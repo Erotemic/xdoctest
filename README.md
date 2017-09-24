@@ -13,11 +13,12 @@ TODO:
 - [ ] Get standalone module / package tester working
 - [ ] Get pytest plugin working
 - [ ] TESTS TESTS TESTS
+- [x] Register on pypi
 - [ ] CI-via Travis / AppVeyor
 - [ ] Coverage
 - [ ] Professional readme (remove/rephrase my ramblings)
 - [ ] Documentation
-- [ ] Rename to something that's not \*2?
+- [ ] Rename to something better than `xdoctest`?
 
 The overall goal of this module is to make doctests easier to write.
 
