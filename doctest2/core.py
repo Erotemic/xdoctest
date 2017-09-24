@@ -79,8 +79,7 @@ class DocTest(object):
                     for count, line in enumerate(
                         doctest_src.splitlines(), start=1 + part.line_offset)])
             if colored:
-                from doctest2 import colors
-                doctest_src = colors.highlight_code(doctest_src, 'python')
+                doctest_src = utils.highlight_code(doctest_src, 'python')
             part_source.append(doctest_src)
         full_source = '\n'.join(part_source)
         return full_source
