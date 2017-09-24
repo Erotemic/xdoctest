@@ -1,5 +1,24 @@
 This is a followup to pytest#2786.
 
+This is a work in progress:
+
+TODO:
+
+- [x] Basic functionality
+- [x] Basic got/want support
+- [x] Parse google-style examples
+- [ ] Parse numpy-style examples
+- [ ] Support for non-nested doctests? (maybe as an option)
+- [ ] Add more fuzzy want support to mirror original doctest.
+- [ ] Get standalone module / package tester working
+- [ ] Get pytest plugin working
+- [ ] TESTS TESTS TESTS
+- [ ] CI-via Travis / AppVeyor
+- [ ] Coverage
+- [ ] Professional readme (remove/rephrase my ramblings)
+- [ ] Documentation
+- [ ] Rename to something that's not \*2?
+
 The overall goal of this module is to make doctests easier to write.
 
 This is done by (1) allowing `>>> ` to be a valid prefix for all lines, and
