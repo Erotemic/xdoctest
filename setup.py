@@ -4,12 +4,12 @@ from setuptools import setup
 
 if __name__ == '__main__':
     setup(
-        name="doctest2",
-        packages=['doctest2'],
+        name="xdoctest",
+        packages=['xdoctest'],
         # the following makes a plugin available to pytest
         entry_points={
             'pytest11': [
-                'doctest2 = doctest2.plugin',
+                'xdoctest = xdoctest.plugin',
             ]
         },
         # custom PyPI classifier for pytest plugins

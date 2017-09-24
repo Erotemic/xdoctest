@@ -251,7 +251,7 @@ def split_google_docblocks(docstr):
             tag and the second item is the bock corresponding to that tag.
 
     Example:
-        >>> from doctest2.docscrape_google import *  # NOQA
+        >>> from xdoctest.docscrape_google import *  # NOQA
         >>> docstr = split_google_docblocks.__doc__
         >>> groups = split_google_docblocks(docstr)
         >>> #print('groups = %s' % (groups,))
@@ -260,7 +260,7 @@ def split_google_docblocks(docstr):
         ['Args', 'Returns', 'Example']
 
     Example:
-        >>> from doctest2.docscrape_google import *  # NOQA
+        >>> from xdoctest.docscrape_google import *  # NOQA
         >>> docstr = split_google_docblocks.__doc__
         >>> groups = split_google_docblocks(docstr)
     """

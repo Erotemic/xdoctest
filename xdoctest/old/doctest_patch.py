@@ -214,7 +214,7 @@ class DocTestParser2(doctest.DocTestParser):
 
     def _label_lines(self, string):
         """
-        >>> from _pytest.doctest2 import *
+        >>> from _pytest.xdoctest import *
         >>> import textwrap
         >>> self = DocTestParser2()
         >>> # Having multiline strings in doctests can be nice

@@ -76,9 +76,9 @@ class DoctestParser(object):
             <BLANKLINE> directive is still in effect.
 
         Example:
-            >>> from doctest2 import doctest_parser
-            >>> from doctest2 import docscrape_google
-            >>> from doctest2 import core
+            >>> from xdoctest import doctest_parser
+            >>> from xdoctest import docscrape_google
+            >>> from xdoctest import core
             >>> self = doctest_parser.DoctestParser()
             >>> docstr = self.parse.__doc__
             >>> blocks = docscrape_google.split_google_docblocks(docstr)
@@ -234,7 +234,7 @@ class DoctestParser(object):
     def _label_docsrc_lines(self, string):
         """
         Example:
-            >>> from doctest2.doctest_parser import *
+            >>> from xdoctest.doctest_parser import *
             >>> import textwrap
             >>> # Having multiline strings in doctests can be nice
             >>> string = textwrap.dedent(

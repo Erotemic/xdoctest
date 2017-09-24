@@ -4,10 +4,10 @@ import warnings
 import sys
 import six
 from os.path import exists
-from doctest2 import static_analysis as static
-from doctest2 import docscrape_google
-from doctest2 import utils
-from doctest2 import doctest_parser
+from xdoctest import static_analysis as static
+from xdoctest import docscrape_google
+from xdoctest import utils
+from xdoctest import doctest_parser
 
 
 class ExitTestException(Exception):
@@ -19,7 +19,7 @@ class DocTest(object):
     Holds information necessary to execute and verify a doctest
 
     Example:
-        >>> package_name = 'doctest2'
+        >>> package_name = 'xdoctest'
         >>> testables = parse_doctestables(package_name)
         >>> self = next(testables)
         >>> print(self.want)
@@ -66,7 +66,7 @@ class DocTest(object):
         Adds prefix and line numbers to a doctest
 
         Example:
-            >>> package_name = 'doctest2'
+            >>> package_name = 'xdoctest'
             >>> testables = parse_doctestables(package_name)
             >>> self = next(testables)
             >>> print(self.format_src())
@@ -116,9 +116,9 @@ class DocTest(object):
             <BLANKLINE> directive is still in effect.
 
         Example:
-            >>> from doctest2 import doctest_parser
-            >>> from doctest2 import docscrape_google
-            >>> from doctest2 import core
+            >>> from xdoctest import doctest_parser
+            >>> from xdoctest import docscrape_google
+            >>> from xdoctest import core
             >>> docstr = core.DocTest._parse.__doc__
             >>> blocks = docscrape_google.split_google_docblocks(docstr)
             >>> doclineno = core.DocTest._parse.__code__.co_firstlineno
@@ -298,7 +298,7 @@ def parse_doctestables(package_name, exclude=[], strict=False):
     Finds all functions/callables with Google-style example blocks
 
     Example:
-        >>> package_name = 'doctest2'
+        >>> package_name = 'xdoctest'
         >>> testables = list(parse_doctestables(package_name))
         >>> this_example = None
         >>> for example in testables:

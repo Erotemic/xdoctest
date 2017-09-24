@@ -1,6 +1,6 @@
 
 def test_lineno():
-    from doctest2 import static_analysis as static
+    from xdoctest import static_analysis as static
     import ubelt as ub
     source = ub.codeblock(
         '''

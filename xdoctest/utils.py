@@ -31,7 +31,7 @@ class CaptureStdout(object):
         enabled (bool): (default = True)
 
     Example:
-        >>> from doctest2.utils import *
+        >>> from xdoctest.utils import *
         >>> self = CaptureStdout(enabled=True)
         >>> print('dont capture the table flip (╯°□°）╯︵ ┻━┻')
         >>> with self:

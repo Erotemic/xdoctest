@@ -16,41 +16,41 @@ from _pytest.fixtures import FixtureRequest
 
 def pytest_addoption(parser):
     group = parser.getgroup("collect")
-    group.addoption("--doctest2-modules",
+    group.addoption("--xdoctest-modules",
                     action="store_true", default=False,
                     help="run doctests in all .py modules using new style parsing",
-                    dest="doctest2modules")
-    group.addoption("--doctest2-glob",
+                    dest="xdoctestmodules")
+    group.addoption("--xdoctest-glob",
                     action="append", default=[], metavar="pat",
                     help="doctests2 file matching pattern, default: test*.txt",
-                    dest="doctest2glob")
-    group.addoption("--doctest2-ignore-syntax-errors",
+                    dest="xdoctestglob")
+    group.addoption("--xdoctest-ignore-syntax-errors",
                     action="store_true", default=False,
-                    help="ignore doctest2 SyntaxErrors",
-                    dest="doctest2_ignore_syntax_errors")
+                    help="ignore xdoctest SyntaxErrors",
+                    dest="xdoctest_ignore_syntax_errors")
 
-    # parser.addini('doctest2_optionflags', 'option flags for doctests2',
+    # parser.addini('xdoctest_optionflags', 'option flags for doctests2',
     #               type="args", default=["ELLIPSIS"])
-    # parser.addini("doctest2_encoding", 'encoding used for doctest2 files', default="utf-8")
-    # group.addoption("--doctest2-report",
+    # parser.addini("xdoctest_encoding", 'encoding used for xdoctest files', default="utf-8")
+    # group.addoption("--xdoctest-report",
     #                 type=str.lower, default="udiff",
-    #                 help="choose another output format for diffs on doctest2 failure",
+    #                 help="choose another output format for diffs on xdoctest failure",
     #                 choices=DOCTEST_REPORT_CHOICES,
-    #                 dest="doctest2report")
-    # group.addoption("--doctest2-glob",
+    #                 dest="xdoctestreport")
+    # group.addoption("--xdoctest-glob",
     #                 action="append", default=[], metavar="pat",
     #                 help="doctests2 file matching pattern, default: test*.txt",
-    #                 dest="doctest2glob")
+    #                 dest="xdoctestglob")
 
 
 def pytest_collect_file(path, parent):
     config = parent.config
     if path.ext == ".py":
-        if config.option.doctest2modules:
-            return Doctest2Module(path, parent)
+        if config.option.xdoctestmodules:
+            return XDoctestModule(path, parent)
 
 
-class ReprFailDoctest2(TerminalRepr):
+class ReprFailXDoctest(TerminalRepr):
 
     def __init__(self, reprlocation, lines):
         self.reprlocation = reprlocation
@@ -62,9 +62,9 @@ class ReprFailDoctest2(TerminalRepr):
         self.reprlocation.toterminal(tw)
 
 
-class Doctest2Item(pytest.Item):
+class XDoctestItem(pytest.Item):
     def __init__(self, name, parent, example=None):
-        super(Doctest2Item, self).__init__(name, parent)
+        super(XDoctestItem, self).__init__(name, parent)
         self.example = example
         self.obj = None
         self.fixture_request = None
@@ -73,7 +73,7 @@ class Doctest2Item(pytest.Item):
         if self.example is not None:
             self.fixture_request = _setup_fixtures(self)
             globs = dict(getfixture=self.fixture_request.getfixturevalue)
-            for name, value in self.fixture_request.getfixturevalue('doctest2_namespace').items():
+            for name, value in self.fixture_request.getfixturevalue('xdoctest_namespace').items():
                 globs[name] = value
             self.example.globs.update(globs)
 
@@ -89,7 +89,7 @@ class Doctest2Item(pytest.Item):
         # self.runner.run(self.example)
 
     def repr_failure(self, excinfo):
-        return super(Doctest2Item, self).repr_failure(excinfo)
+        return super(XDoctestItem, self).repr_failure(excinfo)
         # return self.dtest.repr_failure()
         # import doctest
         # if excinfo.errisinstance((doctest.DocTestFailure,
@@ -127,14 +127,14 @@ class Doctest2Item(pytest.Item):
         #         lines += ["UNEXPECTED EXCEPTION: %s" %
         #                   repr(inner_excinfo.value)]
         #         lines += traceback.format_exception(*excinfo.value.exc_info)
-        #     return ReprFailDoctest2(reprlocation, lines)
+        #     return ReprFailXDoctest(reprlocation, lines)
         # else:
 
     def reportinfo(self):
-        return self.fspath, self.example.lineno, "[doctest2] %s" % self.name
+        return self.fspath, self.example.lineno, "[xdoctest] %s" % self.name
 
 
-class Doctest2Textfile(pytest.Module):
+class XDoctestTextfile(pytest.Module):
     obj = None
 
     def collect(self):
@@ -143,7 +143,7 @@ class Doctest2Textfile(pytest.Module):
 
         # inspired by doctest.testfile; ideally we would use it directly,
         # but it doesn't support passing a custom checker
-        # encoding = self.config.getini("doctest2_encoding")
+        # encoding = self.config.getini("xdoctest_encoding")
         # text = self.fspath.read_text(encoding)
         # filename = str(self.fspath)
         # name = self.fspath.basename
@@ -154,14 +154,14 @@ class Doctest2Textfile(pytest.Module):
         #                              checker=_get_checker())
         # _fix_spoof_python2(runner, encoding)
 
-        # from doctest2 import doctest_patch  # NOQA
+        # from xdoctest import doctest_patch  # NOQA
         # DocTestParser = doctest_patch.DocTestParser2
         # # DocTestParser = doctest.DocTestParser  # NOQA
 
         # parser = DocTestParser()
         # test = parser.get_doctest(text, globs, name, filename, 0)
         # if test.examples:
-        #     yield Doctest2Item(test.name, self, runner, test)
+        #     yield XDoctestItem(test.name, self, runner, test)
 
 
 # def _check_all_skipped(test):
@@ -174,15 +174,15 @@ class Doctest2Textfile(pytest.Module):
 #         pytest.skip('all tests skipped by +SKIP option')
 
 
-class Doctest2Module(pytest.Module):
+class XDoctestModule(pytest.Module):
     def collect(self):
-        from doctest2 import core
+        from xdoctest import core
         modpath = str(self.fspath)
 
         try:
             calldefs = core.module_calldefs(modpath)
         except SyntaxError:
-            if self.config.getvalue('doctest2_ignore_syntax_errors'):
+            if self.config.getvalue('xdoctest_ignore_syntax_errors'):
                 pytest.skip('unable to import module %r' % self.fspath)
             else:
                 raise
@@ -195,14 +195,14 @@ class Doctest2Module(pytest.Module):
                 for example in core.parse_google_docstr_examples(docstr, callname, modpath, lineno=lineno):
                     if not example.is_disabled():
                         name = example.unique_callname
-                        yield Doctest2Item(name, self, example)
+                        yield XDoctestItem(name, self, example)
 
         # import doctest
         # if self.fspath.basename == "conftest.py":
         #     module = self.config.pluginmanager._importconftest(self.fspath)
 
         # uses internal doctest module parsing mechanism
-        # from doctest2 import doctest_patch  # NOQA
+        # from xdoctest import doctest_patch  # NOQA
         # DocTestParser = doctest_patch.DocTestParser2
         # # DocTestParser = doctest.DocTestParser  # NOQA
 
@@ -214,21 +214,21 @@ class Doctest2Module(pytest.Module):
 
         # for test in finder.find(module, module.__name__):
         #     if test.examples:  # skip empty doctests
-        #         yield Doctest2Item(test.name, self, runner, test)
+        #         yield XDoctestItem(test.name, self, runner, test)
 
 
-def _setup_fixtures(doctest2_item):
+def _setup_fixtures(xdoctest_item):
     """
-    Used by Doctest2Textfile and Doctest2Item to setup fixture information.
+    Used by XDoctestTextfile and XDoctestItem to setup fixture information.
     """
     def func():
         pass
 
-    doctest2_item.funcargs = {}
-    fm = doctest2_item.session._fixturemanager
-    doctest2_item._fixtureinfo = fm.getfixtureinfo(node=doctest2_item, func=func,
+    xdoctest_item.funcargs = {}
+    fm = xdoctest_item.session._fixturemanager
+    xdoctest_item._fixtureinfo = fm.getfixtureinfo(node=xdoctest_item, func=func,
                                                    cls=None, funcargs=False)
-    fixture_request = FixtureRequest(doctest2_item)
+    fixture_request = FixtureRequest(xdoctest_item)
     fixture_request._fillfixtures()
     return fixture_request
 
@@ -373,7 +373,7 @@ def _setup_fixtures(doctest2_item):
 
 
 # def get_optionflags(parent):
-#     optionflags_str = parent.config.getini("doctest2_optionflags")
+#     optionflags_str = parent.config.getini("xdoctest_optionflags")
 #     flag_lookup_table = _get_flag_lookup()
 #     flag_acc = 0
 #     for flag in optionflags_str:
@@ -383,8 +383,8 @@ def _setup_fixtures(doctest2_item):
 
 
 @pytest.fixture(scope='session')
-def doctest2_namespace():
+def xdoctest_namespace():
     """
-    Inject names into the doctest2 namespace.
+    Inject names into the xdoctest namespace.
     """
     return dict()

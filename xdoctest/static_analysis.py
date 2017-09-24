@@ -38,7 +38,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         http://greentreesnakes.readthedocs.io/en/latest/nodes.html
 
     Example:
-        >>> from doctest2.static_analysis import *  # NOQA
+        >>> from xdoctest.static_analysis import *  # NOQA
         >>> import ubelt as ub
         >>> source = ub.codeblock(
         ...    '''

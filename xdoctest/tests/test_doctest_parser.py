@@ -1,7 +1,7 @@
 
 def testdata():
     import ubelt as ub
-    from doctest2 import doctest_parser
+    from xdoctest import doctest_parser
     string = '''
             text
             >>> dsrc()
