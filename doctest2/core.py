@@ -43,7 +43,12 @@ class DocTest(object):
         self.globs = {}
 
     def is_disabled(self):
-        return self.docsrc.startswith('>>> # DISABLE_DOCTEST')
+        """
+        Checks for comment directives on the first line of the doctest
+        """
+        import re
+        m = re.match(r'>>>\s*#\s*DISABLE', self.docsrc, flags=re.IGNORECASE)
+        return m is not None
 
     @property
     def unique_callname(self):
@@ -192,7 +197,7 @@ class DocTest(object):
                 '',
                 'report failure',
                 self.cmdline,
-                self.format_src(),
+                # self.format_src(),
             ]
         lines += [
             '* FAILURE: {}, {}'.format(self.callname, type(self.ex)),

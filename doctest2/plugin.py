@@ -79,6 +79,12 @@ class Doctest2Item(pytest.Item):
 
     def runtest(self):
         # _check_all_skipped(self.example)
+        #     if all_skipped:
+        #         pytest.skip('all tests skipped by +SKIP option')
+        import re
+        m = re.match(r'>>>\s*#\s*pytest.skip', self.example.docsrc, flags=re.IGNORECASE)
+        if m is not None:
+            pytest.skip('doctest encountered skip directive')
         self.example.run()
         # self.runner.run(self.example)
 
