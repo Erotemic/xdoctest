@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function
 import sys
 import _pytest._code
 from _pytest.compat import MODULE_NOT_FOUND_ERROR
-from xdoctest.plugin import DoctestItem, DoctestModule, DoctestTextfile
+from xdoctest.plugin import XDoctestItem, XDoctestModule, DoctestTextfile
 import pytest
 
 
@@ -26,7 +26,7 @@ class TestDoctests2(object):
             # print "checking that %s returns custom items" % (x,)
             items, reprec = testdir.inline_genitems(x)
             assert len(items) == 1
-            assert isinstance(items[0], DoctestItem)
+            assert isinstance(items[0], XDoctestItem)
             assert isinstance(items[0].parent, DoctestTextfile)
         # Empty file has no items.
         items, reprec = testdir.inline_genitems(w)
@@ -45,8 +45,8 @@ class TestDoctests2(object):
             items, reprec = testdir.inline_genitems(p,
                                                     '--xdoctest-modules')
             assert len(items) == 1
-            assert isinstance(items[0], DoctestItem)
-            assert isinstance(items[0].parent, DoctestModule)
+            assert isinstance(items[0], XDoctestItem)
+            assert isinstance(items[0].parent, XDoctestModule)
 
     def test_collect_module_two_doctest_one_modulelevel(self, testdir):
         path = testdir.makepyfile(whatever="""
@@ -58,9 +58,9 @@ class TestDoctests2(object):
             items, reprec = testdir.inline_genitems(p,
                                                     '--xdoctest-modules')
             assert len(items) == 2
-            assert isinstance(items[0], DoctestItem)
-            assert isinstance(items[1], DoctestItem)
-            assert isinstance(items[0].parent, DoctestModule)
+            assert isinstance(items[0], XDoctestItem)
+            assert isinstance(items[1], XDoctestItem)
+            assert isinstance(items[0].parent, XDoctestModule)
             assert items[0].parent is items[1].parent
 
     def test_collect_module_two_doctest_no_modulelevel(self, testdir):
@@ -83,9 +83,9 @@ class TestDoctests2(object):
             items, reprec = testdir.inline_genitems(p,
                                                     '--xdoctest-modules')
             assert len(items) == 2
-            assert isinstance(items[0], DoctestItem)
-            assert isinstance(items[1], DoctestItem)
-            assert isinstance(items[0].parent, DoctestModule)
+            assert isinstance(items[0], XDoctestItem)
+            assert isinstance(items[1], XDoctestItem)
+            assert isinstance(items[0].parent, XDoctestModule)
             assert items[0].parent is items[1].parent
 
     def test_simple_doctestfile(self, testdir):
@@ -551,7 +551,7 @@ class TestDoctests2(object):
 
     def test_reportinfo(self, testdir):
         '''
-        Test case to make sure that DoctestItem.reportinfo() returns lineno.
+        Test case to make sure that XDoctestItem.reportinfo() returns lineno.
         '''
         p = testdir.makepyfile(test_reportinfo="""
             def foo(x):
