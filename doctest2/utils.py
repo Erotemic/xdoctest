@@ -3,7 +3,24 @@ from __future__ import print_function, division, absolute_import, unicode_litera
 import sys
 import six
 import codecs
-from six.moves import cStringIO
+from six.moves import cStringIO as StringIO
+
+
+class TeeStringIO(StringIO):
+    """ simple class to write to a stdout and a StringIO """
+    def __init__(self, redirect=None):
+        self.redirect = redirect
+        super(TeeStringIO, self).__init__()
+
+    def write(self, msg):
+        if self.redirect is not None:
+            self.redirect.write(msg)
+        super(TeeStringIO, self).write(msg)
+
+    def flush(self, msg):
+        if self.redirect is not None:
+            self.redirect.flush(msg)
+        super(TeeStringIO, self).flush(msg)
 
 
 class CaptureStdout(object):
@@ -14,18 +31,24 @@ class CaptureStdout(object):
         enabled (bool): (default = True)
 
     Example:
+        >>> from doctest2.utils import *
         >>> self = CaptureStdout(enabled=True)
         >>> print('dont capture the table flip (╯°□°）╯︵ ┻━┻')
         >>> with self:
-        ...     print('capture the heart ♥')
+        ...     text = 'capture the heart ♥'
+        ...     print(text)
         >>> print('dont capture look of disapproval ಠ_ಠ')
         >>> assert isinstance(self.text, six.text_type)
-        >>> assert self.text == 'capture the heart ♥\n', 'failed capture text'
+        >>> assert self.text == text + '\n', 'failed capture text'
     """
-    def __init__(self, enabled=True):
-        self.enabled = enabled
+    def __init__(self, supress=True):
+        self.supress = supress
         self.orig_stdout = sys.stdout
-        self.cap_stdout = cStringIO()
+        if supress:
+            redirect = None
+        else:
+            redirect = self.orig_stdout
+        self.cap_stdout = TeeStringIO(redirect)
         if six.PY2:
             # http://stackoverflow.com/questions/1817695/stringio-accept-utf8
             codecinfo = codecs.lookup('utf8')
@@ -35,22 +58,20 @@ class CaptureStdout(object):
         self.text = None
 
     def __enter__(self):
-        if self.enabled:
-            sys.stdout = self.cap_stdout
+        sys.stdout = self.cap_stdout
         return self
 
     def __exit__(self, type_, value, trace):
-        if self.enabled:
-            try:
-                self.cap_stdout.seek(0)
-                self.text = self.cap_stdout.read()
-                if six.PY2:
-                    self.text = self.text.decode('utf8')
-            except Exception:  # nocover
-                pass
-            finally:
-                self.cap_stdout.close()
-                sys.stdout = self.orig_stdout
+        try:
+            self.cap_stdout.seek(0)
+            self.text = self.cap_stdout.read()
+            if six.PY2:
+                self.text = self.text.decode('utf8')
+        except Exception:  # nocover
+            raise
+        finally:
+            self.cap_stdout.close()
+            sys.stdout = self.orig_stdout
         if trace is not None:
             return False  # return a falsey value on error
 

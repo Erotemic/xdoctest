@@ -27,7 +27,8 @@ def parse_google_args(docstr):
         [[('desc', 'a google-style docstring'), ('name', 'docstr'), ('type', 'str')]]
     """
     blocks = split_google_docblocks(docstr)
-    for key, lines in blocks:
+    for key, block in blocks:
+        lines = block[0]
         if key == 'Args':
             for argdict in parse_google_argblock(lines):
                 yield argdict
@@ -59,7 +60,8 @@ def parse_google_returns(docstr, return_annot=None):
         [('type', 'list')]
     """
     blocks = split_google_docblocks(docstr)
-    for key, lines in blocks:
+    for key, block in blocks:
+        lines = block[0]
         if key == 'Returns':
             for retdict in parse_google_retblock(lines, return_annot):
                 yield retdict
@@ -239,7 +241,8 @@ def parse_google_argblock(lines):
 
 
 def split_google_docblocks(docstr):
-    r"""
+    r""" Breaks a docstring into parts defined by google style
+
     Args:
         docstr (str): a docstring
 
@@ -248,13 +251,18 @@ def split_google_docblocks(docstr):
             tag and the second item is the bock corresponding to that tag.
 
     Example:
-        >>> from ubelt.meta.docscrape_google import *  # NOQA
+        >>> from doctest2.docscrape_google import *  # NOQA
         >>> docstr = split_google_docblocks.__doc__
         >>> groups = split_google_docblocks(docstr)
         >>> #print('groups = %s' % (groups,))
         >>> assert len(groups) == 3
-        >>> print([k for k, v in groups])
+        >>> print([g[0] for g in groups])
         ['Args', 'Returns', 'Example']
+
+    Example:
+        >>> from doctest2.docscrape_google import *  # NOQA
+        >>> docstr = split_google_docblocks.__doc__
+        >>> groups = split_google_docblocks(docstr)
     """
     if not isinstance(docstr, six.string_types):
         raise TypeError('Input docstr must be a string. Got {} instead'.format(
@@ -336,6 +344,7 @@ def split_google_docblocks(docstr):
     tag_aliases = dict([(item, group[0]) for group in tag_groups for item in group])
     tag_pattern = '^' + '(' + '|'.join(tag_aliases.keys()) + '): *$'
 
+    # Label lines by their group-id
     group_id = 0
     prev_indent = 0
     group_list = []
@@ -362,6 +371,8 @@ def split_google_docblocks(docstr):
         group_list.append(group_id)
         prev_indent = indent_
 
+    assert len(docstr_lines) == len(group_list)
+
     # Group docstr lines by group list
     groups_ = collections.defaultdict(list)
     for groupid, line in zip(group_list, docstr_lines):
@@ -384,6 +395,7 @@ def split_google_docblocks(docstr):
             subblock = '\n'.join(val)
 
         key = tag_aliases.get(key, key)
-        groups.append((key, subblock))
+        block = (subblock, line_offset)
+        groups.append((key, block))
         line_offset += len(lines)
     return groups

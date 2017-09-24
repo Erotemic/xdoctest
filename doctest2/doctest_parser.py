@@ -24,10 +24,25 @@ _EXCEPTION_RE = re.compile(r"""
 
 
 class DoctestPart(object):
-    def __init__(self, source, want, lineno):
+    def __init__(self, source, want, line_offset):
         self.source = source
         self.want = want
-        self.lineno = lineno
+        self.line_offset = line_offset
+
+    def check_got_vs_want(self, got):
+        if not self.want:
+            return True
+        if self.want:
+            if self.want == '...':
+                return True
+            if got.endswith('\n') and not self.want.endswith('\n'):
+                # allow got to have one extra newline
+                got = got[:-1]
+            if self.want == got:
+                return True
+
+        raise AssertionError(
+            'got={!r} differs with doctest want={!r}'.format(got, self.want))
 
 
 class DoctestParser(object):
@@ -38,6 +53,40 @@ class DoctestParser(object):
     def parse(self, string):
         """
         Divide the given string into examples and intervening text.
+
+        Example:
+            >>> s = 'I am a dummy example with two parts'
+            >>> x = 10
+            >>> print(s)
+            I am a dummy example with three parts
+            >>> s = 'My purpose it so demonstrate how wants work here'
+            >>> print('The new want applies ONLY to stdout')
+            >>> print('given before the last want')
+            >>> '''
+                this wont hurt the test at all
+                even though its multiline '''
+            >>> y = 20
+            The new want applies ONLY to stdout
+            given before the last want
+            >>> # Parts from previous examples are executed in the same context
+            >>> print(x + y)
+            30
+
+            this is simply text, and doesnt apply to the previous doctest the
+            <BLANKLINE> directive is still in effect.
+
+        Example:
+            >>> from doctest2 import doctest_parser
+            >>> from doctest2 import docscrape_google
+            >>> from doctest2 import core
+            >>> self = doctest_parser.DoctestParser()
+            >>> docstr = self.parse.__doc__
+            >>> blocks = docscrape_google.split_google_docblocks(docstr)
+            >>> doclineno = self.parse.__func__.__code__.co_firstlineno
+            >>> key, (string, offset) = blocks[-2]
+            >>> self._label_docsrc_lines(string)
+            >>> doctest_parts = self.parse(string)
+            >>> assert len(doctest_parts) == 4
         """
         string = string.expandtabs()
         # If all lines begin with the same indentation, then strip it.
@@ -60,7 +109,7 @@ class DoctestParser(object):
                 for example in self._package_chunk(source_lines, want_lines,
                                                    lineno):
                     yield example
-                lineno += len(source_lines)
+                lineno += len(source_lines) + len(want_lines)
             else:
                 text_part = '\n'.join(chunk)
                 yield text_part
@@ -75,6 +124,7 @@ class DoctestParser(object):
         match = _INDENT_RE.search(source_lines[0])
         line_indent = 0 if match is None else (match.end() - match.start())
         # indent = min_indent + line_indent
+        norm_source_lines = [p[line_indent + 4:] for p in source_lines]
 
         s1 = 0
         if self.simulate_repl:
@@ -86,18 +136,18 @@ class DoctestParser(object):
             # Break down first parts which dont have any want
             for s1, s2 in zip(ps1_linenos, ps1_linenos[1:]):
                 self._locate_ps1_linenos(source_lines, line_indent)
-                source = '\n'.join(source_lines[s1:s2])
+                source = '\n'.join(norm_source_lines[s1:s2])
                 # options = self._find_options(source, name, lineno + s1)
                 # example = DoctestPart(source, None, None, lineno=lineno + s1,
                 #                       indent=indent, options=options)
-                example = DoctestPart(source, want=None, lineno=lineno + s1)
+                example = DoctestPart(source, want=None, line_offset=lineno + s1)
                 yield example
         else:
             ps1_linenos = [0]
 
         # the last part has a want
         last = ps1_linenos[-1]
-        source = '\n'.join(source_lines[last:])
+        source = '\n'.join(norm_source_lines[last:])
         # If `want` contains a traceback message, then extract it.
         norm_want_lines = [p[line_indent:] for p in want_lines]
         want = '\n'.join(norm_want_lines)
@@ -105,7 +155,7 @@ class DoctestParser(object):
         # m = _EXCEPTION_RE.match(want)
         # exc_msg = m.group('msg') if m else None
 
-        example = DoctestPart(source, want=want, lineno=lineno + s1)
+        example = DoctestPart(source, want=want, line_offset=lineno + s1)
         yield example
 
     def _group_labeled_lines(self, labeled_lines):
@@ -349,78 +399,6 @@ def is_balanced(lines):
         raise
     else:
         return True
-
-
-def parse_src_want(docsrc):
-    """
-    Breaks into sections of source code and result checks
-
-    Args:
-        docsrc (str):
-
-    References:
-        https://stackoverflow.com/questions/46061949/parse-until-expr-complete
-
-    Example:
-        >>> from doctest2 import docscrape_google
-        >>> import inspect
-        >>> docstr = inspect.getdoc(parse_src_want)
-        >>> blocks = dict(docscrape_google.split_google_docblocks(docstr))
-        >>> docsrc = blocks['Example']
-        >>> src, want = parse_src_want(docsrc)
-        >>> 'I want to see this str'
-        'I want to see this str'
-
-    Example:
-        >>> from doctest2 import docscrape_google
-        >>> import inspect
-        >>> docstr = inspect.getdoc(parse_src_want)
-        >>> blocks = dict(docscrape_google.split_google_docblocks(docstr))
-        >>> str = (
-        ...   '''
-        ...    TODO: be able to parse docstrings like this.
-        ...    ''')
-        >>> print('Intermediate want')
-        Intermediate want
-        >>> docsrc = blocks['Example']
-        >>> src, want = parse_src_want(docsrc)
-        >>> 'I want to see this str'
-        'I want to see this str'
-    """
-    # TODO: new strategy.
-    # Parse as much as possible until we get to a non-doctest line then check
-    # if the syntax is a valid parse tree. if not, add the line and potentially
-    # continue. Otherwise infer that it is a want line.
-
-    # parse and differenatiate between doctest source and want statements.
-    parsed = []
-    current = []
-    for linex, line in enumerate(docsrc.splitlines()):
-        if not current and not line.startswith(('>>>', '...')):
-            parsed.append(('want', line))
-        else:
-            prefix = line[:4]
-            suffix = line[4:]
-            if prefix.strip() not in {'>>>', '...', ''}:  # nocover
-                raise SyntaxError(
-                    'Bad indentation in doctest on line {}: {!r}'.format(
-                        linex, line))
-            current.append(suffix)
-            if is_balanced(current):
-                statement = ('\n'.join(current))
-                parsed.append(('source', statement))
-                current = []
-
-    statements = [val for type_, val in parsed if type_ == 'source']
-    wants = [val for type_, val in parsed if type_ == 'want']
-
-    src = '\n'.join([line for val in statements for line in val.splitlines()])
-    # take just the last want for now
-    if len(wants) > 0:
-        want = wants[-1]
-    else:
-        want = None
-    return src, want
 
 
 def min_indentation(s):
