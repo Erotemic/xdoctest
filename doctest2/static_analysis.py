@@ -15,16 +15,17 @@ from os.path import (join, exists, expanduser, abspath, split, splitext,
 
 
 class CallDefNode(object):
-    def __init__(self, callname, lineno, docstr, doclineno):
+    def __init__(self, callname, lineno, docstr, doclineno, doclineno_end):
         self.callname = callname
         self.lineno = lineno
         self.docstr = docstr
         self.doclineno = doclineno
-        self.endlineno = None
+        self.doclineno_end = doclineno_end
+        self.lineno_end = None
 
     # def __str__(self):
     #     return '{}[{}:{}][{}]'.format(
-    #         self.callname, self.lineno, self.endlineno,
+    #         self.callname, self.lineno, self.lineno_end,
     #         self.doclineno)
 
 
@@ -37,7 +38,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         http://greentreesnakes.readthedocs.io/en/latest/nodes.html
 
     Example:
-        >>> from ubelt.meta.static_analysis import *  # NOQA
+        >>> from doctest2.static_analysis import *  # NOQA
         >>> import ubelt as ub
         >>> source = ub.codeblock(
         ...    '''
@@ -70,12 +71,12 @@ class TopLevelVisitor(ast.NodeVisitor):
         """ process (get ending lineno) for everything marked as finished """
         if self._finish_queue:
             if isinstance(node, int):
-                endlineno = node
+                lineno_end = node
             else:
-                endlineno = getattr(node, 'lineno', None)
+                lineno_end = getattr(node, 'lineno', None)
             while self._finish_queue:
                 calldef = self._finish_queue.pop()
-                calldef.endlineno = endlineno
+                calldef.lineno_end = lineno_end
 
     @classmethod
     def parse(TopLevelVisitor, source):
@@ -83,8 +84,8 @@ class TopLevelVisitor(ast.NodeVisitor):
         pt = ast.parse(source_utf8)
         self = TopLevelVisitor()
         self.visit(pt)
-        endlineno = source.count('\n') + 2  # one indexing
-        self.process_finished(endlineno)
+        lineno_end = source.count('\n') + 2  # one indexing
+        self.process_finished(lineno_end)
         return self
 
     def visit(self, node):
@@ -94,18 +95,21 @@ class TopLevelVisitor(ast.NodeVisitor):
     def _get_docstring(self, node):
         docstr = ast.get_docstring(node, clean=False)
         if docstr is not None:
-            doclineno = (node.lineno + 1, node.body[0].lineno + 1)
+            doclineno = node.lineno + 1
+            doclineno_end = node.body[0].lineno + 1
         else:
             doclineno = None
-        return (docstr, doclineno)
+            doclineno_end = None
+        return (docstr, doclineno, doclineno_end)
 
     def visit_FunctionDef(self, node):
         if self._current_classname is None:
             callname = node.name
         else:
             callname = self._current_classname + '.' + node.name
-        docstr, doclineno = self._get_docstring(node)
-        calldef = CallDefNode(callname, node.lineno, docstr, doclineno)
+        docstr, doclineno, doclineno_end = self._get_docstring(node)
+        calldef = CallDefNode(callname, node.lineno, docstr, doclineno,
+                              doclineno_end)
         self.calldefs[callname] = calldef
 
         self._finish_queue.append(calldef)
@@ -114,8 +118,9 @@ class TopLevelVisitor(ast.NodeVisitor):
         if self._current_classname is None:
             callname = node.name
             self._current_classname = callname
-            docstr, doclineno = self._get_docstring(node)
-            calldef = CallDefNode(callname, node.lineno, docstr, doclineno)
+            docstr, doclineno, doclineno_end = self._get_docstring(node)
+            calldef = CallDefNode(callname, node.lineno, docstr, doclineno,
+                                  doclineno_end)
             self.calldefs[callname] = calldef
 
             self.generic_visit(node)

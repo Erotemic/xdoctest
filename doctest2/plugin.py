@@ -10,32 +10,37 @@ Adapted from the original `pytest/_pytest/doctest.py` module at:
 from __future__ import absolute_import, division, print_function
 # import traceback
 import pytest
-from _pytest._code.code import ExceptionInfo, ReprFileLocation, TerminalRepr
+from _pytest._code.code import ExceptionInfo, ReprFileLocation, TerminalRepr  # NOQA
 from _pytest.fixtures import FixtureRequest
 
 
 def pytest_addoption(parser):
-    # parser.addini('doctest2_optionflags', 'option flags for doctests2',
-    #               type="args", default=["ELLIPSIS"])
-    # parser.addini("doctest2_encoding", 'encoding used for doctest2 files', default="utf-8")
     group = parser.getgroup("collect")
     group.addoption("--doctest2-modules",
                     action="store_true", default=False,
                     help="run doctests in all .py modules using new style parsing",
                     dest="doctest2modules")
+    group.addoption("--doctest2-glob",
+                    action="append", default=[], metavar="pat",
+                    help="doctests2 file matching pattern, default: test*.txt",
+                    dest="doctest2glob")
+    group.addoption("--doctest2-ignore-syntax-errors",
+                    action="store_true", default=False,
+                    help="ignore doctest2 SyntaxErrors",
+                    dest="doctest2_ignore_syntax_errors")
+
+    # parser.addini('doctest2_optionflags', 'option flags for doctests2',
+    #               type="args", default=["ELLIPSIS"])
+    # parser.addini("doctest2_encoding", 'encoding used for doctest2 files', default="utf-8")
     # group.addoption("--doctest2-report",
     #                 type=str.lower, default="udiff",
     #                 help="choose another output format for diffs on doctest2 failure",
     #                 choices=DOCTEST_REPORT_CHOICES,
     #                 dest="doctest2report")
-    group.addoption("--doctest2-glob",
-                    action="append", default=[], metavar="pat",
-                    help="doctests2 file matching pattern, default: test*.txt",
-                    dest="doctest2glob")
-    # group.addoption("--doctest2-ignore-import-errors",
-    #                 action="store_true", default=False,
-    #                 help="ignore doctest2 ImportErrors",
-    #                 dest="doctest2_ignore_import_errors")
+    # group.addoption("--doctest2-glob",
+    #                 action="append", default=[], metavar="pat",
+    #                 help="doctests2 file matching pattern, default: test*.txt",
+    #                 dest="doctest2glob")
 
 
 def pytest_collect_file(path, parent):
@@ -43,18 +48,6 @@ def pytest_collect_file(path, parent):
     if path.ext == ".py":
         if config.option.doctest2modules:
             return Doctest2Module(path, parent)
-    # elif _is_doctest2(config, path, parent):
-    #     return Doctest2Textfile(path, parent)
-
-
-# def _is_doctest2(config, path, parent):
-#     if path.ext in ('.txt', '.rst') and parent.session.isinitpath(path):
-#         return True
-#     globs = config.getoption("doctest2glob") or ['test*.txt']
-#     for glob in globs:
-#         if path.check(fnmatch=glob):
-#             return True
-#     return False
 
 
 class ReprFailDoctest2(TerminalRepr):
@@ -135,28 +128,6 @@ class Doctest2Item(pytest.Item):
         return self.fspath, self.example.lineno, "[doctest2] %s" % self.name
 
 
-# def _get_flag_lookup():
-#     import doctest
-#     return dict(DONT_ACCEPT_TRUE_FOR_1=doctest.DONT_ACCEPT_TRUE_FOR_1,
-#                 DONT_ACCEPT_BLANKLINE=doctest.DONT_ACCEPT_BLANKLINE,
-#                 NORMALIZE_WHITESPACE=doctest.NORMALIZE_WHITESPACE,
-#                 ELLIPSIS=doctest.ELLIPSIS,
-#                 IGNORE_EXCEPTION_DETAIL=doctest.IGNORE_EXCEPTION_DETAIL,
-#                 COMPARISON_FLAGS=doctest.COMPARISON_FLAGS,
-#                 ALLOW_UNICODE=_get_allow_unicode_flag(),
-#                 ALLOW_BYTES=_get_allow_bytes_flag(),
-#                 )
-
-
-# def get_optionflags(parent):
-#     optionflags_str = parent.config.getini("doctest2_optionflags")
-#     flag_lookup_table = _get_flag_lookup()
-#     flag_acc = 0
-#     for flag in optionflags_str:
-#         flag_acc |= flag_lookup_table[flag]
-#     return flag_acc
-
-
 class Doctest2Textfile(pytest.Module):
     obj = None
 
@@ -199,31 +170,28 @@ class Doctest2Textfile(pytest.Module):
 
 class Doctest2Module(pytest.Module):
     def collect(self):
-        from doctest2.core import parse_docstr_examples
-        from doctest2 import static_analysis as static
+        from doctest2 import core
         modpath = str(self.fspath)
-        calldefs = static.parse_calldefs(fpath=modpath)
+
+        try:
+            calldefs = core.module_calldefs(fpath=modpath)
+        except SyntaxError:
+            if self.config.getvalue('doctest2_ignore_syntax_errors'):
+                pytest.skip('unable to import module %r' % self.fspath)
+            else:
+                raise
 
         for callname, calldef in calldefs.items():
             docstr = calldef.docstr
             if calldef.docstr is not None:
-                for example in parse_docstr_examples(docstr, callname, modpath):
+                for example in core.parse_docstr_examples(docstr, callname, modpath):
                     if not example.is_disabled():
                         name = example.unique_callname
                         yield Doctest2Item(name, self, example)
-                    # yield example
 
         # import doctest
         # if self.fspath.basename == "conftest.py":
         #     module = self.config.pluginmanager._importconftest(self.fspath)
-        # else:
-        #     try:
-        #         module = self.fspath.pyimport()
-        #     except ImportError:
-        #         if self.config.getvalue('doctest2_ignore_import_errors'):
-        #             pytest.skip('unable to import module %r' % self.fspath)
-        #         else:
-        #             raise
 
         # uses internal doctest module parsing mechanism
         # from doctest2 import doctest_patch  # NOQA
@@ -382,6 +350,28 @@ def _setup_fixtures(doctest2_item):
 #             return result
 
 #     runner._fakeout = UnicodeSpoof()
+
+# def _get_flag_lookup():
+#     import doctest
+#     return dict(DONT_ACCEPT_TRUE_FOR_1=doctest.DONT_ACCEPT_TRUE_FOR_1,
+#                 DONT_ACCEPT_BLANKLINE=doctest.DONT_ACCEPT_BLANKLINE,
+#                 NORMALIZE_WHITESPACE=doctest.NORMALIZE_WHITESPACE,
+#                 ELLIPSIS=doctest.ELLIPSIS,
+#                 IGNORE_EXCEPTION_DETAIL=doctest.IGNORE_EXCEPTION_DETAIL,
+#                 COMPARISON_FLAGS=doctest.COMPARISON_FLAGS,
+#                 ALLOW_UNICODE=_get_allow_unicode_flag(),
+#                 ALLOW_BYTES=_get_allow_bytes_flag(),
+#                 )
+
+
+# def get_optionflags(parent):
+#     optionflags_str = parent.config.getini("doctest2_optionflags")
+#     flag_lookup_table = _get_flag_lookup()
+#     flag_acc = 0
+#     for flag in optionflags_str:
+#         flag_acc |= flag_lookup_table[flag]
+#     return flag_acc
+
 
 
 @pytest.fixture(scope='session')
