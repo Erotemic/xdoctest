@@ -22,14 +22,14 @@ def pytest_addoption(parser):
                     dest="xdoctestmodules")
     group.addoption("--xdoctest-glob",
                     action="append", default=[], metavar="pat",
-                    help="doctests2 file matching pattern, default: test*.txt",
+                    help="xdoctests file matching pattern, default: test*.txt",
                     dest="xdoctestglob")
     group.addoption("--xdoctest-ignore-syntax-errors",
                     action="store_true", default=False,
                     help="ignore xdoctest SyntaxErrors",
                     dest="xdoctest_ignore_syntax_errors")
 
-    # parser.addini('xdoctest_optionflags', 'option flags for doctests2',
+    # parser.addini('xdoctest_optionflags', 'option flags for xdoctests',
     #               type="args", default=["ELLIPSIS"])
     # parser.addini("xdoctest_encoding", 'encoding used for xdoctest files', default="utf-8")
     # group.addoption("--xdoctest-report",
@@ -39,7 +39,7 @@ def pytest_addoption(parser):
     #                 dest="xdoctestreport")
     # group.addoption("--xdoctest-glob",
     #                 action="append", default=[], metavar="pat",
-    #                 help="doctests2 file matching pattern, default: test*.txt",
+    #                 help="xdoctests file matching pattern, default: test*.txt",
     #                 dest="xdoctestglob")
 
 
@@ -155,7 +155,7 @@ class XDoctestTextfile(pytest.Module):
         # _fix_spoof_python2(runner, encoding)
 
         # from xdoctest import doctest_patch  # NOQA
-        # DocTestParser = doctest_patch.DocTestParser2
+        # DocTestParser = doctest_patch.XDocTestParser
         # # DocTestParser = doctest.DocTestParser  # NOQA
 
         # parser = DocTestParser()
@@ -203,7 +203,7 @@ class XDoctestModule(pytest.Module):
 
         # uses internal doctest module parsing mechanism
         # from xdoctest import doctest_patch  # NOQA
-        # DocTestParser = doctest_patch.DocTestParser2
+        # DocTestParser = doctest_patch.XDocTestParser
         # # DocTestParser = doctest.DocTestParser  # NOQA
 
         # parser = DocTestParser()
@@ -379,7 +379,6 @@ def _setup_fixtures(xdoctest_item):
 #     for flag in optionflags_str:
 #         flag_acc |= flag_lookup_table[flag]
 #     return flag_acc
-
 
 
 @pytest.fixture(scope='session')
