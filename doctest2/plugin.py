@@ -79,7 +79,7 @@ class Doctest2Item(pytest.Item):
 
     def runtest(self):
         # _check_all_skipped(self.example)
-        self.example.run_example()
+        self.example.run()
         # self.runner.run(self.example)
 
     def repr_failure(self, excinfo):
@@ -174,7 +174,7 @@ class Doctest2Module(pytest.Module):
         modpath = str(self.fspath)
 
         try:
-            calldefs = core.module_calldefs(fpath=modpath)
+            calldefs = core.module_calldefs(modpath)
         except SyntaxError:
             if self.config.getvalue('doctest2_ignore_syntax_errors'):
                 pytest.skip('unable to import module %r' % self.fspath)
@@ -184,7 +184,9 @@ class Doctest2Module(pytest.Module):
         for callname, calldef in calldefs.items():
             docstr = calldef.docstr
             if calldef.docstr is not None:
-                for example in core.parse_docstr_examples(docstr, callname, modpath):
+                # TODO: handle more than just google-style
+                lineno = calldef.doclineno
+                for example in core.parse_google_docstr_examples(docstr, callname, modpath, lineno=lineno):
                     if not example.is_disabled():
                         name = example.unique_callname
                         yield Doctest2Item(name, self, example)

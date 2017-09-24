@@ -73,11 +73,12 @@ class DocTest(object):
         for part in self._parts:
             doctest_src = part.source
             doctest_src = utils.indent(doctest_src, '>>> ')
+            doctest_want = part.want if part.want else ''
             if linenums:
                 doctest_src = '\n'.join([
                     '%3d %s' % (count, line)
                     for count, line in enumerate(
-                        doctest_src.splitlines(), start=1 + part.line_offset)])
+                        doctest_src.splitlines() + doctest_want.splitlines(), start=1 + part.line_offset)])
             if colored:
                 doctest_src = utils.highlight_code(doctest_src, 'python')
             part_source.append(doctest_src)
@@ -225,10 +226,17 @@ class DocTest(object):
         return summary
 
 
+# def parse_docstr_examples():
+#     for example in parse_google_docstr_examples(
+#     pass
+
+
 def parse_google_docstr_examples(docstr, callname=None, modpath=None,
                                  lineno=None):
     """
     Parses Google-style doctests from a docstr and generates example objects
+
+    TODO: generalize to not just google-style
     """
     try:
         blocks = docscrape_google.split_google_docblocks(docstr)
@@ -267,7 +275,7 @@ def package_calldefs(package_name, exclude=[], strict=False):
                 'Is it an old pyc file?'.format(modname))
             continue
         try:
-            calldefs = module_calldefs(fpath=modpath)
+            calldefs = module_calldefs(modpath=modpath)
         except SyntaxError as ex:  # nocover
             msg = 'Cannot parse module={} at path={}.\nCaused by={}'
             msg = msg.format(modname, modpath, ex)

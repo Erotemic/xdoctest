@@ -17,10 +17,10 @@ class TeeStringIO(StringIO):
             self.redirect.write(msg)
         super(TeeStringIO, self).write(msg)
 
-    def flush(self, msg):
+    def flush(self):
         if self.redirect is not None:
-            self.redirect.flush(msg)
-        super(TeeStringIO, self).flush(msg)
+            self.redirect.flush()
+        super(TeeStringIO, self).flush()
 
 
 class CaptureStdout(object):
