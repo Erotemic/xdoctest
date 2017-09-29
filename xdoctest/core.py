@@ -32,8 +32,14 @@ class DocTest(object):
 
     def __init__(self, modpath, callname, docsrc, num, lineno=0):
         self.modpath = modpath
-        self.modname = static.modpath_to_modname(modpath)
-        self.callname = callname
+        if modpath is None:
+            self.modpath = '<none>'
+        else:
+            self.modname = static.modpath_to_modname(modpath)
+        if callname is None:
+            self.callname = '<string>'
+        else:
+            self.callname = callname
         self.docsrc = docsrc
         self.lineno = lineno
         self.num = num
@@ -234,6 +240,55 @@ class DocTest(object):
 # def parse_docstr_examples():
 #     for example in parse_google_docstr_examples(
 #     pass
+
+def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
+                                   lineno=0):
+    """
+    Example:
+        >>> from xdoctest import core
+        >>> import ubelt as ub
+        >>> docstr = ub.codeblock(
+            '''
+            freeform
+            >>> doctest
+            >>> hasmultilines
+            whoppie
+            >>> butthis is the same doctest
+
+            >>> secondone
+
+            ''')
+        >>> modpath = core.__file__
+        >>> callname = 'parse_freeform_docstr_examples'
+        >>> examples = list(parse_freeform_docstr_examples(docstr, callname, modpath))
+        >>> assert len(examples) == 2
+    """
+    # fixme: we already did the parsing! just put it in the container
+    parts = doctest_parser.DoctestParser().parse(docstr)
+    lines = docstr.split('\n')  # hack
+    current = []
+    num = 0
+
+    def doctest_from_parts(current, num):
+        lineno_ = lineno + current[0].line_offset
+        end_lineno_ = (lineno + current[-1].line_offset +
+                       len(current[-1].source.splitlines()))
+        docsrc = '\n'.join(lines[lineno_:end_lineno_])
+        example = DocTest(modpath, callname, docsrc, num, lineno=lineno_)
+        return example
+
+    for part in parts:
+        if isinstance(part, six.string_types):
+            if current:
+                example = doctest_from_parts(current, num)
+                yield example
+                num += 1
+                current = []
+        else:
+            current.append(part)
+    if current:
+        example = doctest_from_parts(current, num)
+        yield example
 
 
 def parse_google_docstr_examples(docstr, callname=None, modpath=None,

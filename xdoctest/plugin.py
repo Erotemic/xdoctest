@@ -48,6 +48,18 @@ def pytest_collect_file(path, parent):
     if path.ext == ".py":
         if config.option.xdoctestmodules:
             return XDoctestModule(path, parent)
+    elif _is_xdoctest(config, path, parent):
+        return XDoctestTextfile(path, parent)
+
+
+def _is_xdoctest(config, path, parent):
+    if path.ext in ('.txt', '.rst') and parent.session.isinitpath(path):
+        return True
+    globs = config.getoption("xdoctestglob") or ['test*.txt']
+    for glob in globs:
+        if path.check(fnmatch=glob):
+            return True
+    return False
 
 
 class ReprFailXDoctest(TerminalRepr):
@@ -144,10 +156,10 @@ class XDoctestTextfile(pytest.Module):
         # inspired by doctest.testfile; ideally we would use it directly,
         # but it doesn't support passing a custom checker
         # encoding = self.config.getini("xdoctest_encoding")
-        # text = self.fspath.read_text(encoding)
-        # filename = str(self.fspath)
-        # name = self.fspath.basename
-        # globs = {'__name__': '__main__'}
+        text = self.fspath.read_text('utf8')
+        filename = str(self.fspath)
+        name = self.fspath.basename
+        globs = {'__name__': '__main__'}
 
         # optionflags = get_optionflags(self)
         # runner = doctest.DebugRunner(verbose=0, optionflags=optionflags,
@@ -162,6 +174,10 @@ class XDoctestTextfile(pytest.Module):
         # test = parser.get_doctest(text, globs, name, filename, 0)
         # if test.examples:
         #     yield XDoctestItem(test.name, self, runner, test)
+        from xdoctest import core
+        parse_func = core.parse_freeform_docstr_examples
+        for example in parse_func(text, name, filename):
+            yield XDoctestItem(name, self, example)
 
 
 # def _check_all_skipped(test):
@@ -187,12 +203,15 @@ class XDoctestModule(pytest.Module):
             else:
                 raise
 
+        parse_func = core.parse_freeform_docstr_examples
+        # parse_func = core.parse_google_docstr_examples
+
         for callname, calldef in calldefs.items():
             docstr = calldef.docstr
             if calldef.docstr is not None:
                 # TODO: handle more than just google-style
                 lineno = calldef.doclineno
-                for example in core.parse_google_docstr_examples(docstr, callname, modpath, lineno=lineno):
+                for example in parse_func(docstr, callname, modpath, lineno=lineno):
                     if not example.is_disabled():
                         name = example.unique_callname
                         yield XDoctestItem(name, self, example)

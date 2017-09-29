@@ -7,13 +7,17 @@ from __future__ import absolute_import, division, print_function
 import sys
 import _pytest._code
 from _pytest.compat import MODULE_NOT_FOUND_ERROR
-from xdoctest.plugin import XDoctestItem, XDoctestModule, DoctestTextfile
+from xdoctest.plugin import XDoctestItem, XDoctestModule, XDoctestTextfile
 import pytest
 
 
-class TestDoctests2(object):
+class TestXDoctest(object):
 
     def test_collect_testtextfile(self, testdir):
+        """
+        CommandLine:
+            pytest -rsxX -p no:doctest -p xdoctest -p pytester xdoctest/tests/test_xdoctest.py::TestXDoctest::test_collect_testtextfile
+        """
         w = testdir.maketxtfile(whatever="")
         checkfile = testdir.maketxtfile(test_something="""
             alskdjalsdk
@@ -23,11 +27,14 @@ class TestDoctests2(object):
         """)
 
         for x in (testdir.tmpdir, checkfile):
-            # print "checking that %s returns custom items" % (x,)
-            items, reprec = testdir.inline_genitems(x)
+            print("checking that %s returns custom items" % (x,))
+            items, reprec = testdir.inline_genitems(x, '-p', 'xdoctest', '-p', 'no:doctest')
+            print('items = {!r}'.format(items))
+            print('!!!!!!!!!!')
+            print('!!!!!!!!!!')
             assert len(items) == 1
             assert isinstance(items[0], XDoctestItem)
-            assert isinstance(items[0].parent, DoctestTextfile)
+            assert isinstance(items[0].parent, XDoctestTextfile)
         # Empty file has no items.
         items, reprec = testdir.inline_genitems(w)
         assert len(items) == 0
@@ -40,6 +47,10 @@ class TestDoctests2(object):
             assert len(items) == 0
 
     def test_collect_module_single_modulelevel_doctest(self, testdir):
+        """
+        CommandLine:
+            pytest -rsxX -p pytester xdoctest/tests/test_xdoctest.py::TestXDoctest::test_collect_module_single_modulelevel_doctest
+        """
         path = testdir.makepyfile(whatever='""">>> pass"""')
         for p in (path, testdir.tmpdir):
             items, reprec = testdir.inline_genitems(p,
@@ -64,6 +75,10 @@ class TestDoctests2(object):
             assert items[0].parent is items[1].parent
 
     def test_collect_module_two_doctest_no_modulelevel(self, testdir):
+        """
+        CommandLine:
+            pytest -rsxX -p pytester xdoctest/tests/test_xdoctest.py::TestXDoctest::test_collect_module_two_doctest_no_modulelevel
+        """
         path = testdir.makepyfile(whatever="""
             '# Empty'
             def my_func():
@@ -609,6 +624,10 @@ class TestDoctests2(object):
         result.stdout.fnmatch_lines(['* 1 passed *'])
 
     def test_xdoctest_trycatch(self, testdir):
+        """
+        CommandLine:
+            pytest -rsxX -p pytester xdoctest/tests/test_xdoctest.py::TestXDoctest::test_xdoctest_trycatch
+        """
         p = testdir.maketxtfile(test_xdoctest_multiline_string="""
             .. xdoctest::
 
