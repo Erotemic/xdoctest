@@ -8,10 +8,10 @@ Adapted from the original `pytest/_pytest/doctest.py` module at:
     https://github.com/pytest-dev/pytest
 """
 from __future__ import absolute_import, division, print_function
-# import traceback
 import pytest
-from _pytest._code.code import ExceptionInfo, ReprFileLocation, TerminalRepr  # NOQA
-from _pytest.fixtures import FixtureRequest
+from _pytest._code import code
+from _pytest import fixtures
+# import traceback
 
 
 ### WE SHALL NOW BE VERY NAUGHTY ###
@@ -78,7 +78,7 @@ def _is_xdoctest(config, path, parent):
     return False
 
 
-class ReprFailXDoctest(TerminalRepr):
+class ReprFailXDoctest(code.TerminalRepr):
 
     def __init__(self, reprlocation, lines):
         self.reprlocation = reprlocation
@@ -131,7 +131,7 @@ class XDoctestItem(pytest.Item):
         #     else:
         #         lineno = test.lineno + example.lineno + 1
         #     message = excinfo.type.__name__
-        #     reprlocation = ReprFileLocation(filename, lineno, message)
+        #     reprlocation = code.ReprFileLocation(filename, lineno, message)
         #     checker = _get_checker()
         #     report_choice = _get_report_choice(self.config.getoption("doctestreport"))
         #     if lineno is not None:
@@ -151,7 +151,7 @@ class XDoctestItem(pytest.Item):
         #         lines += checker.output_difference(example,
         #                                            doctestfailure.got, report_choice).split("\n")
         #     else:
-        #         inner_excinfo = ExceptionInfo(excinfo.value.exc_info)
+        #         inner_excinfo = code.ExceptionInfo(excinfo.value.exc_info)
         #         lines += ["UNEXPECTED EXCEPTION: %s" %
         #                   repr(inner_excinfo.value)]
         #         lines += traceback.format_exception(*excinfo.value.exc_info)
@@ -193,6 +193,7 @@ class XDoctestTextfile(pytest.Module):
         from xdoctest import core
         parse_func = core.parse_freeform_docstr_examples
         for example in parse_func(text, name, filename):
+            example.globs.update(globs)
             yield XDoctestItem(name, self, example)
 
 
@@ -263,7 +264,7 @@ def _setup_fixtures(xdoctest_item):
     fm = xdoctest_item.session._fixturemanager
     xdoctest_item._fixtureinfo = fm.getfixtureinfo(node=xdoctest_item, func=func,
                                                    cls=None, funcargs=False)
-    fixture_request = FixtureRequest(xdoctest_item)
+    fixture_request = fixtures.FixtureRequest(xdoctest_item)
     fixture_request._fillfixtures()
     return fixture_request
 

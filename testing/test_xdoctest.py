@@ -11,12 +11,78 @@ from xdoctest.plugin import XDoctestItem, XDoctestModule, XDoctestTextfile
 import pytest
 
 
+def _modname_to_modpath_backup(modname):
+    """
+    Alternative version that does not rely on pkgutil, which is broken when
+    using pytest. This only does very basic module lookup.
+    """
+    from os.path import join, isfile, exists
+    import sys
+    candidate_fnames = [
+        join(modname, '.py'),
+        join(modname, '.pyc'),
+        join(modname, '.pyo'),
+        # join(modname, '.so'),  # TODO: dylib pyd
+    ]
+    modname = modname.replace('.', '/')
+    candidate_dpaths = ['.'] + sys.path
+    for dpath in candidate_dpaths:
+        for fname in candidate_fnames:
+            # Check for file-based modules
+            modpath = join(dpath, fname)
+            if isfile(modpath):
+                return modpath
+            # Check for directory-based modules
+            modpath = join(dpath, modname)
+            if exists(modpath):
+                if isfile(join(modpath, '__init__.py')):
+                    return modpath
+            # Check for egg-links
+            egglink = join(dpath, modname + '.egg-link')
+            if exists(egglink):
+                with open(egglink, 'r') as f:
+                    modpath = f.readline().strip()
+                if isfile(join(modpath, '__init__.py')):
+                    return modpath
+            # Check for easy-install
+            # easyinstall = join(dpath, 'easy-install.pth')
+            # if exists(easyinstall):
+            #     pass
+            #     # with open(easyinstall, 'r') as f:
+            #     #     candidate_dpaths.extend(f.readlines())
+            #     # TODO easyinstall checks
+
+
+def explicit_testdir():
+    """
+    Explicitly constructs a testdir for use in IPython development
+    Note used by any tests.
+    """
+    # modpath = _modname_to_modpath_backup('pytest')
+    import pytest  # NOQA
+    import _pytest
+    config = _pytest.config._prepareconfig(['-s'], plugins=['pytester'])
+    session = _pytest.main.Session(config)
+    _pytest.tmpdir.pytest_configure(config)
+    _pytest.fixtures.pytest_sessionstart(session)
+    _pytest.runner.pytest_sessionstart(session)
+
+    def func(testdir):
+        pass
+
+    parent = _pytest.python.Module('parent', config=config, session=session)
+    function = _pytest.python.Function(
+        'func', parent, callobj=func, config=config, session=session)
+    _pytest.fixtures.fillfixtures(function)
+    testdir = function.funcargs['testdir']
+    return testdir
+
+
 class TestXDoctest(object):
 
     def test_collect_testtextfile(self, testdir):
         """
         CommandLine:
-            pytest -rsxX -p no:doctest -p xdoctest -p pytester testing/test_xdoctest.py::TestXDoctest::test_collect_testtextfile
             pytest testing/test_xdoctest.py::TestXDoctest::test_collect_testtextfile
         """
         w = testdir.maketxtfile(whatever="")
@@ -51,8 +117,20 @@ class TestXDoctest(object):
     def test_collect_module_single_modulelevel_doctest(self, testdir):
         """
         CommandLine:
-            pytest -rsxX -p pytester testing/test_xdoctest.py::TestXDoctest::test_collect_module_single_modulelevel_doctest
+            pytest testing/test_xdoctest.py::TestXDoctest::test_collect_module_single_modulelevel_doctest
+
+        Ignore:
+            # https://xr.gs/2017/07/pytest-dynamic-runtime-fixtures-python3/
+            https://stackoverflow.com/questions/45970572/how-to-get-a-pytest-fixture-interactively
+            >>> import sys
+            >>> sys.path.append('/home/joncrall/code/xdoctest/testing')
+            >>> from test_xdoctest import *
+            >>> testdir = explicit_testdir()
+
+
         """
+        import utool
+        utool.embed()
         path = testdir.makepyfile(whatever='""">>> pass"""')
         for p in (path, testdir.tmpdir):
             items, reprec = testdir.inline_genitems(p,

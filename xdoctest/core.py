@@ -27,13 +27,10 @@ class DocTest(object):
         >>> print(self.valid_testnames)
     """
 
-    def __nice__(self):
-        return self.modname + ' ' + self.callname
-
-    def __init__(self, modpath, callname, docsrc, num, lineno=0):
+    def __init__(self, modpath, callname, docsrc, num=0, lineno=0):
         self.modpath = modpath
         if modpath is None:
-            self.modpath = '<none>'
+            self.modname = '<none>'
         else:
             self.modname = static.modpath_to_modname(modpath)
         if callname is None:
@@ -47,6 +44,24 @@ class DocTest(object):
         self.ex = None
         self.outputs = []
         self.globs = {}
+
+    def __nice__(self):
+        parts = []
+        parts.append(self.modname)
+        parts.append('%s:%s' % (self.callname, self.num))
+        if self.lineno is not None:
+            parts.append('ln %s' % (self.lineno))
+        return ' '.join(parts)
+
+    def __repr__(self):
+        classname = self.__class__.__name__
+        devnice = self.__nice__()
+        return '<%s(%s) at %s>' % (classname, devnice, hex(id(self)))
+
+    def __str__(self):
+        classname = self.__class__.__name__
+        devnice = self.__nice__()
+        return '<%s(%s)>' % (classname, devnice)
 
     def is_disabled(self):
         """
@@ -89,7 +104,8 @@ class DocTest(object):
                 doctest_src = '\n'.join([
                     '%3d %s' % (count, line)
                     for count, line in enumerate(
-                        doctest_src.splitlines() + doctest_want.splitlines(), start=1 + part.line_offset)])
+                        doctest_src.splitlines() + doctest_want.splitlines(),
+                        start=1 + part.line_offset)])
             if colored:
                 doctest_src = utils.highlight_code(doctest_src, 'python')
             part_source.append(doctest_src)
@@ -237,13 +253,15 @@ class DocTest(object):
         return summary
 
 
-# def parse_docstr_examples():
-#     for example in parse_google_docstr_examples(
-#     pass
-
 def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
                                    lineno=0):
     """
+    Finds free-form doctests in a docstring. This is similar to the original
+    doctests because these tests do not requires a google/numpy style header.
+
+    Some care is taken to avoid enabling tests that look like disabled google
+    doctests / scripts.
+
     Example:
         >>> from xdoctest import core
         >>> import ubelt as ub
@@ -257,37 +275,74 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
 
             >>> secondone
 
-            ''')
-        >>> modpath = core.__file__
-        >>> callname = 'parse_freeform_docstr_examples'
-        >>> examples = list(parse_freeform_docstr_examples(docstr, callname, modpath))
-        >>> assert len(examples) == 2
-    """
-    # fixme: we already did the parsing! just put it in the container
-    parts = doctest_parser.DoctestParser().parse(docstr)
-    lines = docstr.split('\n')  # hack
-    current = []
-    num = 0
+            Script:
+                >>> special case, dont parse me
 
-    def doctest_from_parts(current, num):
-        lineno_ = lineno + current[0].line_offset
-        end_lineno_ = (lineno + current[-1].line_offset +
-                       len(current[-1].source.splitlines()))
-        docsrc = '\n'.join(lines[lineno_:end_lineno_])
+            DisableDoctest:
+                >>> special case, dont parse me
+                want
+
+            AnythingElse:
+                >>> general case, parse me
+                want
+            ''')
+        >>> examples = list(parse_freeform_docstr_examples(docstr))
+        >>> assert len(examples) == 3
+    """
+    import textwrap
+
+    def doctest_from_parts(parts, num):
+        lineno_ = lineno + parts[0].line_offset
+        docsrc = '\n'.join([line for p in parts for line in p.orig_lines])
+        docsrc = textwrap.dedent(docsrc)
         example = DocTest(modpath, callname, docsrc, num, lineno=lineno_)
+        # We've already parsed, so we dont need to do it again
+        example._parts = parts
         return example
 
-    for part in parts:
+    respect_google_headers = True
+    if respect_google_headers:
+        # These are google doctest patterns that disable a test from being run
+        # try to respect these even in freeform mode.
+        special_skip_patterns = [
+            'DisableDoctest:',
+            'SkipDoctest:',
+            'Ignore:',
+            'Script:',
+        ]
+    else:
+        special_skip_patterns = []
+    special_skip_patterns_ = tuple([
+        p.lower() for p in special_skip_patterns
+    ])
+
+    def _special_skip(prev):
+        return (special_skip_patterns_ and
+                isinstance(prev, six.string_types) and
+                prev.strip().lower().startswith(special_skip_patterns_))
+
+    # parse into doctest and plaintext parts
+    all_parts = doctest_parser.DoctestParser().parse(docstr)
+
+    parts = []
+    num = 0
+    prev = None
+    for part in all_parts:
         if isinstance(part, six.string_types):
-            if current:
-                example = doctest_from_parts(current, num)
+            # Part is a plaintext
+            if parts:
+                example = doctest_from_parts(parts, num)
                 yield example
                 num += 1
-                current = []
+                parts = []
         else:
-            current.append(part)
-    if current:
-        example = doctest_from_parts(current, num)
+            # Part is a doctest
+            if _special_skip(prev):
+                continue
+            parts.append(part)
+        prev = part
+    if parts:
+        example = doctest_from_parts(parts, num)
         yield example
 
 
@@ -368,5 +423,7 @@ def parse_doctestables(package_name, exclude=[], strict=False):
             docstr = calldef.docstr
             if calldef.docstr is not None:
                 lineno = calldef.doclineno
-                for example in parse_google_docstr_examples(docstr, callname, modpath, lineno=lineno):
+                for example in parse_google_docstr_examples(docstr, callname,
+                                                            modpath,
+                                                            lineno=lineno):
                     yield example

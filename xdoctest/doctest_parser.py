@@ -24,10 +24,11 @@ _EXCEPTION_RE = re.compile(r"""
 
 
 class DoctestPart(object):
-    def __init__(self, source, want, line_offset):
+    def __init__(self, source, want, line_offset, orig_lines=None):
         self.source = source
         self.want = want
         self.line_offset = line_offset
+        self.orig_lines = orig_lines
 
     def check_got_vs_want(self, got):
         if not self.want:
@@ -137,10 +138,13 @@ class DoctestParser(object):
             for s1, s2 in zip(ps1_linenos, ps1_linenos[1:]):
                 self._locate_ps1_linenos(source_lines, line_indent)
                 source = '\n'.join(norm_source_lines[s1:s2])
+                orig_lines = source_lines[s1:s2]
                 # options = self._find_options(source, name, lineno + s1)
                 # example = DoctestPart(source, None, None, lineno=lineno + s1,
                 #                       indent=indent, options=options)
-                example = DoctestPart(source, want=None, line_offset=lineno + s1)
+                example = DoctestPart(source, want=None,
+                                      orig_lines=orig_lines,
+                                      line_offset=lineno + s1)
                 yield example
         else:
             ps1_linenos = [0]
@@ -151,11 +155,16 @@ class DoctestParser(object):
         # If `want` contains a traceback message, then extract it.
         norm_want_lines = [p[line_indent:] for p in want_lines]
         want = '\n'.join(norm_want_lines)
+        orig_lines = source_lines[last:]
+        if want_lines:
+            orig_lines += want_lines
 
         # m = _EXCEPTION_RE.match(want)
         # exc_msg = m.group('msg') if m else None
 
-        example = DoctestPart(source, want=want, line_offset=lineno + s1)
+        example = DoctestPart(source, want=want,
+                              orig_lines=orig_lines,
+                              line_offset=lineno + s1)
         yield example
 
     def _group_labeled_lines(self, labeled_lines):
