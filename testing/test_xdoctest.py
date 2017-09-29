@@ -16,7 +16,8 @@ class TestXDoctest(object):
     def test_collect_testtextfile(self, testdir):
         """
         CommandLine:
-            pytest -rsxX -p no:doctest -p xdoctest -p pytester xdoctest/tests/test_xdoctest.py::TestXDoctest::test_collect_testtextfile
+            pytest -rsxX -p no:doctest -p xdoctest -p pytester testing/test_xdoctest.py::TestXDoctest::test_collect_testtextfile
+            pytest testing/test_xdoctest.py::TestXDoctest::test_collect_testtextfile
         """
         w = testdir.maketxtfile(whatever="")
         checkfile = testdir.maketxtfile(test_something="""
@@ -28,7 +29,8 @@ class TestXDoctest(object):
 
         for x in (testdir.tmpdir, checkfile):
             print("checking that %s returns custom items" % (x,))
-            items, reprec = testdir.inline_genitems(x, '-p', 'xdoctest', '-p', 'no:doctest')
+            # items, reprec = testdir.inline_genitems(x, '-p', 'no:doctest')
+            items, reprec = testdir.inline_genitems(x)
             print('items = {!r}'.format(items))
             print('!!!!!!!!!!')
             print('!!!!!!!!!!')
@@ -49,7 +51,7 @@ class TestXDoctest(object):
     def test_collect_module_single_modulelevel_doctest(self, testdir):
         """
         CommandLine:
-            pytest -rsxX -p pytester xdoctest/tests/test_xdoctest.py::TestXDoctest::test_collect_module_single_modulelevel_doctest
+            pytest -rsxX -p pytester testing/test_xdoctest.py::TestXDoctest::test_collect_module_single_modulelevel_doctest
         """
         path = testdir.makepyfile(whatever='""">>> pass"""')
         for p in (path, testdir.tmpdir):
@@ -77,7 +79,7 @@ class TestXDoctest(object):
     def test_collect_module_two_doctest_no_modulelevel(self, testdir):
         """
         CommandLine:
-            pytest -rsxX -p pytester xdoctest/tests/test_xdoctest.py::TestXDoctest::test_collect_module_two_doctest_no_modulelevel
+            pytest -rsxX -p pytester testing/test_xdoctest.py::TestXDoctest::test_collect_module_two_doctest_no_modulelevel
         """
         path = testdir.makepyfile(whatever="""
             '# Empty'
@@ -626,7 +628,7 @@ class TestXDoctest(object):
     def test_xdoctest_trycatch(self, testdir):
         """
         CommandLine:
-            pytest -rsxX -p pytester xdoctest/tests/test_xdoctest.py::TestXDoctest::test_xdoctest_trycatch
+            pytest -rsxX -p pytester testing/test_xdoctest.py::TestXDoctest::test_xdoctest_trycatch
         """
         p = testdir.maketxtfile(test_xdoctest_multiline_string="""
             .. xdoctest::
@@ -761,7 +763,7 @@ class TestLiterals(object):
         reprec.assertoutcome(passed=passed, failed=int(not passed))
 
 
-class TestDoctestSkips(object):
+class TestXDoctestSkips(object):
     """
     If all examples in a xdoctest are skipped due to the SKIP option, then
     the tests should be SKIPPED rather than PASSED. (#957)
@@ -815,7 +817,7 @@ class TestDoctestSkips(object):
         reprec.assertoutcome(passed=0, skipped=0)
 
 
-class TestDoctestAutoUseFixtures(object):
+class TestXDoctestAutoUseFixtures(object):
 
     SCOPES = ['module', 'session', 'class', 'function']
 
@@ -934,7 +936,8 @@ class TestDoctestAutoUseFixtures(object):
         result.stdout.fnmatch_lines(['*=== 1 passed in *'])
 
 
-class TestDoctestNamespaceFixture(object):
+@pytest.mark.skip
+class TestXDoctestNamespaceFixture(object):
 
     SCOPES = ['module', 'session', 'class', 'function']
 
@@ -984,7 +987,9 @@ class TestDoctestNamespaceFixture(object):
         reprec.assertoutcome(passed=1)
 
 
-class TestDoctestReportingOption(object):
+@pytest.mark.skip
+class TestXDoctestReportingOption(object):
+    @pytest.mark.skip
     def _run_doctest_report(self, testdir, format):
         testdir.makepyfile("""
             def foo():
@@ -1054,6 +1059,7 @@ class TestDoctestReportingOption(object):
             '    2  3  6',
         ])
 
+    @pytest.mark.skip
     def test_doctest_report_invalid(self, testdir):
         result = self._run_doctest_report(testdir, 'obviously_invalid_format')
         result.stderr.fnmatch_lines([
