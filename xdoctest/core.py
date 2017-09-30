@@ -184,6 +184,13 @@ class DocTest(object):
         self.pre_run(verbose)
         # Prepare for actual test run
         test_globals = self.globs
+
+        # if not self.modname.startswith('<'):
+        #     # TODO:
+        #     # Put the module globals in the doctest global namespace
+        #     module = __import__(self.modname)
+        #     test_globals.update(module.__dict__)
+
         self.outputs = []
         try:
             for part in self._parts:
