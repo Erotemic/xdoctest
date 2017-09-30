@@ -174,3 +174,152 @@ def testdata():
     import ast
     pt = ast.parse(source)
     ps1_linenos = sorted({node.lineno for node in pt.body})
+
+
+def test_final_eval_exec():
+    """
+    Ensure that if the line before a want is able to be evaled, it is so we can
+    compare its value to the want value.
+    """
+    import ubelt as ub
+    from xdoctest import doctest_parser
+    string = ub.codeblock(
+        '''
+        >>> x = 2
+        >>> x + 1
+        1
+        ''')
+    self = doctest_parser.DoctestParser()
+    parts = self.parse(string)
+    assert [p.use_eval for p in parts] == [False, True]
+
+    string = ub.codeblock(
+        '''
+        >>> x = 2
+        >>> x + 1
+        ''')
+    self = doctest_parser.DoctestParser()
+    parts = self.parse(string)
+    assert [p.use_eval for p in parts] == [False]
+
+    string = ub.codeblock(
+        r'''
+        >>> x = 2
+        >>> x += 3
+        >>> """
+        ... foobar
+        ... """
+        '\nfoobar\n'
+        ''')
+    self = doctest_parser.DoctestParser()
+    parts = self.parse(string)
+    assert [p.use_eval for p in parts] == [False, True]
+
+    string = ub.codeblock(
+        r'''
+        >>> x = 2
+        >>> x += 3
+        >>> print('foo')
+        foo
+        ''')
+    self = doctest_parser.DoctestParser()
+    parts = self.parse(string)
+    assert [p.use_eval for p in parts] == [False, True]
+
+
+def test_ps1_linenos():
+    """
+    Test we can find the line numbers for every "evaluatable" statement
+    """
+    import ubelt as ub
+    from xdoctest import doctest_parser
+    source_lines = ub.codeblock(
+        '''
+        >>> x = 2
+        >>> x + 1
+        1
+        ''').split('\n')[:-1]
+    self = doctest_parser.DoctestParser()
+    line_indent = 0
+    linenos, eval_final = self._locate_ps1_linenos(source_lines, line_indent)
+    assert eval_final
+    assert linenos == [0, 1]
+
+    source_lines = ub.codeblock(
+        '''
+        >>> x = """
+            x = 2
+            """
+        >>> print(x.strip() + '1')
+        x = 21
+        ''').split('\n')[:-1]
+    self = doctest_parser.DoctestParser()
+    line_indent = 0
+    linenos, eval_final = self._locate_ps1_linenos(source_lines, line_indent)
+    assert eval_final
+    assert linenos == [0, 3]
+
+    source_lines = ub.codeblock(
+        '''
+        >>> x = """
+            x = 2
+            """
+        >>> y = (x.strip() + '1')
+        'x = 21'
+        ''').split('\n')[:-1]
+    self = doctest_parser.DoctestParser()
+    line_indent = 0
+    linenos, eval_final = self._locate_ps1_linenos(source_lines, line_indent)
+    assert eval_final
+    assert linenos == [0, 3]
+
+    source_lines = ub.codeblock(
+        '''
+        >>> x = """
+            x = 2
+            """
+        >>> def foo():
+        ...     return 5
+        >>> ms1 = """
+        ... multistring2
+        ... multistring2
+        ... """
+        >>> ms2 = """
+        ... multistring2
+        ... multistring2
+        ... """
+        >>> x = sum([
+        >>>     foo()
+        >>> ])
+        >>> y = len(ms1) + len(ms2)
+        >>> z = (
+        >>>     x + y
+        >>> )
+        >>> z
+        59
+        ''').split('\n')[:-1]
+    self = doctest_parser.DoctestParser()
+    line_indent = 0
+    linenos, eval_final = self._locate_ps1_linenos(source_lines, line_indent)
+    assert eval_final
+    assert linenos == [0, 3, 5, 9, 13, 16, 17, 20]
+
+
+def test_retain_source():
+    import ubelt as ub
+    from xdoctest import doctest_parser
+    source = ub.codeblock(
+        '''
+        >>> x = 2
+        >>> print("foo")
+        foo
+        ''')
+    source_lines = source.split('\n')[:-1]
+    self = doctest_parser.DoctestParser()
+    line_indent = 0
+    linenos, eval_final = self._locate_ps1_linenos(source_lines, line_indent)
+    assert eval_final
+    assert linenos == [0, 1]
+    p1, p2 = self.parse(source)
+    assert p1.source == 'x = 2'
+    assert p2.source == 'print("foo")'

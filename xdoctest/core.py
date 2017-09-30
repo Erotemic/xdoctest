@@ -90,6 +90,7 @@ class DocTest(object):
             >>> package_name = 'xdoctest'
             >>> testables = parse_doctestables(package_name)
             >>> self = next(testables)
+            >>> self._parse()
             >>> print(self.format_src())
             >>> print(self.format_src(linenums=False, colored=False))
             >>> assert not self.is_disabled()
@@ -99,17 +100,26 @@ class DocTest(object):
         for part in self._parts:
             doctest_src = part.source
             doctest_src = utils.indent(doctest_src, '>>> ')
+            doctest_src = '\n'.join(part.orig_lines)
             doctest_want = part.want if part.want else ''
             if linenums:
-                doctest_src = '\n'.join([
-                    '%3d %s' % (count, line)
-                    for count, line in enumerate(
-                        doctest_src.splitlines() + doctest_want.splitlines(),
-                        start=1 + part.line_offset)])
+                new_lines = []
+                count = 1 + part.line_offset
+                for count, line in enumerate(doctest_src.splitlines(), start=count):
+                    new_lines.append('%3d %s' % (count, line))
+                if doctest_want:
+                    for count, line in enumerate(doctest_want.splitlines(), start=count):
+                        new_lines.append('    %s' % (line))
+                new = '\n'.join(new_lines)
+            else:
+                if doctest_want:
+                    new = doctest_src + '\n' + doctest_want
+                else:
+                    new = doctest_src
             if colored:
-                doctest_src = utils.highlight_code(doctest_src, 'python')
-            part_source.append(doctest_src)
-        full_source = '\n'.join(part_source)
+                new = utils.highlight_code(new, 'python')
+            part_source.append(new)
+        full_source = ''.join(part_source)
         return full_source
 
     def _parse(self):
@@ -148,8 +158,8 @@ class DocTest(object):
             >>> lineno = doclineno + offset
             >>> self = core.DocTest(core.__file__, '_parse',  docsrc, 0, lineno)
             >>> self._parse()
-            >>> assert len(self._parts) == 3
-            >>> p1, p2, p3 = self._parts
+            >>> assert len(self._parts) >= 3
+            >>> #p1, p2, p3 = self._parts
             >>> self.run()
         """
         self._parts = doctest_parser.DoctestParser().parse(self.docsrc)
@@ -177,13 +187,28 @@ class DocTest(object):
         self.outputs = []
         try:
             for part in self._parts:
-                code = compile(part.source, '<string>', 'exec')
+                mode = 'eval' if part.use_eval else 'exec'
+                code = compile(part.source, '<string>', mode)
                 cap = utils.CaptureStdout(supress=verbose <= 1)
                 with cap:
-                    exec(code, test_globals)
+                    if part.use_eval:
+                        result = eval(code, test_globals)
+                    else:
+                        exec(code, test_globals)
+                        result = None
                 assert cap.text is not None
                 self.outputs.append(cap.text)
-                part.check_got_vs_want(cap.text)
+                try:
+                    part.check_stdout_got_vs_want(cap.text)
+                except AssertionError as ex1:
+                    if part.use_eval:
+                        # FIXME: got message might be confusing with this logic
+                        try:
+                            part.check_eval_got_vs_want(result)
+                        except AssertionError as ex2:
+                            raise AssertionError('ex1 = ' + str(ex1) + '\n ex2 =' + str(ex2))
+                    else:
+                        raise
         # Handle anything that could go wrong
         except ExitTestException:  # nocover
             if verbose > 0:

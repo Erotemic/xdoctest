@@ -29,8 +29,23 @@ class DoctestPart(object):
         self.want = want
         self.line_offset = line_offset
         self.orig_lines = orig_lines
+        self.use_eval = False
 
-    def check_got_vs_want(self, got):
+    def check_eval_got_vs_want(self, got):
+        if not self.want:
+            return True
+        if self.want:
+            if self.want == '...':
+                return True
+            if str(got) == self.want:
+                return True
+            if repr(got) == self.want:
+                return True
+
+        raise AssertionError(
+            'got={!r} differs with doctest want={!r}'.format(repr(got), self.want))
+
+    def check_stdout_got_vs_want(self, got):
         if not self.want:
             return True
         if self.want:
@@ -124,47 +139,51 @@ class DoctestParser(object):
         """
         match = _INDENT_RE.search(source_lines[0])
         line_indent = 0 if match is None else (match.end() - match.start())
-        # indent = min_indent + line_indent
         norm_source_lines = [p[line_indent + 4:] for p in source_lines]
 
-        s1 = 0
-        if self.simulate_repl:
-            # for compatibility we break down each source block into individual
-            # statements. (We need to remember to move PS2 lines in with the
-            # previous PS1 line)
-            ps1_linenos = self._locate_ps1_linenos(source_lines, line_indent)
+        # Find the line number of each standalone statment
+        ps1_linenos, eval_final = self._locate_ps1_linenos(source_lines,
+                                                           line_indent)
 
+        def slice_example(s1, s2, want_lines=None):
+            source = '\n'.join(norm_source_lines[s1:s2])
+            orig_lines = source_lines[s1:s2]
+            # options = self._find_options(source, name, lineno + s1)
+            # example = DoctestPart(source, None, None, lineno=lineno + s1,
+            #                       indent=indent, options=options)
+            # the last part has a want
+            # todo: If `want` contains a traceback message, then extract it.
+            # m = _EXCEPTION_RE.match(want)
+            # exc_msg = m.group('msg') if m else None
+            if want_lines:
+                orig_lines += want_lines
+                norm_want_lines = [p[line_indent:] for p in want_lines]
+                want = '\n'.join(norm_want_lines)
+            else:
+                want = None
+            example = DoctestPart(source, want=want,
+                                  orig_lines=orig_lines,
+                                  line_offset=lineno + s1)
+            return example
+
+        if self.simulate_repl:
             # Break down first parts which dont have any want
             for s1, s2 in zip(ps1_linenos, ps1_linenos[1:]):
-                self._locate_ps1_linenos(source_lines, line_indent)
-                source = '\n'.join(norm_source_lines[s1:s2])
-                orig_lines = source_lines[s1:s2]
-                # options = self._find_options(source, name, lineno + s1)
-                # example = DoctestPart(source, None, None, lineno=lineno + s1,
-                #                       indent=indent, options=options)
-                example = DoctestPart(source, want=None,
-                                      orig_lines=orig_lines,
-                                      line_offset=lineno + s1)
+                example = slice_example(s1, s2)
                 yield example
         else:
-            ps1_linenos = [0]
+            s1 = 0
+            if want_lines and eval_final:
+                # break the last line off so we can eval its value, but keep
+                # previous groupings.
+                s2 = ps1_linenos[-1]
+                example = slice_example(s1, s2)
+                yield example
+                s1 = s2
+            s2 = None
 
-        # the last part has a want
-        last = ps1_linenos[-1]
-        source = '\n'.join(norm_source_lines[last:])
-        # If `want` contains a traceback message, then extract it.
-        norm_want_lines = [p[line_indent:] for p in want_lines]
-        want = '\n'.join(norm_want_lines)
-        orig_lines = source_lines[last:]
-        if want_lines:
-            orig_lines += want_lines
-
-        # m = _EXCEPTION_RE.match(want)
-        # exc_msg = m.group('msg') if m else None
-
-        example = DoctestPart(source, want=want,
-                              orig_lines=orig_lines,
-                              line_offset=lineno + s1)
+        example = slice_example(s1, s2, want_lines)
+        example.use_eval = bool(want_lines) and eval_final
         yield example
 
     def _group_labeled_lines(self, labeled_lines):
@@ -193,22 +212,27 @@ class DoctestParser(object):
             grouped_lines.append((prev_source, ''))
         return grouped_lines
 
-    def _locate_ps1_linenos(self, source_lines, line_indent):
+    def _locate_ps1_linenos(self, source_lines, line_indent=0):
         # Strip indentation (and PS1 / PS2 from source)
         norm_source_lines = [p[line_indent + 4:] for p in source_lines]
         source_block = '\n'.join(norm_source_lines)
         pt = ast.parse(source_block)
-        ps1_linenos = [node.lineno - 1 for node in pt.body]
+        statement_nodes = pt.body
+        ps1_linenos = [node.lineno - 1 for node in statement_nodes]
         NEED_16806_WORKAROUND = True
         if NEED_16806_WORKAROUND:
             ps1_linenos = self._workaround_16806(
                 ps1_linenos, norm_source_lines)
+        # Respect any line explicitly defined as PS2
         ps2_linenos = {
             x for x, p in enumerate(source_lines)
             if p[line_indent:line_indent + 4] != '>>> '
         }
         ps1_linenos = sorted(ps1_linenos.difference(ps2_linenos))
-        return ps1_linenos
+
+        # Is the last statement evaluatable?
+        eval_final = isinstance(statement_nodes[-1], ast.Expr)
+        return ps1_linenos, eval_final
 
     def _workaround_16806(self, ps1_linenos, norm_source_lines):
         """

@@ -83,30 +83,35 @@ all expressions before a "want" statement will be executed as a block. This
 will cause the execution of the doctest to mirror how it would proceed if you
 were to copy and paste the code into an IPython terminal.
 
-As such, all "want" statements must go through stdout. So you can no longer 
-do something like
+Note: The module now contains functionality to be backwards compatible with
+these type of statements. However, we only check evaluated values if a want
+statement follows an expression, and the stdout want is given priority over an
+evaluated want.
+
+~~As such, all "want" statements must go through stdout. So you can no longer 
+do something like~~
 
 ```python
 >>> 1 + 2
 3
 ```
 
-The rational for removing this feature is to encourage coders to write doctests
+~~The rational for removing this feature is to encourage coders to write doctests
 like "real code". In the previous example `1 + 2`  would be evaluated and
 nothing would happen to it. You would never write code like that when scripting
 a file and then expect its output to be something specific (at most you would
 simply expect it not to throw an exception). If you were writing "real code"
-you would instead write something like this:
+you would instead write something like this:~~
 
 ```python
 >>> print(1 + 2)
 3
 ```
 
-Restricting the doctests "want magic" to stdout makes it very explicit as to
+~~Restricting the doctests "want magic" to stdout makes it very explicit as to
 what is being tested and what is not. You can even throw in simple informative
 print in stdout and restrict a "want" statement to only a specific print
-statement using the doctest Ellipses:
+statement using the doctest Ellipses:~~
 
 ```python
 >>> print('just printing some debug info')
@@ -115,7 +120,6 @@ statement using the doctest Ellipses:
 >>> print(1 + 2)
 3
 ```
-
 
 The new implementation will only throw a `want != got` error iff a want
 statement was given. Thus, if you choose to write your doctest without "want
