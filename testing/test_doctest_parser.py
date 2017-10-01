@@ -226,6 +226,82 @@ def test_final_eval_exec():
     parts = self.parse(string)
     assert [p.use_eval for p in parts] == [False, True]
 
+    string = ub.codeblock(
+        r'''
+        >>> i = 0
+        >>> 0 / i
+        2
+        ''')
+    self = doctest_parser.DoctestParser()
+    parts = self.parse(string)
+    assert [p.use_eval for p in parts] == [False, True]
+
+
+def test_label_lines():
+    import ubelt as ub
+    from xdoctest import doctest_parser
+    string = ub.codeblock(
+        r'''
+        >>> i = 0
+        >>> 0 / i
+        2
+        ''')
+    self = doctest_parser.DoctestParser()
+    labeled = self._label_docsrc_lines(string)
+    assert labeled == [
+        ('dsrc', '>>> i = 0'),
+        ('dsrc', '>>> 0 / i'),
+        ('want', '2')
+    ]
+
+    string = '''
+            text
+            >>> dsrc()
+            want
+
+                >>> dsrc()
+                >>> cont(
+                ... a=b)
+                ... dsrc
+                >>> dsrc():
+                ...     a
+                ...     b = """
+                        multiline
+                        """
+                want
+
+            text
+            ... still text
+            >>> "now its a doctest"
+
+            text
+    '''
+    self = doctest_parser.DoctestParser()
+    labeled = self._label_docsrc_lines(string)
+    assert labeled == [
+        ('text', ''),
+        ('text', '        text'),
+        ('dsrc', '        >>> dsrc()'),
+        ('want', '        want'),
+        ('text', ''),
+        ('dsrc', '            >>> dsrc()'),
+        ('dsrc', '            >>> cont('),
+        ('dsrc', '            ... a=b)'),
+        ('dsrc', '            ... dsrc'),
+        ('dsrc', '            >>> dsrc():'),
+        ('dsrc', '            ...     a'),
+        ('dsrc', '            ...     b = """'),
+        ('dsrc', '                    multiline'),
+        ('dsrc', '                    """'),
+        ('want', '            want'),
+        ('text', ''),
+        ('text', '        text'),
+        ('text', '        ... still text'),
+        ('dsrc', '        >>> "now its a doctest"'),
+        ('text', ''),
+        ('text', '        text'),
+    ]
+
 
 def test_ps1_linenos():
     """

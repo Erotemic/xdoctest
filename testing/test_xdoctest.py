@@ -12,16 +12,43 @@ import pytest
 
 
 def explicit_testdir():
-    """
+    r"""
     Explicitly constructs a testdir for use in IPython development
     Note used by any tests.
 
     # https://xr.gs/2017/07/pytest-dynamic-runtime-fixtures-python3/
     https://stackoverflow.com/questions/45970572/how-to-get-a-pytest-fixture-interactively
+
+
+    Ignore:
+        python -c codeblock "
+        from __future__ import absolute_import, division, print_function
+        import subprocess, grp
+        import imp, inspect, textwrap, pprint, json, tempfile, string, lzma, bz2, shutil
+        import glob, time, struct, bisect, pdb, platform, atexit, shlex,
+        import sys
+        s1 = set(sys.modules)
+        import pytest
+        s2 = set(sys.modules)
+        print('\n'.join(sorted(s2 - s1)))
+        "
     """
     # modpath = _modname_to_modpath_backup('pytest')
     # import pytest  # NOQA
-    import _pytest
+    # import sys
+    # if 'pytest' in sys.modules:
+    #     for k in list(sys.modules):
+    #         if k.startswith(('_pytest.', 'py.')):
+    #             del sys.modules[k]
+    #         elif k in {'_pytest', 'py'}:
+    #             del sys.modules[k]
+    # import _pytest
+    # import _pytest.config
+    # import _pytest.main
+    # import _pytest.tmpdir
+    # import _pytest.fixtures
+    # import _pytest.runner
+    # import _pytest.python
     # _pytest.config._preloadplugins()  # to populate pytest.* namespace so help(pytest) works
     config = _pytest.config._prepareconfig(['-s'], plugins=['pytester'])
     session = _pytest.main.Session(config)
@@ -116,6 +143,10 @@ class TestXDoctest(object):
         assert len(items) == 0
 
     def test_collect_module_empty(self, testdir):
+        """
+        CommandLine:
+            pytest testing/test_xdoctest.py::TestXDoctest::test_collect_module_empty
+        """
         path = testdir.makepyfile(whatever="#")
         for p in (path, testdir.tmpdir):
             items, reprec = testdir.inline_genitems(p,
@@ -124,6 +155,9 @@ class TestXDoctest(object):
 
     def test_simple_doctestfile(self, testdir):
         """
+        CommandLine:
+            pytest testing/test_xdoctest.py::TestXDoctest::test_simple_doctestfile
+
         Ignore:
             >>> import sys
             >>> sys.path.append('/home/joncrall/code/xdoctest/testing')
@@ -139,6 +173,10 @@ class TestXDoctest(object):
         reprec.assertoutcome(failed=1)
 
     def test_new_pattern(self, testdir):
+        """
+        CommandLine:
+            pytest testing/test_xdoctest.py::TestXDoctest::test_new_pattern
+        """
         p = testdir.maketxtfile(xdoc="""
             >>> x = 1
             >>> x == 1
@@ -149,6 +187,9 @@ class TestXDoctest(object):
 
     def test_multiple_patterns(self, testdir):
         """Test support for multiple --xdoctest-glob arguments (#1255).
+
+        CommandLine:
+            pytest testing/test_xdoctest.py::TestXDoctest::test_multiple_patterns
         """
         testdir.maketxtfile(xdoc="""
             >>> 1
@@ -186,11 +227,14 @@ class TestXDoctest(object):
         ]
     )
     def test_encoding(self, testdir, test_string, encoding):
-        """Test support for doctest_encoding ini option.
+        """Test support for xdoctest_encoding ini option.
+
+        CommandLine:
+            pytest testing/test_xdoctest.py::TestXDoctest::test_encoding
         """
         testdir.makeini("""
             [pytest]
-            doctest_encoding={0}
+            xdoctest_encoding={0}
         """.format(encoding))
         xdoctest = u"""
             >>> u"{0}"
@@ -205,7 +249,19 @@ class TestXDoctest(object):
         ])
 
     def test_doctest_unexpected_exception(self, testdir):
-        testdir.maketxtfile("""
+        """
+        CommandLine:
+            pytest testing/test_xdoctest.py::TestXDoctest::test_doctest_unexpected_exception
+
+        Ignore:
+            >>> import sys
+            >>> sys.path.append('/home/joncrall/code/xdoctest/testing')
+            >>> from test_xdoctest import *
+            >>> testdir = explicit_testdir()
+            >>> self = TestXDoctest()
+            >>> self.test_doctest_unexpected_exception(testdir)
+        """
+        p = testdir.maketxtfile("""
             >>> i = 0
             >>> 0 / i
             2

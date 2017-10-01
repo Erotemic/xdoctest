@@ -31,19 +31,67 @@ class DoctestPart(object):
         self.orig_lines = orig_lines
         self.use_eval = False
 
-    def check_eval_got_vs_want(self, got):
+    def __nice__(self):
+        parts = []
+        if self.line_offset is not None:
+            parts.append('ln %s' % (self.line_offset))
+        head_src = self.source.split('\n')[0][0:8]
+        parts.append('src="%s..."' % (head_src,))
+        if self.want is None:
+            parts.append('want=None')
+        else:
+            head_wnt = self.want.split('\n')[0][0:8]
+            parts.append('want="%s..."' % (head_wnt,))
+        return ', '.join(parts)
+
+    def __repr__(self):
+        classname = self.__class__.__name__
+        devnice = self.__nice__()
+        return '<%s(%s) at %s>' % (classname, devnice, hex(id(self)))
+
+    def __str__(self):
+        classname = self.__class__.__name__
+        devnice = self.__nice__()
+        return '<%s(%s)>' % (classname, devnice)
+
+    def check_got_vs_want(part, got_stdout, got_eval, not_evaled):
+        # If we did not want anything than ignore eval and stdout
+        if got_eval is not_evaled:
+            # if there was no eval, check stdout
+            got = got_stdout
+            flag = part.check_stdout_got_vs_want(got)
+        else:
+            if not got_stdout:
+                # If there was no stdout then use eval value.
+                got = got_eval
+                flag = part.check_eval_got_vs_want(got)
+            else:
+                # If there was eval and stdout, defer to stdout
+                got = got_stdout
+                flag = part.check_stdout_got_vs_want(got)
+                if not flag:
+                    # allow eval to fallback and save us
+                    flag = part.check_eval_got_vs_want(got_eval)
+                    if flag:
+                        got = got_eval
+        if not flag:
+            raise AssertionError(
+                'got={!r} differs with doctest want={!r}'.format(got, part.want))
+
+    def check_eval_got_vs_want(self, got_eval):
         if not self.want:
             return True
         if self.want:
             if self.want == '...':
                 return True
-            if str(got) == self.want:
+            if str(got_eval) == self.want:
                 return True
-            if repr(got) == self.want:
+            if repr(got_eval) == self.want:
                 return True
+        return False
 
-        raise AssertionError(
-            'got={!r} differs with doctest want={!r}'.format(repr(got), self.want))
+        # raise AssertionError(
+        #     'got={!r} differs with doctest want={!r}'.format(repr(got), self.want))
 
     def check_stdout_got_vs_want(self, got):
         if not self.want:
@@ -56,9 +104,7 @@ class DoctestPart(object):
                 got = got[:-1]
             if self.want == got:
                 return True
-
-        raise AssertionError(
-            'got={!r} differs with doctest want={!r}'.format(got, self.want))
+        return False
 
 
 class DoctestParser(object):
@@ -156,7 +202,7 @@ class DoctestParser(object):
             # m = _EXCEPTION_RE.match(want)
             # exc_msg = m.group('msg') if m else None
             if want_lines:
-                orig_lines += want_lines
+                # orig_lines += want_lines
                 norm_want_lines = [p[line_indent:] for p in want_lines]
                 want = '\n'.join(norm_want_lines)
             else:

@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import, unicode_literals
+import __future__
 import warnings
 import sys
 import six
+import itertools as it
 from os.path import exists
 from xdoctest import static_analysis as static
 from xdoctest import docscrape_google
@@ -41,7 +43,7 @@ class DocTest(object):
         self.lineno = lineno
         self.num = num
         self._parts = None
-        self.ex = None
+        self.exception = None
         self.outputs = []
         self.globs = {}
 
@@ -96,7 +98,7 @@ class DocTest(object):
             >>> assert not self.is_disabled()
         """
         # return '\n'.join([p.source for p in self._parts])
-        part_source = []
+        formated_parts = []
         for part in self._parts:
             doctest_src = part.source
             doctest_src = utils.indent(doctest_src, '>>> ')
@@ -118,8 +120,8 @@ class DocTest(object):
                     new = doctest_src
             if colored:
                 new = utils.highlight_code(new, 'python')
-            part_source.append(new)
-        full_source = ''.join(part_source)
+            formated_parts.append(new)
+        full_source = '\n'.join(formated_parts)
         return full_source
 
     def _parse(self):
@@ -166,7 +168,7 @@ class DocTest(object):
         self._parts = [p for p in self._parts
                        if not isinstance(p, six.string_types)]
 
-    def run(self, verbose=None):
+    def run(self, verbose=None, on_error='record'):
         """
         Executes the doctest
 
@@ -191,40 +193,57 @@ class DocTest(object):
         #     module = __import__(self.modname)
         #     test_globals.update(module.__dict__)
 
+        def _extract_future_flags(globs):
+            """
+            Return the compiler-flags associated with the future features that
+            have been imported into the given namespace (globs).
+            """
+            flags = 0
+            for fname in __future__.all_feature_names:
+                feature = globs.get(fname, None)
+                if feature is getattr(__future__, fname):
+                    flags |= feature.compiler_flag
+            return flags
+        compileflags = _extract_future_flags(test_globals)
         self.outputs = []
-        try:
-            for part in self._parts:
+        self.exception = None
+        for part in self._parts:
+            try:
                 mode = 'eval' if part.use_eval else 'exec'
-                code = compile(part.source, '<string>', mode)
+                code = compile(
+                    part.source, mode=mode, filename=self.modpath,  # '<string>',
+                    flags=compileflags, dont_inherit=True
+                )
                 cap = utils.CaptureStdout(supress=verbose <= 1)
+                not_evaled = object()  # sentinal value
                 with cap:
                     if part.use_eval:
-                        result = eval(code, test_globals)
+                        got_eval = eval(code, test_globals)
                     else:
                         exec(code, test_globals)
-                        result = None
+                        got_eval = not_evaled
+                if part.want:
+                    got_stdout = cap.text
+                    part.check_got_vs_want(got_stdout, got_eval, not_evaled)
+            # Handle anything that could go wrong
+            except ExitTestException:  # nocover
+                if verbose > 0:
+                    print('Test gracefully exists')
+            except KeyboardInterrupt:  # noqa
+                raise
+            except:
+                if on_error == 'raise':
+                    raise
+                type, value, tb = sys.exc_info()
+                # remove the runner from the traceback
+                tb = tb.tb_next
+                # self.exception = sys.exc_info()
+                break
+            finally:
                 assert cap.text is not None
                 self.outputs.append(cap.text)
-                try:
-                    part.check_stdout_got_vs_want(cap.text)
-                except AssertionError as ex1:
-                    if part.use_eval:
-                        # FIXME: got message might be confusing with this logic
-                        try:
-                            part.check_eval_got_vs_want(result)
-                        except AssertionError as ex2:
-                            raise AssertionError('ex1 = ' + str(ex1) + '\n ex2 =' + str(ex2))
-                    else:
-                        raise
-        # Handle anything that could go wrong
-        except ExitTestException:  # nocover
-            if verbose > 0:
-                print('Test gracefully exists')
-        except Exception as ex:  # nocover
-            self.ex = ex
+        if self.exception is not None:
             self.report_failure(verbose)
-            raise
-
         return self.post_run(verbose)
 
     @property
@@ -251,10 +270,10 @@ class DocTest(object):
                 '',
                 'report failure',
                 self.cmdline,
-                # self.format_src(),
+                self.format_src(),
             ]
         lines += [
-            '* FAILURE: {}, {}'.format(self.callname, type(self.ex)),
+            '* FAILURE: {}, {}'.format(self.callname, type(self.exception)),
             ''.join(self.outputs),
         ]
         # TODO: remove appropriate amount of traceback
@@ -268,7 +287,12 @@ class DocTest(object):
         print(text)
 
     def post_run(self, verbose):
-        if self.ex is None and verbose >= 1:
+        summary = {
+            'passed': self.exception is None
+        }
+        if self.exception is None:
+            if verbose >= 1:
+                print('* SUCCESS: {}'.format(self.callname))
             # out_text = ''.join(self.outputs)
             # if out_text is not None:
             #     assert isinstance(out_text, six.text_type), 'do not use ascii'
@@ -278,10 +302,8 @@ class DocTest(object):
             #     print('Weird travis bug')
             #     print('type(out_text) = %r' % (type(out_text),))
             #     print('out_text = %r' % (out_text,))
-            print('* SUCCESS: {}'.format(self.callname))
-        summary = {
-            'passed': self.ex is None
-        }
+        else:
+            summary['exception'] = self.exception
         return summary
 
 
@@ -303,19 +325,19 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
             >>> doctest
             >>> hasmultilines
             whoppie
-            >>> butthis is the same doctest
+            >>> 'butthis is the same doctest'
 
             >>> secondone
 
             Script:
-                >>> special case, dont parse me
+                >>> 'special case, dont parse me'
 
             DisableDoctest:
-                >>> special case, dont parse me
+                >>> 'special case, dont parse me'
                 want
 
             AnythingElse:
-                >>> general case, parse me
+                >>> 'general case, parse me'
                 want
             ''')
         >>> examples = list(parse_freeform_docstr_examples(docstr))
@@ -325,7 +347,13 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
 
     def doctest_from_parts(parts, num):
         lineno_ = lineno + parts[0].line_offset
-        docsrc = '\n'.join([line for p in parts for line in p.orig_lines])
+        nested = [
+            p.orig_lines
+            if p.want is None else
+            p.orig_lines + p.want.splitlines()
+            for p in parts
+        ]
+        docsrc = '\n'.join(list(it.chain.from_iterable(nested)))
         docsrc = textwrap.dedent(docsrc)
         example = DocTest(modpath, callname, docsrc, num, lineno=lineno_)
         # We've already parsed, so we dont need to do it again

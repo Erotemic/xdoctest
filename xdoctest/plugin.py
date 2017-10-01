@@ -32,6 +32,9 @@ monkey_patch_disable_normal_doctest()
 
 def pytest_addoption(parser):
     group = parser.getgroup("collect")
+    parser.addini("xdoctest_encoding", 'encoding used for xdoctest files', default="utf-8")
+    # parser.addini('xdoctest_optionflags', 'option flags for xdoctests',
+    #               type="args", default=["ELLIPSIS"])
     group.addoption("--xdoctest-modules",
                     action="store_true", default=False,
                     help="run doctests in all .py modules using new style parsing",
@@ -45,14 +48,11 @@ def pytest_addoption(parser):
                     help="ignore xdoctest SyntaxErrors",
                     dest="xdoctest_ignore_syntax_errors")
 
-    # parser.addini('xdoctest_optionflags', 'option flags for xdoctests',
-    #               type="args", default=["ELLIPSIS"])
-    # parser.addini("xdoctest_encoding", 'encoding used for xdoctest files', default="utf-8")
-    # group.addoption("--xdoctest-report",
-    #                 type=str.lower, default="udiff",
-    #                 help="choose another output format for diffs on xdoctest failure",
-    #                 choices=DOCTEST_REPORT_CHOICES,
-    #                 dest="xdoctestreport")
+    group.addoption("--xdoctest-report",
+                    type=str.lower, default="udiff",
+                    help="choose another output format for diffs on xdoctest failure",
+                    choices=DOCTEST_REPORT_CHOICES,
+                    dest="xdoctestreport")
     # group.addoption("--xdoctest-glob",
     #                 action="append", default=[], metavar="pat",
     #                 help="xdoctests file matching pattern, default: test*.txt",
@@ -117,46 +117,49 @@ class XDoctestItem(pytest.Item):
         # self.runner.run(self.example)
 
     def repr_failure(self, excinfo):
-        return super(XDoctestItem, self).repr_failure(excinfo)
         # return self.dtest.repr_failure()
         # import doctest
         # if excinfo.errisinstance((doctest.DocTestFailure,
         #                           doctest.UnexpectedException)):
-        #     doctestfailure = excinfo.value
-        #     example = doctestfailure.example
-        #     test = doctestfailure.test
-        #     filename = test.filename
-        #     if test.lineno is None:
-        #         lineno = None
-        #     else:
-        #         lineno = test.lineno + example.lineno + 1
-        #     message = excinfo.type.__name__
-        #     reprlocation = code.ReprFileLocation(filename, lineno, message)
-        #     checker = _get_checker()
-        #     report_choice = _get_report_choice(self.config.getoption("doctestreport"))
-        #     if lineno is not None:
-        #         lines = doctestfailure.test.docstring.splitlines(False)
-        #         # add line numbers to the left of the error message
-        #         lines = ["%03d %s" % (i + test.lineno + 1, x)
-        #                  for (i, x) in enumerate(lines)]
-        #         # trim docstring error lines to 10
-        #         lines = lines[example.lineno - 9:example.lineno + 1]
-        #     else:
-        #         lines = ['EXAMPLE LOCATION UNKNOWN, not showing all tests of that example']
-        #         indent = '>>>'
-        #         for line in example.source.splitlines():
-        #             lines.append('??? %s %s' % (indent, line))
-        #             indent = '...'
-        #     if excinfo.errisinstance(doctest.DocTestFailure):
-        #         lines += checker.output_difference(example,
-        #                                            doctestfailure.got, report_choice).split("\n")
-        #     else:
-        #         inner_excinfo = code.ExceptionInfo(excinfo.value.exc_info)
-        #         lines += ["UNEXPECTED EXCEPTION: %s" %
-        #                   repr(inner_excinfo.value)]
-        #         lines += traceback.format_exception(*excinfo.value.exc_info)
-        #     return ReprFailXDoctest(reprlocation, lines)
-        # else:
+        if False:
+            pass
+            # doctestfailure = excinfo.value
+            # example = doctestfailure.example
+            # test = doctestfailure.test
+            # filename = test.filename
+            # if test.lineno is None:
+            #     lineno = None
+            # else:
+            #     lineno = test.lineno + example.lineno + 1
+            # message = excinfo.type.__name__
+            # reprlocation = code.ReprFileLocation(filename, lineno, message)
+            # checker = _get_checker()
+            # report_choice = _get_report_choice(self.config.getoption("doctestreport"))
+            # if lineno is not None:
+            #     lines = doctestfailure.test.docstring.splitlines(False)
+            #     # add line numbers to the left of the error message
+            #     lines = ["%03d %s" % (i + test.lineno + 1, x)
+            #              for (i, x) in enumerate(lines)]
+            #     # trim docstring error lines to 10
+            #     lines = lines[example.lineno - 9:example.lineno + 1]
+            # else:
+            #     lines = ['EXAMPLE LOCATION UNKNOWN, not showing all tests of that example']
+            #     indent = '>>>'
+            #     for line in example.source.splitlines():
+            #         lines.append('??? %s %s' % (indent, line))
+            #         indent = '...'
+            # if excinfo.errisinstance(doctest.DocTestFailure):
+            #     lines += checker.output_difference(example,
+            #                                        doctestfailure.got, report_choice).split("\n")
+            # else:
+            #     inner_excinfo = code.ExceptionInfo(excinfo.value.exc_info)
+            #     lines += ["UNEXPECTED EXCEPTION: %s" %
+            #               repr(inner_excinfo.value)]
+            #     lines += traceback.format_exception(*excinfo.value.exc_info)
+            # lines = ['foo']
+            # return ReprFailXDoctest(reprlocation, lines)
+        else:
+            return super(XDoctestItem, self).repr_failure(excinfo)
 
     def reportinfo(self):
         return self.fspath, self.example.lineno, "[xdoctest] %s" % self.name
@@ -171,8 +174,8 @@ class XDoctestTextfile(pytest.Module):
 
         # inspired by doctest.testfile; ideally we would use it directly,
         # but it doesn't support passing a custom checker
-        # encoding = self.config.getini("xdoctest_encoding")
-        text = self.fspath.read_text('utf8')
+        encoding = self.config.getini("xdoctest_encoding")
+        text = self.fspath.read_text(encoding)
         filename = str(self.fspath)
         name = self.fspath.basename
         globs = {'__name__': '__main__'}
@@ -355,19 +358,19 @@ def _setup_fixtures(xdoctest_item):
 #         DOCTEST_REPORT_CHOICE_ONLY_FIRST_FAILURE: doctest.REPORT_ONLY_FIRST_FAILURE,
 #         DOCTEST_REPORT_CHOICE_NONE: 0,
 #     }[key]
-# DOCTEST_REPORT_CHOICE_NONE = 'none'
-# DOCTEST_REPORT_CHOICE_CDIFF = 'cdiff'
-# DOCTEST_REPORT_CHOICE_NDIFF = 'ndiff'
-# DOCTEST_REPORT_CHOICE_UDIFF = 'udiff'
-# DOCTEST_REPORT_CHOICE_ONLY_FIRST_FAILURE = 'only_first_failure'
+DOCTEST_REPORT_CHOICE_NONE = 'none'
+DOCTEST_REPORT_CHOICE_CDIFF = 'cdiff'
+DOCTEST_REPORT_CHOICE_NDIFF = 'ndiff'
+DOCTEST_REPORT_CHOICE_UDIFF = 'udiff'
+DOCTEST_REPORT_CHOICE_ONLY_FIRST_FAILURE = 'only_first_failure'
 
-# DOCTEST_REPORT_CHOICES = (
-#     DOCTEST_REPORT_CHOICE_NONE,
-#     DOCTEST_REPORT_CHOICE_CDIFF,
-#     DOCTEST_REPORT_CHOICE_NDIFF,
-#     DOCTEST_REPORT_CHOICE_UDIFF,
-#     DOCTEST_REPORT_CHOICE_ONLY_FIRST_FAILURE,
-# )
+DOCTEST_REPORT_CHOICES = (
+    DOCTEST_REPORT_CHOICE_NONE,
+    DOCTEST_REPORT_CHOICE_CDIFF,
+    DOCTEST_REPORT_CHOICE_NDIFF,
+    DOCTEST_REPORT_CHOICE_UDIFF,
+    DOCTEST_REPORT_CHOICE_ONLY_FIRST_FAILURE,
+)
 
 
 # def _fix_spoof_python2(runner, encoding):
