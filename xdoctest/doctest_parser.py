@@ -4,9 +4,17 @@ import sys
 import itertools as it
 import tokenize
 import re
+from xdoctest import utils
+
+
+class GotWantException(AssertionError):
+    pass
 
 
 _INDENT_RE = re.compile('^([ ]*)(?=\S)', re.MULTILINE)
+
+BLANKLINE_MARKER = '<BLANKLINE>'
+ELLIPSIS_MARKER = '...'
 
 
 _EXCEPTION_RE = re.compile(r"""
@@ -21,6 +29,57 @@ _EXCEPTION_RE = re.compile(r"""
     (?P<stack> .*?)      # don't blink: absorb stuff until...
     ^ (?P<msg> \w+ .*)   #     a line *starts* with alphanum.
     """, re.VERBOSE | re.MULTILINE | re.DOTALL)
+
+
+def output_difference(want, got, optionflags=0):
+    """
+    Return a string describing the differences between the
+    expected output for a given example (`example`) and the actual
+    output (`got`).  `optionflags` is the set of option flags used
+    to compare `want` and `got`.
+    """
+    import difflib
+    # If <BLANKLINE>s are being used, then replace blank lines
+    # with <BLANKLINE> in the actual output string.
+    # if not (optionflags & DONT_ACCEPT_BLANKLINE):
+    if True:
+        got = re.sub('(?m)^[ ]*(?=\n)', BLANKLINE_MARKER, got)
+
+    # Check if we should use diff.
+    if True:
+        # Split want & got into lines.
+        want_lines = want.splitlines(keepends=True)
+        got_lines = got.splitlines(keepends=True)
+        # Use difflib to find their differences.
+        # if optionflags & REPORT_UDIFF:
+        if True:
+            diff = difflib.unified_diff(want_lines, got_lines, n=2)
+            diff = list(diff)[2:]  # strip the diff header
+            kind = 'unified diff with -expected +actual'
+        # elif optionflags & REPORT_CDIFF:
+        #     diff = difflib.context_diff(want_lines, got_lines, n=2)
+        #     diff = list(diff)[2:] # strip the diff header
+        #     kind = 'context diff with expected followed by actual'
+        # elif optionflags & REPORT_NDIFF:
+        #     engine = difflib.Differ(charjunk=difflib.IS_CHARACTER_JUNK)
+        #     diff = list(engine.compare(want_lines, got_lines))
+        #     kind = 'ndiff with -expected +actual'
+        else:
+            assert 0, 'Bad diff option'
+        # Remove trailing whitespace on diff output.
+        diff = [line.rstrip() + '\n' for line in diff]
+        return 'Differences (%s):\n' % kind + utils.indent(''.join(diff))
+
+    # If we're not using diff, then simply list the expected
+    # output followed by the actual output.
+    if want and got:
+        return 'Expected:\n%sGot:\n%s' % (utils.indent(want), utils.indent(got))
+    elif want:
+        return 'Expected:\n%sGot nothing\n' % utils.indent(want)
+    elif got:
+        return 'Expected nothing\nGot:\n%s' % utils.indent(got)
+    else:
+        return 'Expected nothing\nGot nothing\n'
 
 
 class DoctestPart(object):
@@ -73,10 +132,11 @@ class DoctestPart(object):
                     # allow eval to fallback and save us
                     flag = part.check_eval_got_vs_want(got_eval)
                     if flag:
-                        got = got_eval
+                        got = repr(got_eval)
         if not flag:
-            raise AssertionError(
-                'got={!r} differs with doctest want={!r}'.format(got, part.want))
+            msg = 'got differs with doctest want'
+            msg += output_difference(part.want, got)
+            raise GotWantException(msg)
 
     def check_eval_got_vs_want(self, got_eval):
         if not self.want:
@@ -167,32 +227,35 @@ class DoctestParser(object):
         lineno = 0
         for chunk in grouped_lines:
             if isinstance(chunk, tuple):
-                source_lines, want_lines = chunk
-                for example in self._package_chunk(source_lines, want_lines,
+                raw_source_lines, raw_want_lines = chunk
+                for example in self._package_chunk(raw_source_lines, raw_want_lines,
                                                    lineno):
                     yield example
-                lineno += len(source_lines) + len(want_lines)
+                lineno += len(raw_source_lines) + len(raw_want_lines)
             else:
                 text_part = '\n'.join(chunk)
                 yield text_part
                 lineno += len(chunk)
 
-    def _package_chunk(self, source_lines, want_lines, lineno=0):
+    def _package_chunk(self, raw_source_lines, raw_want_lines, lineno=0):
         """
         if `self.simulate_repl` is True, then each statment is broken into its
         own part.  Otherwise, statements are grouped by the closest `want`
         statement.
         """
-        match = _INDENT_RE.search(source_lines[0])
+        match = _INDENT_RE.search(raw_source_lines[0])
         line_indent = 0 if match is None else (match.end() - match.start())
-        norm_source_lines = [p[line_indent + 4:] for p in source_lines]
+
+        source_lines = [p[line_indent:] for p in raw_source_lines]
+        want_lines = [p[line_indent:] for p in raw_want_lines]
+
+        exec_source_lines = [p[4:] for p in source_lines]
 
         # Find the line number of each standalone statment
-        ps1_linenos, eval_final = self._locate_ps1_linenos(source_lines,
-                                                           line_indent)
+        ps1_linenos, eval_final = self._locate_ps1_linenos(source_lines)
 
         def slice_example(s1, s2, want_lines=None):
-            source = '\n'.join(norm_source_lines[s1:s2])
+            source = '\n'.join(exec_source_lines[s1:s2])
             orig_lines = source_lines[s1:s2]
             # options = self._find_options(source, name, lineno + s1)
             # example = DoctestPart(source, None, None, lineno=lineno + s1,
@@ -203,8 +266,7 @@ class DoctestParser(object):
             # exc_msg = m.group('msg') if m else None
             if want_lines:
                 # orig_lines += want_lines
-                norm_want_lines = [p[line_indent:] for p in want_lines]
-                want = '\n'.join(norm_want_lines)
+                want = '\n'.join(want_lines)
             else:
                 want = None
             example = DoctestPart(source, want=want,
@@ -258,21 +320,20 @@ class DoctestParser(object):
             grouped_lines.append((prev_source, ''))
         return grouped_lines
 
-    def _locate_ps1_linenos(self, source_lines, line_indent=0):
+    def _locate_ps1_linenos(self, source_lines):
         # Strip indentation (and PS1 / PS2 from source)
-        norm_source_lines = [p[line_indent + 4:] for p in source_lines]
-        source_block = '\n'.join(norm_source_lines)
+        exec_source_lines = [p[4:] for p in source_lines]
+        source_block = '\n'.join(exec_source_lines)
         pt = ast.parse(source_block)
         statement_nodes = pt.body
         ps1_linenos = [node.lineno - 1 for node in statement_nodes]
         NEED_16806_WORKAROUND = True
         if NEED_16806_WORKAROUND:
             ps1_linenos = self._workaround_16806(
-                ps1_linenos, norm_source_lines)
+                ps1_linenos, exec_source_lines)
         # Respect any line explicitly defined as PS2
         ps2_linenos = {
-            x for x, p in enumerate(source_lines)
-            if p[line_indent:line_indent + 4] != '>>> '
+            x for x, p in enumerate(source_lines) if p[:4] != '>>> '
         }
         ps1_linenos = sorted(ps1_linenos.difference(ps2_linenos))
 
@@ -280,7 +341,7 @@ class DoctestParser(object):
         eval_final = isinstance(statement_nodes[-1], ast.Expr)
         return ps1_linenos, eval_final
 
-    def _workaround_16806(self, ps1_linenos, norm_source_lines):
+    def _workaround_16806(self, ps1_linenos, exec_source_lines):
         """
         workaround for python issue 16806 (https://bugs.python.org/issue16806)
 
@@ -294,11 +355,11 @@ class DoctestParser(object):
             ps1_linenos[-1] to the end of the line list.
         """
         new_ps1_lines = []
-        b = len(norm_source_lines)
+        b = len(exec_source_lines)
         for a in ps1_linenos[::-1]:
             # the position of `b` is correct, but `a` may be wrong
             # is_balanced will be False iff `a` is wrong.
-            while not is_balanced(norm_source_lines[a:b]):
+            while not is_balanced(exec_source_lines[a:b]):
                 # shift `a` down until it becomes correct
                 a -= 1
             # push the new correct value back into the list

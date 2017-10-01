@@ -113,7 +113,7 @@ class XDoctestItem(pytest.Item):
         m = re.match(r'>>>\s*#\s*pytest.skip', self.example.docsrc, flags=re.IGNORECASE)
         if m is not None:
             pytest.skip('doctest encountered skip directive')
-        self.example.run()
+        self.example.run(on_error='raise')
         # self.runner.run(self.example)
 
     def repr_failure(self, excinfo):
@@ -121,8 +121,26 @@ class XDoctestItem(pytest.Item):
         # import doctest
         # if excinfo.errisinstance((doctest.DocTestFailure,
         #                           doctest.UnexpectedException)):
-        if False:
-            pass
+        example = self.example
+        # print('REPR FAIL example = {!r}'.format(example))
+        if example.exception is not None:
+            type, value, tb = example.exception
+            lineno = example.lineno + example.failed_part.line_offset
+            from xdoctest import doctest_parser
+            if isinstance(value, doctest_parser.GotWantException):
+                lineno += len(example.failed_part.orig_lines)
+            message = type.__name__
+            reprlocation = code.ReprFileLocation(example.modpath, lineno, message)
+            lines = [
+                '=== LINES ===',
+                'lineno = {!r}'.format(lineno),
+                'FOOBAR',
+                'EXCEPTME',
+                str(value),
+                str(message),
+                '=== END LINES ===',
+            ]
+            return ReprFailXDoctest(reprlocation, lines)
             # doctestfailure = excinfo.value
             # example = doctestfailure.example
             # test = doctestfailure.test
@@ -156,7 +174,6 @@ class XDoctestItem(pytest.Item):
             #     lines += ["UNEXPECTED EXCEPTION: %s" %
             #               repr(inner_excinfo.value)]
             #     lines += traceback.format_exception(*excinfo.value.exc_info)
-            # lines = ['foo']
             # return ReprFailXDoctest(reprlocation, lines)
         else:
             return super(XDoctestItem, self).repr_failure(excinfo)

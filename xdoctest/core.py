@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import, unicode_literals
 import __future__
+import textwrap
 import warnings
 import sys
+import re
 import six
 import itertools as it
 from os.path import exists
@@ -44,6 +46,7 @@ class DocTest(object):
         self.num = num
         self._parts = None
         self.exception = None
+        self.failed_part = None
         self.outputs = []
         self.globs = {}
 
@@ -84,7 +87,7 @@ class DocTest(object):
             self.unique_callname,
         }
 
-    def format_src(self, linenums=True, colored=True):
+    def format_src(self, linenums=True, colored=False):
         """
         Adds prefix and line numbers to a doctest
 
@@ -102,16 +105,25 @@ class DocTest(object):
         for part in self._parts:
             doctest_src = part.source
             doctest_src = utils.indent(doctest_src, '>>> ')
-            doctest_src = '\n'.join(part.orig_lines)
+            # doctest_src = '\n'.join(part.orig_lines)
+            # doctest_src = '\n'.join(part.orig_lines)
             doctest_want = part.want if part.want else ''
+
+            doctest_parser
+
             if linenums:
+                import math
+                base = 1 if self.lineno is None else self.lineno
+                n_digits = int(math.ceil(math.log(base, 10)))
+                src_fmt = '{{:{}d}} {{}}'.format(n_digits)
+                want_fmt = '{} {{}}'.format(' ' * n_digits)
                 new_lines = []
-                count = 1 + part.line_offset
+                count = base + part.line_offset
                 for count, line in enumerate(doctest_src.splitlines(), start=count):
-                    new_lines.append('%3d %s' % (count, line))
+                    new_lines.append(src_fmt.format(count, line))
                 if doctest_want:
                     for count, line in enumerate(doctest_want.splitlines(), start=count):
-                        new_lines.append('    %s' % (line))
+                        new_lines.append(want_fmt.format(line))
                 new = '\n'.join(new_lines)
             else:
                 if doctest_want:
@@ -168,7 +180,7 @@ class DocTest(object):
         self._parts = [p for p in self._parts
                        if not isinstance(p, six.string_types)]
 
-    def run(self, verbose=None, on_error='record'):
+    def run(self, verbose=None, on_error='raise'):
         """
         Executes the doctest
 
@@ -178,7 +190,6 @@ class DocTest(object):
         Notes:
             * There is no difference between locals/globals in exec context
             Only pass in one dict, otherwise there is weird behavior
-            References: https://bugs.python.org/issue13557
         """
         if verbose is None:
             verbose = 2
@@ -204,6 +215,7 @@ class DocTest(object):
                 if feature is getattr(__future__, fname):
                     flags |= feature.compiler_flag
             return flags
+
         compileflags = _extract_future_flags(test_globals)
         self.outputs = []
         self.exception = None
@@ -222,6 +234,7 @@ class DocTest(object):
                     else:
                         exec(code, test_globals)
                         got_eval = not_evaled
+
                 if part.want:
                     got_stdout = cap.text
                     part.check_got_vs_want(got_stdout, got_eval, not_evaled)
@@ -232,12 +245,14 @@ class DocTest(object):
             except KeyboardInterrupt:  # noqa
                 raise
             except:
-                if on_error == 'raise':
-                    raise
+                self.failed_part = part
                 type, value, tb = sys.exc_info()
                 # remove the runner from the traceback
                 tb = tb.tb_next
-                # self.exception = sys.exc_info()
+                self.exception = (type, value, tb)
+                if on_error == 'raise':
+                    raise
+                    self.exception = sys.exc_info()
                 break
             finally:
                 assert cap.text is not None
@@ -343,8 +358,6 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         >>> examples = list(parse_freeform_docstr_examples(docstr))
         >>> assert len(examples) == 3
     """
-    import textwrap
-
     def doctest_from_parts(parts, num):
         lineno_ = lineno + parts[0].line_offset
         nested = [

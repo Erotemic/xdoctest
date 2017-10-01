@@ -8,7 +8,7 @@ def test_failure():
         >>> 0 / i
         2
         ''')
-    self = core.DocTest('<test>', '<test>',  docsrc=string)
+    self = core.DocTest('<testmod>', '<testfunc>',  docsrc=string, lineno=1000)
     self._parse()
     try:
         self.run(on_error='raise')
