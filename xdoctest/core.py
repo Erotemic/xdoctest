@@ -72,7 +72,6 @@ class DocTest(object):
         """
         Checks for comment directives on the first line of the doctest
         """
-        import re
         m = re.match(r'>>>\s*#\s*DISABLE', self.docsrc, flags=re.IGNORECASE)
         return m is not None
 
@@ -100,6 +99,7 @@ class DocTest(object):
             >>> print(self.format_src(linenums=False, colored=False))
             >>> assert not self.is_disabled()
         """
+        import math
         # return '\n'.join([p.source for p in self._parts])
         formated_parts = []
         for part in self._parts:
@@ -112,9 +112,8 @@ class DocTest(object):
             doctest_parser
 
             if linenums:
-                import math
                 base = 1 if self.lineno is None else self.lineno
-                n_digits = int(math.ceil(math.log(base, 10)))
+                n_digits = int(math.ceil(math.log(max(1, base), 10)))
                 src_fmt = '{{:{}d}} {{}}'.format(n_digits)
                 want_fmt = '{} {{}}'.format(' ' * n_digits)
                 new_lines = []
@@ -244,6 +243,15 @@ class DocTest(object):
                     print('Test gracefully exists')
             except KeyboardInterrupt:  # noqa
                 raise
+            except doctest_parser.GotWantException:
+                self.failed_part = part
+                type, value, tb = sys.exc_info()
+                # remove the runner from the traceback
+                tb = tb.tb_next
+                self.exception = (type, value, tb)
+                if on_error == 'raise':
+                    raise
+                break
             except:
                 self.failed_part = part
                 type, value, tb = sys.exc_info()
@@ -252,7 +260,6 @@ class DocTest(object):
                 self.exception = (type, value, tb)
                 if on_error == 'raise':
                     raise
-                    self.exception = sys.exc_info()
                 break
             finally:
                 assert cap.text is not None

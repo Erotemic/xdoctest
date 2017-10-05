@@ -63,7 +63,7 @@ def test_eval_expr_capture():
         >>> x = 3
         >>> y = x + 2
         >>> y + 2
-        7
+        2
         ''')
     self = core.DocTest('<test>', '<test>',  docsrc=docsrc)
     self._parse()
@@ -74,4 +74,16 @@ def test_eval_expr_capture():
     # exec(code1, test_globals)
     # code2 = compile(p2.source, '<string>', 'eval')
     # result = eval(code2, test_globals)
-    self.run()
+    try:
+        self.run()
+    except Exception as ex:
+        assert hasattr(ex, 'output_difference')
+        msg = ex.output_difference()
+        print(msg)
+        assert msg == ub.codeblock(
+            '''
+            Expected:
+                2
+            Got:
+                7
+            ''')

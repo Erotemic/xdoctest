@@ -8,7 +8,80 @@ from xdoctest import utils
 
 
 class GotWantException(AssertionError):
-    pass
+
+    def __init__(self, msg, want, got):
+        self.want = want
+        self.got = got
+        super(GotWantException, self).__init__(msg)
+
+    def _do_a_fancy_diff(self, optionflags=0):
+        # Not unless they asked for a fancy diff.
+        got = self.got
+        want = self.want
+        # if not optionflags & (REPORT_UDIFF |
+        #                       REPORT_CDIFF |
+        #                       REPORT_NDIFF):
+        #     return False
+
+        # ndiff does intraline difference marking, so can be useful even
+        # for 1-line differences.
+        # if optionflags & REPORT_NDIFF:
+        #     return True
+
+        # The other diff types need at least a few lines to be helpful.
+        return want.count('\n') > 2 and got.count('\n') > 2
+
+    def output_difference(self, optionflags=0):
+        """
+        Return a string describing the differences between the
+        expected output for a given example (`example`) and the actual
+        output (`got`).  `optionflags` is the set of option flags used
+        to compare `want` and `got`.
+        """
+        import difflib
+        got = self.got
+        want = self.want
+        # If <BLANKLINE>s are being used, then replace blank lines
+        # with <BLANKLINE> in the actual output string.
+        # if not (optionflags & DONT_ACCEPT_BLANKLINE):
+        if True:
+            got = re.sub('(?m)^[ ]*(?=\n)', BLANKLINE_MARKER, got)
+
+        # Check if we should use diff.
+        if self._do_a_fancy_diff(optionflags):
+            # Split want & got into lines.
+            want_lines = want.splitlines(keepends=True)
+            got_lines = got.splitlines(keepends=True)
+            # Use difflib to find their differences.
+            # if optionflags & REPORT_UDIFF:
+            if True:
+                diff = difflib.unified_diff(want_lines, got_lines, n=2)
+                diff = list(diff)[2:]  # strip the diff header
+                kind = 'unified diff with -expected +actual'
+            # elif optionflags & REPORT_CDIFF:
+            #     diff = difflib.context_diff(want_lines, got_lines, n=2)
+            #     diff = list(diff)[2:] # strip the diff header
+            #     kind = 'context diff with expected followed by actual'
+            # elif optionflags & REPORT_NDIFF:
+            #     engine = difflib.Differ(charjunk=difflib.IS_CHARACTER_JUNK)
+            #     diff = list(engine.compare(want_lines, got_lines))
+            #     kind = 'ndiff with -expected +actual'
+            else:
+                assert 0, 'Bad diff option'
+            # Remove trailing whitespace on diff output.
+            diff = [line.rstrip() + '\n' for line in diff]
+            return 'Differences (%s):\n' % kind + utils.indent(''.join(diff))
+
+        # If we're not using diff, then simply list the expected
+        # output followed by the actual output.
+        if want and got:
+            return 'Expected:\n%s\nGot:\n%s' % (utils.indent(want), utils.indent(got))
+        elif want:
+            return 'Expected:\n%s\nGot nothing\n' % utils.indent(want)
+        elif got:
+            return 'Expected nothing\nGot:\n%s' % utils.indent(got)
+        else:
+            return 'Expected nothing\nGot nothing\n'
 
 
 _INDENT_RE = re.compile('^([ ]*)(?=\S)', re.MULTILINE)
@@ -29,57 +102,6 @@ _EXCEPTION_RE = re.compile(r"""
     (?P<stack> .*?)      # don't blink: absorb stuff until...
     ^ (?P<msg> \w+ .*)   #     a line *starts* with alphanum.
     """, re.VERBOSE | re.MULTILINE | re.DOTALL)
-
-
-def output_difference(want, got, optionflags=0):
-    """
-    Return a string describing the differences between the
-    expected output for a given example (`example`) and the actual
-    output (`got`).  `optionflags` is the set of option flags used
-    to compare `want` and `got`.
-    """
-    import difflib
-    # If <BLANKLINE>s are being used, then replace blank lines
-    # with <BLANKLINE> in the actual output string.
-    # if not (optionflags & DONT_ACCEPT_BLANKLINE):
-    if True:
-        got = re.sub('(?m)^[ ]*(?=\n)', BLANKLINE_MARKER, got)
-
-    # Check if we should use diff.
-    if True:
-        # Split want & got into lines.
-        want_lines = want.splitlines(keepends=True)
-        got_lines = got.splitlines(keepends=True)
-        # Use difflib to find their differences.
-        # if optionflags & REPORT_UDIFF:
-        if True:
-            diff = difflib.unified_diff(want_lines, got_lines, n=2)
-            diff = list(diff)[2:]  # strip the diff header
-            kind = 'unified diff with -expected +actual'
-        # elif optionflags & REPORT_CDIFF:
-        #     diff = difflib.context_diff(want_lines, got_lines, n=2)
-        #     diff = list(diff)[2:] # strip the diff header
-        #     kind = 'context diff with expected followed by actual'
-        # elif optionflags & REPORT_NDIFF:
-        #     engine = difflib.Differ(charjunk=difflib.IS_CHARACTER_JUNK)
-        #     diff = list(engine.compare(want_lines, got_lines))
-        #     kind = 'ndiff with -expected +actual'
-        else:
-            assert 0, 'Bad diff option'
-        # Remove trailing whitespace on diff output.
-        diff = [line.rstrip() + '\n' for line in diff]
-        return 'Differences (%s):\n' % kind + utils.indent(''.join(diff))
-
-    # If we're not using diff, then simply list the expected
-    # output followed by the actual output.
-    if want and got:
-        return 'Expected:\n%sGot:\n%s' % (utils.indent(want), utils.indent(got))
-    elif want:
-        return 'Expected:\n%sGot nothing\n' % utils.indent(want)
-    elif got:
-        return 'Expected nothing\nGot:\n%s' % utils.indent(got)
-    else:
-        return 'Expected nothing\nGot nothing\n'
 
 
 class DoctestPart(object):
@@ -124,19 +146,24 @@ class DoctestPart(object):
                 # If there was no stdout then use eval value.
                 got = got_eval
                 flag = part.check_eval_got_vs_want(got)
+                got = str(got_eval)
             else:
                 # If there was eval and stdout, defer to stdout
+                # but allow fallback on the eval.
                 got = got_stdout
                 flag = part.check_stdout_got_vs_want(got)
                 if not flag:
                     # allow eval to fallback and save us
                     flag = part.check_eval_got_vs_want(got_eval)
                     if flag:
-                        got = repr(got_eval)
+                        got = str(got_eval)
         if not flag:
+            # print('got = {!r}'.format(got))
+            # print('part.want = {!r}'.format(part.want))
+            # msg += output_difference(part.want, got)
             msg = 'got differs with doctest want'
-            msg += output_difference(part.want, got)
-            raise GotWantException(msg)
+            ex = GotWantException(msg, part.want, got)
+            raise ex
 
     def check_eval_got_vs_want(self, got_eval):
         if not self.want:
@@ -145,8 +172,6 @@ class DoctestPart(object):
             if self.want == '...':
                 return True
             if str(got_eval) == self.want:
-                return True
-            if repr(got_eval) == self.want:
                 return True
         return False
 

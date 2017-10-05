@@ -129,12 +129,7 @@ class TestXDoctest(object):
         """)
 
         for x in (testdir.tmpdir, checkfile):
-            print("checking that %s returns custom items" % (x,))
-            # items, reprec = testdir.inline_genitems(x, '-p', 'no:doctest')
             items, reprec = testdir.inline_genitems(x)
-            print('items = {!r}'.format(items))
-            print('!!!!!!!!!!')
-            print('!!!!!!!!!!')
             assert len(items) == 1
             assert isinstance(items[0], XDoctestItem)
             assert isinstance(items[0].parent, XDoctestTextfile)
