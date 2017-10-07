@@ -338,7 +338,10 @@ class DocTest(object):
                 lineno += len(self.failed_part.orig_lines)
             else:
                 # Use the next because we need to pop the eval of the stack
-                lineno += tb.tb_next.tb_lineno
+                if tb.tb_next is None:
+                    lineno = tb.tb_lineno
+                else:
+                    lineno += tb.tb_next.tb_lineno
             return lineno
 
     def repr_failure(self, verbose=1):
@@ -491,9 +494,11 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         # try to respect these even in freeform mode.
         special_skip_patterns = [
             'DisableDoctest:',
+            'DisableExample:',
             'SkipDoctest:',
             'Ignore:',
             'Script:',
+            'Sympy:',
         ]
     else:
         special_skip_patterns = []
@@ -504,7 +509,7 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
     def _special_skip(prev):
         return (special_skip_patterns_ and
                 isinstance(prev, six.string_types) and
-                prev.strip().lower().startswith(special_skip_patterns_))
+                prev.strip().lower().endswith(special_skip_patterns_))
 
     # parse into doctest and plaintext parts
     all_parts = doctest_parser.DoctestParser().parse(docstr)

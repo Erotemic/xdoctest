@@ -24,8 +24,9 @@ def monkey_patch_disable_normal_doctest():
     # try to be considerate to those who really want the old version and were
     # so unfortunate as to get ours.
     if '--doctest-modules' not in sys.argv:
-        # but now rip out the old modules heart!
-        doctest.pytest_collect_file = pytest_collect_file
+        if '--xdoctest-modules' in sys.argv or '--xdoctest' in sys.argv:
+            # but now rip out the old modules heart!
+            doctest.pytest_collect_file = pytest_collect_file
 monkey_patch_disable_normal_doctest()
 ### THE NAUGHTINESS MUST NOW CEASE ###
 
