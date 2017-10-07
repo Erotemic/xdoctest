@@ -772,6 +772,20 @@ class TestXDoctestSkips(object):
     the tests should be SKIPPED rather than PASSED. (#957)
     """
 
+    def test_xdoctest_skips_diabled(self, testdir):
+        testdir.makepyfile(foo="""
+            import sys
+
+            def foo():
+                '''
+                DisableDoctest:
+                    >>> True
+                    True
+                '''
+        """)
+        result = testdir.runpytest("--xdoctest-modules")
+        result.stdout.fnmatch_lines('*0 passed*')
+
     @pytest.fixture(params=['text', 'module'])
     def makedoctest(self, testdir, request):
         def makeit(xdoctest):
