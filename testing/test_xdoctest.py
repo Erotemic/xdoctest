@@ -1009,7 +1009,6 @@ class TestXDoctestNamespaceFixture(object):
         reprec.assertoutcome(passed=1)
 
 
-@pytest.mark.skip
 class TestXDoctestReportingOption(object):
     @pytest.mark.skip
     def _run_doctest_report(self, testdir, format):
@@ -1030,6 +1029,7 @@ class TestXDoctestReportingOption(object):
         return testdir.runpytest("--xdoctest-modules", "--xdoctest-report", format)
 
     @pytest.mark.parametrize('format', ['udiff', 'UDIFF', 'uDiFf'])
+    @pytest.mark.skip
     def test_doctest_report_udiff(self, testdir, format):
         result = self._run_doctest_report(testdir, format)
         result.stdout.fnmatch_lines([
@@ -1039,6 +1039,7 @@ class TestXDoctestReportingOption(object):
             '     2  3  6',
         ])
 
+    @pytest.mark.skip
     def test_doctest_report_cdiff(self, testdir):
         result = self._run_doctest_report(testdir, 'cdiff')
         result.stdout.fnmatch_lines([
@@ -1053,6 +1054,7 @@ class TestXDoctestReportingOption(object):
             '      2  3  6',
         ])
 
+    @pytest.mark.skip
     def test_doctest_report_ndiff(self, testdir):
         result = self._run_doctest_report(testdir, 'ndiff')
         result.stdout.fnmatch_lines([
@@ -1066,6 +1068,7 @@ class TestXDoctestReportingOption(object):
         ])
 
     @pytest.mark.parametrize('format', ['none', 'only_first_failure'])
+    @pytest.mark.skip
     def test_doctest_report_none_or_only_first_failure(self, testdir, format):
         result = self._run_doctest_report(testdir, format)
         result.stdout.fnmatch_lines([
@@ -1081,6 +1084,7 @@ class TestXDoctestReportingOption(object):
             '    2  3  6',
         ])
 
+    @pytest.mark.skip
     @pytest.mark.skip
     def test_doctest_report_invalid(self, testdir):
         result = self._run_doctest_report(testdir, 'obviously_invalid_format')
