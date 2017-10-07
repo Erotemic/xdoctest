@@ -1,7 +1,7 @@
+import ubelt as ub
+from xdoctest import doctest_parser
 
 def testdata():
-    import ubelt as ub
-    from xdoctest import doctest_parser
     string = '''
             text
             >>> dsrc()
@@ -147,9 +147,9 @@ def testdata():
     self._label_docsrc_lines(string)
     ex = self.parse(string)[0]
 
-    outputs = self2.parse(string)
-    print('outputs = {!r}'.format(outputs))
-    for o in outputs:
+    parts = self2.parse(string)
+    print('parts = {!r}'.format(parts))
+    for o in parts:
         if not isinstance(o, str):
             e = o
             print('e.source = {!r}'.format(e.source))
@@ -316,8 +316,7 @@ def test_ps1_linenos():
         1
         ''').split('\n')[:-1]
     self = doctest_parser.DoctestParser()
-    line_indent = 0
-    linenos, eval_final = self._locate_ps1_linenos(source_lines, line_indent)
+    linenos, eval_final = self._locate_ps1_linenos(source_lines)
     assert eval_final
     assert linenos == [0, 1]
 
@@ -330,8 +329,7 @@ def test_ps1_linenos():
         x = 21
         ''').split('\n')[:-1]
     self = doctest_parser.DoctestParser()
-    line_indent = 0
-    linenos, eval_final = self._locate_ps1_linenos(source_lines, line_indent)
+    linenos, eval_final = self._locate_ps1_linenos(source_lines)
     assert eval_final
     assert linenos == [0, 3]
 
@@ -344,8 +342,7 @@ def test_ps1_linenos():
         'x = 21'
         ''').split('\n')[:-1]
     self = doctest_parser.DoctestParser()
-    line_indent = 0
-    linenos, eval_final = self._locate_ps1_linenos(source_lines, line_indent)
+    linenos, eval_final = self._locate_ps1_linenos(source_lines)
     assert eval_final
     assert linenos == [0, 3]
 
@@ -375,13 +372,14 @@ def test_ps1_linenos():
         59
         ''').split('\n')[:-1]
     self = doctest_parser.DoctestParser()
-    line_indent = 0
-    linenos, eval_final = self._locate_ps1_linenos(source_lines, line_indent)
+    linenos, eval_final = self._locate_ps1_linenos(source_lines)
     assert eval_final
     assert linenos == [0, 3, 5, 9, 13, 16, 17, 20]
 
 
 def test_retain_source():
+    """
+    """
     import ubelt as ub
     from xdoctest import doctest_parser
     source = ub.codeblock(
@@ -392,10 +390,125 @@ def test_retain_source():
         ''')
     source_lines = source.split('\n')[:-1]
     self = doctest_parser.DoctestParser()
-    line_indent = 0
-    linenos, eval_final = self._locate_ps1_linenos(source_lines, line_indent)
+    linenos, eval_final = self._locate_ps1_linenos(source_lines)
     assert eval_final
     assert linenos == [0, 1]
     p1, p2 = self.parse(source)
     assert p1.source == 'x = 2'
     assert p2.source == 'print("foo")'
+
+
+def test_package_string_tup():
+    """
+    pytest testing/test_doctest_parser.py::test_package_string_tup
+    """
+    from xdoctest import doctest_parser
+    raw_source_lines = ['>>> "string"']
+    raw_want_lines = ['string']
+    self = doctest_parser.DoctestParser()
+    parts = list(self._package_chunk(raw_source_lines, raw_want_lines))
+    assert len(parts) == 1, 'should only want one string'
+
+
+def test_simulate_repl():
+    """
+    pytest testing/test_doctest_parser.py::test_package_string_tup
+    """
+    from xdoctest import doctest_parser
+    import ubelt as ub
+    string = ub.codeblock(
+        '''
+        >>> x = 1
+        >>> x = 2
+        >>> x = 3
+        ''')
+    self = doctest_parser.DoctestParser()
+    self.simulate_repl = False
+    assert len(self.parse(string)) == 1
+    self.simulate_repl = True
+    assert len(self.parse(string)) == 3
+
+
+def test_parse_multi_want():
+    string = ub.codeblock(
+        '''
+        >>> x = 2
+        >>> x
+        2
+        >>> 'string'
+        'string'
+        >>> print('string')
+        string
+        ''')
+    self = doctest_parser.DoctestParser()
+    parts = self.parse(string)
+
+    self._label_docsrc_lines(string)
+    assert parts[2].source == 'string'
+    assert len(parts) == 4
+
+
+def test_parse_eval_nowant():
+    string = ub.codeblock(
+        '''
+        >>> a = 1
+        >>> 1 / 0
+        ''')
+    self = doctest_parser.DoctestParser()
+    parts = self.parse(string)
+    raw_source_lines = string.split('\n')[:]
+    ps1_linenos, eval_final = self._locate_ps1_linenos(raw_source_lines)
+    assert ps1_linenos == [0, 1]
+    assert eval_final
+    # Only one part because there is no want
+    assert len(parts) == 1
+
+
+def test_parse_eval_single_want():
+    string = ub.codeblock(
+        '''
+        >>> a = 1
+        >>> 1 / 0
+        We have a want
+        ''')
+    self = doctest_parser.DoctestParser()
+    parts = self.parse(string)
+    raw_source_lines = string.split('\n')[:-1]
+    ps1_linenos, eval_final = self._locate_ps1_linenos(raw_source_lines)
+    assert ps1_linenos == [0, 1]
+    assert eval_final
+    # Only one part because there is no want
+    assert len(parts) == 2
+
+
+def test_parse_comment():
+    """
+    """
+    import ubelt as ub
+    from xdoctest import doctest_parser
+    string = ub.codeblock(
+        '''
+        >>> # nothing
+        ''')
+
+    self = doctest_parser.DoctestParser()
+
+    labeled = self._label_docsrc_lines(string)
+    assert labeled == [('dsrc', '>>> # nothing')]
+
+    source_lines = string.split('\n')[:]
+    linenos, eval_final = self._locate_ps1_linenos(source_lines)
+
+    parts = self.parse(string)
+
+    self._label_docsrc_lines(string)
+
+    print(parts[2].source)
+
+if __name__ == '__main__':
+    r"""
+    CommandLine:
+        python ~/code/xdoctest/testing/test_doctest_parser.py
+    """
+    import pytest
+    pytest.main([__file__])

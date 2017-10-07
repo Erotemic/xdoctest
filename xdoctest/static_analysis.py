@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 import ast
+import re
 import pkgutil
 import tokenize
 import six
@@ -61,6 +62,7 @@ class TopLevelVisitor(ast.NodeVisitor):
     def __init__(self):
         super(TopLevelVisitor, self).__init__()
         self.calldefs = {}
+        self.sourcelines = None
 
         self._current_classname = None
         # Keep track of when we leave a top level definition
@@ -83,6 +85,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         source_utf8 = source.encode('utf8')
         pt = ast.parse(source_utf8)
         self = TopLevelVisitor()
+        self.sourcelines = source.splitlines()
         self.visit(pt)
         lineno_end = source.count('\n') + 2  # one indexing
         self.process_finished(lineno_end)
@@ -92,23 +95,67 @@ class TopLevelVisitor(ast.NodeVisitor):
         self.process_finished(node)
         super(TopLevelVisitor, self).visit(node)
 
+    def _docstr_line_workaround(self, docnode):
+        # lineno points to the last line of a string
+        endpos = docnode.lineno - 1
+        # First assume we have a single quoted string
+        startpos = endpos
+        # See if we can check for the tripple quote
+        # This is a hueristic, and is not robust
+        trips = ('"""', "'''")
+        endline = self.sourcelines[endpos]
+        for trip in trips:
+            # try to account for comments
+            endline = re.sub(endline, trip + '\s*#.*$', trip).strip()
+            if endline.endswith(trip):
+                # Hack: we can count the number of lines in the str, but we can
+                # be 100% sure that its a multiline string
+                #
+                # there are pathological cases this wont work for
+                # (i.e. think nestings: """ # ''' # """)
+                nlines = docnode.value.s.count('\n')
+                startline = self.sourcelines[endpos - nlines]
+                if not startline.strip().startswith(trip):
+                    startpos = endpos - nlines
+
+        doclineno = startpos + 1
+        doclineno_end = endpos + 2
+        return doclineno, doclineno_end
+
     def _get_docstring(self, node):
         docstr = ast.get_docstring(node, clean=False)
         if docstr is not None:
-            doclineno = node.lineno + 1
-            doclineno_end = node.body[0].lineno + 1
+            docnode = node.body[0]
+            doclineno, doclineno_end = self._docstr_line_workaround(docnode)
         else:
             doclineno = None
             doclineno_end = None
         return (docstr, doclineno, doclineno_end)
+
+    def _workaround_func_lineno(self, node):
+        # Try and find the lineno of the function definition
+        # (maybe the fact that its on a decorator is actually right...)
+        if node.decorator_list:
+            # Decorators can throw off the line the function is declared on
+            lineno = node.lineno - 1
+            pattern = '\s*def\s*' + node.name
+            # I think this is actually robust
+            while not re.match(pattern, self.sourcelines[lineno]):
+                lineno += 1
+            lineno += 1
+        else:
+            lineno = node.lineno
+        return lineno
 
     def visit_FunctionDef(self, node):
         if self._current_classname is None:
             callname = node.name
         else:
             callname = self._current_classname + '.' + node.name
+
+        lineno = self._workaround_func_lineno(node)
         docstr, doclineno, doclineno_end = self._get_docstring(node)
-        calldef = CallDefNode(callname, node.lineno, docstr, doclineno,
+        calldef = CallDefNode(callname, lineno, docstr, doclineno,
                               doclineno_end)
         self.calldefs[callname] = calldef
 

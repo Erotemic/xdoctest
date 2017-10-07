@@ -84,7 +84,7 @@ class GotWantException(AssertionError):
             return 'Expected nothing\nGot nothing\n'
 
 
-_INDENT_RE = re.compile('^([ ]*)(?=\S)', re.MULTILINE)
+INDENT_RE = re.compile('^([ ]*)(?=\S)', re.MULTILINE)
 
 BLANKLINE_MARKER = '<BLANKLINE>'
 ELLIPSIS_MARKER = '...'
@@ -104,13 +104,66 @@ _EXCEPTION_RE = re.compile(r"""
     """, re.VERBOSE | re.MULTILINE | re.DOTALL)
 
 
+class memoize_method(object):
+    """
+    References:
+        http://code.activestate.com/recipes/577452-a-memoize-decorator-for-instance-methods/
+    """
+    def __init__(self, function):
+        self._function = function
+        self._cacheName = '_cache__' + function.__name__
+    def __get__(self, instance, cls=None):
+        self._instance = instance
+        return self
+    def __call__(self, *args):
+        cache = self._instance.__dict__.setdefault(self._cacheName, {})
+        if args in cache:
+            return cache[args]
+        else:
+            object = cache[args] = self._function(self._instance, *args)
+            return object
+
+
 class DoctestPart(object):
-    def __init__(self, source, want, line_offset, orig_lines=None):
-        self.source = source
-        self.want = want
+    def __init__(self, exec_lines, want_lines, line_offset, orig_lines=None):
+        self.exec_lines = exec_lines
+        self.want_lines = want_lines
         self.line_offset = line_offset
         self.orig_lines = orig_lines
         self.use_eval = False
+
+    @property
+    def n_lines(self):
+        return self.n_exec_lines + self.n_want_lines
+
+    @property
+    def n_exec_lines(self):
+        return len(self.exec_lines)
+
+    @property
+    def n_want_lines(self):
+        if self.want_lines:
+            return len(self.want_lines)
+        else:
+            return 0
+
+    @property
+    def source(self):
+        return '\n'.join(self.exec_lines)
+
+    @property
+    def want(self):
+        # options = self._find_options(source, name, lineno + s1)
+        # example = DoctestPart(source, None, None, lineno=lineno + s1,
+        #                       indent=indent, options=options)
+        # the last part has a want
+        # todo: If `want` contains a traceback message, then extract it.
+        # m = _EXCEPTION_RE.match(want)
+        # exc_msg = m.group('msg') if m else None
+        if self.want_lines:
+            return '\n'.join(self.want_lines)
+        else:
+            return None
 
     def __nice__(self):
         parts = []
@@ -146,7 +199,7 @@ class DoctestPart(object):
                 # If there was no stdout then use eval value.
                 got = got_eval
                 flag = part.check_eval_got_vs_want(got)
-                got = str(got_eval)
+                got = repr(got_eval)
             else:
                 # If there was eval and stdout, defer to stdout
                 # but allow fallback on the eval.
@@ -156,7 +209,7 @@ class DoctestPart(object):
                     # allow eval to fallback and save us
                     flag = part.check_eval_got_vs_want(got_eval)
                     if flag:
-                        got = str(got_eval)
+                        got = repr(got_eval)
         if not flag:
             # print('got = {!r}'.format(got))
             # print('part.want = {!r}'.format(part.want))
@@ -171,7 +224,7 @@ class DoctestPart(object):
         if self.want:
             if self.want == '...':
                 return True
-            if str(got_eval) == self.want:
+            if repr(got_eval) == self.want:
                 return True
         return False
 
@@ -184,10 +237,12 @@ class DoctestPart(object):
         if self.want:
             if self.want == '...':
                 return True
-            if got.endswith('\n') and not self.want.endswith('\n'):
-                # allow got to have one extra newline
-                got = got[:-1]
-            if self.want == got:
+            got = got.rstrip()
+            want = self.want.rstrip()
+            # if got.endswith('\n') and not self.want.endswith('\n'):
+            #     # allow got to have one extra newline
+            #     got = got[:-1]
+            if want == got:
                 return True
         return False
 
@@ -242,7 +297,6 @@ class DoctestParser(object):
             string = '\n'.join([l[min_indent:] for l in string.split('\n')])
 
         labeled_lines = self._label_docsrc_lines(string)
-
         grouped_lines = self._group_labeled_lines(labeled_lines)
 
         output = list(self._package_groups(grouped_lines))
@@ -252,11 +306,10 @@ class DoctestParser(object):
         lineno = 0
         for chunk in grouped_lines:
             if isinstance(chunk, tuple):
-                raw_source_lines, raw_want_lines = chunk
-                for example in self._package_chunk(raw_source_lines, raw_want_lines,
-                                                   lineno):
+                slines, wlines = chunk
+                for example in self._package_chunk(slines, wlines, lineno):
                     yield example
-                lineno += len(raw_source_lines) + len(raw_want_lines)
+                lineno += len(slines) + len(wlines)
             else:
                 text_part = '\n'.join(chunk)
                 yield text_part
@@ -267,8 +320,15 @@ class DoctestParser(object):
         if `self.simulate_repl` is True, then each statment is broken into its
         own part.  Otherwise, statements are grouped by the closest `want`
         statement.
+
+        Example:
+            >>> raw_source_lines = ['>>> "string"']
+            >>> raw_want_lines = ['string']
+            >>> self = doctest_parser.DoctestParser()
+            >>> parts = list(self._package_chunk(raw_source_lines, raw_want_lines))
+
         """
-        match = _INDENT_RE.search(raw_source_lines[0])
+        match = INDENT_RE.search(raw_source_lines[0])
         line_indent = 0 if match is None else (match.end() - match.start())
 
         source_lines = [p[line_indent:] for p in raw_source_lines]
@@ -280,21 +340,9 @@ class DoctestParser(object):
         ps1_linenos, eval_final = self._locate_ps1_linenos(source_lines)
 
         def slice_example(s1, s2, want_lines=None):
-            source = '\n'.join(exec_source_lines[s1:s2])
+            exec_lines = exec_source_lines[s1:s2]
             orig_lines = source_lines[s1:s2]
-            # options = self._find_options(source, name, lineno + s1)
-            # example = DoctestPart(source, None, None, lineno=lineno + s1,
-            #                       indent=indent, options=options)
-            # the last part has a want
-            # todo: If `want` contains a traceback message, then extract it.
-            # m = _EXCEPTION_RE.match(want)
-            # exc_msg = m.group('msg') if m else None
-            if want_lines:
-                # orig_lines += want_lines
-                want = '\n'.join(want_lines)
-            else:
-                want = None
-            example = DoctestPart(source, want=want,
+            example = DoctestPart(exec_lines, want_lines=want_lines,
                                   orig_lines=orig_lines,
                                   line_offset=lineno + s1)
             return example
@@ -310,9 +358,10 @@ class DoctestParser(object):
                 # break the last line off so we can eval its value, but keep
                 # previous groupings.
                 s2 = ps1_linenos[-1]
-                example = slice_example(s1, s2)
-                yield example
-                s1 = s2
+                if s2 != s1:
+                    example = slice_example(s1, s2)
+                    yield example
+                    s1 = s2
             s2 = None
 
         example = slice_example(s1, s2, want_lines)
@@ -346,8 +395,25 @@ class DoctestParser(object):
         return grouped_lines
 
     def _locate_ps1_linenos(self, source_lines):
+        """
+        Args:
+            source_lines (list): lines belonging only to the doctest src
+                these will be unindented, prefixed, and without any want.
+
+        Example:
+            >>> self = doctest_parser.DoctestParser()
+            >>> source_lines = ['>>> def foo():', '>>>     return 0', '>>> 3']
+            >>> linenos, eval_final = self._locate_ps1_linenos(source_lines)
+            >>> assert linenos == [0, 2]
+            >>> assert eval_final is True
+        """
         # Strip indentation (and PS1 / PS2 from source)
         exec_source_lines = [p[4:] for p in source_lines]
+
+        # Hack to make comments appear like executable statements
+        exec_source_lines = ['_._  = None' if p.startswith('#') else p
+                             for p in exec_source_lines]
+
         source_block = '\n'.join(exec_source_lines)
         pt = ast.parse(source_block)
         statement_nodes = pt.body
@@ -370,14 +436,14 @@ class DoctestParser(object):
         """
         workaround for python issue 16806 (https://bugs.python.org/issue16806)
 
-        Issue causes lineno for multiline strings to give the line they end on, not
-        the line they start on.  A patch for this issue exists
+        Issue causes lineno for multiline strings to give the line they end on,
+        not the line they start on.  A patch for this issue exists
         `https://github.com/python/cpython/pull/1800`
 
         Notes:
-            Starting from the end look at consecutive pairs of indices to inspect
-            the statment it corresponds to.  (the first statment goes from
-            ps1_linenos[-1] to the end of the line list.
+            Starting from the end look at consecutive pairs of indices to
+            inspect the statment it corresponds to.  (the first statment goes
+            from ps1_linenos[-1] to the end of the line list.
         """
         new_ps1_lines = []
         b = len(exec_source_lines)
@@ -468,7 +534,7 @@ class DoctestParser(object):
         curr_state = None
         line_iter = enumerate(string.splitlines())
         for linex, line in line_iter:
-            match = _INDENT_RE.search(line)
+            match = INDENT_RE.search(line)
             line_indent = 0 if match is None else (match.end() - match.start())
             norm_line = line[state_indent:]  # Normalize line indentation
             strip_line = line.strip()
@@ -568,7 +634,7 @@ def is_balanced(lines):
 
 def min_indentation(s):
     "Return the minimum indentation of any non-blank line in `s`"
-    indents = [len(indent) for indent in _INDENT_RE.findall(s)]
+    indents = [len(indent) for indent in INDENT_RE.findall(s)]
     if len(indents) > 0:
         return min(indents)
     else:

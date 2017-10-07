@@ -50,6 +50,7 @@ def explicit_testdir():
     # import _pytest.runner
     # import _pytest.python
     # _pytest.config._preloadplugins()  # to populate pytest.* namespace so help(pytest) works
+    import _pytest
     config = _pytest.config._prepareconfig(['-s'], plugins=['pytester'])
     session = _pytest.main.Session(config)
 
@@ -256,120 +257,174 @@ class TestXDoctest(object):
             >>> self = TestXDoctest()
             >>> self.test_doctest_unexpected_exception(testdir)
         """
-        p = testdir.maketxtfile("""
+        # import sys
+        # try:
+        #     i = 0
+        #     0 / i
+        # except Exception as ex:
+        #     exc_info = sys.exc_info()
+        # import traceback
+        # traceback.format_exception(*exc_info)
+
+        testdir.maketxtfile("""
             >>> i = 0
             >>> 0 / i
             2
         """)
         result = testdir.runpytest("--xdoctest-modules")
+        # print('<stdout>')
+        # print('\n'.join(result.stdout.lines))
+        # print('</stdout>')
+
         result.stdout.fnmatch_lines([
-            "*unexpected_exception*",
+            "*FAILED DOCTEST*",
             "*>>> i = 0*",
             "*>>> 0 / i*",
-            "*UNEXPECTED*ZeroDivision*",
         ])
 
-    def test_docstring_context_around_error(self, testdir):
-        """Test that we show some context before the actual line of a failing
-        xdoctest.
+        # result.stdout.fnmatch_lines([
+        #     "*unexpected_exception*",
+        #     "*>>> i = 0*",
+        #     "*>>> 0 / i*",
+        #     "*FAILED*ZeroDivision*",
+        # ])
+
+    def test_doctest_property_lineno(self, testdir):
         """
-        testdir.makepyfile('''
-            def foo():
-                """
-                text-line-1
-                text-line-2
-                text-line-3
-                text-line-4
-                text-line-5
-                text-line-6
-                text-line-7
-                text-line-8
-                text-line-9
-                text-line-10
-                text-line-11
-                >>> 1 + 1
-                3
+        REPLACES: test_doctest_linedata_missing
+        REASON: Static parsing means we do know this line number.
 
-                text-line-after
-                """
-        ''')
-        result = testdir.runpytest('--xdoctest-modules')
-        result.stdout.fnmatch_lines([
-            '*docstring_context_around_error*',
-            '005*text-line-3',
-            '006*text-line-4',
-            '013*text-line-11',
-            '014*>>> 1 + 1',
-            'Expected:',
-            '    3',
-            'Got:',
-            '    2',
-        ])
-        # lines below should be trimmed out
-        assert 'text-line-2' not in result.stdout.str()
-        assert 'text-line-after' not in result.stdout.str()
-
-    def test_doctest_linedata_missing(self, testdir):
-        testdir.tmpdir.join('hello.py').write(_pytest._code.Source("""
+        CommandLine:
+            pytest testing/test_xdoctest.py::TestXDoctest::test_doctest_property_lineno
+        """
+        import ubelt as ub
+        testdir.tmpdir.join('hello.py').write(_pytest._code.Source(ub.codeblock(
+            """
             class Fun(object):
                 @property
                 def test(self):
                     '''
                     >>> a = 1
-                    >>> 1/0
+                    >>> 1 / 0
                     '''
-            """))
+            """)))
         result = testdir.runpytest("--xdoctest-modules")
         result.stdout.fnmatch_lines([
-            "*hello*",
-            "*EXAMPLE LOCATION UNKNOWN, not showing all tests of that example*",
-            "*1/0*",
-            "*UNEXPECTED*ZeroDivision*",
+            "*FAILED DOCTEST: ZeroDivisionError on line 5",
+            "*5 >>> a = 1*",
+            "*6 >>> 1 / 0*",
+            "*ZeroDivision*",
             "*1 failed*",
         ])
 
+    def test_docstring_show_entire_doctest(self, testdir):
+        """Test that we show the entire doctest when there is a failure
+
+        REPLACES: test_docstring_context_around_error
+        REPLACES: test_docstring_context_around_error
+
+        # XDOCTEST DOES NOT SHOW NON-SOURCE CONTEXT
+
+        CommandLine:
+            pytest testing/test_xdoctest.py::TestXDoctest::test_docstring_show_entire_doctest
+        """
+        import ubelt as ub
+        testdir.makepyfile(ub.codeblock(
+            '''
+            def foo():
+                """
+                Example:
+                    >>> x = 4
+                    >>> x = 5 + x
+                    >>> x = 6 + x
+                    >>> x = 7 + x
+                    >>> x
+                    22
+                    >>> x = 8 + x
+                    >>> x = 9 + x
+                    >>> x = 10 + x
+                    >>> x = 11 + x
+                    >>> x = 12 + x
+                    >>> x
+                    42
+
+                text-line-after
+                """
+            '''))
+        result = testdir.runpytest('--xdoctest-modules')
+        result.stdout.fnmatch_lines([
+            '*FAILED*',
+            '* 4 >>> x = 4*',
+            '* 5 >>> x = 5 + x*',
+            '* 6 >>> x = 6 + x*',
+            '* 7 >>> x = 7 + x*',
+            '* 8 >>> x*',
+            '*10 >>> x = 8 + x*',
+            '*11 >>> x = 9 + x*',
+            '*12 >>> x = 10 + x*',
+            '*13 >>> x = 11 + x*',
+            '*14 >>> x = 12 + x*',
+            '*15 >>> x*',
+            'Expected:',
+            '    42',
+            'Got:',
+            '    72',
+        ])
+        # non-source lines should be trimmed out
+        assert 'Example:' not in result.stdout.str()
+        assert 'text-line-after' not in result.stdout.str()
+
     def test_doctest_unex_importerror_only_txt(self, testdir):
+        """
+        CommandLine:
+            pytest testing/test_xdoctest.py::TestXDoctest::test_doctest_unex_importerror_only_txt
+        """
         testdir.maketxtfile("""
             >>> import asdalsdkjaslkdjasd
-            >>>
         """)
         result = testdir.runpytest()
         # xdoctest is never executed because of error during hello.py collection
         result.stdout.fnmatch_lines([
+            '*FAILED*',
             "*>>> import asdals*",
-            "*UNEXPECTED*{e}*".format(e=MODULE_NOT_FOUND_ERROR),
-            "{e}: No module named *asdal*".format(e=MODULE_NOT_FOUND_ERROR),
+            "*{e}: No module named *asdal*".format(e=MODULE_NOT_FOUND_ERROR),
         ])
 
     def test_doctest_unex_importerror_with_module(self, testdir):
+        """
+        CHANGES:
+            No longer fails durring collection because we're doing
+            static-parsing baby!
+
+        CommandLine:
+            pytest testing/test_xdoctest.py::TestXDoctest::test_doctest_unex_importerror_with_module
+        """
         testdir.tmpdir.join("hello.py").write(_pytest._code.Source("""
             import asdalsdkjaslkdjasd
         """))
         testdir.maketxtfile("""
             >>> import hello
-            >>>
         """)
-        result = testdir.runpytest("--xdoctest-modules")
-        # xdoctest is never executed because of error during hello.py collection
+        # because python is not started from this dir, it cant find the hello
+        # module in the temporary dir without adding it to the path
+        import os
+        import sys
+        cwd = os.getcwd()
+        sys.path.append(cwd)
+        result = testdir.runpytest("--xdoctest-modules", "-s")
         result.stdout.fnmatch_lines([
-            "*ERROR collecting hello.py*",
+            '*FAILED*',
+            '*1 >>> import hello*',
             "*{e}: No module named *asdals*".format(e=MODULE_NOT_FOUND_ERROR),
-            "*Interrupted: 1 errors during collection*",
+            # "*Interrupted: 1 errors during collection*",
         ])
-
-    def test_doctestmodule(self, testdir):
-        p = testdir.makepyfile("""
-            '''
-                >>> x = 1
-                >>> x == 1
-                False
-
-            '''
-        """)
-        reprec = testdir.inline_run(p, "--xdoctest-modules")
-        reprec.assertoutcome(failed=1)
+        sys.path.pop()
 
     def test_doctestmodule_external_and_issue116(self, testdir):
+        """
+        CommandLine:
+            pytest testing/test_xdoctest.py::TestXDoctest::test_doctestmodule_external_and_issue116
+        """
         p = testdir.mkpydir("hello")
         p.join("__init__.py").write(_pytest._code.Source("""
             def somefunc():
@@ -381,16 +436,20 @@ class TestXDoctest(object):
         """))
         result = testdir.runpytest(p, "--xdoctest-modules")
         result.stdout.fnmatch_lines([
-            '004 *>>> i = 0',
-            '005 *>>> i + 1',
+            '*4 *>>> i = 0',
+            '*5 *>>> i + 1',
             '*Expected:',
             "*    2",
             "*Got:",
             "*    1",
-            "*:5: DocTestFailure"
+            "*:6: GotWantException"
         ])
 
     def test_txtfile_failing(self, testdir):
+        """
+        CommandLine:
+            pytest testing/test_xdoctest.py::TestXDoctest::test_txtfile_failing
+        """
         p = testdir.maketxtfile("""
             >>> i = 0
             >>> i + 1
@@ -398,16 +457,20 @@ class TestXDoctest(object):
         """)
         result = testdir.runpytest(p, "-s")
         result.stdout.fnmatch_lines([
-            '001 >>> i = 0',
-            '002 >>> i + 1',
+            '*1 >>> i = 0',
+            '*2 >>> i + 1',
             'Expected:',
             "    2",
             "Got:",
             "    1",
-            "*test_txtfile_failing.txt:2: DocTestFailure"
+            "*test_txtfile_failing.txt:3: GotWantException"
         ])
 
     def test_txtfile_with_fixtures(self, testdir):
+        """
+        CommandLine:
+            pytest testing/test_xdoctest.py::TestXDoctest::test_txtfile_with_fixtures
+        """
         p = testdir.maketxtfile("""
             >>> dir = getfixture('tmpdir')
             >>> type(dir).__name__
@@ -417,6 +480,10 @@ class TestXDoctest(object):
         reprec.assertoutcome(passed=1)
 
     def test_txtfile_with_usefixtures_in_ini(self, testdir):
+        """
+        CommandLine:
+            pytest testing/test_xdoctest.py::TestXDoctest::test_txtfile_with_usefixtures_in_ini
+        """
         testdir.makeini("""
             [pytest]
             usefixtures = myfixture
@@ -436,61 +503,6 @@ class TestXDoctest(object):
         reprec = testdir.inline_run(p, )
         reprec.assertoutcome(passed=1)
 
-    def test_doctestmodule_with_fixtures(self, testdir):
-        p = testdir.makepyfile("""
-            '''
-                >>> dir = getfixture('tmpdir')
-                >>> type(dir).__name__
-                'LocalPath'
-            '''
-        """)
-        reprec = testdir.inline_run(p, "--xdoctest-modules")
-        reprec.assertoutcome(passed=1)
-
-    def test_doctestmodule_three_tests(self, testdir):
-        p = testdir.makepyfile("""
-            '''
-            >>> dir = getfixture('tmpdir')
-            >>> type(dir).__name__
-            'LocalPath'
-            '''
-            def my_func():
-                '''
-                >>> magic = 42
-                >>> magic - 42
-                0
-                '''
-            def unuseful():
-                pass
-            def another():
-                '''
-                >>> import os
-                >>> os is os
-                True
-                '''
-        """)
-        reprec = testdir.inline_run(p, "--xdoctest-modules")
-        reprec.assertoutcome(passed=3)
-
-    def test_doctestmodule_two_tests_one_fail(self, testdir):
-        p = testdir.makepyfile("""
-            class MyClass(object):
-                def bad_meth(self):
-                    '''
-                    >>> magic = 42
-                    >>> magic
-                    0
-                    '''
-                def nice_meth(self):
-                    '''
-                    >>> magic = 42
-                    >>> magic - 42
-                    0
-                    '''
-        """)
-        reprec = testdir.inline_run(p, "--xdoctest-modules")
-        reprec.assertoutcome(failed=1, passed=1)
-
     def test_ignored_whitespace(self, testdir):
         testdir.makeini("""
             [pytest]
@@ -508,23 +520,6 @@ class TestXDoctest(object):
         reprec = testdir.inline_run(p, "--xdoctest-modules")
         reprec.assertoutcome(passed=1)
 
-    def test_non_ignored_whitespace(self, testdir):
-        testdir.makeini("""
-            [pytest]
-            doctest_optionflags = ELLIPSIS
-        """)
-        p = testdir.makepyfile("""
-            class MyClass(object):
-                '''
-                >>> a = "foo    "
-                >>> print(a)
-                foo
-                '''
-                pass
-        """)
-        reprec = testdir.inline_run(p, "--xdoctest-modules")
-        reprec.assertoutcome(failed=1, passed=0)
-
     def test_ignored_whitespace_glob(self, testdir):
         testdir.makeini("""
             [pytest]
@@ -537,19 +532,6 @@ class TestXDoctest(object):
         """)
         reprec = testdir.inline_run(p, "--xdoctest-glob=x*.txt")
         reprec.assertoutcome(passed=1)
-
-    def test_non_ignored_whitespace_glob(self, testdir):
-        testdir.makeini("""
-            [pytest]
-            doctest_optionflags = ELLIPSIS
-        """)
-        p = testdir.maketxtfile(xdoc="""
-            >>> a = "foo    "
-            >>> print(a)
-            foo
-        """)
-        reprec = testdir.inline_run(p, "--xdoctest-glob=x*.txt")
-        reprec.assertoutcome(failed=1, passed=0)
 
     def test_contains_unicode(self, testdir):
         """Fix internal error with docstrings containing non-ascii characters.
@@ -568,22 +550,6 @@ class TestXDoctest(object):
             '* 1 failed in*',
         ])
 
-    def test_ignore_import_errors_on_doctest(self, testdir):
-        p = testdir.makepyfile("""
-            import asdf
-
-            def add_one(x):
-                '''
-                >>> add_one(1)
-                2
-                '''
-                return x + 1
-        """)
-
-        reprec = testdir.inline_run(p, "--xdoctest-modules",
-                                    "--xdoctest-ignore-import-errors")
-        reprec.assertoutcome(skipped=1, failed=1, passed=0)
-
     def test_junit_report_for_doctest(self, testdir):
         """
         #713: Fix --junit-xml option when used with --xdoctest-modules.
@@ -599,28 +565,6 @@ class TestXDoctest(object):
         reprec = testdir.inline_run(p, "--xdoctest-modules",
                                     "--junit-xml=junit.xml")
         reprec.assertoutcome(failed=1)
-
-    def test_unicode_doctest(self, testdir):
-        """
-        Test case for issue 2434: DecodeError on Python 2 when xdoctest contains non-ascii
-        characters.
-        """
-        p = testdir.maketxtfile(test_unicode_doctest="""
-            .. xdoctest::
-
-                >>> print(
-                ...    "Hi\\n\\nByé")
-                Hi
-                ...
-                Byé
-                >>> 1/0  # Byé
-                1
-        """)
-        result = testdir.runpytest(p)
-        result.stdout.fnmatch_lines([
-            '*UNEXPECTED EXCEPTION: ZeroDivisionError*',
-            '*1 failed*',
-        ])
 
     def test_unicode_doctest_module(self, testdir):
         """
@@ -640,22 +584,6 @@ class TestXDoctest(object):
         """)
         result = testdir.runpytest(p, '--xdoctest-modules')
         result.stdout.fnmatch_lines(['* 1 passed *'])
-
-    def test_reportinfo(self, testdir):
-        '''
-        Test case to make sure that XDoctestItem.reportinfo() returns lineno.
-        '''
-        p = testdir.makepyfile(test_reportinfo="""
-            def foo(x):
-                '''
-                    >>> foo('a')
-                    'b'
-                '''
-                return 'c'
-        """)
-        items, reprec = testdir.inline_genitems(p, '--xdoctest-modules')
-        reportinfo = items[0].reportinfo()
-        assert reportinfo[1] == 1
 
     def test_xdoctest_multiline_string(self, testdir):
         import textwrap
@@ -686,7 +614,7 @@ class TestXDoctest(object):
                 Just prefix everything with >>> and the xdoctest should work
             """).lstrip())
         result = testdir.runpytest(p)
-        result.stdout.fnmatch_lines(['* 1 passed *'])
+        result.stdout.fnmatch_lines(['* 3 passed *'])
 
     def test_xdoctest_multiline_list(self, testdir):
         p = testdir.maketxtfile(test_xdoctest_multiline_string="""
@@ -729,7 +657,7 @@ class TestXDoctest(object):
                 bar
         """)
         result = testdir.runpytest(p)
-        result.stdout.fnmatch_lines(['* 1 passed *'])
+        result.stdout.fnmatch_lines(['* 2 passed *'])
 
     def test_xdoctest_functions(self, testdir):
         p = testdir.maketxtfile(test_xdoctest_multiline_string="""
@@ -748,7 +676,7 @@ class TestXDoctest(object):
                 but now we can write code like humans
         """)
         result = testdir.runpytest(p)
-        result.stdout.fnmatch_lines(['* 1 passed *'])
+        result.stdout.fnmatch_lines(['* 2 passed *'])
 
 
 class TestLiterals(object):
@@ -1201,3 +1129,245 @@ class Disabled(object):
             assert isinstance(items[1], XDoctestItem)
             assert isinstance(items[0].parent, XDoctestModule)
             assert items[0].parent is items[1].parent
+
+    def test_docstring_context_around_error(self, testdir):
+        """Test that we show some context before the actual line of a failing
+        xdoctest.
+
+        # XDOCTEST DOES NOT SHOW NON-SOURCE CONTEXT
+
+        CommandLine:
+            pytest testing/test_xdoctest.py::TestXDoctest::test_docstring_context_around_error
+        """
+        testdir.makepyfile('''
+            def foo():
+                """
+                text-line-1
+                text-line-2
+                text-line-3
+                text-line-4
+                text-line-5
+                text-line-6
+                text-line-7
+                text-line-8
+                text-line-9
+                text-line-10
+                text-line-11
+                >>> 1 + 1
+                3
+
+                text-line-after
+                """
+        ''')
+        result = testdir.runpytest('--xdoctest-modules')
+        result.stdout.fnmatch_lines([
+            '*docstring_context_around_error*',
+            '005*text-line-3',
+            '006*text-line-4',
+            '013*text-line-11',
+            '014*>>> 1 + 1',
+            'Expected:',
+            '    3',
+            'Got:',
+            '    2',
+        ])
+        # lines below should be trimmed out
+        assert 'text-line-2' not in result.stdout.str()
+        assert 'text-line-after' not in result.stdout.str()
+
+    def test_doctest_linedata_missing(self, testdir):
+        """
+        REPLACES: test_doctest_linedata_missing
+        REASON: Static parsing means we do know this line number.
+
+        CommandLine:
+            pytest testing/test_xdoctest.py::TestXDoctest::test_doctest_linedata_missing
+        """
+        testdir.tmpdir.join('hello.py').write(_pytest._code.Source("""
+            class Fun(object):
+                @property
+                def test(self):
+                    '''
+                    >>> a = 1
+                    >>> 1/0
+                    '''
+            """))
+        result = testdir.runpytest("--xdoctest-modules")
+        result.stdout.fnmatch_lines([
+            "*hello*",
+            "*EXAMPLE LOCATION UNKNOWN, not showing all tests of that example*",
+            "*1/0*",
+            "*FAILED*ZeroDivision*",
+            "*1 failed*",
+        ])
+
+    def test_doctestmodule(self, testdir):
+        """
+        XDOCTEST DOES NOT SUPPORT MODULE LEVEL DOCTESTS
+        SHOULD WE?
+
+        CommandLine:
+            pytest testing/test_xdoctest.py::TestXDoctest::test_doctestmodule
+
+        Ignore:
+            >>> import sys
+            >>> sys.path.append('/home/joncrall/code/xdoctest/testing')
+            >>> from test_xdoctest import *
+            >>> testdir = explicit_testdir()
+            >>> self = TestXDoctest()
+        """
+        p = testdir.makepyfile("""
+            '''
+                >>> x = 1
+                >>> x == 1
+                False
+
+            '''
+        """)
+        reprec = testdir.inline_run(p, "--xdoctest-modules")
+        # print(reprec.stdout.str())
+        print(reprec.listoutcomes())
+        reprec.assertoutcome(failed=1)
+
+    def test_doctestmodule_with_fixtures(self, testdir):
+        p = testdir.makepyfile("""
+            '''
+                >>> dir = getfixture('tmpdir')
+                >>> type(dir).__name__
+                'LocalPath'
+            '''
+        """)
+        reprec = testdir.inline_run(p, "--xdoctest-modules")
+        reprec.assertoutcome(passed=1)
+
+    def test_doctestmodule_three_tests(self, testdir):
+        p = testdir.makepyfile("""
+            '''
+            >>> dir = getfixture('tmpdir')
+            >>> type(dir).__name__
+            'LocalPath'
+            '''
+            def my_func():
+                '''
+                >>> magic = 42
+                >>> magic - 42
+                0
+                '''
+            def unuseful():
+                pass
+            def another():
+                '''
+                >>> import os
+                >>> os is os
+                True
+                '''
+        """)
+        reprec = testdir.inline_run(p, "--xdoctest-modules")
+        reprec.assertoutcome(passed=3)
+
+    def test_doctestmodule_two_tests_one_fail(self, testdir):
+        """
+        CommandLine:
+            pytest testing/test_xdoctest.py::TestXDoctest::test_doctestmodule_two_tests_one_fail
+        """
+        p = testdir.makepyfile("""
+            class MyClass(object):
+                def bad_meth(self):
+                    '''
+                    >>> magic = 42
+                    >>> magic
+                    0
+                    '''
+                def nice_meth(self):
+                    '''
+                    >>> magic = 42
+                    >>> magic - 42
+                    0
+                    '''
+        """)
+        reprec = testdir.inline_run(p, "--xdoctest-modules")
+        reprec.assertoutcome(failed=1, passed=1)
+
+    def test_non_ignored_whitespace(self, testdir):
+        testdir.makeini("""
+            [pytest]
+            doctest_optionflags = ELLIPSIS
+        """)
+        p = testdir.makepyfile("""
+            class MyClass(object):
+                '''
+                >>> a = "foo    "
+                >>> print(a)
+                foo
+                '''
+                pass
+        """)
+        reprec = testdir.inline_run(p, "--xdoctest-modules")
+        reprec.assertoutcome(failed=1, passed=0)
+
+    def test_non_ignored_whitespace_glob(self, testdir):
+        testdir.makeini("""
+            [pytest]
+            doctest_optionflags = ELLIPSIS
+        """)
+        p = testdir.maketxtfile(xdoc="""
+            >>> a = "foo    "
+            >>> print(a)
+            foo
+        """)
+        reprec = testdir.inline_run(p, "--xdoctest-glob=x*.txt")
+        reprec.assertoutcome(failed=1, passed=0)
+
+    def test_ignore_import_errors_on_doctest(self, testdir):
+        p = testdir.makepyfile("""
+            import asdf
+
+            def add_one(x):
+                '''
+                >>> add_one(1)
+                2
+                '''
+                return x + 1
+        """)
+
+        reprec = testdir.inline_run(p, "--xdoctest-modules",
+                                    "--xdoctest-ignore-import-errors")
+        reprec.assertoutcome(skipped=1, failed=1, passed=0)
+
+    def test_unicode_doctest(self, testdir):
+        """
+        Test case for issue 2434: DecodeError on Python 2 when xdoctest contains non-ascii
+        characters.
+        """
+        p = testdir.maketxtfile(test_unicode_doctest="""
+            .. xdoctest::
+
+                >>> print(
+                ...    "Hi\\n\\nByé")
+                Hi
+                ...
+                Byé
+                >>> 1/0  # Byé
+                1
+        """)
+        result = testdir.runpytest(p)
+        result.stdout.fnmatch_lines([
+            '*FAILED DOCTEST: ZeroDivisionError*',
+            '*1 failed*',
+        ])
+
+    def test_reportinfo(self, testdir):
+        '''
+        Test case to make sure that XDoctestItem.reportinfo() returns lineno.
+        '''
+        p = testdir.makepyfile(test_reportinfo="""
+            def foo(x):
+                '''
+                    >>> foo('a')
+                    'b'
+                '''
+                return 'c'
+        """)
+        items, reprec = testdir.inline_genitems(p, '--xdoctest-modules')
+        reportinfo = items[0].reportinfo()
+        assert reportinfo[1] == 1

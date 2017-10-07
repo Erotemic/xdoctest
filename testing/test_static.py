@@ -45,3 +45,67 @@ def test_lineno():
         # Ensure linenumbers correspond with start and end of doctest
         assert docsrc_lines[0].strip().startswith('"""')
         assert docsrc_lines[-1].strip().endswith('"""')
+
+
+def test_mod_lineno2():
+    import ubelt as ub
+    source = ub.codeblock(
+        '''
+        class Fun(object):  #1
+            @property
+            def test(self):
+                """         # 4
+                >>> a = 1
+                >>> 1 / 0
+                """
+
+        def nodec1(self):  # 9
+            pass
+
+        def nodec2(self,  # 12
+                   x=y):
+            """           # 14
+            >>> d = 1
+            """           # 16
+
+        @decor             # 18
+        def decor1(self):  # 19
+            pass
+
+        @decor()
+        def decor2(self):
+            pass
+
+        @decor(
+            foo=bar
+        )
+        def decor3(self):  # 29
+            """
+            >>> d = 3
+            """
+
+        @decor(
+            foo=bar         # 35
+        )                   # 36
+        def decor4(self):   # 37
+            ">>> print(1)"  # 38
+        ''')
+    import ast
+    from xdoctest.static_analysis import TopLevelVisitor
+    source_utf8 = source.encode('utf8')
+    pt = ast.parse(source_utf8)
+    node = pt.body[0].body[0]
+    self = TopLevelVisitor.parse(source)
+
+    calldefs = self.calldefs
+    assert calldefs['Fun'].lineno == 1
+    assert calldefs['Fun.test'].lineno == 3
+    assert calldefs['Fun.test'].doclineno == 4
+    assert calldefs['Fun.test'].doclineno_end == 8
+    assert calldefs['nodec1'].doclineno is None
+    assert calldefs['nodec2'].doclineno == 14
+    assert calldefs['nodec2'].doclineno_end == 17
+    assert calldefs['decor3'].doclineno == 30
+    assert calldefs['decor3'].doclineno_end == 33
+    assert calldefs['decor4'].doclineno == 38
+    assert calldefs['decor4'].doclineno_end == 39

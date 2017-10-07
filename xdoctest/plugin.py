@@ -113,7 +113,7 @@ class XDoctestItem(pytest.Item):
         m = re.match(r'>>>\s*#\s*pytest.skip', self.example.docsrc, flags=re.IGNORECASE)
         if m is not None:
             pytest.skip('doctest encountered skip directive')
-        self.example.run(on_error='raise')
+        self.example.run(verbose=0, on_error='raise')
         # self.runner.run(self.example)
 
     def repr_failure(self, excinfo):
@@ -123,23 +123,13 @@ class XDoctestItem(pytest.Item):
         #                           doctest.UnexpectedException)):
         example = self.example
         # print('REPR FAIL example = {!r}'.format(example))
-        if example.exception is not None:
-            type, value, tb = example.exception
-            lineno = example.lineno + example.failed_part.line_offset
-            from xdoctest import doctest_parser
-            if isinstance(value, doctest_parser.GotWantException):
-                lineno += len(example.failed_part.orig_lines)
+        if example.exc_info is not None:
+            lineno = example.failed_lineno()
+            type = example.exc_info[0]
             message = type.__name__
-            reprlocation = code.ReprFileLocation(example.modpath, lineno, message)
-            lines = [
-                '=== LINES ===',
-                'lineno = {!r}'.format(lineno),
-                'FOOBAR',
-                'EXCEPTME',
-                str(value),
-                str(message),
-                '=== END LINES ===',
-            ]
+            reprlocation = code.ReprFileLocation(example.fpath, lineno, message)
+            lines = example.repr_failure()
+
             return ReprFailXDoctest(reprlocation, lines)
             # doctestfailure = excinfo.value
             # example = doctestfailure.example
@@ -212,7 +202,7 @@ class XDoctestTextfile(pytest.Module):
         #     yield XDoctestItem(test.name, self, runner, test)
         from xdoctest import core
         parse_func = core.parse_freeform_docstr_examples
-        for example in parse_func(text, name, filename):
+        for example in parse_func(text, name, fpath=filename):
             example.globs.update(globs)
             yield XDoctestItem(name, self, example)
 
@@ -240,13 +230,13 @@ class XDoctestModule(pytest.Module):
             else:
                 raise
 
+        # Todo: restrict to google style
         parse_func = core.parse_freeform_docstr_examples
         # parse_func = core.parse_google_docstr_examples
 
         for callname, calldef in calldefs.items():
             docstr = calldef.docstr
             if calldef.docstr is not None:
-                # TODO: handle more than just google-style
                 lineno = calldef.doclineno
                 for example in parse_func(docstr, callname, modpath, lineno=lineno):
                     if not example.is_disabled():

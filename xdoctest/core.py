@@ -31,23 +31,31 @@ class DocTest(object):
         >>> print(self.valid_testnames)
     """
 
-    def __init__(self, modpath, callname, docsrc, num=0, lineno=0):
+    def __init__(self, docsrc, modpath=None, callname=None, num=0,
+                 lineno=1, fpath=None):
         self.modpath = modpath
+        self.fpath = fpath
         if modpath is None:
-            self.modname = '<none>'
+            self.modname = '<modname?>'
+            self.modpath = '<modpath?>'
         else:
+            if fpath is not None:
+                assert fpath == modpath, (
+                    'only specify fpath for non-python files')
+            self.fpath = modpath
             self.modname = static.modpath_to_modname(modpath)
         if callname is None:
-            self.callname = '<string>'
+            self.callname = '<callname?>'
         else:
             self.callname = callname
         self.docsrc = docsrc
         self.lineno = lineno
         self.num = num
         self._parts = None
-        self.exception = None
+        self.exc_info = None
         self.failed_part = None
-        self.outputs = []
+        self.stdout_results = []
+        self.evaled_results = []
         self.globs = {}
 
     def __nice__(self):
@@ -86,7 +94,7 @@ class DocTest(object):
             self.unique_callname,
         }
 
-    def format_src(self, linenums=True, colored=False):
+    def format_src(self, linenums=True, colored=False, want=True):
         """
         Adds prefix and line numbers to a doctest
 
@@ -102,6 +110,17 @@ class DocTest(object):
         import math
         # return '\n'.join([p.source for p in self._parts])
         formated_parts = []
+
+        if linenums:
+            base = 1 if self.lineno is None else self.lineno
+            startline = base + self._parts[0].line_offset
+            n_lines = sum(p.n_lines for p in self._parts)
+            endline = startline + n_lines
+
+            n_digits = int(math.ceil(math.log(max(1, endline), 10)))
+            src_fmt = '{{:{}d}} {{}}'.format(n_digits)
+            want_fmt = '{} {{}}'.format(' ' * n_digits)
+
         for part in self._parts:
             doctest_src = part.source
             doctest_src = utils.indent(doctest_src, '>>> ')
@@ -112,21 +131,20 @@ class DocTest(object):
             doctest_parser
 
             if linenums:
-                base = 1 if self.lineno is None else self.lineno
-                n_digits = int(math.ceil(math.log(max(1, base), 10)))
-                src_fmt = '{{:{}d}} {{}}'.format(n_digits)
-                want_fmt = '{} {{}}'.format(' ' * n_digits)
                 new_lines = []
                 count = base + part.line_offset
                 for count, line in enumerate(doctest_src.splitlines(), start=count):
                     new_lines.append(src_fmt.format(count, line))
                 if doctest_want:
                     for count, line in enumerate(doctest_want.splitlines(), start=count):
-                        new_lines.append(want_fmt.format(line))
+                        if want:
+                            new_lines.append(want_fmt.format(line))
                 new = '\n'.join(new_lines)
             else:
                 if doctest_want:
-                    new = doctest_src + '\n' + doctest_want
+                    new = doctest_src
+                    if want:
+                        new = new + '\n' + doctest_want
                 else:
                     new = doctest_src
             if colored:
@@ -169,17 +187,18 @@ class DocTest(object):
             >>> doclineno = core.DocTest._parse.__code__.co_firstlineno
             >>> key, (docsrc, offset) = blocks[-2]
             >>> lineno = doclineno + offset
-            >>> self = core.DocTest(core.__file__, '_parse',  docsrc, 0, lineno)
+            >>> self = core.DocTest(docsrc, core.__file__, '_parse', 0, lineno)
             >>> self._parse()
             >>> assert len(self._parts) >= 3
             >>> #p1, p2, p3 = self._parts
             >>> self.run()
         """
-        self._parts = doctest_parser.DoctestParser().parse(self.docsrc)
-        self._parts = [p for p in self._parts
-                       if not isinstance(p, six.string_types)]
+        if not self._parts:
+            self._parts = doctest_parser.DoctestParser().parse(self.docsrc)
+            self._parts = [p for p in self._parts
+                           if not isinstance(p, six.string_types)]
 
-    def run(self, verbose=None, on_error='raise'):
+    def run(self, verbose=None, on_error=None):
         """
         Executes the doctest
 
@@ -190,18 +209,28 @@ class DocTest(object):
             * There is no difference between locals/globals in exec context
             Only pass in one dict, otherwise there is weird behavior
         """
+        if on_error is None:
+            on_error = 'raise'
+        if on_error not in {'raise', 'return'}:
+            raise KeyError(on_error)
+
         if verbose is None:
-            verbose = 2
+            verbose = 1
         self._parse()
         self.pre_run(verbose)
         # Prepare for actual test run
         test_globals = self.globs
 
-        # if not self.modname.startswith('<'):
-        #     # TODO:
-        #     # Put the module globals in the doctest global namespace
-        #     module = __import__(self.modname)
-        #     test_globals.update(module.__dict__)
+        if not self.modname.startswith('<'):
+            # TODO:
+            # Put the module globals in the doctest global namespace
+            # Import from the filepath?
+            module = __import__(self.modname)
+            test_globals.update(module.__dict__)
+        # else:
+        #     if self.fname is not None:
+        #         if '__file__' not in test_globals:
+        #             test_globals['__file__'] = self.fpath
 
         def _extract_future_flags(globs):
             """
@@ -216,56 +245,67 @@ class DocTest(object):
             return flags
 
         compileflags = _extract_future_flags(test_globals)
-        self.outputs = []
-        self.exception = None
+        self.stdout_results = []
+        self.evaled_results = []
+        self.exc_info = None
+
+        not_evaled = object()  # sentinal value
+
         for part in self._parts:
+            # Prepare to capture stdout and evaluated values
+            self.failed_part = part
+            got_eval = not_evaled
+            cap = utils.CaptureStdout(supress=verbose <= 1)
             try:
+                # Compile code, handle syntax errors
                 mode = 'eval' if part.use_eval else 'exec'
                 code = compile(
-                    part.source, mode=mode, filename=self.modpath,  # '<string>',
+                    part.source, mode=mode, filename=self.modpath,
                     flags=compileflags, dont_inherit=True
                 )
-                cap = utils.CaptureStdout(supress=verbose <= 1)
-                not_evaled = object()  # sentinal value
+            except KeyboardInterrupt:  # nocover
+                raise
+            except:
+                self.exc_info = sys.exc_info()
+                if on_error == 'raise':
+                    raise
+            try:
+                # Execute the doctest code
                 with cap:
                     if part.use_eval:
+                        # Only capture the repr to allow for gc tests
                         got_eval = eval(code, test_globals)
+                        self.evaled_results.append(repr(got_eval))
                     else:
                         exec(code, test_globals)
-                        got_eval = not_evaled
-
+                        self.evaled_results.append(None)
                 if part.want:
                     got_stdout = cap.text
                     part.check_got_vs_want(got_stdout, got_eval, not_evaled)
             # Handle anything that could go wrong
+            except KeyboardInterrupt:  # nocover
+                raise
             except ExitTestException:  # nocover
                 if verbose > 0:
                     print('Test gracefully exists')
-            except KeyboardInterrupt:  # noqa
-                raise
             except doctest_parser.GotWantException:
-                self.failed_part = part
-                type, value, tb = sys.exc_info()
-                # remove the runner from the traceback
-                tb = tb.tb_next
-                self.exception = (type, value, tb)
+                self.exc_info = sys.exc_info()
                 if on_error == 'raise':
                     raise
                 break
             except:
-                self.failed_part = part
-                type, value, tb = sys.exc_info()
-                # remove the runner from the traceback
-                tb = tb.tb_next
-                self.exception = (type, value, tb)
+                # import traceback
+                # print("Got exception:", traceback.format_exc())
+                self.exc_info = sys.exc_info()
                 if on_error == 'raise':
                     raise
                 break
             finally:
                 assert cap.text is not None
-                self.outputs.append(cap.text)
-        if self.exception is not None:
-            self.report_failure(verbose)
+                self.stdout_results.append(cap.text)
+
+        if self.exc_info is None:
+            self.failed_part = None
         return self.post_run(verbose)
 
     @property
@@ -275,47 +315,98 @@ class DocTest(object):
 
     def pre_run(self, verbose):
         if verbose >= 1:
-            print('============')
-            print('* BEGIN EXAMPLE : {}'.format(self.callname))
-            print(self.cmdline)
+            if verbose >= 2:
+                print('============')
+            print('* DOCTEST : {}'.format(self.callname))
+            # print(self.cmdline)
             if verbose >= 2:
                 print(self.format_src())
         else:  # nocover
             sys.stdout.write('.')
             sys.stdout.flush()
 
+    def failed_lineno(self):
+        if self.exc_info is None:
+            return None
+        else:
+            from xdoctest import doctest_parser
+            type, value, tb = self.exc_info
+            # Find the first line of the part
+            lineno = self.lineno + self.failed_part.line_offset
+            if isinstance(value, doctest_parser.GotWantException):
+                # Return the line of the want line
+                lineno += len(self.failed_part.orig_lines)
+            else:
+                # Use the next because we need to pop the eval of the stack
+                lineno += tb.tb_next.tb_lineno
+            return lineno
+
     def repr_failure(self, verbose=1):
-        # TODO: print out nice line number
-        lines = []
-        if verbose > 0:
-            lines += [
-                '',
-                'report failure',
-                self.cmdline,
-                self.format_src(),
-            ]
-        lines += [
-            '* FAILURE: {}, {}'.format(self.callname, type(self.exception)),
-            ''.join(self.outputs),
+        from xdoctest import doctest_parser
+        type, value, tb = self.exc_info
+        lineno = self.lineno + self.failed_part.line_offset
+        if isinstance(value, doctest_parser.GotWantException):
+            lineno += len(self.failed_part.orig_lines)
+
+        lines = [
+            'FAILED DOCTEST: {} on line {}'.format(type.__name__, lineno),
         ]
+        #     '=== LINES ===',
+        # ]
+
+        lines += self.format_src(linenums=True, want=False).splitlines()
+
+        # lines += [
+        #     # '=== LINES ===',
+        #     'lineno = {!r}'.format(lineno),
+        #     # 'example.lineno = {!r}'.format(self.lineno),
+        #     # 'example.failed_part.line_offset = {!r}'.format(self._parts[0].line_offset),
+        #     # 'self._parts = {!r}'.format(self._parts)
+        #     # repr(excinfo),
+        #     # str(value),
+        #     # str(message),
+        # ]
+
+        if hasattr(value, 'output_difference'):
+            # report_choice = _get_report_choice(self.config.getoption("doctestreport"))
+            lines += [
+                value.output_difference()
+            ]
+        else:
+            # inner_excinfo = code.ExceptionInfo(excinfo.value.exc_info)
+            # lines += ["UNEXPECTED EXCEPTION: %s" % (type,)]
+            import traceback
+            lines += traceback.format_exception(*self.exc_info)
+            pass
+
+        # # TODO: print out nice line number
+        # lines = []
+        # if verbose > 0:
+        #     lines += [
+        #         '',
+        #         'report failure',
+        #         self.cmdline,
+        #         self.format_src(),
+        #     ]
+        # lines += [
+        #     '* UNEXPECTED EXCEPTION: {}, {}'.format(self.callname, type(self.exc_info)),
+        #     ''.join(self.stdout_results),
+        # ]
         # TODO: remove appropriate amount of traceback
         # exc_type, exc_value, exc_traceback = sys.exc_info()
         # exc_traceback = exc_traceback.tb_next
         # six.reraise(exc_type, exc_value, exc_traceback)
-        return '\n'.join(lines)
-
-    def report_failure(self, verbose):
-        text = self.repr_failure(verbose=verbose)
-        print(text)
+        # return '\n'.join(lines)
+        return lines
 
     def post_run(self, verbose):
         summary = {
-            'passed': self.exception is None
+            'passed': self.exc_info is None
         }
-        if self.exception is None:
+        if self.exc_info is None:
             if verbose >= 1:
                 print('* SUCCESS: {}'.format(self.callname))
-            # out_text = ''.join(self.outputs)
+            # out_text = ''.join(self.stdout_results)
             # if out_text is not None:
             #     assert isinstance(out_text, six.text_type), 'do not use ascii'
             # try:
@@ -325,12 +416,15 @@ class DocTest(object):
             #     print('type(out_text) = %r' % (type(out_text),))
             #     print('out_text = %r' % (out_text,))
         else:
-            summary['exception'] = self.exception
+            if verbose >= 1:
+                text = '\n'.join(self.repr_failure(verbose=verbose))
+                print(text)
+            summary['exc_info'] = self.exc_info
         return summary
 
 
 def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
-                                   lineno=0):
+                                   lineno=1, fpath=None):
     """
     Finds free-form doctests in a docstring. This is similar to the original
     doctests because these tests do not requires a google/numpy style header.
@@ -366,7 +460,9 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         >>> assert len(examples) == 3
     """
     def doctest_from_parts(parts, num):
-        lineno_ = lineno + parts[0].line_offset
+        # lineno_ = lineno + parts[0].line_offset - 1
+        # lineno_ = lineno
+        # + parts[0].line_offset
         nested = [
             p.orig_lines
             if p.want is None else
@@ -375,9 +471,18 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         ]
         docsrc = '\n'.join(list(it.chain.from_iterable(nested)))
         docsrc = textwrap.dedent(docsrc)
-        example = DocTest(modpath, callname, docsrc, num, lineno=lineno_)
+        # FIXME: lineno should be offset a little here I think
+        # and then we need to unoffset the part lines
+        example = DocTest(docsrc, modpath=modpath, callname=callname, num=num,
+                          lineno=lineno, fpath=fpath)
         # We've already parsed, so we dont need to do it again
         example._parts = parts
+        # for p in parts:
+        #     # p.line_offset -= (lineno - 1)
+        #     # p.line_offset -= (lineno - 1)
+        #     pass
+        # but we do need to unoffset the line numbers
+
         return example
 
     respect_google_headers = True
@@ -444,7 +549,7 @@ def parse_google_docstr_examples(docstr, callname=None, modpath=None,
         for num, (type, (docsrc, offset)) in enumerate(example_blocks):
             # Add one because offset applies to the google-type label
             lineno_ = lineno + offset + 1
-            example = DocTest(modpath, callname, docsrc, num, lineno=lineno_)
+            example = DocTest(docsrc, modpath, callname, num, lineno=lineno_)
             yield example
     except Exception as ex:  # nocover
         msg = ('Cannot scrape callname={} in modpath={}.\n'
@@ -481,6 +586,23 @@ def package_calldefs(package_name, exclude=[], strict=False):
                 continue
         else:
             yield calldefs, modpath
+
+
+def module_doctestables(modpath, mode='freeform'):
+    if mode == 'freeform':
+        parser = parse_freeform_docstr_examples
+    elif mode == 'google':
+        parser = parse_google_docstr_examples
+    else:
+        raise KeyError(mode)
+
+    calldefs = module_calldefs(modpath)
+    for callname, calldef in calldefs.items():
+        docstr = calldef.docstr
+        if calldef.docstr is not None:
+            lineno = calldef.doclineno
+            for example in parser(docstr, callname, modpath, lineno=lineno):
+                yield example
 
 
 def parse_doctestables(package_name, exclude=[], strict=False):
