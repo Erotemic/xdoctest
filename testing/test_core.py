@@ -1,22 +1,12 @@
-import sys
-
-
-class PythonPathContext(object):
-    def __init__(self, dpath):
-        self.dpath = dpath
-
-    def __enter__(self):
-        sys.path.append(self.dpath)
-
-    def __exit__(self, a, b, c):
-        assert sys.path[-1] == self.dpath
-        sys.path.pop()
+# -*- coding: utf-8 -*-
+from __future__ import print_function, division, absolute_import, unicode_literals
+from os.path import join
+from xdoctest import core
+from xdoctest import utils
 
 
 def test_failure():
-    import ubelt as ub
-    from xdoctest import core
-    string = ub.codeblock(
+    string = utils.codeblock(
         '''
         >>> i = 0
         >>> 0 / i
@@ -36,15 +26,13 @@ def test_failure():
 
 
 def test_format_src():
-    import ubelt as ub
-    from xdoctest import core
-    string = ub.codeblock(
+    string = utils.codeblock(
         '''
         >>> i = 0
         >>> 0 / i
         2
         ''')
-    string_with_lineno = ub.codeblock(
+    string_with_lineno = utils.codeblock(
         '''
         1 >>> i = 0
         2 >>> 0 / i
@@ -69,10 +57,7 @@ def test_format_src():
 
 
 def test_eval_expr_capture():
-    import ubelt as ub
-    from xdoctest import core
-
-    docsrc = ub.codeblock(
+    docsrc = utils.codeblock(
         '''
         >>> x = 3
         >>> y = x + 2
@@ -94,7 +79,7 @@ def test_eval_expr_capture():
         assert hasattr(ex, 'output_difference')
         msg = ex.output_difference()
         print(msg)
-        assert msg == ub.codeblock(
+        assert msg == utils.codeblock(
             '''
             Expected:
                 2
@@ -104,11 +89,7 @@ def test_eval_expr_capture():
 
 
 def test_run_multi_want():
-    """
-    """
-    import ubelt as ub
-    from xdoctest import core
-    docsrc = ub.codeblock(
+    docsrc = utils.codeblock(
         '''
         >>> x = 2
         >>> x
@@ -131,9 +112,7 @@ def test_run_multi_want():
 
 
 def test_comment():
-    import ubelt as ub
-    from xdoctest import core
-    docsrc = ub.codeblock(
+    docsrc = utils.codeblock(
         '''
         >>> # foobar
         ''')
@@ -142,7 +121,7 @@ def test_comment():
     assert len(self._parts) == 1
     self.run()
 
-    docsrc = ub.codeblock(
+    docsrc = utils.codeblock(
         '''
         >>> # foobar
         >>> # bazbiz
@@ -152,7 +131,7 @@ def test_comment():
     assert len(self._parts) == 1
     self.run()
 
-    docsrc = ub.codeblock(
+    docsrc = utils.codeblock(
         '''
         >>> # foobar
         >>> x = 0
@@ -169,111 +148,111 @@ def test_comment():
 
 
 def test_mod_lineno():
-    import ubelt as ub
-    from os.path import join
-    dpath = ub.ensure_app_cache_dir('xdoctest', 'testing')
-    modpath = join(dpath, 'test_lineno.py')
-    source = ub.codeblock(
-        '''
-        class Fun(object):  #1
-            @property
-            def test(self):
-                """         # 4
-                >>> a = 1
-                >>> 1 / 0
-                """
-        ''')
-    ub.writeto(modpath, source)
-    from xdoctest import core
-    doctests = list(core.module_doctestables(modpath))
-    assert len(doctests) == 1
-    self = doctests[0]
+    with utils.TempDir() as temp:
+        dpath = temp.dpath
+        modpath = join(dpath, 'test_lineno.py')
+        source = utils.codeblock(
+            '''
+            class Fun(object):  #1
+                @property
+                def test(self):
+                    """         # 4
+                    >>> a = 1
+                    >>> 1 / 0
+                    """
+            ''')
+        with open(modpath, 'w') as file:
+            file.write(source)
+        from xdoctest import core
+        doctests = list(core.module_doctestables(modpath))
+        assert len(doctests) == 1
+        self = doctests[0]
 
-    print(self._parts[0])
+        print(self._parts[0])
 
-    assert self.lineno == 4
-    print(self.format_src())
+        assert self.lineno == 4
+        print(self.format_src())
 
-    assert self.format_src().strip().startswith('5')
+        assert self.format_src().strip().startswith('5')
 
-    with PythonPathContext(dpath):
-        status = self.run(verbose=10, on_error='return')
+        with utils.PythonPathContext(dpath):
+            status = self.run(verbose=10, on_error='return')
 
-    assert not status['passed']
+        assert not status['passed']
 
 
 def test_mod_globals():
-    import ubelt as ub
-    from os.path import join
-    dpath = ub.ensure_app_cache_dir('xdoctest', 'testing')
-    modpath = join(dpath, 'test_mod_globals.py')
-    source = ub.codeblock(
-        '''
-        X = 10
-        def test(self):
-            """
-            >>> X
-            10
-            """
-        ''')
-    ub.writeto(modpath, source)
-    from xdoctest import core
-    doctests = list(core.module_doctestables(modpath))
-    assert len(doctests) == 1
-    self = doctests[0]
+    with utils.TempDir() as temp:
+        dpath = temp.dpath
+        modpath = join(dpath, 'test_mod_globals.py')
+        source = utils.codeblock(
+            '''
+            X = 10
+            def test(self):
+                """
+                >>> X
+                10
+                """
+            ''')
+        with open(modpath, 'w') as file:
+            file.write(source)
+        from xdoctest import core
+        doctests = list(core.module_doctestables(modpath))
+        assert len(doctests) == 1
+        self = doctests[0]
 
-    with PythonPathContext(dpath):
-        status = self.run(verbose=0, on_error='return')
-    assert status['passed']
-    assert self.evaled_results[0] == '10'
+        with utils.PythonPathContext(dpath):
+            status = self.run(verbose=0, on_error='return')
+        assert status['passed']
+        assert self.evaled_results[0] == '10'
 
 
 def test_show_entire():
-    import ubelt as ub
-    from os.path import join
-    dpath = ub.ensure_app_cache_dir('xdoctest', 'testing')
-    modpath = join(dpath, 'test_show_entire.py')
-    source = ub.codeblock(
-        '''
-        def foo():
-            """
-            Prefix
+    with utils.TempDir() as temp:
+        dpath = temp.dpath
+        modpath = join(dpath, 'test_show_entire.py')
+        source = utils.codeblock(
+            '''
+            def foo():
+                """
+                Prefix
 
-            Example:
-                >>> x = 4
-                >>> x = 5 + x
-                >>> x = 6 + x
-                >>> x = 7 + x
-                >>> x
-                22
-                >>> x = 8 + x
-                >>> x = 9 + x
-                >>> x = 10 + x
-                >>> x = 11 + x
-                >>> x = 12 + x
-                >>> x
-                42
+                Example:
+                    >>> x = 4
+                    >>> x = 5 + x
+                    >>> x = 6 + x
+                    >>> x = 7 + x
+                    >>> x
+                    22
+                    >>> x = 8 + x
+                    >>> x = 9 + x
+                    >>> x = 10 + x
+                    >>> x = 11 + x
+                    >>> x = 12 + x
+                    >>> x
+                    42
 
-            text-line-after
-            """
-        ''')
-    ub.writeto(modpath, source)
-    from xdoctest import core
+                text-line-after
+                """
+            ''')
+        with open(modpath, 'w') as file:
+            file.write(source)
+        from xdoctest import core
 
-    # calldefs = core.module_calldefs(modpath)
-    # docline = calldefs['foo'].doclineno
-    # docstr = calldefs['foo'].docstr
-    # all_parts = doctest_parser.DoctestParser().parse(docstr)
-    # assert docline == 2
+        # calldefs = core.module_calldefs(modpath)
+        # docline = calldefs['foo'].doclineno
+        # docstr = calldefs['foo'].docstr
+        # all_parts = parser.DoctestParser().parse(docstr)
+        # assert docline == 2
 
-    doctests = list(core.module_doctestables(modpath))
-    assert len(doctests) == 1
-    self = doctests[0]
-    print(self.lineno)
-    print(self._parts[0].line_offset)
-    print(self.format_src())
-    assert self.format_src().strip().startswith('6')
+        doctests = list(core.module_doctestables(modpath))
+        assert len(doctests) == 1
+        self = doctests[0]
+        print(self.lineno)
+        print(self._parts[0].line_offset)
+        print(self.format_src())
+        assert self.format_src().strip().startswith('6')
 
-    with PythonPathContext(dpath):
-        status = self.run(verbose=0, on_error='return')
-    assert not status['passed']
+        with utils.PythonPathContext(dpath):
+            status = self.run(verbose=0, on_error='return')
+        assert not status['passed']

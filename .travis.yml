@@ -1,0 +1,30 @@
+language: python
+sudo: false
+
+cache:
+  apt: true
+  directories:
+  - $HOME/.cache/pip
+  - $HOME/download
+python:
+  - "2.7"
+  - "3.4"
+before_install:
+  - pip install pip -U
+  - pip install codecov -U
+  - pip install pytest -U
+install:
+  #- travis_retry python setup.py build develop
+  - travis_retry pip install -e .
+script: 
+  #- travis_wait ./run_tests.py
+  - travis_wait python run_tests.py
+after_success: 
+  #- coveralls || echo "Coveralls upload failed"
+  - codecov 
+#after_failure: 
+#  - cat failed_doctests.txt
+cache: 
+    apt: true
+    directories:
+        - $HOME/.pip-cache

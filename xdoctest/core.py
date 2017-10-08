@@ -11,7 +11,7 @@ from os.path import exists
 from xdoctest import static_analysis as static
 from xdoctest import docscrape_google
 from xdoctest import utils
-from xdoctest import doctest_parser
+from xdoctest import parser
 
 
 class ExitTestException(Exception):
@@ -128,7 +128,7 @@ class DocTest(object):
             # doctest_src = '\n'.join(part.orig_lines)
             doctest_want = part.want if part.want else ''
 
-            doctest_parser
+            parser
 
             if linenums:
                 new_lines = []
@@ -179,7 +179,7 @@ class DocTest(object):
             <BLANKLINE> directive is still in effect.
 
         Example:
-            >>> from xdoctest import doctest_parser
+            >>> from xdoctest import parser
             >>> from xdoctest import docscrape_google
             >>> from xdoctest import core
             >>> docstr = core.DocTest._parse.__doc__
@@ -194,7 +194,7 @@ class DocTest(object):
             >>> self.run()
         """
         if not self._parts:
-            self._parts = doctest_parser.DoctestParser().parse(self.docsrc)
+            self._parts = parser.DoctestParser().parse(self.docsrc)
             self._parts = [p for p in self._parts
                            if not isinstance(p, six.string_types)]
 
@@ -288,7 +288,7 @@ class DocTest(object):
             except ExitTestException:  # nocover
                 if verbose > 0:
                     print('Test gracefully exists')
-            except doctest_parser.GotWantException:
+            except parser.GotWantException:
                 self.exc_info = sys.exc_info()
                 if on_error == 'raise':
                     raise
@@ -329,11 +329,11 @@ class DocTest(object):
         if self.exc_info is None:
             return None
         else:
-            from xdoctest import doctest_parser
+            from xdoctest import parser
             type, value, tb = self.exc_info
             # Find the first line of the part
             lineno = self.lineno + self.failed_part.line_offset
-            if isinstance(value, doctest_parser.GotWantException):
+            if isinstance(value, parser.GotWantException):
                 # Return the line of the want line
                 lineno += len(self.failed_part.orig_lines)
             else:
@@ -345,10 +345,10 @@ class DocTest(object):
             return lineno
 
     def repr_failure(self, verbose=1):
-        from xdoctest import doctest_parser
+        from xdoctest import parser
         type, value, tb = self.exc_info
         lineno = self.lineno + self.failed_part.line_offset
-        if isinstance(value, doctest_parser.GotWantException):
+        if isinstance(value, parser.GotWantException):
             lineno += len(self.failed_part.orig_lines)
 
         lines = [
@@ -437,8 +437,8 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
 
     Example:
         >>> from xdoctest import core
-        >>> import ubelt as ub
-        >>> docstr = ub.codeblock(
+        >>> from xdoctest import utils
+        >>> docstr = utils.codeblock(
             '''
             freeform
             >>> doctest
@@ -512,7 +512,7 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
                 prev.strip().lower().endswith(special_skip_patterns_))
 
     # parse into doctest and plaintext parts
-    all_parts = doctest_parser.DoctestParser().parse(docstr)
+    all_parts = parser.DoctestParser().parse(docstr)
 
     parts = []
     num = 0

@@ -278,10 +278,10 @@ class DoctestParser(object):
             <BLANKLINE> directive is still in effect.
 
         Example:
-            >>> from xdoctest import doctest_parser
+            >>> from xdoctest import parser
             >>> from xdoctest import docscrape_google
             >>> from xdoctest import core
-            >>> self = doctest_parser.DoctestParser()
+            >>> self = parser.DoctestParser()
             >>> docstr = self.parse.__doc__
             >>> blocks = docscrape_google.split_google_docblocks(docstr)
             >>> doclineno = self.parse.__func__.__code__.co_firstlineno
@@ -324,7 +324,7 @@ class DoctestParser(object):
         Example:
             >>> raw_source_lines = ['>>> "string"']
             >>> raw_want_lines = ['string']
-            >>> self = doctest_parser.DoctestParser()
+            >>> self = parser.DoctestParser()
             >>> parts = list(self._package_chunk(raw_source_lines, raw_want_lines))
 
         """
@@ -401,7 +401,7 @@ class DoctestParser(object):
                 these will be unindented, prefixed, and without any want.
 
         Example:
-            >>> self = doctest_parser.DoctestParser()
+            >>> self = parser.DoctestParser()
             >>> source_lines = ['>>> def foo():', '>>>     return 0', '>>> 3']
             >>> linenos, eval_final = self._locate_ps1_linenos(source_lines)
             >>> assert linenos == [0, 2]
@@ -465,7 +465,7 @@ class DoctestParser(object):
     def _label_docsrc_lines(self, string):
         """
         Example:
-            >>> from xdoctest.doctest_parser import *
+            >>> from xdoctest.parser import *
             >>> import textwrap
             >>> # Having multiline strings in doctests can be nice
             >>> string = textwrap.dedent(

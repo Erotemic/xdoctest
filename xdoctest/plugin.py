@@ -54,10 +54,6 @@ def pytest_addoption(parser):
                     help="choose another output format for diffs on xdoctest failure",
                     choices=DOCTEST_REPORT_CHOICES,
                     dest="xdoctestreport")
-    # group.addoption("--xdoctest-glob",
-    #                 action="append", default=[], metavar="pat",
-    #                 help="xdoctests file matching pattern, default: test*.txt",
-    #                 dest="xdoctestglob")
 
 
 def pytest_collect_file(path, parent):

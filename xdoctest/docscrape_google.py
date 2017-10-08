@@ -20,7 +20,6 @@ def parse_google_args(docstr):
         dict: dictionaries of parameter hints
 
     Example:
-        >>> from ubelt.meta.docscrape_google import *  # NOQA
         >>> docstr = parse_google_args.__doc__
         >>> argdict_list = list(parse_google_args(docstr))
         >>> print([sorted(d.items()) for d in argdict_list])
@@ -46,14 +45,12 @@ def parse_google_returns(docstr, return_annot=None):
         dict: dictionaries of return value hints
 
     Example:
-        >>> from ubelt.meta.docscrape_google import *  # NOQA
         >>> docstr = parse_google_returns.__doc__
         >>> retdict_list = list(parse_google_returns(docstr))
         >>> print([sorted(d.items()) for d in retdict_list])
         [[('desc', 'dictionaries of return value hints'), ('type', 'dict')]]
 
     Example:
-        >>> from ubelt.meta.docscrape_google import *  # NOQA
         >>> docstr = split_google_docblocks.__doc__
         >>> retdict_list = list(parse_google_returns(docstr))
         >>> print([sorted(d.items())[1] for d in retdict_list])
@@ -79,11 +76,7 @@ def parse_google_retblock(lines, return_annot=None):
     Yeilds:
         dict: each dict specifies the return type and its description
 
-    CommandLine:
-        python -m ubelt.meta.docscrape_google parse_google_retblock
-
     Example:
-        >>> from ubelt.meta.docscrape_google import *  # NOQA
         >>> # Test various ways that retlines can be written
         >>> assert len(list(parse_google_retblock('list: a desc'))) == 1
         >>> assert len(list(parse_google_retblock('no type, just desc'))) == 0
@@ -179,11 +172,7 @@ def parse_google_argblock(lines):
         https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google
         http://www.sphinx-doc.org/en/stable/ext/example_google.html#example-google
 
-    CommandLine:
-        python -m ubelt.meta.docscrape_google parse_google_argblock
-
     Example:
-        >>> from ubelt.meta.docscrape_google import *  # NOQA
         >>> # Test various ways that arglines can be written
         >>> line_list = [
         ...     '',

@@ -1,8 +1,9 @@
+from xdoctest import static_analysis as static
+from xdoctest import utils
+
 
 def test_lineno():
-    from xdoctest import static_analysis as static
-    import ubelt as ub
-    source = ub.codeblock(
+    source = utils.codeblock(
         '''
         def foo():
             """ multiline 0-1-0 """
@@ -48,8 +49,7 @@ def test_lineno():
 
 
 def test_mod_lineno2():
-    import ubelt as ub
-    source = ub.codeblock(
+    source = utils.codeblock(
         '''
         class Fun(object):  #1
             @property

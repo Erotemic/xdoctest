@@ -3,6 +3,7 @@ from __future__ import print_function, division, absolute_import, unicode_litera
 import sys
 import six
 import codecs
+import textwrap
 from six.moves import cStringIO as StringIO
 
 
@@ -116,8 +117,7 @@ def highlight_code(text, lexer_name='python', **kwargs):
         python -c "import pygments.formatters; print(list(pygments.formatters.get_all_formatters()))"
 
     Example:
-        >>> import ubelt as ub
-        >>> text = 'import ubelt as ub; print(ub)'
+        >>> text = 'import xdoctest as xdoc; print(xdoc)'
         >>> new_text = ub.highlight_code(text)
         >>> print(new_text)
     """
@@ -142,3 +142,69 @@ def highlight_code(text, lexer_name='python', **kwargs):
         warnings.warn('pygments is not installed')
         new_text = text
     return new_text
+
+
+def codeblock(block_str):
+    r"""
+    Wraps multiline string blocks and returns unindented code.
+    Useful for templated code defined in indented parts of code.
+
+    Args:
+        block_str (str): typically in the form of a multiline string
+
+    Returns:
+        str: the unindented string
+
+    Example:
+        >>> # Simulate an indented part of code
+        >>> if True:
+        ...     # notice the indentation on this will be normal
+        ...     codeblock_version = codeblock(
+        ...             '''
+        ...             def foo():
+        ...                 return 'bar'
+        ...             '''
+        ...         )
+        ...     # notice the indentation and newlines on this will be odd
+        ...     normal_version = ('''
+        ...         def foo():
+        ...             return 'bar'
+        ...     ''')
+        >>> assert normal_version != codeblock_version
+        >>> print('Without codeblock')
+        >>> print(normal_version)
+        >>> print('With codeblock')
+        >>> print(codeblock_version)
+    """
+    return textwrap.dedent(block_str).strip('\n')
+
+
+class PythonPathContext(object):
+    """
+    Context for temporarilly adding a dir to the PYTHONPATH. Used in testing
+    """
+    def __init__(self, dpath):
+        self.dpath = dpath
+
+    def __enter__(self):
+        sys.path.append(self.dpath)
+
+    def __exit__(self, a, b, c):
+        assert sys.path[-1] == self.dpath
+        sys.path.pop()
+
+
+class TempDir(object):
+    """
+    Context for creating and cleaning up temporary files. Used in testing.
+    """
+    def __init__(self, dpath):
+        self.dpath = None
+
+    def __enter__(self):
+        import tempfile
+        self.dpath = tempfile.mkdtemp()
+
+    def __exit__(self, a, b, c):
+        import shutil
+        shutil.rmtree(self.dpath)

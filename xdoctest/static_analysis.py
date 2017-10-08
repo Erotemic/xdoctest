@@ -11,9 +11,6 @@ from collections import deque
 from os.path import (join, exists, expanduser, abspath, split, splitext,
                      isfile, dirname)
 
-# CallDefNode = namedtuple('CallDefNode',
-#                          ('callname', 'lineno', 'docstr', 'doclineno'))
-
 
 class CallDefNode(object):
     def __init__(self, callname, lineno, docstr, doclineno, doclineno_end):
@@ -40,7 +37,6 @@ class TopLevelVisitor(ast.NodeVisitor):
 
     Example:
         >>> from xdoctest.static_analysis import *  # NOQA
-        >>> import ubelt as ub
         >>> source = ub.codeblock(
         ...    '''
         ...    def foo():
@@ -211,13 +207,9 @@ def parse_calldefs(source=None, fpath=None):
     Returns:
         dict(str, CallDefNode): map of callnames to tuples with def info
 
-    CommandLine:
-        python -m ubelt.meta.static_analysis parse_calldefs
-
     Example:
-        >>> from ubelt.meta.static_analysis import *  # NOQA
-        >>> import ubelt as ub
-        >>> fpath = ub.meta.static_analysis.__file__.replace('.pyc', '.py')
+        >>> from xdoctest import static_analysis
+        >>> fpath = static_analysis.__file__.replace('.pyc', '.py')
         >>> calldefs = parse_calldefs(fpath=fpath)
         >>> assert 'parse_calldefs' in calldefs
     """
@@ -251,26 +243,6 @@ def package_modnames(package_name, with_pkg=False, with_mod=True, exclude=[]):
 
     References:
         http://stackoverflow.com/questions/1707709/list-modules-in-py-package
-
-    CommandLine:
-        python -m ubelt.meta.static_analysis package_modnames
-
-    Example:
-        >>> from ubelt.meta.static_analysis import *  # NOQA
-        >>> exclude = ['*util_*']
-        >>> with_pkg, with_mod = False, True
-        >>> names = list(package_modnames('ubelt', with_pkg, with_mod, exclude))
-        >>> assert 'ubelt.meta' not in names
-        >>> assert 'ubelt.meta.static_analysis' in names
-        >>> #print('\n'.join(names))
-
-    Example:
-        >>> from ubelt.meta.static_analysis import *  # NOQA
-        >>> with_pkg, with_mod = True, False
-        >>> names = list(package_modnames('ubelt', with_pkg, with_mod))
-        >>> assert 'ubelt.meta' in names
-        >>> assert 'ubelt.meta.static_analysis' not in names
-        >>> #print('\n'.join(names))
     """
     modpath = modname_to_modpath(package_name, hide_init=True)
     if isfile(modpath):
@@ -301,14 +273,11 @@ def modpath_to_modname(modpath):
         str: modname
 
     Example:
-        >>> from ubelt.meta.static_analysis import *  # NOQA
-        >>> import ubelt.meta.static_analysis
-        >>> modpath = ubelt.meta.static_analysis.__file__
+        >>> import xdoctest import static_analysis
+        >>> modpath = static_analysis.__file__
         >>> modpath = modpath.replace('.pyc', '.py')
-        >>> #print('modpath = %r' % (modpath))
         >>> modname = modpath_to_modname(modpath)
-        >>> #print('modname = %r' % (modname,))
-        >>> assert modname == 'ubelt.meta.static_analysis'
+        >>> assert modname == 'xdoctest.static_analysis'
     """
     modpath_ = abspath(expanduser(modpath))
     full_dpath, fname_ext = split(modpath_)
@@ -336,34 +305,21 @@ def modname_to_modpath(modname, hide_init=True, hide_main=True):
     Returns:
         str: modpath
 
-    CommandLine:
-        python -m ubelt.meta.static_analysis modname_to_modpath
-
     TODO:
-        Test with a module we know wont be imported by ubelt.
+        Test with a module we know wont be imported by xdoctest.
         Maybe make this a non-doctest and put in tests directory.
 
     Example:
-        >>> from ubelt.meta.static_analysis import *  # NOQA
         >>> import sys
-        >>> modname = 'ubelt.progiter'
-        >>> already_exists = modname in sys.modules
-        >>> modpath = modname_to_modpath(modname)
-        >>> #print('modpath = %r' % (modpath,))
-        >>> assert already_exists or modname not in sys.modules
-
-    Example:
-        >>> from ubelt.meta.static_analysis import *  # NOQA
-        >>> import sys
-        >>> modname = 'ubelt.__main__'
+        >>> modname = 'xdoctest.__main__'
         >>> modpath = modname_to_modpath(modname, hide_main=False)
         >>> #print('modpath = %r' % (modpath,))
         >>> assert modpath.endswith('__main__.py')
-        >>> modname = 'ubelt'
+        >>> modname = 'xdoctest'
         >>> modpath = modname_to_modpath(modname, hide_init=False)
         >>> #print('modpath = %r' % (modpath,))
         >>> assert modpath.endswith('__init__.py')
-        >>> modname = 'ubelt'
+        >>> modname = 'xdoctest'
         >>> modpath = modname_to_modpath(modname, hide_init=False, hide_main=False)
         >>> #print('modpath = %r' % (modpath,))
         >>> assert modpath.endswith('__main__.py')
@@ -395,7 +351,6 @@ def is_complete_statement(lines):
         lines (list): list of strings
 
     Doctest:
-        >>> from ubelt.meta.static_analysis import *  # NOQA
         >>> assert is_complete_statement(['print(foobar)'])
         >>> assert is_complete_statement(['foo = bar']) is True
         >>> assert is_complete_statement(['foo = (']) is False

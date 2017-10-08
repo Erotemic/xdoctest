@@ -8,6 +8,7 @@ import sys
 import _pytest._code
 from _pytest.compat import MODULE_NOT_FOUND_ERROR
 from xdoctest.plugin import XDoctestItem, XDoctestModule, XDoctestTextfile
+from xdoctest import utils
 import pytest
 
 
@@ -18,7 +19,6 @@ def explicit_testdir():
 
     # https://xr.gs/2017/07/pytest-dynamic-runtime-fixtures-python3/
     https://stackoverflow.com/questions/45970572/how-to-get-a-pytest-fixture-interactively
-
 
     Ignore:
         python -c codeblock "
@@ -297,8 +297,7 @@ class TestXDoctest(object):
         CommandLine:
             pytest testing/test_xdoctest.py::TestXDoctest::test_doctest_property_lineno
         """
-        import ubelt as ub
-        testdir.tmpdir.join('hello.py').write(_pytest._code.Source(ub.codeblock(
+        testdir.tmpdir.join('hello.py').write(_pytest._code.Source(utils.codeblock(
             """
             class Fun(object):
                 @property
@@ -328,8 +327,7 @@ class TestXDoctest(object):
         CommandLine:
             pytest testing/test_xdoctest.py::TestXDoctest::test_docstring_show_entire_doctest
         """
-        import ubelt as ub
-        testdir.makepyfile(ub.codeblock(
+        testdir.makepyfile(utils.codeblock(
             '''
             def foo():
                 """
