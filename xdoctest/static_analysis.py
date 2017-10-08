@@ -273,7 +273,7 @@ def modpath_to_modname(modpath):
         str: modname
 
     Example:
-        >>> import xdoctest import static_analysis
+        >>> from xdoctest import static_analysis
         >>> modpath = static_analysis.__file__
         >>> modpath = modpath.replace('.pyc', '.py')
         >>> modname = modpath_to_modname(modpath)
@@ -309,7 +309,7 @@ def modname_to_modpath(modname, hide_init=True, hide_main=True):
         Test with a module we know wont be imported by xdoctest.
         Maybe make this a non-doctest and put in tests directory.
 
-    Example:
+    DisableExample:
         >>> import sys
         >>> modname = 'xdoctest.__main__'
         >>> modpath = modname_to_modpath(modname, hide_main=False)

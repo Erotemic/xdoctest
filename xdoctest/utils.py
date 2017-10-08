@@ -33,7 +33,7 @@ class CaptureStdout(object):
 
     Example:
         >>> from xdoctest.utils import *
-        >>> self = CaptureStdout(enabled=True)
+        >>> self = CaptureStdout(supress=True)
         >>> print('dont capture the table flip (╯°□°）╯︵ ┻━┻')
         >>> with self:
         ...     text = 'capture the heart ♥'
@@ -118,7 +118,7 @@ def highlight_code(text, lexer_name='python', **kwargs):
 
     Example:
         >>> text = 'import xdoctest as xdoc; print(xdoc)'
-        >>> new_text = ub.highlight_code(text)
+        >>> new_text = highlight_code(text)
         >>> print(new_text)
     """
     # Resolve extensions to languages
@@ -198,13 +198,81 @@ class TempDir(object):
     """
     Context for creating and cleaning up temporary files. Used in testing.
     """
-    def __init__(self, dpath):
+    def __init__(self):
         self.dpath = None
 
     def __enter__(self):
         import tempfile
         self.dpath = tempfile.mkdtemp()
+        return self
 
     def __exit__(self, a, b, c):
         import shutil
         shutil.rmtree(self.dpath)
+
+
+def import_module_from_fpath(module_fpath):
+    """
+    imports module from a file path
+
+    Args:
+        module_fpath (str):
+
+    Returns:
+        module: module
+    """
+    from os.path import basename, splitext, isdir, join, exists, dirname, split
+    if isdir(module_fpath):
+        module_fpath = join(module_fpath, '__init__.py')
+    if not exists(module_fpath):
+        raise ImportError('module_fpath={!r} does not exist'.format(
+            module_fpath))
+    modname = splitext(basename(module_fpath))[0]
+    if modname == '__init__':
+        modname = split(dirname(module_fpath))[1]
+    if sys.version.startswith('2.7'):
+        import imp
+        module = imp.load_source(modname, module_fpath)
+    elif sys.version.startswith('3'):
+        import importlib.machinery
+        loader = importlib.machinery.SourceFileLoader(modname, module_fpath)
+        module = loader.load_module()
+        # module = loader.exec_module(modname)
+    else:
+        raise AssertionError('invalid python version={!r}'.format(
+            sys.version))
+    return module
+
+
+def import_module_from_name(modname):
+    r"""
+    Args:
+        modname (str):  module name
+
+    Returns:
+        module: module
+
+    CommandLine:
+        python -m utool.util_import --test-import_modname
+
+    Example:
+        >>> # test with modules that wont be imported in normal circumstances
+        >>> # todo write a test where we gaurentee this
+        >>> modname_list = [
+        >>>     'test',
+        >>>     'pickletools',
+        >>>     'lib2to3.fixes.fix_apply',
+        >>> ]
+        >>> #assert not any(m in sys.modules for m in modname_list)
+        >>> modules = [import_modname(modname) for modname in modname_list]
+        >>> assert [m.__name__ for m in modules] == modname_list
+        >>> assert all(m in sys.modules for m in modname_list)
+    """
+    # The __import__ statment is weird
+    if '.' in modname:
+        fromlist = modname.split('.')[-1]
+        fromlist_ = list(map(str, fromlist))  # needs to be ascii for python2.7
+        module = __import__(modname, {}, {}, fromlist_, 0)
+    else:
+        module = __import__(modname, {}, {}, [], 0)
+    return module

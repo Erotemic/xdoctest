@@ -256,3 +256,56 @@ def test_show_entire():
         with utils.PythonPathContext(dpath):
             status = self.run(verbose=0, on_error='return')
         assert not status['passed']
+
+
+def test_freeform_parse_lineno():
+    docstr = utils.codeblock(
+        '''
+        >>> print('line1')  # test.line=1, offset=0
+
+        Example:
+            >>> x = 0  # test.line=4, offset=0
+
+        DisableExample:
+            >>> x = 0  # test.line=7, offset=0
+
+        Example:
+            >>> True  # test.line=10, offset=0
+            True
+
+        Example:
+            >>> False  # test.line=14, offset=0
+            >>> False  # test.line=15, offset=1
+            False
+            >>> True  # test.line=17, offset=3
+
+        junk text
+        >>> x = 4       # line 20, offset 0
+        >>> x = 5 + x   # line 21, offset 1
+        33
+        >>> x = 6 + x   # line 23, offset 3
+
+        text-line-after
+        ''')
+
+    from xdoctest import core
+    doctests = list(core.parse_freeform_docstr_examples(docstr, lineno=1))
+    assert  [test.lineno for test in doctests] == [1, 4, 10, 14, 20]
+
+    for test in doctests:
+        assert test._parts[0].line_offset == 0
+        offset = 0
+        for p in test._parts:
+            assert p.line_offset == offset
+            offset += p.n_lines
+
+    doctests = list(core.parse_google_docstr_examples(docstr, lineno=1))
+    assert  [test.lineno for test in doctests] == [4, 10, 14]
+
+    for test in doctests:
+        test._parse()
+        assert test._parts[0].line_offset == 0
+        offset = 0
+        for p in test._parts:
+            assert p.line_offset == offset
+            offset += p.n_lines

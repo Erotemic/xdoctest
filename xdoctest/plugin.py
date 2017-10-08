@@ -16,17 +16,25 @@ from _pytest import fixtures
 
 ### WE SHALL NOW BE VERY NAUGHTY ###
 def monkey_patch_disable_normal_doctest():
-    # Perhaps there's a less terrible way to do this
-    from _pytest import doctest
-    def pytest_collect_file(path, parent):
-        return None
+    """
+    The doctest plugin captures tests even if it is disabled. This causes
+    conflicts with this package. Thus, we monkey-patch `_pytest.doctest` to
+    prevent it from collecting anything. Perhaps there is a less terrible way
+    to do this.
+    """
     import sys
-    # try to be considerate to those who really want the old version and were
-    # so unfortunate as to get ours.
+    from _pytest import doctest
+    # Only perform the monkey patch if it is clear the xdoctest plugin is
+    # wanted instead of the standard _pytest.doctest pluginn
     if '--doctest-modules' not in sys.argv:
         if '--xdoctest-modules' in sys.argv or '--xdoctest' in sys.argv:
-            # but now rip out the old modules heart!
+            # overwriting the collect function will cripple _pytest.doctest and
+            # prevent conflicts with this module.
+            def pytest_collect_file(path, parent):
+                return None
             doctest.pytest_collect_file = pytest_collect_file
+
+
 monkey_patch_disable_normal_doctest()
 ### THE NAUGHTINESS MUST NOW CEASE ###
 
@@ -36,7 +44,7 @@ def pytest_addoption(parser):
     parser.addini("xdoctest_encoding", 'encoding used for xdoctest files', default="utf-8")
     # parser.addini('xdoctest_optionflags', 'option flags for xdoctests',
     #               type="args", default=["ELLIPSIS"])
-    group.addoption("--xdoctest-modules",
+    group.addoption("--xdoctest-modules", "--xdoctest",
                     action="store_true", default=False,
                     help="run doctests in all .py modules using new style parsing",
                     dest="xdoctestmodules")

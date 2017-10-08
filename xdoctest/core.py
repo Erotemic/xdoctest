@@ -23,11 +23,16 @@ class DocTest(object):
     Holds information necessary to execute and verify a doctest
 
     Example:
-        >>> package_name = 'xdoctest'
-        >>> testables = parse_doctestables(package_name)
-        >>> self = next(testables)
-        >>> print(self.want)
-        >>> print(self.want)
+        >>> from xdoctest import core
+        >>> testables = core.module_doctestables(core.__file__)
+        >>> print('testables = {!r}'.format(testables))
+        >>> for test in testables:
+        >>>     print('test.callname = {!r}'.format(test.callname))
+        >>>     if test.callname == 'Doctest':
+        >>>         self = test
+        >>>         break
+        >>> assert self.num == 0
+        >>> assert self.modpath == core.__file__
         >>> print(self.valid_testnames)
     """
 
@@ -94,13 +99,13 @@ class DocTest(object):
             self.unique_callname,
         }
 
-    def format_src(self, linenums=True, colored=False, want=True):
+    def format_src(self, linenums=True, colored=False, want=True, offset_linenums=False):
         """
         Adds prefix and line numbers to a doctest
 
         Example:
-            >>> package_name = 'xdoctest'
-            >>> testables = parse_doctestables(package_name)
+            >>> from xdoctest import core
+            >>> testables = module_doctestables(core.__file__)
             >>> self = next(testables)
             >>> self._parse()
             >>> print(self.format_src())
@@ -112,7 +117,10 @@ class DocTest(object):
         formated_parts = []
 
         if linenums:
-            base = 1 if self.lineno is None else self.lineno
+            if offset_linenums:
+                base = 1 if self.lineno is None else self.lineno
+            else:
+                base = 0
             startline = base + self._parts[0].line_offset
             n_lines = sum(p.n_lines for p in self._parts)
             endline = startline + n_lines
@@ -225,26 +233,32 @@ class DocTest(object):
             # TODO:
             # Put the module globals in the doctest global namespace
             # Import from the filepath?
-            module = __import__(self.modname)
+            # module = utils.import_module_from_fpath(self.modpath)
+            module = utils.import_module_from_name(self.modname)
+            # module = __import__(self.modname, {}, {})
+            self.module = module
             test_globals.update(module.__dict__)
-        # else:
-        #     if self.fname is not None:
-        #         if '__file__' not in test_globals:
-        #             test_globals['__file__'] = self.fpath
+            compileflags = 0
+        else:
+            self.module = None
+            # else:
+            #     if self.fname is not None:
+            #         if '__file__' not in test_globals:
+            #             test_globals['__file__'] = self.fpath
 
-        def _extract_future_flags(globs):
-            """
-            Return the compiler-flags associated with the future features that
-            have been imported into the given namespace (globs).
-            """
-            flags = 0
-            for fname in __future__.all_feature_names:
-                feature = globs.get(fname, None)
-                if feature is getattr(__future__, fname):
-                    flags |= feature.compiler_flag
-            return flags
+            def _extract_future_flags(globs):
+                """
+                Return the compiler-flags associated with the future features that
+                have been imported into the given namespace (globs).
+                """
+                flags = 0
+                for fname in __future__.all_feature_names:
+                    feature = globs.get(fname, None)
+                    if feature is getattr(__future__, fname):
+                        flags |= feature.compiler_flag
+                return flags
 
-        compileflags = _extract_future_flags(test_globals)
+            compileflags = _extract_future_flags(test_globals)
         self.stdout_results = []
         self.evaled_results = []
         self.exc_info = None
@@ -259,8 +273,13 @@ class DocTest(object):
             try:
                 # Compile code, handle syntax errors
                 mode = 'eval' if part.use_eval else 'exec'
+
+                _filename = self.modpath + '::' + self.callname
+
                 code = compile(
-                    part.source, mode=mode, filename=self.modpath,
+                    part.source, mode=mode,
+                    # filename=self.modpath,
+                    filename=_filename,
                     flags=compileflags, dont_inherit=True
                 )
             except KeyboardInterrupt:  # nocover
@@ -357,9 +376,16 @@ class DocTest(object):
         #     '=== LINES ===',
         # ]
 
-        lines += self.format_src(linenums=True, want=False).splitlines()
+        lines += [
+            'self.module = {}'.format(self.module),
+            'self.modpath = {}'.format(self.modpath),
+            'self.modpath = {}'.format(self.modname),
+            # 'self.globs = {}'.format(self.globs.keys()),
+        ]
 
-        # lines += [
+        lines += self.format_src(linenums=True, want=False).splitlines()
+        lines += self.stdout_results
+
         #     # '=== LINES ===',
         #     'lineno = {!r}'.format(lineno),
         #     # 'example.lineno = {!r}'.format(self.lineno),
@@ -402,6 +428,17 @@ class DocTest(object):
         # return '\n'.join(lines)
         return lines
 
+    def _print_captured(self):
+        out_text = ''.join(self.stdout_results)
+        if out_text is not None:
+            assert isinstance(out_text, six.text_type), 'do not use ascii'
+        try:
+            print(out_text)
+        except UnicodeEncodeError:
+            print('Weird travis bug')
+            print('type(out_text) = %r' % (type(out_text),))
+            print('out_text = %r' % (out_text,))
+
     def post_run(self, verbose):
         summary = {
             'passed': self.exc_info is None
@@ -409,15 +446,7 @@ class DocTest(object):
         if self.exc_info is None:
             if verbose >= 1:
                 print('* SUCCESS: {}'.format(self.callname))
-            # out_text = ''.join(self.stdout_results)
-            # if out_text is not None:
-            #     assert isinstance(out_text, six.text_type), 'do not use ascii'
-            # try:
-            #     print(out_text)
-            # except UnicodeEncodeError:
-            #     print('Weird travis bug')
-            #     print('type(out_text) = %r' % (type(out_text),))
-            #     print('out_text = %r' % (out_text,))
+                self._print_captured()
         else:
             if verbose >= 1:
                 text = '\n'.join(self.repr_failure(verbose=verbose))
@@ -462,10 +491,7 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         >>> examples = list(parse_freeform_docstr_examples(docstr))
         >>> assert len(examples) == 3
     """
-    def doctest_from_parts(parts, num):
-        # lineno_ = lineno + parts[0].line_offset - 1
-        # lineno_ = lineno
-        # + parts[0].line_offset
+    def doctest_from_parts(parts, num, curr_offset):
         nested = [
             p.orig_lines
             if p.want is None else
@@ -474,18 +500,14 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         ]
         docsrc = '\n'.join(list(it.chain.from_iterable(nested)))
         docsrc = textwrap.dedent(docsrc)
-        # FIXME: lineno should be offset a little here I think
-        # and then we need to unoffset the part lines
         example = DocTest(docsrc, modpath=modpath, callname=callname, num=num,
-                          lineno=lineno, fpath=fpath)
-        # We've already parsed, so we dont need to do it again
+                          lineno=lineno + curr_offset, fpath=fpath)
+        # rebase the offsets relative to the test lineno (ie start at 0)
+        unoffset = parts[0].line_offset
+        for p in parts:
+            p.line_offset -= unoffset
+        # We've already parsed the parts, so we dont need to do it again
         example._parts = parts
-        # for p in parts:
-        #     # p.line_offset -= (lineno - 1)
-        #     # p.line_offset -= (lineno - 1)
-        #     pass
-        # but we do need to unoffset the line numbers
-
         return example
 
     respect_google_headers = True
@@ -506,7 +528,7 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         p.lower() for p in special_skip_patterns
     ])
 
-    def _special_skip(prev):
+    def _start_ignoring(prev):
         return (special_skip_patterns_ and
                 isinstance(prev, six.string_types) and
                 prev.strip().lower().endswith(special_skip_patterns_))
@@ -514,25 +536,39 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
     # parse into doctest and plaintext parts
     all_parts = parser.DoctestParser().parse(docstr)
 
-    parts = []
+    curr_parts = []
+    curr_offset = 0
     num = 0
-    prev = None
+    prev_part = None
+    ignoring = False
     for part in all_parts:
         if isinstance(part, six.string_types):
             # Part is a plaintext
-            if parts:
-                example = doctest_from_parts(parts, num)
+            if curr_parts:
+                # Group the current parts into a single DocTest
+                example = doctest_from_parts(curr_parts, num, curr_offset)
                 yield example
+                # Initialize empty parts for a new DocTest
+                curr_offset += sum(p.n_lines for p in curr_parts)
                 num += 1
-                parts = []
+                curr_parts = []
+            curr_offset += part.count('\n') + 1
+            # stop ignoring
+            ignoring = False
         else:
-            # Part is a doctest
-            if _special_skip(prev):
-                continue
-            parts.append(part)
-        prev = part
-    if parts:
-        example = doctest_from_parts(parts, num)
+            # If the previous part was text-based, and matches a special skip
+            # ignore pattern then ignore all tests until a new doctest block
+            # begins. (different doctest blocks are separated by plaintext)
+            if ignoring or _start_ignoring(prev_part):
+                ignoring = True
+                curr_offset += part.n_lines
+            else:
+                # Append part to the current parts
+                curr_parts.append(part)
+        prev_part = part
+    if curr_parts:
+        # Group remaining parts into the final doctest
+        example = doctest_from_parts(curr_parts, num, curr_offset)
         yield example
 
 
@@ -614,7 +650,7 @@ def parse_doctestables(package_name, exclude=[], strict=False):
     r"""
     Finds all functions/callables with Google-style example blocks
 
-    Example:
+    DisableExample:
         >>> package_name = 'xdoctest'
         >>> testables = list(parse_doctestables(package_name))
         >>> this_example = None
