@@ -355,7 +355,7 @@ class DocTest(object):
             offset = self.failed_part.line_offset
             if isinstance(value, parser.GotWantException):
                 # Return the line of the want line
-                offset += self.failed_part.n_lines
+                offset += self.failed_part.n_exec_lines + 1
             else:
                 # Use the next because we need to pop the eval of the stack
                 if tb.tb_next is None:
@@ -412,7 +412,7 @@ class DocTest(object):
                                       want=False)
         if fail_lineno is not None:
             lines += ['in {} on line {}'.format(self.fpath, fail_lineno)]
-        lines += ['in docsrc on line {}'.format(fail_offset + 1)]
+        lines += ['in docsrc of {} on line {}'.format(self.unique_callname, fail_offset + 1)]
 
         source_text = utils.indent(source_text)
         lines += source_text.splitlines()

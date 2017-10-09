@@ -471,9 +471,8 @@ class DoctestParser(object):
         """
         Example:
             >>> from xdoctest.parser import *
-            >>> import textwrap
             >>> # Having multiline strings in doctests can be nice
-            >>> string = textwrap.dedent(
+            >>> string = utils.codeblock(
                     '''
                     text
                     >>> items = ['also', 'nice', 'to', 'not', 'worry',
@@ -482,9 +481,9 @@ class DoctestParser(object):
                     but its still allowed
 
                     more text
-                    ''').strip()
+                    ''')
             >>> self = DoctestParser()
-            >>> self._label_docsrc_lines(string)
+            >>> print(self._label_docsrc_lines(string))
             [('text', 'text'),
              ('dsrc', ">>> items = ['also', 'nice', 'to', 'not', 'worry', 'about',"),
              ('dsrc', ">>>          'using', '...', 'instead', 'of', '>>>']"),
