@@ -1,3 +1,42 @@
+[![Travis](https://img.shields.io/travis/Erotemic/xdoctest.svg)](https://travis-ci.org/Erotemic/xdoctest)
+[![Pypi](https://img.shields.io/pypi/v/xdoctest.svg)](https://pypi.python.org/pypi/xdoctest)
+[![Codecov](https://codecov.io/github/Erotemic/xdoctest/badge.svg?branch=master&service=github)](https://codecov.io/github/Erotemic/xdoctest?branch=master)
+
+## Purpose
+
+The `xdoctest` package is a re-write of Python's builtin `doctest` module. 
+It replaces the old regex-based parser with a new abstract-syntax-tree based
+parser (using Python's `ast` module). 
+
+The main effects are 
+
+1. All lines in the doctest can now be prefixed with `>>>`. 
+2. Tests are executed in blocks, rather than line-by-line.
+
+
+## Differences with doctest
+
+Overall, the goal is to be "mostly" backwards compatible with doctest.
+Currently not all features (such as comment-based macros) and fuzzy "want"
+parsing available.
+
+Also changed:
+
+1. You no longer need a "want" statement. You can use simple asserts.
+
+
+All together this means:
+
+1. There is no need to carefully prefix some lines with `>>>` and others with
+   `...`. (Though the latter still works)
+
+2. Printing to stdout in the middle of a test will no longer require you to immediately write a "want" statement. 
+
+3. If you dont specify a want statment, Also, if you don't specify a want 
+
+
+
+## OLD README
 This is a followup to pytest#2786.
 
 This is a work in progress:
@@ -8,11 +47,11 @@ TODO:
 - [x] Basic got/want support
 - [x] Parse google-style examples
 - [ ] Parse numpy-style examples
-- [ ] Support for non-nested doctests? (maybe as an option)
-- [ ] Add more fuzzy want support to mirror original doctest.
+- [x] Support for non-nested doctests? (maybe as an option)
+- [ ] Add more fuzzy want support to mirror original doctest. (ELLIPSES, etc...)
 - [ ] Get standalone module / package tester working
-- [ ] Get pytest plugin working
-- [ ] TESTS TESTS TESTS
+- [x] Get pytest plugin working
+- [x] TESTS TESTS TESTS
 - [x] Register on pypi
 - [ ] CI-via Travis / AppVeyor
 - [ ] Coverage
