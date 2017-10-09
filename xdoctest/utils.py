@@ -130,7 +130,7 @@ def indent(text, prefix='    '):
 
 def highlight_code(text, lexer_name='python', **kwargs):
     r"""
-    Highlights a block of text using ansii tags based on language syntax.
+    Highlights a block of text using ansi tags based on language syntax.
 
     Args:
         text (str): plain text to highlight
