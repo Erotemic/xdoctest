@@ -269,25 +269,27 @@ class DocTest(object):
             self.module = module
             test_globals.update(module.__dict__)
             compileflags = 0
+            def _extract_future_flags(globs):
+                """
+                Return the compiler-flags associated with the future features that
+                have been imported into the given namespace (globs).
+                """
+                flags = 0
+                for key in __future__.all_feature_names:
+                    feature = globs.get(key, None)
+                    if feature is getattr(__future__, key):
+                        flags |= feature.compiler_flag
+                return flags
+            compileflags = _extract_future_flags(test_globals)
         else:
+            # Compile with future flags by default for tests without parent
+            # modules
             self.module = None
-            # else:
-            #     if self.fname is not None:
-            #         if '__file__' not in test_globals:
-            #             test_globals['__file__'] = self.fpath
+            compileflags = 0
 
-        def _extract_future_flags(globs):
-            """
-            Return the compiler-flags associated with the future features that
-            have been imported into the given namespace (globs).
-            """
-            flags = 0
-            for fname in __future__.all_feature_names:
-                feature = globs.get(fname, None)
-                if feature is getattr(__future__, fname):
-                    flags |= feature.compiler_flag
-            return flags
-        compileflags = _extract_future_flags(test_globals)
+        # force print function and division futures
+        compileflags |= (__future__.print_function.compiler_flag |
+                         __future__.division.compiler_flag)
 
         self.stdout_results = []
         self.evaled_results = []

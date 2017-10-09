@@ -172,12 +172,12 @@ class DoctestPart(object):
         parts = []
         if self.line_offset is not None:
             parts.append('ln %s' % (self.line_offset))
-        head_src = self.source.split('\n')[0][0:8]
+        head_src = self.source.splitlines()[0][0:8]
         parts.append('src="%s..."' % (head_src,))
         if self.want is None:
             parts.append('want=None')
         else:
-            head_wnt = self.want.split('\n')[0][0:8]
+            head_wnt = self.want.splitlines()[0][0:8]
             parts.append('want="%s..."' % (head_wnt,))
         return ', '.join(parts)
 
@@ -268,11 +268,13 @@ class DoctestParser(object):
             >>> # each part with a want-string needs to be broken in two
             >>> assert len(doctest_parts) == 6
         """
+        if sys.version_info.major == 2:  # nocover
+            string = utils.ensure_unicode(string)
         string = string.expandtabs()
         # If all lines begin with the same indentation, then strip it.
         min_indent = min_indentation(string)
         if min_indent > 0:
-            string = '\n'.join([l[min_indent:] for l in string.split('\n')])
+            string = '\n'.join([l[min_indent:] for l in string.splitlines()])
 
         labeled_lines = self._label_docsrc_lines(string)
         grouped_lines = self._group_labeled_lines(labeled_lines)

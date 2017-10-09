@@ -327,3 +327,19 @@ def test_exit_test_exception():
     self = core.DocTest(docsrc=string)
     result = self.run(on_error='raise')
     assert result['passed']
+
+
+def test_multiline_list():
+    """
+    pytest testing/test_core.py::test_multiline_list
+    """
+    string = utils.codeblock(
+        '''
+        >>> x = [1, 2, 3,
+        >>>      4, 5, 6]
+        >>> print(len(x))
+        6
+        ''')
+    self = core.DocTest(docsrc=string)
+    result = self.run(on_error='raise')
+    assert result['passed']

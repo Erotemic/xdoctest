@@ -309,7 +309,7 @@ class TestXDoctest(object):
                     >>> 1 / 0
                     '''
             """)))
-        result = testdir.runpytest("--xdoctest-modules", '--xdoctest-nocolor')
+        result = testdir.runpytest("--xdoctest-modules", *EXTRA_ARGS)
         result.stdout.fnmatch_lines([
             "*FAILED DOCTEST: ZeroDivisionError*",
             '*on line 6*',
@@ -384,7 +384,7 @@ class TestXDoctest(object):
         testdir.maketxtfile("""
             >>> import asdalsdkjaslkdjasd
         """)
-        result = testdir.runpytest()
+        result = testdir.runpytest(*EXTRA_ARGS)
         # xdoctest is never executed because of error during hello.py collection
         result.stdout.fnmatch_lines([
             '*FAILED*',
@@ -413,7 +413,7 @@ class TestXDoctest(object):
         import sys
         cwd = os.getcwd()
         sys.path.append(cwd)
-        result = testdir.runpytest("--xdoctest-modules", "-s")
+        result = testdir.runpytest("--xdoctest-modules", "-s", *EXTRA_ARGS)
         result.stdout.fnmatch_lines([
             '*FAILED*',
             '*1 >>> import hello*',
@@ -546,7 +546,7 @@ class TestXDoctest(object):
                 'anything'
                 """
         ''')
-        result = testdir.runpytest('--xdoctest-modules')
+        result = testdir.runpytest('--xdoctest-modules', *EXTRA_ARGS)
         result.stdout.fnmatch_lines([
             'Got nothing',
             '* 1 failed in*',
@@ -618,7 +618,7 @@ class TestXDoctest(object):
                 >>> '''.strip())
                 Just prefix everything with >>> and the xdoctest should work
             """).lstrip())
-        result = testdir.runpytest(p)
+        result = testdir.runpytest(p, *EXTRA_ARGS)
         result.stdout.fnmatch_lines(['* 3 passed *'])
 
     def test_xdoctest_multiline_list(self, testdir):
@@ -630,7 +630,7 @@ class TestXDoctest(object):
                 >>> print(len(x))
                 6
         """)
-        result = testdir.runpytest(p)
+        result = testdir.runpytest(p, *EXTRA_ARGS)
         result.stdout.fnmatch_lines(['* 1 passed *'])
 
     def test_xdoctest_trycatch(self, testdir):
@@ -661,7 +661,7 @@ class TestXDoctest(object):
                 foo
                 bar
         """)
-        result = testdir.runpytest(p)
+        result = testdir.runpytest(p, *EXTRA_ARGS)
         result.stdout.fnmatch_lines(['* 2 passed *'])
 
     def test_xdoctest_functions(self, testdir):
@@ -680,7 +680,7 @@ class TestXDoctest(object):
                 >>> func()
                 but now we can write code like humans
         """)
-        result = testdir.runpytest(p)
+        result = testdir.runpytest(p, *EXTRA_ARGS)
         result.stdout.fnmatch_lines(['* 2 passed *'])
 
 
@@ -792,7 +792,7 @@ class TestXDoctestSkips(object):
                     True
                 '''
         """)
-        result = testdir.runpytest("--xdoctest-modules")
+        result = testdir.runpytest("--xdoctest-modules", *EXTRA_ARGS)
         result.stdout.fnmatch_lines(['*no tests ran*'])
 
     @pytest.fixture(params=['text', 'module'])
@@ -1189,7 +1189,7 @@ class Disabled(object):
                 text-line-after
                 """
         ''')
-        result = testdir.runpytest('--xdoctest-modules')
+        result = testdir.runpytest('--xdoctest-modules', *EXTRA_ARGS)
         result.stdout.fnmatch_lines([
             '*docstring_context_around_error*',
             '005*text-line-3',
@@ -1222,7 +1222,7 @@ class Disabled(object):
                     >>> 1/0
                     '''
             """))
-        result = testdir.runpytest("--xdoctest-modules", '--xdoctest-nocolor')
+        result = testdir.runpytest("--xdoctest-modules", *EXTRA_ARGS)
         result.stdout.fnmatch_lines([
             "*hello*",
             "*EXAMPLE LOCATION UNKNOWN, not showing all tests of that example*",

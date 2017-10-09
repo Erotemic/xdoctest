@@ -8,6 +8,7 @@ import six
 from fnmatch import fnmatch
 from six.moves import cStringIO as StringIO
 from collections import deque, OrderedDict
+from xdoctest import utils
 from os.path import (join, exists, expanduser, abspath, split, splitext,
                      isfile, dirname)
 
@@ -110,7 +111,7 @@ class TopLevelVisitor(ast.NodeVisitor):
                 #
                 # there are pathological cases this wont work for
                 # (i.e. think nestings: """ # ''' # """)
-                nlines = docnode.value.s.count('\n')
+                nlines = utils.ensure_unicode(docnode.value.s).count('\n')
                 startline = self.sourcelines[endpos - nlines]
                 if not startline.strip().startswith(trip):
                     startpos = endpos - nlines
