@@ -28,7 +28,7 @@ Also changed:
 All together this means:
 
 1. There is no need to carefully prefix some lines with `>>>` and others with
-   `...`. (Though the latter still works)
+   `...`; though the latter still works.
 
 2. Printing to stdout in the middle of a test will no longer require you to immediately write a "want" statement. 
 
