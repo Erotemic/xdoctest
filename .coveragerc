@@ -1,7 +1,7 @@
 [run]
-omit = 
-    # pytest imports this before we can cover it
-    xdoctest/plugin.py
+branch = True
+source = xdoctest
+
 [report]
 exclude_lines =
     pragma: no cover
@@ -19,3 +19,8 @@ exclude_lines =
     if _debug:
     if __name__ == .__main__.:
     print(.*)
+
+omit = 
+    # pytest imports this before we can cover it
+    xdoctest/plugin.py
+
