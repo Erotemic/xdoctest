@@ -13,8 +13,9 @@ python:
   - "3.6"
 before_install:
   - pip install pip -U
-  - pip install codecov -U
   - pip install pytest -U
+  - pip install pytest-cov -U
+  - pip install codecov -U
   - pip install pygments -U
 install:
   #- travis_retry python setup.py build develop
