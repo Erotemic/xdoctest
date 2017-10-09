@@ -42,8 +42,8 @@ def normalize(got, want):
     got = re.sub(TRAILING_WS, '', got)
     want = re.sub(TRAILING_WS, '', want)
 
-    got_lines = got.splitlines(keepends=True)
-    want_lines = want.splitlines(keepends=True)
+    got_lines = got.splitlines(True)
+    want_lines = want.splitlines(True)
 
     got_lines = visible_text(got_lines)
     want_lines = visible_text(want_lines)
@@ -119,9 +119,11 @@ class GotWantException(AssertionError):
 
         # Check if we should use diff.
         if self._do_a_fancy_diff(optionflags):
+            # if six.PY2:
+            got = utils.ensure_unicode(got)
             # Split want & got into lines.
-            want_lines = want.splitlines(keepends=True)
-            got_lines = got.splitlines(keepends=True)
+            want_lines = want.splitlines(True)
+            got_lines = got.splitlines(True)
             # Use difflib to find their differences.
             # if optionflags & REPORT_UDIFF:
             if True:
