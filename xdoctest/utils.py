@@ -252,9 +252,6 @@ def import_module_from_name(modname):
     Returns:
         module: module
 
-    CommandLine:
-        python -m utool.util_import --test-import_modname
-
     Example:
         >>> # test with modules that wont be imported in normal circumstances
         >>> # todo write a test where we gaurentee this
@@ -264,7 +261,7 @@ def import_module_from_name(modname):
         >>>     'lib2to3.fixes.fix_apply',
         >>> ]
         >>> #assert not any(m in sys.modules for m in modname_list)
-        >>> modules = [import_modname(modname) for modname in modname_list]
+        >>> modules = [import_module_from_name(modname) for modname in modname_list]
         >>> assert [m.__name__ for m in modules] == modname_list
         >>> assert all(m in sys.modules for m in modname_list)
     """

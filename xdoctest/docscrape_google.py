@@ -244,8 +244,9 @@ def split_google_docblocks(docstr):
         >>> docstr = split_google_docblocks.__doc__
         >>> groups = split_google_docblocks(docstr)
         >>> #print('groups = %s' % (groups,))
-        >>> assert len(groups) == 3
-        >>> print([g[0] for g in groups])
+        >>> print(len(groups))
+        >>> assert len(groups) == 5
+        >>> print(sorted(set([g[0] for g in groups])))
         ['Args', 'Returns', 'Example']
 
     Example:

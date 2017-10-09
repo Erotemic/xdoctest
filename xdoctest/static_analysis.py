@@ -37,7 +37,8 @@ class TopLevelVisitor(ast.NodeVisitor):
 
     Example:
         >>> from xdoctest.static_analysis import *  # NOQA
-        >>> source = ub.codeblock(
+        >>> from xdoctest import utils
+        >>> source = utils.codeblock(
         ...    '''
         ...    def foo():
         ...        \"\"\" my docstring \"\"\"

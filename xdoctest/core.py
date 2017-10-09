@@ -25,10 +25,8 @@ class DocTest(object):
     Example:
         >>> from xdoctest import core
         >>> testables = core.module_doctestables(core.__file__)
-        >>> print('testables = {!r}'.format(testables))
         >>> for test in testables:
-        >>>     print('test.callname = {!r}'.format(test.callname))
-        >>>     if test.callname == 'Doctest':
+        >>>     if test.callname == 'DocTest':
         >>>         self = test
         >>>         break
         >>> assert self.num == 0
@@ -93,13 +91,19 @@ class DocTest(object):
         return self.callname + ':' + str(self.num)
 
     @property
+    def node(self):
+        """ this pytest node """
+        return self.modpath + '::' + self.callname + ':' + str(self.num)
+
+    @property
     def valid_testnames(self):
         return {
             self.callname,
             self.unique_callname,
         }
 
-    def format_src(self, linenums=True, colored=False, want=True, offset_linenums=False):
+    def format_src(self, linenos=True, colored=False, want=True,
+                   offset_linenums=False):
         """
         Adds prefix and line numbers to a doctest
 
@@ -109,23 +113,24 @@ class DocTest(object):
             >>> self = next(testables)
             >>> self._parse()
             >>> print(self.format_src())
-            >>> print(self.format_src(linenums=False, colored=False))
+            >>> print(self.format_src(linenos=False, colored=False))
             >>> assert not self.is_disabled()
         """
         import math
         # return '\n'.join([p.source for p in self._parts])
         formated_parts = []
 
-        if linenums:
+        if linenos:
             if offset_linenums:
-                base = 1 if self.lineno is None else self.lineno
+                startline = 1 if self.lineno is None else self.lineno
             else:
-                base = 0
-            startline = base + self._parts[0].line_offset
+                startline = 1
             n_lines = sum(p.n_lines for p in self._parts)
             endline = startline + n_lines
 
-            n_digits = int(math.ceil(math.log(max(1, endline), 10)))
+            n_digits = math.log(max(1, endline), 10)
+            n_digits = int(math.ceil(n_digits))
+
             src_fmt = '{{:{}d}} {{}}'.format(n_digits)
             want_fmt = '{} {{}}'.format(' ' * n_digits)
 
@@ -138,9 +143,9 @@ class DocTest(object):
 
             parser
 
-            if linenums:
+            if linenos:
                 new_lines = []
-                count = base + part.line_offset
+                count = startline + part.line_offset
                 for count, line in enumerate(doctest_src.splitlines(), start=count):
                     new_lines.append(src_fmt.format(count, line))
                 if doctest_want:
@@ -274,12 +279,9 @@ class DocTest(object):
                 # Compile code, handle syntax errors
                 mode = 'eval' if part.use_eval else 'exec'
 
-                _filename = self.modpath + '::' + self.callname
-
                 code = compile(
                     part.source, mode=mode,
-                    # filename=self.modpath,
-                    filename=_filename,
+                    filename=self.node,
                     flags=compileflags, dont_inherit=True
                 )
             except KeyboardInterrupt:  # nocover
@@ -344,47 +346,79 @@ class DocTest(object):
             sys.stdout.write('.')
             sys.stdout.flush()
 
-    def failed_lineno(self):
+    def failed_line_offset(self):
         if self.exc_info is None:
             return None
         else:
             from xdoctest import parser
             type, value, tb = self.exc_info
-            # Find the first line of the part
-            lineno = self.lineno + self.failed_part.line_offset
+            offset = self.failed_part.line_offset
             if isinstance(value, parser.GotWantException):
                 # Return the line of the want line
-                lineno += len(self.failed_part.orig_lines)
+                offset += self.failed_part.n_lines
             else:
                 # Use the next because we need to pop the eval of the stack
                 if tb.tb_next is None:
-                    lineno = tb.tb_lineno
+                    offset = tb.tb_lineno
                 else:
-                    lineno += tb.tb_next.tb_lineno
+                    offset += tb.tb_next.tb_lineno
+            offset -= 1
+            return offset
+
+    def failed_lineno(self):
+        offset = self.failed_line_offset()
+        if offset is None:
+            return None
+        else:
+            # Find the first line of the part
+            lineno = self.lineno + offset
             return lineno
 
-    def repr_failure(self, verbose=1):
-        from xdoctest import parser
+    def repr_failure(self, verbose=1, colored=True):
+        """
+        Notes:
+            utool's output format was
+
+            (stdout was printed in real time)
+            test-stdout,
+            errmsg + traceback
+
+            Then failed where:
+                docest src
+
+
+        """
         type, value, tb = self.exc_info
-        lineno = self.lineno + self.failed_part.line_offset
-        if isinstance(value, parser.GotWantException):
-            lineno += len(self.failed_part.orig_lines)
+        fail_offset = self.failed_line_offset()
+        fail_lineno = self.failed_lineno()
 
         lines = [
-            'FAILED DOCTEST: {} on line {}'.format(type.__name__, lineno),
+            'FAILED DOCTEST: {}'.format(type.__name__),
+            'in node ' + self.node,
         ]
         #     '=== LINES ===',
         # ]
 
         lines += [
-            'self.module = {}'.format(self.module),
-            'self.modpath = {}'.format(self.modpath),
-            'self.modpath = {}'.format(self.modname),
+            # 'self.module = {}'.format(self.module),
+            # 'self.modpath = {}'.format(self.modpath),
+            # 'self.modpath = {}'.format(self.modname),
             # 'self.globs = {}'.format(self.globs.keys()),
         ]
 
-        lines += self.format_src(linenums=True, want=False).splitlines()
-        lines += self.stdout_results
+        # lines += ['Failed doctest in ' + self.callname]
+
+        source_text = self.format_src(colored=colored, linenos=True,
+                                      want=False)
+        if fail_lineno is not None:
+            lines += ['in {} on line {}'.format(self.fpath, fail_lineno)]
+        lines += ['in docsrc on line {}'.format(fail_offset + 1)]
+
+        source_text = utils.indent(source_text)
+        lines += source_text.splitlines()
+
+        if self.stdout_results:
+            lines += self.stdout_results
 
         #     # '=== LINES ===',
         #     'lineno = {!r}'.format(lineno),
@@ -402,30 +436,14 @@ class DocTest(object):
                 value.output_difference()
             ]
         else:
-            # inner_excinfo = code.ExceptionInfo(excinfo.value.exc_info)
-            # lines += ["UNEXPECTED EXCEPTION: %s" % (type,)]
             import traceback
-            lines += traceback.format_exception(*self.exc_info)
-            pass
-
-        # # TODO: print out nice line number
-        # lines = []
-        # if verbose > 0:
-        #     lines += [
-        #         '',
-        #         'report failure',
-        #         self.cmdline,
-        #         self.format_src(),
-        #     ]
-        # lines += [
-        #     '* UNEXPECTED EXCEPTION: {}, {}'.format(self.callname, type(self.exc_info)),
-        #     ''.join(self.stdout_results),
-        # ]
-        # TODO: remove appropriate amount of traceback
-        # exc_type, exc_value, exc_traceback = sys.exc_info()
-        # exc_traceback = exc_traceback.tb_next
-        # six.reraise(exc_type, exc_value, exc_traceback)
-        # return '\n'.join(lines)
+            tblines = traceback.format_exception(*self.exc_info)
+            if colored:
+                tbtext = '\n'.join(tblines)
+                tbtext = utils.highlight_code(tbtext, lexer_name='pytb',
+                                              stripall=True)
+                tblines = tbtext.splitlines()
+            lines += tblines
         return lines
 
     def _print_captured(self):
