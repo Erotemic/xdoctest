@@ -483,14 +483,16 @@ class DoctestParser(object):
                     more text
                     ''')
             >>> self = DoctestParser()
-            >>> print(self._label_docsrc_lines(string))
-            [('text', 'text'),
-             ('dsrc', ">>> items = ['also', 'nice', 'to', 'not', 'worry', 'about',"),
-             ('dsrc', ">>>          'using', '...', 'instead', 'of', '>>>']"),
-             ('dsrc', "... print('but its still allowed')"),
-             ('want', 'but its still allowed'),
-             ('want', ''),
-             ('want', 'more text')]
+            >>> labeled = self._label_docsrc_lines(string))
+            >>> assert labeled == [
+            >>>     ('text', 'text'),
+            >>>     ('dsrc', ">>> items = ['also', 'nice', 'to', 'not', 'worry', 'about',"),
+            >>>     ('dsrc', ">>>          'using', '...', 'instead', 'of', '>>>']"),
+            >>>     ('dsrc', "... print('but its still allowed')"),
+            >>>     ('want', 'but its still allowed'),
+            >>>     ('want', ''),
+            >>>     ('want', 'more text')
+            >>> ]
         """
 
         def _complete_source(line, state_indent, line_iter):
