@@ -92,11 +92,11 @@ def test_mod_lineno2():
         def decor4(self):   # 37
             ">>> print(1)"  # 38
         ''')
-    import ast
+    # import ast
     from xdoctest.static_analysis import TopLevelVisitor
-    source_utf8 = source.encode('utf8')
-    pt = ast.parse(source_utf8)
-    node = pt.body[0].body[0]
+    # source_utf8 = source.encode('utf8')
+    # pt = ast.parse(source_utf8)
+    # node = pt.body[0].body[0]
     self = TopLevelVisitor.parse(source)
 
     calldefs = self.calldefs

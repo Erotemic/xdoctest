@@ -41,19 +41,10 @@ def test_format_src():
     self = core.DocTest(docsrc=string)
     self._parse()
 
-    def strip_ansi(text):
-        """
-        Removes all ansi directives from the string
-        Helper to remove ansi from length calculation
-        References: http://stackoverflow.com/questions/14693701remove-ansi
-        """
-        import re
-        ansi_escape = re.compile(r'\x1b[^m]*m')
-        return ansi_escape.sub('', text)
     assert self.format_src(colored=0, linenos=1) == string_with_lineno
     assert self.format_src(colored=0, linenos=0) == string
-    assert strip_ansi(self.format_src(colored=1, linenos=1)) == string_with_lineno
-    assert strip_ansi(self.format_src(colored=1, linenos=0)) == string
+    assert utils.strip_ansi(self.format_src(colored=1, linenos=1)) == string_with_lineno
+    assert utils.strip_ansi(self.format_src(colored=1, linenos=0)) == string
 
 
 def test_eval_expr_capture():

@@ -26,10 +26,13 @@ def normalize(got, want):
         return re.sub(regex, r'\1\2', text)
 
     def visible_text(lines):
-        # TODO: ansii
         # TODO: backspaces
         # Any lines that end with only a carrage return are erased
         return [line for line in lines if not line.endswith('\r')]
+
+    # Remove terminal colors
+    got = utils.strip_ansi(got)
+    want = utils.strip_ansi(want)
 
     # normalize python 2/3 byte/unicode prefixes
     got = remove_prefixes(unicode_literal_re, got)

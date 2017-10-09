@@ -1,1 +1,1 @@
-__version__ = '0.0.5'  # nocover
+__version__ = '0.0.6'  # nocover

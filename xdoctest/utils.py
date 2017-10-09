@@ -301,3 +301,14 @@ def import_module_from_name(modname):
     else:
         module = __import__(modname, {}, {}, [], 0)
     return module
+
+
+def strip_ansi(text):
+    """
+    Removes all ansi directives from the string
+    Helper to remove ansi from length calculation
+    References: http://stackoverflow.com/questions/14693701remove-ansi
+    """
+    import re
+    ansi_escape = re.compile(r'\x1b[^m]*m')
+    return ansi_escape.sub('', text)
