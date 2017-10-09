@@ -322,10 +322,15 @@ class DoctestParser(object):
         statement.
 
         Example:
+            >>> from xdoctest.parser import *
             >>> raw_source_lines = ['>>> "string"']
             >>> raw_want_lines = ['string']
-            >>> self = parser.DoctestParser()
-            >>> parts = list(self._package_chunk(raw_source_lines, raw_want_lines))
+            >>> self = DoctestParser()
+            >>> part, = self._package_chunk(raw_source_lines, raw_want_lines)
+            >>> part.source
+            '"string"'
+            >>> part.want
+            'string
 
         """
         match = INDENT_RE.search(raw_source_lines[0])

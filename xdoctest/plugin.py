@@ -181,31 +181,13 @@ class XDoctestTextfile(pytest.Module):
     obj = None
 
     def collect(self):
-        pass
-        # import doctest
-
-        # inspired by doctest.testfile; ideally we would use it directly,
-        # but it doesn't support passing a custom checker
+        from xdoctest import core
         encoding = self.config.getini("xdoctest_encoding")
         text = self.fspath.read_text(encoding)
         filename = str(self.fspath)
         name = self.fspath.basename
         globs = {'__name__': '__main__'}
 
-        # optionflags = get_optionflags(self)
-        # runner = doctest.DebugRunner(verbose=0, optionflags=optionflags,
-        #                              checker=_get_checker())
-        # _fix_spoof_python2(runner, encoding)
-
-        # from xdoctest import doctest_patch  # NOQA
-        # DocTestParser = doctest_patch.XDocTestParser
-        # # DocTestParser = doctest.DocTestParser  # NOQA
-
-        # parser = DocTestParser()
-        # test = parser.get_doctest(text, globs, name, filename, 0)
-        # if test.examples:
-        #     yield XDoctestItem(test.name, self, runner, test)
-        from xdoctest import core
         parse_func = core.parse_freeform_docstr_examples
         for example in parse_func(text, name, fpath=filename):
             example.globs.update(globs)

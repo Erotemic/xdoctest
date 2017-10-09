@@ -7,7 +7,7 @@ import tokenize
 import six
 from fnmatch import fnmatch
 from six.moves import cStringIO as StringIO
-from collections import deque
+from collections import deque, OrderedDict
 from os.path import (join, exists, expanduser, abspath, split, splitext,
                      isfile, dirname)
 
@@ -58,7 +58,7 @@ class TopLevelVisitor(ast.NodeVisitor):
     """
     def __init__(self):
         super(TopLevelVisitor, self).__init__()
-        self.calldefs = {}
+        self.calldefs = OrderedDict()
         self.sourcelines = None
 
         self._current_classname = None
