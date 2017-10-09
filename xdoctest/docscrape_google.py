@@ -243,11 +243,9 @@ def split_google_docblocks(docstr):
         >>> from xdoctest.docscrape_google import *  # NOQA
         >>> docstr = split_google_docblocks.__doc__
         >>> groups = split_google_docblocks(docstr)
-        >>> #print('groups = %s' % (groups,))
-        >>> print(len(groups))
         >>> assert len(groups) == 5
-        >>> print(sorted(set([g[0] for g in groups])))
-        ['Args', 'Returns', 'Example']
+        >>> [g[0] for g in groups]
+        ['__DOC__', 'Args', 'Returns', 'Example', 'Example']
 
     Example:
         >>> from xdoctest.docscrape_google import *  # NOQA

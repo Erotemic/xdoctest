@@ -260,7 +260,7 @@ class DoctestParser(object):
             >>> s = 'I am a dummy example with two parts'
             >>> x = 10
             >>> print(s)
-            I am a dummy example with three parts
+            I am a dummy example with two parts
             >>> s = 'My purpose it so demonstrate how wants work here'
             >>> print('The new want applies ONLY to stdout')
             >>> print('given before the last want')
@@ -288,7 +288,8 @@ class DoctestParser(object):
             >>> key, (string, offset) = blocks[-2]
             >>> self._label_docsrc_lines(string)
             >>> doctest_parts = self.parse(string)
-            >>> assert len(doctest_parts) == 4
+            >>> # each part with a want-string needs to be broken in two
+            >>> assert len(doctest_parts) == 6
         """
         string = string.expandtabs()
         # If all lines begin with the same indentation, then strip it.
@@ -330,7 +331,7 @@ class DoctestParser(object):
             >>> part.source
             '"string"'
             >>> part.want
-            'string
+            'string'
 
         """
         match = INDENT_RE.search(raw_source_lines[0])
@@ -406,7 +407,7 @@ class DoctestParser(object):
                 these will be unindented, prefixed, and without any want.
 
         Example:
-            >>> self = parser.DoctestParser()
+            >>> self = DoctestParser()
             >>> source_lines = ['>>> def foo():', '>>>     return 0', '>>> 3']
             >>> linenos, eval_final = self._locate_ps1_linenos(source_lines)
             >>> assert linenos == [0, 2]
@@ -483,16 +484,17 @@ class DoctestParser(object):
                     more text
                     ''')
             >>> self = DoctestParser()
-            >>> labeled = self._label_docsrc_lines(string))
-            >>> assert labeled == [
+            >>> labeled = self._label_docsrc_lines(string)
+            >>> expected = [
             >>>     ('text', 'text'),
-            >>>     ('dsrc', ">>> items = ['also', 'nice', 'to', 'not', 'worry', 'about',"),
-            >>>     ('dsrc', ">>>          'using', '...', 'instead', 'of', '>>>']"),
+            >>>     ('dsrc', ">>> items = ['also', 'nice', 'to', 'not', 'worry',"),
+            >>>     ('dsrc', ">>>          'about', '...', 'vs', '>>>']"),
             >>>     ('dsrc', "... print('but its still allowed')"),
             >>>     ('want', 'but its still allowed'),
-            >>>     ('want', ''),
-            >>>     ('want', 'more text')
+            >>>     ('text', ''),
+            >>>     ('text', 'more text')
             >>> ]
+            >>> assert labeled == expected
         """
 
         def _complete_source(line, state_indent, line_iter):
@@ -590,8 +592,15 @@ class DoctestParser(object):
             # continue current state
             if curr_state == DSRC:
                 # source parts may consume more than one line
-                for part in _complete_source(line, state_indent, line_iter):
-                    labeled_lines.append((DSRC, part))
+                try:
+                    for part in _complete_source(line, state_indent, line_iter):
+                        labeled_lines.append((DSRC, part))
+                except SyntaxError:
+                    # TODO: need a better error message here
+                    print('SYNTAX ERROR WHEN PARSING DOCSTRING')
+                    print(string)
+                    raise
+
             elif curr_state == WANT:
                 labeled_lines.append((WANT, line))
             elif curr_state == TEXT:
