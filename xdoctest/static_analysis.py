@@ -245,6 +245,7 @@ def package_modnames(package_name, with_pkg=False, with_mod=True, exclude=[]):
     References:
         http://stackoverflow.com/questions/1707709/list-modules-in-py-package
     """
+    # FIXME: needs a pytest aware implementation
     modpath = modname_to_modpath(package_name, hide_init=True)
     if isfile(modpath):
         # If input is a file, just return it

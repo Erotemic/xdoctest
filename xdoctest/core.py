@@ -53,6 +53,8 @@ class DocTest(object):
         >>> assert self.num == 0
         >>> assert self.modpath == core.__file__
         >>> print(self.valid_testnames)
+        >>> print(self)
+        <DocTest(xdoctest.core DocTest:0 ln 47)>
     """
 
     def __init__(self, docsrc, modpath=None, callname=None, num=0,
@@ -311,7 +313,7 @@ class DocTest(object):
                 )
             except KeyboardInterrupt:  # nocover
                 raise
-            except:
+            except:  # nocover
                 self.exc_info = sys.exc_info()
                 if on_error == 'raise':
                     raise
@@ -331,9 +333,10 @@ class DocTest(object):
             # Handle anything that could go wrong
             except KeyboardInterrupt:  # nocover
                 raise
-            except ExitTestException:  # nocover
+            except ExitTestException:
                 if verbose > 0:
                     print('Test gracefully exists')
+                break
             except parser.GotWantException:
                 self.exc_info = sys.exc_info()
                 if on_error == 'raise':

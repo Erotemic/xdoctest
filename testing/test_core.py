@@ -311,3 +311,19 @@ def test_freeform_parse_lineno():
         for p in test._parts:
             assert p.line_offset == offset
             offset += p.n_lines
+
+
+def test_exit_test_exception():
+    """
+    pytest testing/test_core.py::test_exit_test_exception
+    """
+    string = utils.codeblock(
+        '''
+        >>> from xdoctest.core import ExitTestException
+        >>> raise ExitTestException()
+        >>> 0 / 0  # should never reach this
+        2
+        ''')
+    self = core.DocTest(docsrc=string)
+    result = self.run(on_error='raise')
+    assert result['passed']

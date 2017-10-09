@@ -18,7 +18,7 @@ class TeeStringIO(StringIO):
             self.redirect.write(msg)
         super(TeeStringIO, self).write(msg)
 
-    def flush(self):
+    def flush(self):  # nocover
         if self.redirect is not None:
             self.redirect.flush()
         super(TeeStringIO, self).flush()
@@ -50,7 +50,7 @@ class CaptureStdout(object):
         else:
             redirect = self.orig_stdout
         self.cap_stdout = TeeStringIO(redirect)
-        if six.PY2:
+        if six.PY2:  # nocover
             # http://stackoverflow.com/questions/1817695/stringio-accept-utf8
             codecinfo = codecs.lookup('utf8')
             self.cap_stdout = codecs.StreamReaderWriter(
@@ -66,7 +66,7 @@ class CaptureStdout(object):
         try:
             self.cap_stdout.seek(0)
             self.text = self.cap_stdout.read()
-            if six.PY2:
+            if six.PY2:  # nocover
                 self.text = self.text.decode('utf8')
         except Exception:  # nocover
             raise
@@ -211,37 +211,37 @@ class TempDir(object):
         shutil.rmtree(self.dpath)
 
 
-def import_module_from_fpath(module_fpath):
-    """
-    imports module from a file path
+# def import_module_from_fpath(module_fpath):
+#     """
+#     imports module from a file path
 
-    Args:
-        module_fpath (str):
+#     Args:
+#         module_fpath (str):
 
-    Returns:
-        module: module
-    """
-    from os.path import basename, splitext, isdir, join, exists, dirname, split
-    if isdir(module_fpath):
-        module_fpath = join(module_fpath, '__init__.py')
-    if not exists(module_fpath):
-        raise ImportError('module_fpath={!r} does not exist'.format(
-            module_fpath))
-    modname = splitext(basename(module_fpath))[0]
-    if modname == '__init__':
-        modname = split(dirname(module_fpath))[1]
-    if sys.version.startswith('2.7'):
-        import imp
-        module = imp.load_source(modname, module_fpath)
-    elif sys.version.startswith('3'):
-        import importlib.machinery
-        loader = importlib.machinery.SourceFileLoader(modname, module_fpath)
-        module = loader.load_module()
-        # module = loader.exec_module(modname)
-    else:
-        raise AssertionError('invalid python version={!r}'.format(
-            sys.version))
-    return module
+#     Returns:
+#         module: module
+#     """
+#     from os.path import basename, splitext, isdir, join, exists, dirname, split
+#     if isdir(module_fpath):
+#         module_fpath = join(module_fpath, '__init__.py')
+#     if not exists(module_fpath):
+#         raise ImportError('module_fpath={!r} does not exist'.format(
+#             module_fpath))
+#     modname = splitext(basename(module_fpath))[0]
+#     if modname == '__init__':
+#         modname = split(dirname(module_fpath))[1]
+#     if sys.version.startswith('2.7'):
+#         import imp
+#         module = imp.load_source(modname, module_fpath)
+#     elif sys.version.startswith('3'):
+#         import importlib.machinery
+#         loader = importlib.machinery.SourceFileLoader(modname, module_fpath)
+#         module = loader.load_module()
+#         # module = loader.exec_module(modname)
+#     else:
+#         raise AssertionError('invalid python version={!r}'.format(
+#             sys.version))
+#     return module
 
 
 def import_module_from_name(modname):

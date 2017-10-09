@@ -2,7 +2,10 @@
 if __name__ == '__main__':
     import pytest
     import sys
-    pytest.main(['-p', 'no:doctest', '-p', 'pytester', '--xdoctest', './testing'] + sys.argv[1:])
+    pytest.main(['--cov=xdoctest',
+                 '--cov-config', '.coveragerc',
+                 '--cov-report', 'html'] + sys.argv[1:])
+    # pytest.main(['-p', 'no:doctest', '-p', 'pytester', '--xdoctest', './testing'] + sys.argv[1:])
     # pytest.main(['-p', 'no:doctest', '-p', 'pytester', '--xdoctest', './xdoctest'] + sys.argv[1:])
     # pytest.main(['-p', 'no:doctest', '-p', 'pytester', '--xdoctest'] + sys.argv[1:])
     # pytest.main(['-rsxX', '-p', 'pytester', 'xdoctest'] + sys.argv[1:])

@@ -53,8 +53,8 @@ TODO:
 - [x] Get pytest plugin working
 - [x] TESTS TESTS TESTS
 - [x] Register on pypi
-- [ ] CI-via Travis / AppVeyor
-- [ ] Coverage
+- [x] CI-via Travis / AppVeyor
+- [x] Coverage
 - [ ] Professional readme (remove/rephrase my ramblings)
 - [ ] Documentation
 - [ ] Rename to something better than `xdoctest`?
