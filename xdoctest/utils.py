@@ -2,9 +2,34 @@
 from __future__ import print_function, division, absolute_import, unicode_literals
 import sys
 import six
-import codecs
+# import codecs
 import textwrap
-from six.moves import cStringIO as StringIO
+from io import StringIO
+# from six.moves import cStringIO as StringIO
+
+
+def ensure_unicode(text):
+    r"""
+    Casts bytes into utf8 (mostly for python2 compatibility)
+
+    References:
+        http://stackoverflow.com/questions/12561063/python-extract-data-from-file
+
+    Example:
+        >>> from xdoctest.utils import *
+        >>> assert ensure_unicode('my ünicôdé strįng') == 'my ünicôdé strįng'
+        >>> assert ensure_unicode('text1') == 'text1'
+        >>> assert ensure_unicode('text1'.encode('utf8')) == 'text1'
+        >>> assert ensure_unicode('ï»¿text1'.encode('utf8')) == 'ï»¿text1'
+        >>> import codecs
+        >>> assert (codecs.BOM_UTF8 + 'text»¿'.encode('utf8')).decode('utf8')
+    """
+    if isinstance(text, six.text_type):
+        return text
+    elif isinstance(text, six.binary_type):
+        return text.decode('utf8')
+    else:  # nocover
+        raise ValueError('unknown input type {!r}'.format(text))
 
 
 class TeeStringIO(StringIO):
@@ -16,6 +41,8 @@ class TeeStringIO(StringIO):
     def write(self, msg):
         if self.redirect is not None:
             self.redirect.write(msg)
+        if six.PY2:
+            msg = ensure_unicode(msg)
         super(TeeStringIO, self).write(msg)
 
     def flush(self):  # nocover
@@ -50,12 +77,13 @@ class CaptureStdout(object):
         else:
             redirect = self.orig_stdout
         self.cap_stdout = TeeStringIO(redirect)
-        if six.PY2:  # nocover
-            # http://stackoverflow.com/questions/1817695/stringio-accept-utf8
-            codecinfo = codecs.lookup('utf8')
-            self.cap_stdout = codecs.StreamReaderWriter(
-                self.cap_stdout, codecinfo.streamreader,
-                codecinfo.streamwriter)
+        # not needed when not using cStriongIO
+        # if six.PY2:
+        #     # http://stackoverflow.com/questions/1817695/stringio-accept-utf8
+        #     codecinfo = codecs.lookup('utf8')
+        #     self.cap_stdout = codecs.StreamReaderWriter(
+        #         self.cap_stdout, codecinfo.streamreader,
+        #         codecinfo.streamwriter)
         self.text = None
 
     def __enter__(self):
@@ -66,8 +94,8 @@ class CaptureStdout(object):
         try:
             self.cap_stdout.seek(0)
             self.text = self.cap_stdout.read()
-            if six.PY2:  # nocover
-                self.text = self.text.decode('utf8')
+            # if six.PY2:  # nocover
+            #     self.text = self.text.decode('utf8')
         except Exception:  # nocover
             raise
         finally:

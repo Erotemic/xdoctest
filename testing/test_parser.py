@@ -43,20 +43,22 @@ def test_final_eval_exec():
 
     string = utils.codeblock(
         r'''
-        >>> x = 2
-        >>> x += 3
-        >>> print('foo')
-        foo
+        >>> i = 0
+        >>> 0 / i
+        2
         ''')
     self = parser.DoctestParser()
     parts = self.parse(string)
     assert [p.use_eval for p in parts] == [False, True]
 
+
+def test_use_eval_print():
     string = utils.codeblock(
         r'''
-        >>> i = 0
-        >>> 0 / i
-        2
+        >>> x = 2
+        >>> x += 3
+        >>> print('foo')
+        foo
         ''')
     self = parser.DoctestParser()
     parts = self.parse(string)

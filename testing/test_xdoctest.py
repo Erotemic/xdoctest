@@ -3,7 +3,7 @@
 Adapted from the original `pytest/testing/test_doctest.py` module at:
     https://github.com/pytest-dev/pytest
 """
-from __future__ import absolute_import, division, print_function
+from __future__ import print_function, division, absolute_import, unicode_literals
 import sys
 import _pytest._code
 from _pytest.compat import MODULE_NOT_FOUND_ERROR
@@ -572,6 +572,9 @@ class TestXDoctest(object):
         """
         Test case for issue 2434: DecodeError on Python 2 when xdoctest docstring
         contains non-ascii characters.
+
+        pytest -rsxX -p pytester testing/test_xdoctest.py::TestXDoctest::test_unicode_doctest_module
+
         """
         p = testdir.makepyfile(test_unicode_doctest_module="""
             # -*- encoding: utf-8 -*-
@@ -584,7 +587,7 @@ class TestXDoctest(object):
                 '''
                 return "único"
         """)
-        result = testdir.runpytest(p, '--xdoctest-modules')
+        result = testdir.runpytest(p, '--xdoctest-modules', *EXTRA_ARGS)
         result.stdout.fnmatch_lines(['* 1 passed *'])
 
     def test_xdoctest_multiline_string(self, testdir):
@@ -684,6 +687,7 @@ class TestXDoctest(object):
 class TestLiterals(object):
 
     @pytest.mark.parametrize('config_mode', ['ini', 'comment'])
+    @pytest.mark.skip('bytes are not supported yet')
     def test_allow_unicode(self, testdir, config_mode):
         """Test that doctests which output unicode work in all python versions
         tested by pytest when the ALLOW_UNICODE option is used (either in
@@ -742,6 +746,7 @@ class TestLiterals(object):
         reprec = testdir.inline_run("--xdoctest-modules")
         reprec.assertoutcome(passed=2)
 
+    @pytest.mark.skip('bytes are not supported yet')
     def test_unicode_string(self, testdir):
         """Test that doctests which output unicode fail in Python 2 when
         the ALLOW_UNICODE option is not used. The same test should pass
@@ -788,7 +793,7 @@ class TestXDoctestSkips(object):
                 '''
         """)
         result = testdir.runpytest("--xdoctest-modules")
-        result.stdout.fnmatch_lines('*no tests ran*')
+        result.stdout.fnmatch_lines(['*no tests ran*'])
 
     @pytest.fixture(params=['text', 'module'])
     def makedoctest(self, testdir, request):
@@ -875,7 +880,7 @@ class TestXDoctestAutoUseFixtures(object):
               '''
         """)
         result = testdir.runpytest("--xdoctest-modules")
-        result.stdout.fnmatch_lines('*2 passed*')
+        result.stdout.fnmatch_lines(['*2 passed*'])
 
     @pytest.mark.parametrize('scope', SCOPES)
     @pytest.mark.parametrize('enable_doctest', [True, False])
@@ -1375,7 +1380,7 @@ class Disabled(object):
                 >>> 1/0  # Byé
                 1
         """)
-        result = testdir.runpytest(p)
+        result = testdir.runpytest(p, *EXTRA_ARGS)
         result.stdout.fnmatch_lines([
             '*FAILED DOCTEST: ZeroDivisionError*',
             '*1 failed*',

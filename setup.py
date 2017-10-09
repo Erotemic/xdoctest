@@ -55,12 +55,12 @@ def parse_version():
     return visitor.version
 
 
-def parse_requirements():
+def parse_requirements(fname='requirements.txt'):
     """
     python -c "import setup; print(setup.parse_requirements())"
     """
     from os.path import dirname, join, exists
-    require_fpath = join(dirname(__file__), 'requirements.txt')
+    require_fpath = join(dirname(__file__), fname)
     # This breaks on pip install, so check that it exists.
     if exists(require_fpath):
         with open(require_fpath, 'r') as f:
@@ -74,7 +74,10 @@ if __name__ == '__main__':
         name="xdoctest",
         version=parse_version(),
         description='A rewrite of the builtin doctest module',
-        install_requires=parse_requirements(),
+        install_requires=parse_requirements('requirements.txt'),
+        extras_require={
+            'all': parse_requirements('optional-requirements.txt')
+        },
         # long_description=parse_description(),
         author='Jon Crall',
         author_email='erotemic@gmail.com',

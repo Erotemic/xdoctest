@@ -52,7 +52,6 @@ class DocTest(object):
         >>>         break
         >>> assert self.num == 0
         >>> assert self.modpath == core.__file__
-        >>> print(self.valid_testnames)
         >>> print(self)
         <DocTest(xdoctest.core DocTest:0 ln 47)>
     """
@@ -80,6 +79,7 @@ class DocTest(object):
         self.lineno = lineno
         self.num = num
         self._parts = None
+        self.tb_lineno = None
         self.exc_info = None
         self.failed_part = None
         self.stdout_results = []
@@ -276,19 +276,19 @@ class DocTest(object):
             #         if '__file__' not in test_globals:
             #             test_globals['__file__'] = self.fpath
 
-            def _extract_future_flags(globs):
-                """
-                Return the compiler-flags associated with the future features that
-                have been imported into the given namespace (globs).
-                """
-                flags = 0
-                for fname in __future__.all_feature_names:
-                    feature = globs.get(fname, None)
-                    if feature is getattr(__future__, fname):
-                        flags |= feature.compiler_flag
-                return flags
+        def _extract_future_flags(globs):
+            """
+            Return the compiler-flags associated with the future features that
+            have been imported into the given namespace (globs).
+            """
+            flags = 0
+            for fname in __future__.all_feature_names:
+                feature = globs.get(fname, None)
+                if feature is getattr(__future__, fname):
+                    flags |= feature.compiler_flag
+            return flags
+        compileflags = _extract_future_flags(test_globals)
 
-            compileflags = _extract_future_flags(test_globals)
         self.stdout_results = []
         self.evaled_results = []
         self.exc_info = None
@@ -315,6 +315,8 @@ class DocTest(object):
                 raise
             except:  # nocover
                 self.exc_info = sys.exc_info()
+                type, value, tb = self.exc_info
+                self.tb_lineno = tb.tb_lineno
                 if on_error == 'raise':
                     raise
             try:
@@ -344,9 +346,10 @@ class DocTest(object):
                 break
             except:
                 type, value, tb = sys.exc_info()
+                print('type = {!r}'.format(type))
                 # Pop the eval off the stack
-                CLEAN_TRACEBACK = True
-                # CLEAN_TRACEBACK = 0
+                # CLEAN_TRACEBACK = True
+                CLEAN_TRACEBACK = 0
                 if CLEAN_TRACEBACK:
                     if tb.tb_next is not None:
                         tb = tb.tb_next
@@ -439,7 +442,6 @@ class DocTest(object):
         # lines += ['Failed doctest in ' + self.callname]
 
         colored = self.config['colored']
-        print('self.config = {!r}'.format(self.config))
         source_text = self.format_src(colored=colored, linenos=True,
                                       want=False)
         if fail_lineno is not None:

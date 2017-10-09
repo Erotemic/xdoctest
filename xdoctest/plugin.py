@@ -1,4 +1,4 @@
-# encoding: utf-8
+# -*- coding: utf-8 -*-
 """
 plugin file for registration with pytest.
 
@@ -7,7 +7,8 @@ discover and run doctests in modules and test files.
 Adapted from the original `pytest/_pytest/doctest.py` module at:
     https://github.com/pytest-dev/pytest
 """
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import print_function, division, absolute_import
 import pytest
 from _pytest._code import code
 from _pytest import fixtures

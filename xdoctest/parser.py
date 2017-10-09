@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+from __future__ import print_function, division, absolute_import, unicode_literals
 from six.moves import cStringIO as StringIO
 import ast
 import sys
@@ -5,13 +7,14 @@ import itertools as it
 import tokenize
 import re
 from xdoctest import utils
+from xdoctest import checker
 
 
 class GotWantException(AssertionError):
 
-    def __init__(self, msg, want, got):
-        self.want = want
+    def __init__(self, msg, got, want):
         self.got = got
+        self.want = want
         super(GotWantException, self).__init__(msg)
 
     def _do_a_fancy_diff(self, optionflags=0):
@@ -193,58 +196,32 @@ class DoctestPart(object):
         if got_eval is not_evaled:
             # if there was no eval, check stdout
             got = got_stdout
-            flag = part.check_stdout_got_vs_want(got)
+            flag = checker.check_output(got, part.want)
         else:
             if not got_stdout:
                 # If there was no stdout then use eval value.
-                got = got_eval
-                flag = part.check_eval_got_vs_want(got)
                 got = repr(got_eval)
+                flag = checker.check_output(got, part.want)
             else:
                 # If there was eval and stdout, defer to stdout
                 # but allow fallback on the eval.
                 got = got_stdout
-                flag = part.check_stdout_got_vs_want(got)
+                flag = checker.check_output(got, part.want)
                 if not flag:
-                    # allow eval to fallback and save us
-                    flag = part.check_eval_got_vs_want(got_eval)
-                    if flag:
-                        got = repr(got_eval)
+                    # allow eval to fallback and save us, but if it fails, do a
+                    # diff with stdout
+                    got = repr(got_eval)
+                    flag = checker.check_output(got, part.want)
+                    if not flag:
+                        got = got_stdout
         if not flag:
             # print('got = {!r}'.format(got))
             # print('part.want = {!r}'.format(part.want))
             # msg += output_difference(part.want, got)
+            got, want = checker.normalize(got, part.want)
             msg = 'got differs with doctest want'
-            ex = GotWantException(msg, part.want, got)
+            ex = GotWantException(msg, got, want)
             raise ex
-
-    def check_eval_got_vs_want(self, got_eval):
-        if not self.want:
-            return True
-        if self.want:
-            if self.want == '...':
-                return True
-            if repr(got_eval) == self.want:
-                return True
-        return False
-
-        # raise AssertionError(
-        #     'got={!r} differs with doctest want={!r}'.format(repr(got), self.want))
-
-    def check_stdout_got_vs_want(self, got):
-        if not self.want:
-            return True
-        if self.want:
-            if self.want == '...':
-                return True
-            got = got.rstrip()
-            want = self.want.rstrip()
-            # if got.endswith('\n') and not self.want.endswith('\n'):
-            #     # allow got to have one extra newline
-            #     got = got[:-1]
-            if want == got:
-                return True
-        return False
 
 
 class DoctestParser(object):
@@ -412,6 +389,13 @@ class DoctestParser(object):
             >>> linenos, eval_final = self._locate_ps1_linenos(source_lines)
             >>> assert linenos == [0, 2]
             >>> assert eval_final is True
+
+        Example:
+            >>> self = DoctestParser()
+            >>> source_lines = ['>>> x = [1, 2, ', '>>> 3, 4]', '>>> print(len(x))']
+            >>> linenos, eval_final = self._locate_ps1_linenos(source_lines)
+            >>> assert linenos == [0, 2]
+            >>> assert eval_final is True
         """
         # Strip indentation (and PS1 / PS2 from source)
         exec_source_lines = [p[4:] for p in source_lines]
@@ -435,7 +419,14 @@ class DoctestParser(object):
         ps1_linenos = sorted(ps1_linenos.difference(ps2_linenos))
 
         # Is the last statement evaluatable?
-        eval_final = isinstance(statement_nodes[-1], ast.Expr)
+        if sys.version_info.major == 2:
+            eval_final = isinstance(statement_nodes[-1], (
+                ast.Expr, ast.Print))
+        else:
+            # This should just be an Expr in python3
+            # (todo: ensure this is true)
+            eval_final = isinstance(statement_nodes[-1], ast.Expr)
+
         return ps1_linenos, eval_final
 
     def _workaround_16806(self, ps1_linenos, exec_source_lines):
