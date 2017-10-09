@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import, unicode_literals
 import __future__
+import traceback
 import textwrap
 import warnings
 import sys
@@ -16,6 +17,26 @@ from xdoctest import parser
 
 class ExitTestException(Exception):
     pass
+
+
+class Config(dict):
+    """
+    Configuration for collection, execution, and reporting doctests
+    """
+    def __init__(self, *args, **kwargs):
+        super(Config, self).__init__(*args, **kwargs)
+        self.update({
+            # 'colored': True,
+            'colored': False,
+            'on_error': 'raise',
+            'verbose': 1,
+        })
+
+    def getvalue(self, key, given=None):
+        if given is None:
+            return self[key]
+        else:
+            return given
 
 
 class DocTest(object):
@@ -36,6 +57,8 @@ class DocTest(object):
 
     def __init__(self, docsrc, modpath=None, callname=None, num=0,
                  lineno=1, fpath=None):
+        self.config = Config()
+
         self.modpath = modpath
         self.fpath = fpath
         if modpath is None:
@@ -102,8 +125,8 @@ class DocTest(object):
             self.unique_callname,
         }
 
-    def format_src(self, linenos=True, colored=False, want=True,
-                   offset_linenums=False):
+    def format_src(self, linenos=True, colored=None, want=True,
+                   offset_linenos=False):
         """
         Adds prefix and line numbers to a doctest
 
@@ -116,12 +139,14 @@ class DocTest(object):
             >>> print(self.format_src(linenos=False, colored=False))
             >>> assert not self.is_disabled()
         """
+        colored = self.config.getvalue('colored', colored)
+
         import math
         # return '\n'.join([p.source for p in self._parts])
         formated_parts = []
 
         if linenos:
-            if offset_linenums:
+            if offset_linenos:
                 startline = 1 if self.lineno is None else self.lineno
             else:
                 startline = 1
@@ -222,13 +247,11 @@ class DocTest(object):
             * There is no difference between locals/globals in exec context
             Only pass in one dict, otherwise there is weird behavior
         """
-        if on_error is None:
-            on_error = 'raise'
+        on_error = self.config.getvalue('on_error', on_error)
+        verbose = self.config.getvalue('verbose', verbose)
         if on_error not in {'raise', 'return'}:
             raise KeyError(on_error)
 
-        if verbose is None:
-            verbose = 1
         self._parse()
         self.pre_run(verbose)
         # Prepare for actual test run
@@ -281,7 +304,9 @@ class DocTest(object):
 
                 code = compile(
                     part.source, mode=mode,
-                    filename=self.node,
+                    filename='<doctest:' + self.node + '>',
+                    # filename='<doctest>',
+                    # self.node,
                     flags=compileflags, dont_inherit=True
                 )
             except KeyboardInterrupt:  # nocover
@@ -315,9 +340,24 @@ class DocTest(object):
                     raise
                 break
             except:
-                # import traceback
-                # print("Got exception:", traceback.format_exc())
-                self.exc_info = sys.exc_info()
+                type, value, tb = sys.exc_info()
+                # Pop the eval off the stack
+                CLEAN_TRACEBACK = True
+                # CLEAN_TRACEBACK = 0
+                if CLEAN_TRACEBACK:
+                    if tb.tb_next is not None:
+                        tb = tb.tb_next
+                    self.tb_lineno = tb.tb_lineno
+                    # tb.tb_lineno = tb_lineno + self.failed_part.line_offset + self.lineno
+                else:
+                    if tb.tb_next is None:
+                        # TODO: test and understand this case
+                        self.tb_lineno = tb.tb_lineno
+                    else:
+                        # Use the next because we need to pop the eval of the stack
+                        self.tb_lineno = tb.tb_next.tb_lineno
+
+                self.exc_info = (type, value, tb)
                 if on_error == 'raise':
                     raise
                 break
@@ -338,7 +378,7 @@ class DocTest(object):
         if verbose >= 1:
             if verbose >= 2:
                 print('============')
-            print('* DOCTEST : {}'.format(self.callname))
+            print('* DOCTEST : {}'.format(self.node))
             # print(self.cmdline)
             if verbose >= 2:
                 print(self.format_src())
@@ -357,11 +397,7 @@ class DocTest(object):
                 # Return the line of the want line
                 offset += self.failed_part.n_exec_lines + 1
             else:
-                # Use the next because we need to pop the eval of the stack
-                if tb.tb_next is None:
-                    offset = tb.tb_lineno
-                else:
-                    offset += tb.tb_next.tb_lineno
+                offset += self.tb_lineno
             offset -= 1
             return offset
 
@@ -374,20 +410,11 @@ class DocTest(object):
             lineno = self.lineno + offset
             return lineno
 
-    def repr_failure(self, verbose=1, colored=True):
+    def repr_failure(self):
         """
-        Notes:
-            utool's output format was
-
-            (stdout was printed in real time)
-            test-stdout,
-            errmsg + traceback
-
-            Then failed where:
-                docest src
-
-
+        Constructs lines detailing information about a failed doctest
         """
+
         type, value, tb = self.exc_info
         fail_offset = self.failed_line_offset()
         fail_lineno = self.failed_lineno()
@@ -408,6 +435,8 @@ class DocTest(object):
 
         # lines += ['Failed doctest in ' + self.callname]
 
+        colored = self.config['colored']
+        print('self.config = {!r}'.format(self.config))
         source_text = self.format_src(colored=colored, linenos=True,
                                       want=False)
         if fail_lineno is not None:
@@ -436,7 +465,6 @@ class DocTest(object):
                 value.output_difference()
             ]
         else:
-            import traceback
             tblines = traceback.format_exception(*self.exc_info)
             if colored:
                 tbtext = '\n'.join(tblines)
@@ -463,11 +491,11 @@ class DocTest(object):
         }
         if self.exc_info is None:
             if verbose >= 1:
-                print('* SUCCESS: {}'.format(self.callname))
+                print('* SUCCESS: {}'.format(self.node))
                 self._print_captured()
         else:
             if verbose >= 1:
-                text = '\n'.join(self.repr_failure(verbose=verbose))
+                text = '\n'.join(self.repr_failure())
                 print(text)
             summary['exc_info'] = self.exc_info
         return summary

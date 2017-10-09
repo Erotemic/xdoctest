@@ -50,10 +50,10 @@ def test_format_src():
         import re
         ansi_escape = re.compile(r'\x1b[^m]*m')
         return ansi_escape.sub('', text)
-    assert self.format_src(colored=0, linenums=1) == string_with_lineno
-    assert self.format_src(colored=0, linenums=0) == string
-    assert strip_ansi(self.format_src(colored=1, linenums=1)) == string_with_lineno
-    assert strip_ansi(self.format_src(colored=1, linenums=0)) == string
+    assert self.format_src(colored=0, linenos=1) == string_with_lineno
+    assert self.format_src(colored=0, linenos=0) == string
+    assert strip_ansi(self.format_src(colored=1, linenos=1)) == string_with_lineno
+    assert strip_ansi(self.format_src(colored=1, linenos=0)) == string
 
 
 def test_eval_expr_capture():
@@ -119,7 +119,7 @@ def test_comment():
     self = core.DocTest(docsrc=docsrc)
     self._parse()
     assert len(self._parts) == 1
-    self.run()
+    self.run(verbose=0)
 
     docsrc = utils.codeblock(
         '''
@@ -129,7 +129,7 @@ def test_comment():
     self = core.DocTest(docsrc=docsrc)
     self._parse()
     assert len(self._parts) == 1
-    self.run()
+    self.run(verbose=0)
 
     docsrc = utils.codeblock(
         '''
@@ -138,10 +138,10 @@ def test_comment():
         >>> x / 0
         >>> # bazbiz
         ''')
-    self = core.DocTest(docsrc=docsrc, lineno=0)
+    self = core.DocTest(docsrc=docsrc, lineno=1)
     self._parse()
     assert len(self._parts) == 1
-    result = self.run(on_error='return')
+    result = self.run(on_error='return', verbose=0)
     assert not result['passed']
 
     assert self.failed_lineno() == 3
@@ -168,12 +168,12 @@ def test_mod_lineno():
         assert len(doctests) == 1
         self = doctests[0]
 
-        print(self._parts[0])
-
-        assert self.lineno == 4
-        print(self.format_src())
-
-        assert self.format_src().strip().startswith('5')
+        # print(self._parts[0])
+        assert self.lineno == 5
+        # print(self.format_src())
+        self.config['colored'] = False
+        assert self.format_src(offset_linenos=False).strip().startswith('1')
+        assert self.format_src(offset_linenos=True).strip().startswith('5')
 
         with utils.PythonPathContext(dpath):
             status = self.run(verbose=10, on_error='return')
@@ -248,10 +248,12 @@ def test_show_entire():
         doctests = list(core.module_doctestables(modpath))
         assert len(doctests) == 1
         self = doctests[0]
+        self.config['colored'] = False
         print(self.lineno)
         print(self._parts[0].line_offset)
         print(self.format_src())
-        assert self.format_src().strip().startswith('6')
+        assert self.format_src(offset_linenos=True).strip().startswith('6')
+        assert self.format_src(offset_linenos=False).strip().startswith('1')
 
         with utils.PythonPathContext(dpath):
             status = self.run(verbose=0, on_error='return')

@@ -63,6 +63,11 @@ def pytest_addoption(parser):
                     choices=DOCTEST_REPORT_CHOICES,
                     dest="xdoctestreport")
 
+    group.addoption("--xdoctest-nocolor",
+                    action="store_false", default=True,
+                    help="Turns off ansii colors in stdout",
+                    dest="xdoctest_colored")
+
 
 def pytest_collect_file(path, parent):
     config = parent.config
@@ -111,14 +116,14 @@ class XDoctestItem(pytest.Item):
             self.example.globs.update(globs)
 
     def runtest(self):
-        # _check_all_skipped(self.example)
-        #     if all_skipped:
-        #         pytest.skip('all tests skipped by +SKIP option')
         import re
         m = re.match(r'>>>\s*#\s*pytest.skip', self.example.docsrc, flags=re.IGNORECASE)
         if m is not None:
             pytest.skip('doctest encountered skip directive')
         self.example.run(verbose=0, on_error='raise')
+        # _check_all_skipped(self.example)
+        #     if all_skipped:
+        #         pytest.skip('all tests skipped by +SKIP option')
         # self.runner.run(self.example)
 
     def repr_failure(self, excinfo):
@@ -188,9 +193,12 @@ class XDoctestTextfile(pytest.Module):
         name = self.fspath.basename
         globs = {'__name__': '__main__'}
 
+        colored = self.config.getvalue('xdoctest_colored')
+
         parse_func = core.parse_freeform_docstr_examples
         for example in parse_func(text, name, fpath=filename):
             example.globs.update(globs)
+            example.config['colored'] = colored
             yield XDoctestItem(name, self, example)
 
 
@@ -221,12 +229,15 @@ class XDoctestModule(pytest.Module):
         parse_func = core.parse_freeform_docstr_examples
         # parse_func = core.parse_google_docstr_examples
 
+        colored = self.config.getvalue('xdoctest_colored')
+
         for callname, calldef in calldefs.items():
             docstr = calldef.docstr
             if calldef.docstr is not None:
                 lineno = calldef.doclineno
                 for example in parse_func(docstr, callname, modpath, lineno=lineno):
                     if not example.is_disabled():
+                        example.config['colored'] = colored
                         name = example.unique_callname
                         yield XDoctestItem(name, self, example)
 
