@@ -11,11 +11,11 @@ python:
   - "3.4"
   - "3.5"
   - "3.6"
-  - "3.7"
 before_install:
   - pip install pip -U
   - pip install codecov -U
   - pip install pytest -U
+  - pip install pygments -U
 install:
   #- travis_retry python setup.py build develop
   - travis_retry pip install -e .
