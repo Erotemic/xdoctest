@@ -117,9 +117,7 @@ class XDoctestItem(pytest.Item):
             self.example.globs.update(globs)
 
     def runtest(self):
-        import re
-        m = re.match(r'>>>\s*#\s*pytest.skip', self.example.docsrc, flags=re.IGNORECASE)
-        if m is not None:
+        if self.example.is_disabled(pytest=True):
             pytest.skip('doctest encountered skip directive')
         self.example.run(verbose=0, on_error='raise')
         # _check_all_skipped(self.example)
@@ -237,10 +235,10 @@ class XDoctestModule(pytest.Module):
             if calldef.docstr is not None:
                 lineno = calldef.doclineno
                 for example in parse_func(docstr, callname, modpath, lineno=lineno):
-                    if not example.is_disabled():
-                        example.config['colored'] = colored
-                        name = example.unique_callname
-                        yield XDoctestItem(name, self, example)
+                    # if not example.is_disabled():
+                    example.config['colored'] = colored
+                    name = example.unique_callname
+                    yield XDoctestItem(name, self, example)
 
         # import doctest
         # if self.fspath.basename == "conftest.py":

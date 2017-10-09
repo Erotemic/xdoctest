@@ -104,11 +104,29 @@ class DocTest(object):
         devnice = self.__nice__()
         return '<%s(%s)>' % (classname, devnice)
 
-    def is_disabled(self):
+    def is_disabled(self, pytest=False):
         """
         Checks for comment directives on the first line of the doctest
+
+        A doctest is disabled if it starts with any of the following patterns:
+            # DISABLE_DOCTEST
+            # doctest: +SKIP
+            # xdoctest: +SKIP
+
+        And if running in pytest, you can also use
+            # pytest.skip
         """
-        m = re.match(r'>>>\s*#\s*DISABLE', self.docsrc, flags=re.IGNORECASE)
+        disable_patterns = [
+            r'>>>\s*#\s*DISABLE',
+            r'>>>\s*#\s*x?doctest:\s\+SKIP',
+        ]
+        if pytest:
+            disable_patterns += [
+                r'>>>\s*#\s*pytest.skip'
+            ]
+
+        pattern = '|'.join(disable_patterns)
+        m = re.match(pattern, self.docsrc, flags=re.IGNORECASE)
         return m is not None
 
     @property
@@ -380,7 +398,8 @@ class DocTest(object):
     @property
     def cmdline(self):
         # TODO: move to pytest
-        return 'python -m ' + self.modname + ' ' + self.unique_callname
+        return 'pytest  ' + self.node
+        # return 'python -m ' + self.modname + ' ' + self.unique_callname
 
     def pre_run(self, verbose):
         if verbose >= 1:
@@ -469,7 +488,9 @@ class DocTest(object):
         if hasattr(value, 'output_difference'):
             # report_choice = _get_report_choice(self.config.getoption("doctestreport"))
             lines += [
-                value.output_difference()
+                value.output_difference(colored=colored),
+                ('value.got  = {!r}'.format(value.got)),
+                ('value.want = {!r}'.format(value.want)),
             ]
         else:
             tblines = traceback.format_exception(*self.exc_info)
@@ -479,6 +500,9 @@ class DocTest(object):
                                               stripall=True)
                 tblines = tbtext.splitlines()
             lines += tblines
+
+        lines += ['CommandLine:']
+        lines += [self.cmdline]
         return lines
 
     def _print_captured(self):
