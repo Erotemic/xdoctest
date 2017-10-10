@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
+import os
+import sys
 import ast
 import re
-import pkgutil
 import tokenize
 import six
-from fnmatch import fnmatch
 from six.moves import cStringIO as StringIO
 from collections import deque, OrderedDict
 from xdoctest import utils
 from os.path import (join, exists, expanduser, abspath, split, splitext,
-                     isfile, dirname)
+                     isfile, dirname, basename, isdir)
 
 
 class CallDefNode(object):
@@ -193,7 +193,7 @@ class TopLevelVisitor(ast.NodeVisitor):
                 ]):
                     # Ignore main block
                     return
-            except Exception as ex:
+            except Exception:  # nocover
                 pass
         self.generic_visit(node)
 
@@ -229,12 +229,31 @@ def parse_calldefs(source=None, fpath=None):
         raise
 
 
-def package_modnames(package_name, with_pkg=False, with_mod=True, exclude=[]):
+def _platform_pylib_ext():  # nocover
+    if sys.platform.startswith('linux'):  # nocover
+        pylib_ext = '.so'
+    elif sys.platform.startswith('win32'):  # nocover
+        pylib_ext = '.pyd'
+    elif sys.platform.startswith('darwin'):  # nocover
+        pylib_ext = '.dylib'
+    else:
+        pylib_ext = '.so'
+    return pylib_ext
+
+
+# def package_modnames(package_name, with_pkg=False, with_mod=True):
+#     pkgpath = modname_to_modpath(package_name)
+#     for modpath in package_modpaths(pkgpath):
+#         modname = modpath_to_modname(modpath, hide_main=False)
+#         yield modname
+
+
+def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True):
     r"""
     Finds sub-packages and sub-modules belonging to a package.
 
     Args:
-        package_name (str): package or module name
+        pkgpath (str): path to a module or package
         with_pkg (bool): if True includes package directories with __init__
             files (default = False)
         with_mod (bool): if True includes module files (default = True)
@@ -245,29 +264,44 @@ def package_modnames(package_name, with_pkg=False, with_mod=True, exclude=[]):
 
     References:
         http://stackoverflow.com/questions/1707709/list-modules-in-py-package
+
+    Example:
+        >>> from xdoctest.static_analysis import *
+        >>> pkgpath = modname_to_modpath('xdoctest')
+        >>> names = list(map(modpath_to_modname, package_modpaths(pkgpath)))
+        >>> assert 'xdoctest.core' in names
+        >>> assert 'xdoctest.__main__' in names
+        >>> assert 'xdoctest' not in names
+        >>> print('\n'.join(names))
     """
-    # FIXME: needs a pytest aware implementation
-    modpath = modname_to_modpath(package_name, hide_init=True)
-    if isfile(modpath):
+    if isfile(pkgpath):
         # If input is a file, just return it
-        yield package_name
+        yield pkgpath
     else:
-        # Otherwise, if it is a package, find sub-packages and sub-modules
-        prefix = package_name + '.'
-        walker = pkgutil.walk_packages([modpath], prefix=prefix,
-                                       onerror=lambda x: None)  # nocover
-        for importer, modname, ispkg in walker:
-            if any(fnmatch(modname, pat) for pat in exclude):
-                continue
-            elif not ispkg and with_mod:
-                yield modname
-            elif ispkg and with_pkg:
-                yield modname
+        valid_exts = ['.py', _platform_pylib_ext()]
+        for dpath, dnames, fnames in os.walk(pkgpath, followlinks=followlinks):
+            ispkg = exists(join(dpath, '__init__.py'))
+            if ispkg:
+                if with_pkg:
+                    yield dpath
+                if with_mod:
+                    for fname in fnames:
+                        if splitext(fname)[1] in valid_exts:
+                            # dont yield inits
+                            if fname != '__init__.py':
+                                yield join(dpath, fname)
+            else:
+                # Stop recursing when we are out of the package
+                del dnames[:]
 
 
-def modpath_to_modname(modpath):
+def modpath_to_modname(modpath, hide_init=True, hide_main=False):
     r"""
     Determines importable name from file path
+
+    The filename is converted to a module name, and parent directories are
+    recursively included until a directory without an __init__.py file is
+    encountered.
 
     Args:
         modpath (str): module filepath
@@ -283,6 +317,11 @@ def modpath_to_modname(modpath):
         >>> assert modname == 'xdoctest.static_analysis'
     """
     modpath_ = abspath(expanduser(modpath))
+    if not exists(modpath_):
+        return None
+    if isdir(modpath_) and not exists(join(modpath, '__init__.py')):
+        # dirs without inits are not modules
+        return None
     full_dpath, fname_ext = split(modpath_)
     fname, ext = splitext(fname_ext)
     _modsubdir_list = [fname]
@@ -293,90 +332,147 @@ def modpath_to_modname(modpath):
         _modsubdir_list.append(dname)
     modsubdir_list = _modsubdir_list[::-1]
     modname = '.'.join(modsubdir_list)
-    modname = modname.replace('.__init__', '').strip()
-    modname = modname.replace('.__main__', '').strip()
+    if hide_init:
+        if modname.endswith('.__init__'):
+            modname = modname[:-len('.__init__')]
+    else:
+        # add in init, if reasonable
+        if not modname.endswith('.__init__'):
+            if exists(join(modpath_, '__init__.py')):
+                modname = modname + '.__init__'
+
+    if hide_main:
+        modname = modname.replace('.__main__', '').strip()
     return modname
 
 
-def modname_to_modpath(modname, hide_init=True, hide_main=True):
+def modname_to_modpath(modname, hide_init=True, hide_main=False):
     r"""
     Determines the path to a python module without directly import it
 
     Args:
         modname (str): module filepath
+        hide_init (bool): if False, __init__.py will be returned for packages
+        hide_main (bool): if False, and hide_init is True, __main__.py will be
+            returned for packages, if it exists.
 
     Returns:
         str: modpath
 
-    TODO:
-        Test with a module we know wont be imported by xdoctest.
-        Maybe make this a non-doctest and put in tests directory.
+    CommandLine:
+        pytest  /home/joncrall/code/xdoctest/xdoctest/static_analysis.py::modname_to_modpath:0
 
-    DisableExample:
+    Example:
         >>> import sys
         >>> modname = 'xdoctest.__main__'
         >>> modpath = modname_to_modpath(modname, hide_main=False)
-        >>> #print('modpath = %r' % (modpath,))
         >>> assert modpath.endswith('__main__.py')
         >>> modname = 'xdoctest'
         >>> modpath = modname_to_modpath(modname, hide_init=False)
-        >>> #print('modpath = %r' % (modpath,))
         >>> assert modpath.endswith('__init__.py')
         >>> modname = 'xdoctest'
         >>> modpath = modname_to_modpath(modname, hide_init=False, hide_main=False)
-        >>> #print('modpath = %r' % (modpath,))
-        >>> assert modpath.endswith('__main__.py')
+        >>> assert modpath.endswith('__init__.py')
     """
-    loader = pkgutil.find_loader(modname)
-    if loader is None:
-        raise Exception('No module named {} in the PYTHONPATH'.format(modname))
-        # return None
-    modpath = loader.get_filename().replace('.pyc', '.py')
-    # if '.' not in basename(modpath):
-    #     modpath = join(modpath, '__init__.py')
+    modpath = _syspath_modname_to_modpath(modname)
+    if modpath is None:
+        return None
     if hide_init:
-        if modpath.endswith(('__init__.py')):
+        if basename(modpath) == '__init__.py':
             modpath = dirname(modpath)
-    if not hide_main:
-        if modpath.endswith('__init__.py'):
-            main_modpath = modpath[:-len('__init__.py')] + '__main__.py'
-            if exists(main_modpath):  # pragma: no branch
-                modpath = main_modpath
+            hide_main = True
+    else:
+        modpath_with_init = join(modpath, '__init__.py')
+        if exists(modpath_with_init):
+            modpath = modpath_with_init
+    if hide_main:
+        # We can remove main, but dont add it
+        if basename(modpath) == '__main__.py':
+            # corner case where main might just be a module name not in a pkg
+            parallel_init = join(dirname(modpath), '__init__.py')
+            if exists(parallel_init):
+                modpath = dirname(modpath)
+    # else:
+    #     modpath_with_main = join(modpath, '__main__.py')
+    #     if exists(modpath_with_main):
+    #         modpath = modpath_with_main
     return modpath
 
 
-def is_complete_statement(lines):
+def _syspath_modname_to_modpath(modname):
     """
-    Checks if the lines form a complete python statment.
-    Currently only handles balanced parans.
+    syspath version of modname_to_modpath
+
+    Note, this is much slower than the pkgutil mechanisms.
+
+    Example:
+        >>> modname = 'xdoctest.static_analysis'
+    """
+
+    def _isvalid(modpath, base):
+        # every directory up to the module, should have an init
+        subdir = dirname(modpath)
+        while subdir and subdir != base:
+            if not exists(join(subdir, '__init__.py')):
+                return False
+            subdir = dirname(subdir)
+        return True
+
+    from os.path import join, isfile, exists
+    import sys
+    _fname_we = modname.replace('.', '/')
+    candidate_fnames = [
+        _fname_we + '.py',
+        # _fname_we + '.pyc',
+        # _fname_we + '.pyo',
+        _fname_we + _platform_pylib_ext()
+    ]
+    candidate_dpaths = ['.'] + sys.path
+    for dpath in candidate_dpaths:
+        # Check for directory-based modules (has presidence over files)
+        modpath = join(dpath, _fname_we)
+        if exists(modpath):
+            if isfile(join(modpath, '__init__.py')):
+                if _isvalid(modpath, dpath):
+                    return modpath
+
+        # If that fails, check for file-based modules
+        for fname in candidate_fnames:
+            modpath = join(dpath, fname)
+            if isfile(modpath):
+                if _isvalid(modpath, dpath):
+                    return modpath
+
+
+def is_balanced_statement(lines):
+    """
+    Checks if the lines have balanced parens, brakets, curlies and strings
 
     Args:
         lines (list): list of strings
 
+    Returns:
+        bool: False if the statement is not balanced
+
     Doctest:
-        >>> assert is_complete_statement(['print(foobar)'])
-        >>> assert is_complete_statement(['foo = bar']) is True
-        >>> assert is_complete_statement(['foo = (']) is False
-        >>> assert is_complete_statement(['foo = (', "')(')"]) is True
-        >>> assert is_complete_statement(
+        >>> assert is_balanced_statement(['print(foobar)'])
+        >>> assert is_balanced_statement(['foo = bar']) is True
+        >>> assert is_balanced_statement(['foo = (']) is False
+        >>> assert is_balanced_statement(['foo = (', "')(')"]) is True
+        >>> assert is_balanced_statement(
         ...     ['foo = (', "'''", ")]'''", ')']) is True
-        >>> #assert is_complete_statement(['foo = ']) is False
-        >>> #assert is_complete_statement(['== ']) is False
+        >>> #assert is_balanced_statement(['foo = ']) is False
+        >>> #assert is_balanced_statement(['== ']) is False
 
     """
-    # import token
+    block = '\n'.join(lines)
     if six.PY2:
-        block = '\n'.join(lines).encode('utf8')
-    else:
-        block = '\n'.join(lines)
+        block = block.encode('utf8')
     stream = StringIO()
     stream.write(block)
     stream.seek(0)
     try:
-        # tokens = []
         for t in tokenize.generate_tokens(stream.readline):
-            # tok_type = token.tok_name[t[0]]
-            # tokens.append((tok_type, t[1]))
             pass
     except tokenize.TokenError as ex:
         message = ex.args[0]
@@ -384,10 +480,6 @@ def is_complete_statement(lines):
             return False
         raise
     else:
-        # FIXME: breaks on try: Except: else:
-        # try:
-        #     # Now check if forms a valid parse tree
-        #     ast.parse(block)
-        # except SyntaxError:
-        #     return False
+        # Note: trying to use ast.parse(block) will not work
+        # here because it breaks in try, except, else
         return True

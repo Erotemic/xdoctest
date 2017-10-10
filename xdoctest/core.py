@@ -683,10 +683,22 @@ def module_calldefs(modpath):
 def package_calldefs(package_name, exclude=[], strict=False):
     """
     Statically generates all callable definitions in a package
+
+    Example:
+        >>> package_name = 'xdoctest.core'
+        >>> testables = list(package_calldefs(package_name))
+        >>> assert len(testables) == 1
+        >>> calldefs, modpath = testables[0]
+        >>> assert static.modpath_to_modname(modpath) == package_name
+        >>> assert 'package_calldefs' in calldefs
     """
-    modnames = static.package_modnames(package_name, exclude=exclude)
-    for modname in modnames:
-        modpath = static.modname_to_modpath(modname, hide_init=False)
+    from fnmatch import fnmatch
+    package_path = static.modname_to_modpath(package_name)
+    modpaths = static.package_modpaths(package_path)
+    for modpath in modpaths:
+        modname = static.modpath_to_modname(modpath)
+        if any(fnmatch(modname, pat) for pat in exclude):
+            continue
         if not exists(modpath):  # nocover
             warnings.warn(
                 'Module {} does not exist. '
@@ -727,7 +739,7 @@ def parse_doctestables(package_name, exclude=[], strict=False):
     r"""
     Finds all functions/callables with Google-style example blocks
 
-    DisableExample:
+    Example:
         >>> package_name = 'xdoctest'
         >>> testables = list(parse_doctestables(package_name))
         >>> this_example = None

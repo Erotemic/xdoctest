@@ -312,3 +312,27 @@ def strip_ansi(text):
     import re
     ansi_escape = re.compile(r'\x1b[^m]*m')
     return ansi_escape.sub('', text)
+
+
+def ensuredir(dpath, mode=0o1777):
+    r"""
+    Ensures that directory will exist. creates new dir with sticky bits by
+    default
+
+    Args:
+        dpath (str): dir to ensure. Can also be a tuple to send to join
+        mode (int): octal mode of directory (default 0o1777)
+
+    Returns:
+        str: path - the ensured directory
+    """
+    from os.path import join, exists, normpath
+    import os
+    if isinstance(dpath, (list, tuple)):  # nocover
+        dpath = join(*dpath)
+    if not exists(dpath):
+        try:
+            os.makedirs(normpath(dpath), mode=mode)
+        except OSError:  # nocover
+            raise
+    return dpath

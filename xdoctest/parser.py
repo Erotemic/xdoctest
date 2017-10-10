@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import, unicode_literals
-from six.moves import cStringIO as StringIO
 import ast
 import sys
-import itertools as it
-import tokenize
 import re
+import itertools as it
 from xdoctest import utils
 from xdoctest import checker
+from xdoctest import static_analysis as static
 
 
 GotWantException = checker.GotWantException
@@ -371,8 +370,8 @@ class DoctestParser(object):
         b = len(exec_source_lines)
         for a in ps1_linenos[::-1]:
             # the position of `b` is correct, but `a` may be wrong
-            # is_balanced will be False iff `a` is wrong.
-            while not is_balanced(exec_source_lines[a:b]):
+            # is_balanced_statement will be False iff `a` is wrong.
+            while not static.is_balanced_statement(exec_source_lines[a:b]):
                 # shift `a` down until it becomes correct
                 a -= 1
             # push the new correct value back into the list
@@ -426,7 +425,7 @@ class DoctestParser(object):
             yield line
 
             source_parts = [suffix]
-            while not is_balanced(source_parts):
+            while not static.is_balanced_statement(source_parts):
                 try:
                     linex, next_line = next(line_iter)
                 except StopIteration:
@@ -524,43 +523,6 @@ class DoctestParser(object):
             prev_state = curr_state
 
         return labeled_lines
-
-
-def is_balanced(lines):
-    """
-    Checks if the lines have balanced parens, brakets, curlies and strings
-
-    Args:
-        lines (list): list of strings
-
-    Returns:
-        bool : True if statment has balanced containers
-
-    Doctest:
-        >>> assert is_balanced(['print(foobar)'])
-        >>> assert is_balanced(['foo = bar']) is True
-        >>> assert is_balanced(['foo = (']) is False
-        >>> assert is_balanced(['foo = (', "')(')"]) is True
-        >>> assert is_balanced(
-        ...     ['foo = (', "'''", ")]'''", ')']) is True
-    """
-    if sys.version_info.major == 3:
-        block = '\n'.join(lines)
-    else:
-        block = '\n'.join(lines).encode('utf8')
-    stream = StringIO()
-    stream.write(block)
-    stream.seek(0)
-    try:
-        for t in tokenize.generate_tokens(stream.readline):
-            pass
-    except tokenize.TokenError as ex:
-        message = ex.args[0]
-        if message.startswith('EOF in multi-line'):
-            return False
-        raise
-    else:
-        return True
 
 
 def min_indentation(s):
