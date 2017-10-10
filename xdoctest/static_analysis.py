@@ -286,7 +286,7 @@ def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True):
                 if with_mod:
                     for fname in fnames:
                         if splitext(fname)[1] in valid_exts:
-                            # dont yield inits
+                            # dont yield inits unless with_pkg is True
                             if with_pkg or fname != '__init__.py':
                                 yield join(dpath, fname)
             else:
