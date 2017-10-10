@@ -254,8 +254,8 @@ def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True):
 
     Args:
         pkgpath (str): path to a module or package
-        with_pkg (bool): if True includes package directories with __init__
-            files (default = False)
+        with_pkg (bool): if True includes package __init__ files (default =
+            False)
         with_mod (bool): if True includes module files (default = True)
         exclude (list): ignores any module that matches any of these patterns
 
@@ -268,7 +268,8 @@ def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True):
     Example:
         >>> from xdoctest.static_analysis import *
         >>> pkgpath = modname_to_modpath('xdoctest')
-        >>> names = list(map(modpath_to_modname, package_modpaths(pkgpath)))
+        >>> paths = list(package_modpaths(pkgpath))
+        >>> names = list(map(modpath_to_modname, paths))
         >>> assert 'xdoctest.core' in names
         >>> assert 'xdoctest.__main__' in names
         >>> assert 'xdoctest' not in names
@@ -282,13 +283,11 @@ def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True):
         for dpath, dnames, fnames in os.walk(pkgpath, followlinks=followlinks):
             ispkg = exists(join(dpath, '__init__.py'))
             if ispkg:
-                if with_pkg:
-                    yield dpath
                 if with_mod:
                     for fname in fnames:
                         if splitext(fname)[1] in valid_exts:
                             # dont yield inits
-                            if fname != '__init__.py':
+                            if with_pkg or fname != '__init__.py':
                                 yield join(dpath, fname)
             else:
                 # Stop recursing when we are out of the package

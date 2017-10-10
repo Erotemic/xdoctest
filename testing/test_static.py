@@ -375,13 +375,13 @@ def test_package_submodules():
         with utils.PythonPathContext(dpath):
             subpaths = sorted(static.package_modpaths(root, with_pkg=True))
 
-            assert root in subpaths
-            assert sub1 in subpaths
-            assert sub2 in subpaths
-
-            assert root_init not in subpaths
-            assert sub1_init not in subpaths
-            assert sub2_init not in subpaths
+            # should only return files not directories
+            assert root_init in subpaths
+            assert sub1_init in subpaths
+            assert sub2_init in subpaths
+            assert root not in subpaths
+            assert sub1 not in subpaths
+            assert sub2 not in subpaths
 
             assert root_main in subpaths
             assert sub2_main in subpaths
