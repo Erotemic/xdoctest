@@ -6,8 +6,9 @@ if __name__ == '__main__':
         '-p', 'pytester',
         '-p', 'no:doctest',
         '--cov=xdoctest',
-        '--cov-config', '.coveragerc',
+        '--cov-config', 'coveragerc',
         '--cov-report', 'html',
+        '--cov-report', 'term',
         '--xdoctest',
     ] + sys.argv[1:])
     # pytest.main(['-p', 'no:doctest', '-p', 'pytester', '--xdoctest', './testing'] + sys.argv[1:])

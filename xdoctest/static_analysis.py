@@ -184,7 +184,7 @@ class TopLevelVisitor(ast.NodeVisitor):
     #     self.generic_visit(node)
 
     def visit_If(self, node):
-        if isinstance(node.test, ast.Compare):
+        if isinstance(node.test, ast.Compare):  # pragma: nobranch
             try:
                 if all([
                     isinstance(node.test.ops[0], ast.Eq),
@@ -195,7 +195,7 @@ class TopLevelVisitor(ast.NodeVisitor):
                     return
             except Exception:  # nocover
                 pass
-        self.generic_visit(node)
+        self.generic_visit(node)  # nocover
 
 
 def parse_calldefs(source=None, fpath=None):

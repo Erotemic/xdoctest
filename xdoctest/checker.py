@@ -61,7 +61,7 @@ def normalize(got, want):
 
 
 def check_output(got, want):
-    if not want:
+    if not want:  # nocover
         return True
     if want:
         if want == '...':
@@ -157,7 +157,9 @@ class GotWantException(AssertionError):
             return 'Expected:\n%s\nGot:\n%s' % (utils.indent(want), utils.indent(got))
         elif want:
             return 'Expected:\n%s\nGot nothing\n' % utils.indent(want)
-        elif got:
+        elif got:  # nocover
+            assert False, 'impossible state'
             return 'Expected nothing\nGot:\n%s' % utils.indent(got)
-        else:
+        else:  # nocover
+            assert False, 'impossible state'
             return 'Expected nothing\nGot nothing\n'
