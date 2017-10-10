@@ -375,9 +375,6 @@ def test_package_submodules():
         with utils.PythonPathContext(dpath):
             subpaths = sorted(static.package_modpaths(root, with_pkg=True))
 
-            import ubelt as ub
-            print('subpaths = {}'.format(ub.repr2(subpaths)))
-
             assert root in subpaths
             assert sub1 in subpaths
             assert sub2 in subpaths
