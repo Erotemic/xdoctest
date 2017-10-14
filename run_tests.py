@@ -6,7 +6,7 @@ if __name__ == '__main__':
         '-p', 'pytester',
         '-p', 'no:doctest',
         '--cov=xdoctest',
-        '--cov-config', 'coveragerc',
+        '--cov-config', '.coveragerc',
         '--cov-report', 'html',
         '--cov-report', 'term',
         '--xdoctest',
