@@ -125,6 +125,9 @@ class DocTest(object):
         """
         disable_patterns = [
             r'>>>\s*#\s*DISABLE',
+            r'>>>\s*#\s*UNSTABLE',
+            r'>>>\s*#\s*FAILING',
+            r'>>>\s*#\s*SCRIPT',
             r'>>>\s*#\s*x?doctest:\s\+SKIP',
         ]
         if pytest:

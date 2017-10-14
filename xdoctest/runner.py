@@ -93,7 +93,11 @@ def doctest_module(modname=None, command=None, argv=None, exclude=[],
         print('running %d test(s)' % (n_total))
         summaries = []
         for example in enabled_examples:
-            summary = example.run(verbose=verbose)
+            try:
+                summary = example.run(verbose=verbose)
+            except Exception:
+                print('\n'.join(example.repr_failure()))
+                raise
             summaries.append(summary)
         if verbose <= 0:
             print('')
