@@ -4,10 +4,9 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 
 def main():
-    import sys
-    from xdoctest import core
-    package = sys.argv[1]
-    core.doctest_package(package)
+    import xdoctest
+    modname = 'xdoctest'
+    xdoctest.doctest_module(modname)
 
 
 if __name__ == '__main__':

@@ -336,3 +336,36 @@ def ensuredir(dpath, mode=0o1777):
         except OSError:  # nocover
             raise
     return dpath
+
+
+def color_text(text, color):
+    r"""
+    Colorizes text a single color using ansii tags.
+
+    Args:
+        text (str): text to colorize
+        color (str): may be one of the following: yellow, blink, lightgray,
+            underline, darkyellow, blue, darkblue, faint, fuchsia, black,
+            white, red, brown, turquoise, bold, darkred, darkgreen, reset,
+            standout, darkteal, darkgray, overline, purple, green, teal, fuscia
+
+    Returns:
+        str: text : colorized text.
+            If pygments is not installed plain text is returned.
+
+    Example:
+        >>> text = 'raw text'
+        >>> assert color_text(text, 'red') == '\x1b[31;01mraw text\x1b[39;49;00m'
+        >>> assert color_text(text, None) == 'raw text'
+    """
+    if color is None:
+        return text
+    try:
+        import pygments
+        import pygments.console
+        ansi_text = pygments.console.colorize(color, text)
+        return ansi_text
+    except ImportError:  # nocover
+        import warnings
+        warnings.warn('pygments is not installed')
+        return text

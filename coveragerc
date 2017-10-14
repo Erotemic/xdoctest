@@ -24,5 +24,6 @@ omit =
     # pytest imports this before we can cover it
     xdoctest/plugin.py
     xdoctest/__main__.py
+    xdoctest/__init__.py
     xdoctest/_old*.py
     xdoctest/_grave*.py

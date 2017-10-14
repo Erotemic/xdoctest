@@ -12,6 +12,7 @@ from __future__ import print_function, division, absolute_import
 import pytest
 from _pytest._code import code
 from _pytest import fixtures
+from xdoctest import core
 # import traceback
 
 
@@ -41,33 +42,39 @@ monkey_patch_disable_normal_doctest()
 
 
 def pytest_addoption(parser):
-    group = parser.getgroup("collect")
-    parser.addini("xdoctest_encoding", 'encoding used for xdoctest files', default="utf-8")
+    group = parser.getgroup('collect')
+    parser.addini('xdoctest_encoding', 'encoding used for xdoctest files', default='utf-8')
     # parser.addini('xdoctest_optionflags', 'option flags for xdoctests',
-    #               type="args", default=["ELLIPSIS"])
-    group.addoption("--xdoctest-modules", "--xdoctest",
-                    action="store_true", default=False,
-                    help="run doctests in all .py modules using new style parsing",
-                    dest="xdoctestmodules")
-    group.addoption("--xdoctest-glob",
-                    action="append", default=[], metavar="pat",
-                    help="xdoctests file matching pattern, default: test*.txt",
-                    dest="xdoctestglob")
-    group.addoption("--xdoctest-ignore-syntax-errors",
-                    action="store_true", default=False,
-                    help="ignore xdoctest SyntaxErrors",
-                    dest="xdoctest_ignore_syntax_errors")
+    #               type='args', default=['ELLIPSIS'])
+    group.addoption('--xdoctest-modules', '--xdoctest', '--xdoc',
+                    action='store_true', default=False,
+                    help='run doctests in all .py modules using new style parsing',
+                    dest='xdoctestmodules')
+    group.addoption('--xdoctest-glob', '--xdoc-glob',
+                    action='append', default=[], metavar='pat',
+                    help='xdoctests file matching pattern, default: test*.txt',
+                    dest='xdoctestglob')
+    group.addoption('--xdoctest-ignore-syntax-errors',
+                    action='store_true', default=False,
+                    help='ignore xdoctest SyntaxErrors',
+                    dest='xdoctest_ignore_syntax_errors')
 
-    group.addoption("--xdoctest-report",
-                    type=str.lower, default="udiff",
-                    help="choose another output format for diffs on xdoctest failure",
+    group.addoption('--xdoctest-style', '--xdoc-style',
+                    type=str.lower, default='freeform',
+                    help='basic style used to write doctests',
+                    choices=core.DOCTEST_STYLES,
+                    dest='xdoctest_style')
+
+    group.addoption('--xdoctest-report', '--xdoc-report',
+                    type=str.lower, default='udiff',
+                    help='choose another output format for diffs on xdoctest failure',
                     choices=DOCTEST_REPORT_CHOICES,
-                    dest="xdoctestreport")
+                    dest='xdoctestreport')
 
-    group.addoption("--xdoctest-nocolor",
-                    action="store_false", default=True,
-                    help="Turns off ansii colors in stdout",
-                    dest="xdoctest_colored")
+    group.addoption('--xdoctest-nocolor', '--xdoc-nocolor',
+                    action='store_false', default=True,
+                    help='Turns off ansii colors in stdout',
+                    dest='xdoctest_colored')
 
 
 def pytest_collect_file(path, parent):
@@ -192,10 +199,10 @@ class XDoctestTextfile(pytest.Module):
         name = self.fspath.basename
         globs = {'__name__': '__main__'}
 
+        style = self.config.getvalue('xdoctest_style')
         colored = self.config.getvalue('xdoctest_colored')
 
-        parse_func = core.parse_freeform_docstr_examples
-        for example in parse_func(text, name, fpath=filename):
+        for example in core.parse_docstr_examples(text, name, fpath=filename, style=style):
             example.globs.update(globs)
             example.config['colored'] = colored
             yield XDoctestItem(name, self, example)
@@ -213,51 +220,21 @@ class XDoctestTextfile(pytest.Module):
 
 class XDoctestModule(pytest.Module):
     def collect(self):
-        from xdoctest import core
         modpath = str(self.fspath)
 
+        style = self.config.getvalue('xdoctest_style')
+        colored = self.config.getvalue('xdoctest_colored')
+
         try:
-            calldefs = core.module_calldefs(modpath)
+            for example in core.module_doctestables(modpath, style=style):
+                example.config['colored'] = colored
+                name = example.unique_callname
+                yield XDoctestItem(name, self, example)
         except SyntaxError:
             if self.config.getvalue('xdoctest_ignore_syntax_errors'):
                 pytest.skip('unable to import module %r' % self.fspath)
             else:
                 raise
-
-        # Todo: restrict to google style
-        parse_func = core.parse_freeform_docstr_examples
-        # parse_func = core.parse_google_docstr_examples
-
-        colored = self.config.getvalue('xdoctest_colored')
-
-        for callname, calldef in calldefs.items():
-            docstr = calldef.docstr
-            if calldef.docstr is not None:
-                lineno = calldef.doclineno
-                for example in parse_func(docstr, callname, modpath, lineno=lineno):
-                    # if not example.is_disabled():
-                    example.config['colored'] = colored
-                    name = example.unique_callname
-                    yield XDoctestItem(name, self, example)
-
-        # import doctest
-        # if self.fspath.basename == "conftest.py":
-        #     module = self.config.pluginmanager._importconftest(self.fspath)
-
-        # uses internal doctest module parsing mechanism
-        # from xdoctest import doctest_patch  # NOQA
-        # DocTestParser = doctest_patch.XDocTestParser
-        # # DocTestParser = doctest.DocTestParser  # NOQA
-
-        # parser = DocTestParser()
-        # finder = doctest.DocTestFinder(parser=parser)
-        # optionflags = get_optionflags(self)
-        # runner = doctest.DebugRunner(verbose=0, optionflags=optionflags,
-        #                              checker=_get_checker())
-
-        # for test in finder.find(module, module.__name__):
-        #     if test.examples:  # skip empty doctests
-        #         yield XDoctestItem(test.name, self, runner, test)
 
 
 def _setup_fixtures(xdoctest_item):

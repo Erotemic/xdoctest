@@ -482,3 +482,8 @@ def is_balanced_statement(lines):
         # Note: trying to use ast.parse(block) will not work
         # here because it breaks in try, except, else
         return True
+
+
+if __name__ == '__main__':
+    import xdoctest as xdoc
+    xdoc.doctest_module()

@@ -15,6 +15,13 @@ from xdoctest import utils
 from xdoctest import parser
 
 
+DOCTEST_STYLES = [
+    'freeform',
+    'google',
+    # 'numpy',  # TODO
+]
+
+
 class ExitTestException(Exception):
     pass
 
@@ -26,8 +33,8 @@ class Config(dict):
     def __init__(self, *args, **kwargs):
         super(Config, self).__init__(*args, **kwargs)
         self.update({
-            # 'colored': True,
-            'colored': False,
+            'colored': True,
+            # 'colored': False,
             'on_error': 'raise',
             'verbose': 1,
         })
@@ -53,7 +60,7 @@ class DocTest(object):
         >>> assert self.num == 0
         >>> assert self.modpath == core.__file__
         >>> print(self)
-        <DocTest(xdoctest.core DocTest:0 ln 47)>
+        <DocTest(xdoctest.core DocTest:0 ln 54)>
     """
 
     def __init__(self, docsrc, modpath=None, callname=None, num=0,
@@ -398,16 +405,22 @@ class DocTest(object):
     @property
     def cmdline(self):
         # TODO: move to pytest
-        return 'pytest  ' + self.node
-        # return 'python -m ' + self.modname + ' ' + self.unique_callname
+        return 'pytest ' + self.node
+
+    @property
+    def native_cmdline(self):
+        return 'python -m ' + self.modname + ' ' + self.unique_callname
 
     def pre_run(self, verbose):
         if verbose >= 1:
             if verbose >= 2:
-                print('============')
-            print('* DOCTEST : {}'.format(self.node))
+                if self.config['colored']:
+                    print(utils.color_text('============', 'white'))
+                else:
+                    print('============')
+            print('* BEGIN DOCTEST : {}'.format(self.node))
             # print(self.cmdline)
-            if verbose >= 2:
+            if verbose >= 3:
                 print(self.format_src())
         else:  # nocover
             sys.stdout.write('.')
@@ -520,10 +533,14 @@ class DocTest(object):
         summary = {
             'passed': self.exc_info is None
         }
+        colored = self.config['colored']
         if self.exc_info is None:
             if verbose >= 1:
-                print('* SUCCESS: {}'.format(self.node))
                 self._print_captured()
+                success = 'SUCCESS'
+                if colored:
+                    success = utils.color_text(success, 'green')
+                print('* {}: {}'.format(success, self.node))
         else:
             if verbose >= 1:
                 text = '\n'.join(self.repr_failure())
@@ -650,11 +667,9 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
 
 
 def parse_google_docstr_examples(docstr, callname=None, modpath=None,
-                                 lineno=None):
+                                 lineno=1, fpath=None):
     """
     Parses Google-style doctests from a docstr and generates example objects
-
-    TODO: generalize to not just google-style
     """
     try:
         blocks = docscrape_google.split_google_docblocks(docstr)
@@ -667,7 +682,8 @@ def parse_google_docstr_examples(docstr, callname=None, modpath=None,
         for num, (type, (docsrc, offset)) in enumerate(example_blocks):
             # Add one because offset applies to the google-type label
             lineno_ = lineno + offset + 1
-            example = DocTest(docsrc, modpath, callname, num, lineno=lineno_)
+            example = DocTest(docsrc, modpath, callname, num, lineno=lineno_,
+                              fpath=fpath)
             yield example
     except Exception as ex:  # nocover
         msg = ('Cannot scrape callname={} in modpath={}.\n'
@@ -694,6 +710,8 @@ def package_calldefs(package_name, exclude=[], strict=False):
     """
     from fnmatch import fnmatch
     package_path = static.modname_to_modpath(package_name)
+    assert package_path is not None, 'cannot find package_name={}'.format(package_name)
+
     modpaths = static.package_modpaths(package_path)
     for modpath in modpaths:
         modname = static.modpath_to_modname(modpath)
@@ -718,24 +736,49 @@ def package_calldefs(package_name, exclude=[], strict=False):
             yield calldefs, modpath
 
 
-def module_doctestables(modpath, mode='freeform'):
-    if mode == 'freeform':
+def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
+                          style='freeform', fpath=None):
+    """
+    Parses doctests from a docstr and generates example objects.
+    The style influences which tests are found.
+    """
+    if style == 'freeform':
         parser = parse_freeform_docstr_examples
-    elif mode == 'google':
+    elif style == 'google':
         parser = parse_google_docstr_examples
+    # TODO:
+    # elif style == 'numpy':
+    #     parser = parse_numpy_docstr_examples
     else:
-        raise KeyError(mode)
+        raise KeyError('Unknown style={}. Valid styles are {}'.format(
+            style, DOCTEST_STYLES))
+
+    for example in parser(docstr, callname=callname, modpath=modpath,
+                          fpath=fpath, lineno=lineno):
+        yield example
+
+
+def module_doctestables(modpath, style='freeform'):
+    """
+    Parses all doctests within top-level callables of a module and generates
+    example objects.  The style influences which tests are found.
+    """
+    if style not in DOCTEST_STYLES:
+        raise KeyError('Unknown style={}. Valid styles are {}'.format(
+            style, DOCTEST_STYLES))
 
     calldefs = module_calldefs(modpath)
     for callname, calldef in calldefs.items():
         docstr = calldef.docstr
         if calldef.docstr is not None:
             lineno = calldef.doclineno
-            for example in parser(docstr, callname, modpath, lineno=lineno):
+            for example in parse_docstr_examples(docstr, callname=callname,
+                                                 modpath=modpath,
+                                                 lineno=lineno, style=style):
                 yield example
 
 
-def parse_doctestables(package_name, exclude=[], strict=False):
+def parse_doctestables(package_name, exclude=[], style='google', strict=False):
     r"""
     Finds all functions/callables with Google-style example blocks
 
@@ -755,7 +798,17 @@ def parse_doctestables(package_name, exclude=[], strict=False):
             docstr = calldef.docstr
             if calldef.docstr is not None:
                 lineno = calldef.doclineno
-                for example in parse_google_docstr_examples(docstr, callname,
-                                                            modpath,
-                                                            lineno=lineno):
+                for example in parse_docstr_examples(docstr, callname=callname,
+                                                     modpath=modpath,
+                                                     lineno=lineno,
+                                                     style=style):
                     yield example
+
+
+if __name__ == '__main__':
+    r"""
+    CommandLine:
+        python -m xdoctest.core
+    """
+    import xdoctest as xdoc
+    xdoc.doctest_module()
