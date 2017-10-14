@@ -152,6 +152,15 @@ class DocTest(object):
             self.unique_callname,
         }
 
+    def wants(self):
+        """
+        Returns a list of the populated wants
+        """
+        self._parse()
+        for part in self._parts:
+            if part.want:
+                yield part.want
+
     def format_src(self, linenos=True, colored=None, want=True,
                    offset_linenos=False):
         """
@@ -166,6 +175,7 @@ class DocTest(object):
             >>> print(self.format_src(linenos=False, colored=False))
             >>> assert not self.is_disabled()
         """
+        self._parse()
         colored = self.config.getvalue('colored', colored)
 
         import math
