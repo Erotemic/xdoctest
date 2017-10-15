@@ -1,4 +1,4 @@
-pygments
+Pygments >= 2.2.0
 pytest
 codecov
 pytest-cov
