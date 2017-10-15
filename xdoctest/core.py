@@ -297,13 +297,6 @@ class DocTest(object):
     def run(self, verbose=None, on_error=None):
         """
         Executes the doctest
-
-        TODO:
-            * break src and want into multiple parts
-
-        Notes:
-            * There is no difference between locals/globals in exec context
-            Only pass in one dict, otherwise there is weird behavior
         """
         on_error = self.config.getvalue('on_error', on_error)
         verbose = self.config.getvalue('verbose', verbose)
@@ -358,6 +351,9 @@ class DocTest(object):
             try:
                 # Execute the doctest code
                 with cap:
+                    # NOTE: There is no difference between locals/globals in
+                    # eval/exec context. Only pass in one dict, otherwise there
+                    # is weird behavior
                     if part.use_eval:
                         # Only capture the repr to allow for gc tests
                         got_eval = eval(code, test_globals)
@@ -593,6 +589,7 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
             ''')
         >>> examples = list(parse_freeform_docstr_examples(docstr))
         >>> assert len(examples) == 3
+
     """
     def doctest_from_parts(parts, num, curr_offset):
         nested = [

@@ -36,12 +36,22 @@ Pypi:
 """
 from setuptools import setup
 
+setupkw = dict(
+    author='Jon Crall',
+    name='xdoctest',
+    author_email='erotemic@gmail.com',
+    url='https://github.com/Erotemic/xdoctest',
+    license='Apache 2',
+    packages=['xdoctest'],
+)
+
 
 def parse_version():
     """ Statically parse the version number from __init__.py """
     from os.path import dirname, join
     import ast
-    init_fpath = join(dirname(__file__), 'xdoctest', '__init__.py')
+    modname = setupkw['name']
+    init_fpath = join(dirname(__file__), modname, '__init__.py')
     with open(init_fpath) as file_:
         sourcecode = file_.read()
     pt = ast.parse(sourcecode)
@@ -71,7 +81,6 @@ def parse_requirements(fname='requirements.txt'):
 
 if __name__ == '__main__':
     setup(
-        name="xdoctest",
         version=parse_version(),
         description='A rewrite of the builtin doctest module',
         install_requires=parse_requirements('requirements.txt'),
@@ -79,11 +88,6 @@ if __name__ == '__main__':
             'all': parse_requirements('optional-requirements.txt')
         },
         # long_description=parse_description(),
-        author='Jon Crall',
-        author_email='erotemic@gmail.com',
-        url='https://github.com/Erotemic/xdoctest',
-        license='Apache 2',
-        packages=['xdoctest'],
         # the following makes a plugin available to pytest
         entry_points={
             'pytest11': [
@@ -103,4 +107,5 @@ if __name__ == '__main__':
             'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3',
         ],
+        **setupkw
     )
