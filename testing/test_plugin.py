@@ -74,48 +74,6 @@ def explicit_testdir():
     return testdir
 
 
-def _modname_to_modpath_backup(modname):
-    """
-    Alternative version that does not rely on pkgutil, which is broken when
-    using pytest. This only does very basic module lookup.
-    """
-    from os.path import join, isfile, exists
-    import sys
-    candidate_fnames = [
-        join(modname, '.py'),
-        join(modname, '.pyc'),
-        join(modname, '.pyo'),
-        # join(modname, '.so'),  # TODO: dylib pyd
-    ]
-    modname = modname.replace('.', '/')
-    candidate_dpaths = ['.'] + sys.path
-    for dpath in candidate_dpaths:
-        for fname in candidate_fnames:
-            # Check for file-based modules
-            modpath = join(dpath, fname)
-            if isfile(modpath):
-                return modpath
-            # Check for directory-based modules
-            modpath = join(dpath, modname)
-            if exists(modpath):
-                if isfile(join(modpath, '__init__.py')):
-                    return modpath
-            # Check for egg-links
-            egglink = join(dpath, modname + '.egg-link')
-            if exists(egglink):
-                with open(egglink, 'r') as f:
-                    modpath = f.readline().strip()
-                if isfile(join(modpath, '__init__.py')):
-                    return modpath
-            # Check for easy-install
-            # easyinstall = join(dpath, 'easy-install.pth')
-            # if exists(easyinstall):
-            #     pass
-            #     # with open(easyinstall, 'r') as f:
-            #     #     candidate_dpaths.extend(f.readlines())
-            #     # TODO easyinstall checks
-
-
 class TestXDoctest(object):
 
     def test_collect_testtextfile(self, testdir):
