@@ -460,7 +460,7 @@ def _syspath_modname_to_modpath(modname):
 
     from os.path import join, isfile, exists
     import sys
-    _fname_we = modname.replace('.', '/')
+    _fname_we = modname.replace('.', os.path.sep)
     candidate_fnames = [
         _fname_we + '.py',
         # _fname_we + '.pyc',

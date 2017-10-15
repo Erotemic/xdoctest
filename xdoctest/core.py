@@ -639,7 +639,6 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
 
     # parse into doctest and plaintext parts
     all_parts = parser.DoctestParser().parse(docstr)
-    print('all_parts = {!r}'.format(all_parts))
 
     curr_parts = []
     curr_offset = 0
