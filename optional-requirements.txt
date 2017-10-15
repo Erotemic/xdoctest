@@ -1,3 +1,4 @@
+pygments
 pytest
 codecov
-pygments
+pytest-cov
