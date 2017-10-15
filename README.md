@@ -91,13 +91,25 @@ To make use of Google-style docstrings, pytest can be run with the option
 `--xdoctest-style=google`, which causes xdoctest to only look for doctests in
 Google "docblocks" with an `Example:` or `Doctest:` tag.
 
+
+## Notes on Got/Want tests
+
+The new got/want tester is very permissive by default; it ignores differences
+in whitespace, tries to normalize for python 2/3 Unicode/bytes differences,
+ANSI formatting, and it uses the old doctest ELLIPSIS fuzzy matcher by default.
+If the "got" text matches the "want" text at any point, the test passes.
+
+Currently, this permissiveness is not highly configurable as it was in the
+original doctest module. It is an open question as to whether or not this
+module should support that level of configuration.  If the test requires a high
+degree of specificity in the got/want checker, it may just be better to use an
+`assert` statement.
+
+
 ## Current Limitations and TODO:
 
 This module is in a working state and can be used, but it is still under
 development.
-
-The main backwards-compatibility limitation is that xdoctest currently does not
-have support for the `# doctest: +ELLIPSES` directive.
 
 #### Parsing:
 - [x] Parse freeform-style doctest examples
@@ -108,11 +120,10 @@ have support for the `# doctest: +ELLIPSES` directive.
 - [x] Support got/want testing with stdout.
 - [x] Support got/want testing with evaluated statements.
 - [x] Support got/want testing with `NORMALIZED_WHITESPACE` and `ELLIPSES` by default
-- [ ] Support advanced got/want directives for backwards compatibility (e.g. ELLIPSES)
+- [ ] Support toggling got/want directives for backwards compatibility?
 
 #### Reporting:
 - [x] Optional colored output
-- [ ] Support advanced got/want reporting directive for backwards compatibility (e.g udiff, ndiff)
 
 #### Running:
 - [x] Standalone `doctest_module` entry point.
@@ -124,10 +135,14 @@ have support for the `# doctest: +ELLIPSES` directive.
 - [x] CI-via Travis 
 - [ ] CI-via AppVeyor
 - [x] Coverage
-- [ ] Figure out why coverage isn't being run by the CI
 
-#### Documentation / Misc:
-- [ ] Improve readme
+#### Documentation:
+- [x] Basic docstring docs
 - [ ] Auto-generate read-the-docs Documentation
-- [ ] allow for inline directives (e.g. `# doctest: +SKIP`)
+- [x] Basic readme
+- [ ] Improve readme
+
+#### Undecided:
+- [ ] allow for inline directives (e.g. `# doctest: +SKIP`)?
 - [ ] Rename to something better than `xdoctest`?
+- [ ] Support advanced got/want reporting directive for backwards compatibility (e.g udiff, ndiff)?

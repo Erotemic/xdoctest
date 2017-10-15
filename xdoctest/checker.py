@@ -108,10 +108,6 @@ def normalize(got, want):
     got = re.sub(TRAILING_WS, '', got)
     want = re.sub(TRAILING_WS, '', want)
 
-    # all whitespace normalization
-    got = ' '.join(got.split())
-    want = ' '.join(want.split())
-
     got_lines = got.splitlines(True)
     want_lines = want.splitlines(True)
 
@@ -124,6 +120,10 @@ def normalize(got, want):
     # normalize endling newlines
     want = want.rstrip()
     got = got.rstrip()
+
+    # all whitespace normalization
+    got = ' '.join(got.split())
+    want = ' '.join(want.split())
     return got, want
 
 
