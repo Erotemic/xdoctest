@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import, unicode_literals
+import os
 import sys
 import six
-# import codecs
 import textwrap
 from io import StringIO
-# from six.moves import cStringIO as StringIO
+from os.path import join, exists, normpath
 
 
 def ensure_unicode(text):
@@ -225,18 +225,44 @@ class PythonPathContext(object):
 class TempDir(object):
     """
     Context for creating and cleaning up temporary files. Used in testing.
+
+    Example:
+        >>> with TempDir() as self:
+        >>>     dpath = self.dpath
+        >>>     assert exists(dpath)
+        >>> assert not exists(dpath)
+
+    Example:
+        >>> self = TempDir()
+        >>> dpath = self.ensure()
+        >>> assert exists(dpath)
+        >>> self.cleanup()
+        >>> assert not exists(dpath)
     """
     def __init__(self):
         self.dpath = None
 
-    def __enter__(self):
+    def __del__(self):
+        self.cleanup()
+
+    def ensure(self):
         import tempfile
-        self.dpath = tempfile.mkdtemp()
+        if not self.dpath:
+            self.dpath = tempfile.mkdtemp()
+        return self.dpath
+
+    def cleanup(self):
+        import shutil
+        if self.dpath:
+            shutil.rmtree(self.dpath)
+            self.dpath = None
+
+    def __enter__(self):
+        self.ensure()
         return self
 
     def __exit__(self, a, b, c):
-        import shutil
-        shutil.rmtree(self.dpath)
+        self.cleanup()
 
 
 # def import_module_from_fpath(module_fpath):
@@ -293,6 +319,7 @@ def import_module_from_name(modname):
         >>> assert [m.__name__ for m in modules] == modname_list
         >>> assert all(m in sys.modules for m in modname_list)
     """
+
     # The __import__ statment is weird
     if '.' in modname:
         fromlist = modname.split('.')[-1]
@@ -300,6 +327,42 @@ def import_module_from_name(modname):
         module = __import__(modname, {}, {}, fromlist_, 0)
     else:
         module = __import__(modname, {}, {}, [], 0)
+    return module
+
+
+def import_module_from_path(modpath):
+    """
+    Args:
+        modpath (str): path to the module
+
+    References:
+        https://stackoverflow.com/questions/67631/import-module-given-path
+
+    Example:
+        >>> from xdoctest import utils
+        >>> modpath = utils.__file__
+        >>> module = import_module_from_path(modpath)
+        >>> assert module is utils
+    """
+    # the importlib version doesnt work in pytest
+    import xdoctest.static_analysis as static
+    dpath, rel_modpath = static.split_modpath(modpath)
+    modname = static.modpath_to_modname(modpath)
+    with PythonPathContext(dpath):
+        module = import_module_from_name(modname)
+    # TODO: use this implementation once pytest fixes importlib
+    # if six.PY2:  # nocover
+    #     import imp
+    #     module = imp.load_source(modname, modpath)
+    # elif sys.version_info[0:2] <= (3, 4):  # nocover
+    #     assert sys.version_info[0:2] <= (3, 2), '3.0 to 3.2 is not supported'
+    #     from importlib.machinery import SourceFileLoader
+    #     module = SourceFileLoader(modname, modpath).load_module()
+    # else:
+    #     import importlib.util
+    #     spec = importlib.util.spec_from_file_location(modname, modpath)
+    #     module = importlib.util.module_from_spec(spec)
+    #     spec.loader.exec_module(module)
     return module
 
 
@@ -326,8 +389,6 @@ def ensuredir(dpath, mode=0o1777):
     Returns:
         str: path - the ensured directory
     """
-    from os.path import join, exists, normpath
-    import os
     if isinstance(dpath, (list, tuple)):  # nocover
         dpath = join(*dpath)
     if not exists(dpath):

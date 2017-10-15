@@ -15,6 +15,69 @@ ELLIPSIS_MARKER = '...'
 TRAILING_WS = re.compile(r"[ \t]*$", re.UNICODE | re.MULTILINE)
 
 
+def _ellipsis_match(got, want):
+    """
+    The ellipsis matching algorithm taken directly from standard doctest.
+
+    Worst-case linear-time ellipsis matching.
+
+    CommandLine:
+        python -m xdoctest.checker _ellipsis_match
+
+    Example:
+        >>> _ellipsis_match('aaa', 'aa...aa')
+        False
+        >>> _ellipsis_match('anything', '...')
+        True
+        >>> _ellipsis_match('prefix-anything', 'prefix-...')
+        True
+        >>> _ellipsis_match('suffix-anything', 'prefix-...')
+        False
+    """
+    if ELLIPSIS_MARKER not in want:
+        return want == got
+
+    # Find "the real" strings.
+    ws = want.split(ELLIPSIS_MARKER)
+    assert len(ws) >= 2
+
+    # Deal with exact matches possibly needed at one or both ends.
+    startpos, endpos = 0, len(got)
+    w = ws[0]
+    if w:   # starts with exact match
+        if got.startswith(w):
+            startpos = len(w)
+            del ws[0]
+        else:
+            return False
+    w = ws[-1]
+    if w:   # ends with exact match
+        if got.endswith(w):
+            endpos -= len(w)
+            del ws[-1]
+        else:
+            return False
+
+    if startpos > endpos:
+        # Exact end matches required more characters than we have, as in
+        # _ellipsis_match('aa...aa', 'aaa')
+        return False
+
+    # For the rest, we only need to find the leftmost non-overlapping
+    # match for each piece.  If there's no overall match that way alone,
+    # there's no overall match period.
+    for w in ws:
+        # w may be '' at times, if there are consecutive ellipses, or
+        # due to an ellipsis at the start or end of `want`.  That's OK.
+        # Search for an empty string succeeds, and doesn't change startpos.
+        startpos = got.find(w, startpos, endpos)
+        if startpos < 0:
+            return False
+        startpos += len(w)
+
+    return True
+
+
 def normalize(got, want):
     """
     Adapated from doctest_nose_plugin.py from the nltk project:
@@ -45,6 +108,10 @@ def normalize(got, want):
     got = re.sub(TRAILING_WS, '', got)
     want = re.sub(TRAILING_WS, '', want)
 
+    # all whitespace normalization
+    got = ' '.join(got.split())
+    want = ' '.join(want.split())
+
     got_lines = got.splitlines(True)
     want_lines = want.splitlines(True)
 
@@ -64,15 +131,15 @@ def check_output(got, want):
     if not want:  # nocover
         return True
     if want:
-        if want == '...':
-            return True
-
         # Try default
         if got == want:
             return True
 
         got, want = normalize(got, want)
         if got == want:
+            return True
+
+        if _ellipsis_match(got, want):
             return True
 
     return False
@@ -163,3 +230,12 @@ class GotWantException(AssertionError):
         else:  # nocover
             assert False, 'impossible state'
             return 'Expected nothing\nGot nothing\n'
+
+
+if __name__ == '__main__':
+    """
+    CommandLine:
+        python -m xdoctest.checker
+    """
+    import xdoctest as xdoc
+    xdoc.doctest_module()

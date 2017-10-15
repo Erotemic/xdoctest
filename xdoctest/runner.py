@@ -4,20 +4,19 @@ Native xdoctest interface to the collecting, executing, and summarizing the
 results of running doctests. This is an alternative to running through pytest.
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
-from xdoctest import static_analysis as static
 from xdoctest import dynamic_analysis as dynamic
 from xdoctest import core
 import sys
 
 
-def doctest_module(modname=None, command=None, argv=None, exclude=[],
-                   verbose=None):
+def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
+                   style='google', verbose=None):
     r"""
     Executes requestsed google-style doctests in a package or module.
     Main entry point into the testing framework.
 
     Args:
-        modname (str): name of the module.
+        modname (str): name of or path to the module.
         command (str): determines which doctests to run.
             if command is None, this is determined by parsing sys.argv
         argv (list): if None uses sys.argv
@@ -29,13 +28,14 @@ def doctest_module(modname=None, command=None, argv=None, exclude=[],
         >>> modname = 'xdoctest.dynamic_analysis'
         >>> result = doctest_module(modname, 'list', argv=[''])
     """
-    print('Start doctest_module({})'.format(modname))
+    print('Start doctest_module({!r})'.format(modpath_or_name))
 
-    if modname is None:
+    if modpath_or_name is None:
         # Determine package name via caller if not specified
         frame_parent = dynamic.get_parent_frame()
-        frame_fpath = frame_parent.f_globals['__file__']
-        modname = static.modpath_to_modname(frame_fpath)
+        modpath = frame_parent.f_globals['__file__']
+    else:
+        modpath = core._rectify_to_modpath(modpath_or_name)
 
     if command is None:
         if argv is None:
@@ -48,15 +48,13 @@ def doctest_module(modname=None, command=None, argv=None, exclude=[],
             command = None
 
     # Change how docstrs are found
-    style = 'google'
     if '--freeform' in sys.argv:
         style = 'freeform'
     elif '--google' in sys.argv:
         style = 'google'
 
     # Parse all valid examples
-    print('modname = {!r}'.format(modname))
-    examples = list(core.parse_doctestables(modname, exclude=exclude,
+    examples = list(core.parse_doctestables(modpath, exclude=exclude,
                                             style=style))
 
     if verbose is None:

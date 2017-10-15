@@ -91,6 +91,7 @@ class DocTest(object):
         self.failed_part = None
         self.stdout_results = []
         self.evaled_results = []
+        self.module = None
         self.globs = {}
 
     def __nice__(self):
@@ -276,6 +277,23 @@ class DocTest(object):
             self._parts = [p for p in self._parts
                            if not isinstance(p, six.string_types)]
 
+    def _import_module(self):
+        if self.module is None:
+            if not self.modname.startswith('<'):
+                self.module = utils.import_module_from_path(self.modpath)
+
+    def _extract_future_flags(self, globs):
+        """
+        Return the compiler-flags associated with the future features that
+        have been imported into the given namespace (globs).
+        """
+        compileflags = 0
+        for key in __future__.all_feature_names:
+            feature = globs.get(key, None)
+            if feature is getattr(__future__, key):
+                compileflags |= feature.compiler_flag
+        return compileflags
+
     def run(self, verbose=None, on_error=None):
         """
         Executes the doctest
@@ -294,40 +312,18 @@ class DocTest(object):
 
         self._parse()
         self.pre_run(verbose)
+        self._import_module()
+
         # Prepare for actual test run
         test_globals = self.globs
-
-        if not self.modname.startswith('<'):
-            # TODO:
-            # Put the module globals in the doctest global namespace
-            # Import from the filepath?
-            # module = utils.import_module_from_fpath(self.modpath)
-            module = utils.import_module_from_name(self.modname)
-            # module = __import__(self.modname, {}, {})
-            self.module = module
-            test_globals.update(module.__dict__)
+        if self.module is None:
             compileflags = 0
-            def _extract_future_flags(globs):
-                """
-                Return the compiler-flags associated with the future features that
-                have been imported into the given namespace (globs).
-                """
-                flags = 0
-                for key in __future__.all_feature_names:
-                    feature = globs.get(key, None)
-                    if feature is getattr(__future__, key):
-                        flags |= feature.compiler_flag
-                return flags
-            compileflags = _extract_future_flags(test_globals)
         else:
-            # Compile with future flags by default for tests without parent
-            # modules
-            self.module = None
-            compileflags = 0
-
+            test_globals.update(self.module.__dict__)
+            compileflags = self._extract_future_flags(test_globals)
         # force print function and division futures
-        compileflags |= (__future__.print_function.compiler_flag |
-                         __future__.division.compiler_flag)
+        compileflags |= __future__.print_function.compiler_flag
+        compileflags |= __future__.division.compiler_flag
 
         self.stdout_results = []
         self.evaled_results = []
@@ -467,7 +463,8 @@ class DocTest(object):
         """
         Constructs lines detailing information about a failed doctest
         """
-
+        if self.exc_info is None:
+            return []
         type, value, tb = self.exc_info
         fail_offset = self.failed_line_offset()
         fail_lineno = self.failed_lineno()
@@ -642,6 +639,7 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
 
     # parse into doctest and plaintext parts
     all_parts = parser.DoctestParser().parse(docstr)
+    print('all_parts = {!r}'.format(all_parts))
 
     curr_parts = []
     curr_offset = 0
@@ -709,23 +707,36 @@ def module_calldefs(modpath):
     return static.parse_calldefs(fpath=modpath)
 
 
-def package_calldefs(package_name, exclude=[], strict=False):
+def _rectify_to_modpath(modpath_or_name):
+    """ if modpath_or_name is a name, statically converts it to a path """
+    if exists(modpath_or_name):
+        modpath = modpath_or_name
+    else:
+        modname = modpath_or_name
+        modpath = static.modname_to_modpath(modname)
+        assert modpath is not None, 'cannot find module={}'.format(modname)
+    return modpath
+
+
+def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
     """
-    Statically generates all callable definitions in a package
+    Statically generates all callable definitions in a module or package
+
+    Args:
+        modpath_or_name (str): path to or name of the module to be tested
 
     Example:
-        >>> package_name = 'xdoctest.core'
-        >>> testables = list(package_calldefs(package_name))
+        >>> modpath_or_name = 'xdoctest.core'
+        >>> testables = list(package_calldefs(modpath_or_name))
         >>> assert len(testables) == 1
         >>> calldefs, modpath = testables[0]
-        >>> assert static.modpath_to_modname(modpath) == package_name
+        >>> assert static.modpath_to_modname(modpath) == modpath_or_name
         >>> assert 'package_calldefs' in calldefs
     """
     from fnmatch import fnmatch
-    package_path = static.modname_to_modpath(package_name)
-    assert package_path is not None, 'cannot find package_name={}'.format(package_name)
+    pkgpath = _rectify_to_modpath(modpath_or_name)
 
-    modpaths = static.package_modpaths(package_path)
+    modpaths = static.package_modpaths(pkgpath)
     for modpath in modpaths:
         modname = static.modpath_to_modname(modpath)
         if any(fnmatch(modname, pat) for pat in exclude):
@@ -740,11 +751,11 @@ def package_calldefs(package_name, exclude=[], strict=False):
         except SyntaxError as ex:  # nocover
             msg = 'Cannot parse module={} at path={}.\nCaused by={}'
             msg = msg.format(modname, modpath, ex)
-            if strict:
-                raise Exception(msg)
-            else:
+            if ignore_syntax_errors:
                 warnings.warn(msg)
                 continue
+            else:
+                raise SyntaxError(msg)
         else:
             yield calldefs, modpath
 
@@ -755,6 +766,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
     Parses doctests from a docstr and generates example objects.
     The style influences which tests are found.
     """
+    print('style = {!r}'.format(style))
     if style == 'freeform':
         parser = parse_freeform_docstr_examples
     elif style == 'google':
@@ -791,13 +803,14 @@ def module_doctestables(modpath, style='freeform'):
                 yield example
 
 
-def parse_doctestables(package_name, exclude=[], style='google', strict=False):
+def parse_doctestables(modpath_or_name, exclude=[], style='google',
+                       ignore_syntax_errors=True):
     r"""
     Finds all functions/callables with Google-style example blocks
 
     Example:
-        >>> package_name = 'xdoctest'
-        >>> testables = list(parse_doctestables(package_name))
+        >>> modpath_or_name = 'xdoctest'
+        >>> testables = list(parse_doctestables(modpath_or_name))
         >>> this_example = None
         >>> for example in testables:
         >>>     print(example)
@@ -806,7 +819,8 @@ def parse_doctestables(package_name, exclude=[], style='google', strict=False):
         >>> assert this_example is not None
         >>> assert this_example.callname == 'parse_doctestables'
     """
-    for calldefs, modpath in package_calldefs(package_name, exclude, strict):
+    for calldefs, modpath in package_calldefs(modpath_or_name, exclude,
+                                              ignore_syntax_errors):
         for callname, calldef in calldefs.items():
             docstr = calldef.docstr
             if calldef.docstr is not None:
@@ -819,7 +833,7 @@ def parse_doctestables(package_name, exclude=[], style='google', strict=False):
 
 
 if __name__ == '__main__':
-    r"""
+    """
     CommandLine:
         python -m xdoctest.core
     """

@@ -65,7 +65,6 @@ class TopLevelVisitor(ast.NodeVisitor):
         self._current_classname = None
         # Keep track of when we leave a top level definition
         self._finish_queue = deque()
-        self._prev_pop = None
 
     def process_finished(self, node):
         """ process (get ending lineno) for everything marked as finished """
@@ -80,11 +79,14 @@ class TopLevelVisitor(ast.NodeVisitor):
 
     @classmethod
     def parse(TopLevelVisitor, source):
-        source_utf8 = source.encode('utf8')
-        pt = ast.parse(source_utf8)
         self = TopLevelVisitor()
         self.sourcelines = source.splitlines()
+
+        source_utf8 = source.encode('utf8')
+        pt = ast.parse(source_utf8)
+
         self.visit(pt)
+
         lineno_end = source.count('\n') + 2  # one indexing
         self.process_finished(lineno_end)
         return self
@@ -92,6 +94,74 @@ class TopLevelVisitor(ast.NodeVisitor):
     def visit(self, node):
         self.process_finished(node)
         super(TopLevelVisitor, self).visit(node)
+
+    def visit_FunctionDef(self, node):
+        if self._current_classname is None:
+            callname = node.name
+        else:
+            callname = self._current_classname + '.' + node.name
+
+        lineno = self._workaround_func_lineno(node)
+        docstr, doclineno, doclineno_end = self._get_docstring(node)
+        calldef = CallDefNode(callname, lineno, docstr, doclineno,
+                              doclineno_end)
+        self.calldefs[callname] = calldef
+
+        self._finish_queue.append(calldef)
+
+    def visit_ClassDef(self, node):
+        if self._current_classname is None:
+            callname = node.name
+            self._current_classname = callname
+            docstr, doclineno, doclineno_end = self._get_docstring(node)
+            calldef = CallDefNode(callname, node.lineno, docstr, doclineno,
+                                  doclineno_end)
+            self.calldefs[callname] = calldef
+
+            self.generic_visit(node)
+            self._current_classname = None
+
+            self._finish_queue.append(calldef)
+
+    def visit_Module(self, node):
+        # get the module level docstr
+        docstr, doclineno, doclineno_end = self._get_docstring(node)
+        if docstr:
+            # the module level docstr is not really a calldef, but parse it for
+            # backwards compatibility.
+            callname = '__doc__'
+            calldef = CallDefNode(callname, doclineno, docstr, doclineno,
+                                  doclineno_end)
+            self.calldefs[callname] = calldef
+
+        self.generic_visit(node)
+        # self._finish_queue.append(calldef)
+
+    # def visit_Assign(self, node):
+    #     # print('VISIT FunctionDef node = %r' % (node,))
+    #     # print('VISIT FunctionDef node = %r' % (node.__dict__,))
+    #     # for target in node.targets:
+    #     #     print('target.id = %r' % (target.id,))
+    #     # print('node.value = %r' % (node.value,))
+    #     # TODO: assign constants to
+    #     # self.const_lookup
+    #     self.generic_visit(node)
+
+    def visit_If(self, node):
+        if isinstance(node.test, ast.Compare):  # pragma: nobranch
+            try:
+                if all([
+                    isinstance(node.test.ops[0], ast.Eq),
+                    node.test.left.id == '__name__',
+                    node.test.comparators[0].s == '__main__',
+                ]):
+                    # Ignore main block
+                    return
+            except Exception:  # nocover
+                pass
+        self.generic_visit(node)  # nocover
+
+    # -- helpers ---
 
     def _docstr_line_workaround(self, docnode):
         # lineno points to the last line of a string
@@ -144,58 +214,6 @@ class TopLevelVisitor(ast.NodeVisitor):
         else:
             lineno = node.lineno
         return lineno
-
-    def visit_FunctionDef(self, node):
-        if self._current_classname is None:
-            callname = node.name
-        else:
-            callname = self._current_classname + '.' + node.name
-
-        lineno = self._workaround_func_lineno(node)
-        docstr, doclineno, doclineno_end = self._get_docstring(node)
-        calldef = CallDefNode(callname, lineno, docstr, doclineno,
-                              doclineno_end)
-        self.calldefs[callname] = calldef
-
-        self._finish_queue.append(calldef)
-
-    def visit_ClassDef(self, node):
-        if self._current_classname is None:
-            callname = node.name
-            self._current_classname = callname
-            docstr, doclineno, doclineno_end = self._get_docstring(node)
-            calldef = CallDefNode(callname, node.lineno, docstr, doclineno,
-                                  doclineno_end)
-            self.calldefs[callname] = calldef
-
-            self.generic_visit(node)
-            self._current_classname = None
-
-            self._finish_queue.append(calldef)
-
-    # def visit_Assign(self, node):
-    #     # print('VISIT FunctionDef node = %r' % (node,))
-    #     # print('VISIT FunctionDef node = %r' % (node.__dict__,))
-    #     # for target in node.targets:
-    #     #     print('target.id = %r' % (target.id,))
-    #     # print('node.value = %r' % (node.value,))
-    #     # TODO: assign constants to
-    #     # self.const_lookup
-    #     self.generic_visit(node)
-
-    def visit_If(self, node):
-        if isinstance(node.test, ast.Compare):  # pragma: nobranch
-            try:
-                if all([
-                    isinstance(node.test.ops[0], ast.Eq),
-                    node.test.left.id == '__name__',
-                    node.test.comparators[0].s == '__main__',
-                ]):
-                    # Ignore main block
-                    return
-            except Exception:  # nocover
-                pass
-        self.generic_visit(node)  # nocover
 
 
 def parse_calldefs(source=None, fpath=None):
@@ -294,6 +312,43 @@ def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True):
                 del dnames[:]
 
 
+def split_modpath(modpath):
+    """
+    Splits the modpath into the dir that must be in PYTHONPATH for the module
+    to be imported and the modulepath relative to this directory.
+
+    Args:
+        modpath (str): module filepath
+
+    Returns:
+        str: directory
+
+    Example:
+        >>> from xdoctest import static_analysis
+        >>> modpath = static_analysis.__file__
+        >>> modpath = modpath.replace('.pyc', '.py')
+        >>> dpath, rel_modpath = split_modpath(modpath)
+        >>> assert join(dpath, rel_modpath) == modpath
+        >>> assert rel_modpath == 'xdoctest/static_analysis.py'
+    """
+    modpath_ = abspath(expanduser(modpath))
+    if not exists(modpath_):
+        raise ValueError('modpath={} is not a module'.format(modpath))
+    if isdir(modpath_) and not exists(join(modpath, '__init__.py')):
+        # dirs without inits are not modules
+        raise ValueError('modpath={} is not a module'.format(modpath))
+    full_dpath, fname_ext = split(modpath_)
+    _relmod_parts = [fname_ext]
+    # Recurse down directories until we are out of the package
+    dpath = full_dpath
+    while exists(join(dpath, '__init__.py')):
+        dpath, dname = split(dpath)
+        _relmod_parts.append(dname)
+    relmod_parts = _relmod_parts[::-1]
+    rel_modpath = '/'.join(relmod_parts)
+    return dpath, rel_modpath
+
+
 def modpath_to_modname(modpath, hide_init=True, hide_main=False):
     r"""
     Determines importable name from file path
@@ -316,21 +371,8 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False):
         >>> assert modname == 'xdoctest.static_analysis'
     """
     modpath_ = abspath(expanduser(modpath))
-    if not exists(modpath_):
-        return None
-    if isdir(modpath_) and not exists(join(modpath, '__init__.py')):
-        # dirs without inits are not modules
-        return None
-    full_dpath, fname_ext = split(modpath_)
-    fname, ext = splitext(fname_ext)
-    _modsubdir_list = [fname]
-    # Recurse down directories until we are out of the package
-    dpath = full_dpath
-    while exists(join(dpath, '__init__.py')):
-        dpath, dname = split(dpath)
-        _modsubdir_list.append(dname)
-    modsubdir_list = _modsubdir_list[::-1]
-    modname = '.'.join(modsubdir_list)
+    dpath, rel_modpath = split_modpath(modpath_)
+    modname = splitext(rel_modpath)[0].replace('/', '.')
     if hide_init:
         if modname.endswith('.__init__'):
             modname = modname[:-len('.__init__')]
@@ -359,18 +401,15 @@ def modname_to_modpath(modname, hide_init=True, hide_main=False):
         str: modpath
 
     CommandLine:
+        python -m xdoctest.static_analysis modname_to_modpath:0
         pytest  /home/joncrall/code/xdoctest/xdoctest/static_analysis.py::modname_to_modpath:0
 
     Example:
-        >>> import sys
         >>> modname = 'xdoctest.__main__'
         >>> modpath = modname_to_modpath(modname, hide_main=False)
         >>> assert modpath.endswith('__main__.py')
         >>> modname = 'xdoctest'
         >>> modpath = modname_to_modpath(modname, hide_init=False)
-        >>> assert modpath.endswith('__init__.py')
-        >>> modname = 'xdoctest'
-        >>> modpath = modname_to_modpath(modname, hide_init=False, hide_main=False)
         >>> assert modpath.endswith('__init__.py')
     """
     modpath = _syspath_modname_to_modpath(modname)

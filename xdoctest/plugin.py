@@ -127,18 +127,9 @@ class XDoctestItem(pytest.Item):
         if self.example.is_disabled(pytest=True):
             pytest.skip('doctest encountered skip directive')
         self.example.run(verbose=0, on_error='raise')
-        # _check_all_skipped(self.example)
-        #     if all_skipped:
-        #         pytest.skip('all tests skipped by +SKIP option')
-        # self.runner.run(self.example)
 
     def repr_failure(self, excinfo):
-        # return self.dtest.repr_failure()
-        # import doctest
-        # if excinfo.errisinstance((doctest.DocTestFailure,
-        #                           doctest.UnexpectedException)):
         example = self.example
-        # print('REPR FAIL example = {!r}'.format(example))
         if example.exc_info is not None:
             lineno = example.failed_lineno()
             type = example.exc_info[0]
@@ -147,40 +138,6 @@ class XDoctestItem(pytest.Item):
             lines = example.repr_failure()
 
             return ReprFailXDoctest(reprlocation, lines)
-            # doctestfailure = excinfo.value
-            # example = doctestfailure.example
-            # test = doctestfailure.test
-            # filename = test.filename
-            # if test.lineno is None:
-            #     lineno = None
-            # else:
-            #     lineno = test.lineno + example.lineno + 1
-            # message = excinfo.type.__name__
-            # reprlocation = code.ReprFileLocation(filename, lineno, message)
-            # checker = _get_checker()
-            # report_choice = _get_report_choice(self.config.getoption("doctestreport"))
-            # if lineno is not None:
-            #     lines = doctestfailure.test.docstring.splitlines(False)
-            #     # add line numbers to the left of the error message
-            #     lines = ["%03d %s" % (i + test.lineno + 1, x)
-            #              for (i, x) in enumerate(lines)]
-            #     # trim docstring error lines to 10
-            #     lines = lines[example.lineno - 9:example.lineno + 1]
-            # else:
-            #     lines = ['EXAMPLE LOCATION UNKNOWN, not showing all tests of that example']
-            #     indent = '>>>'
-            #     for line in example.source.splitlines():
-            #         lines.append('??? %s %s' % (indent, line))
-            #         indent = '...'
-            # if excinfo.errisinstance(doctest.DocTestFailure):
-            #     lines += checker.output_difference(example,
-            #                                        doctestfailure.got, report_choice).split("\n")
-            # else:
-            #     inner_excinfo = code.ExceptionInfo(excinfo.value.exc_info)
-            #     lines += ["UNEXPECTED EXCEPTION: %s" %
-            #               repr(inner_excinfo.value)]
-            #     lines += traceback.format_exception(*excinfo.value.exc_info)
-            # return ReprFailXDoctest(reprlocation, lines)
         else:
             return super(XDoctestItem, self).repr_failure(excinfo)
 
@@ -208,16 +165,6 @@ class XDoctestTextfile(pytest.Module):
             yield XDoctestItem(name, self, example)
 
 
-# def _check_all_skipped(test):
-#     """raises pytest.skip() if all examples in the given DocTest have the SKIP
-#     option set.
-#     """
-#     import doctest
-#     all_skipped = all(x.options.get(doctest.SKIP, False) for x in test.examples)
-#     if all_skipped:
-#         pytest.skip('all tests skipped by +SKIP option')
-
-
 class XDoctestModule(pytest.Module):
     def collect(self):
         modpath = str(self.fspath)
@@ -226,15 +173,23 @@ class XDoctestModule(pytest.Module):
         colored = self.config.getvalue('xdoctest_colored')
 
         try:
-            for example in core.module_doctestables(modpath, style=style):
-                example.config['colored'] = colored
-                name = example.unique_callname
-                yield XDoctestItem(name, self, example)
+            examples = list(core.module_doctestables(modpath, style=style))
         except SyntaxError:
             if self.config.getvalue('xdoctest_ignore_syntax_errors'):
                 pytest.skip('unable to import module %r' % self.fspath)
             else:
                 raise
+
+        # if self.fspath.basename == "conftest.py":
+        #     module = self.config.pluginmanager._importconftest(self.fspath)
+        # else:
+        #     module = self.fspath.pyimport()
+
+        for example in examples:
+            example.config['colored'] = colored
+            # example.module = module
+            name = example.unique_callname
+            yield XDoctestItem(name, self, example)
 
 
 def _setup_fixtures(xdoctest_item):

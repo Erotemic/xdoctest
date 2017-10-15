@@ -2,8 +2,26 @@
 from __future__ import print_function, division, absolute_import, unicode_literals
 import sys
 from xdoctest import static_analysis as static
+import itertools as it
 from xdoctest import utils
 from os.path import join
+import pytest
+
+
+def test_module_docstr():
+    source = utils.codeblock(
+        '''
+        # comment
+        """
+        module level docstr
+        """
+
+        def foo():
+            """ other docstr """
+        ''')
+
+    self = static.TopLevelVisitor.parse(source)
+    assert '__doc__' in self.calldefs
 
 
 def test_lineno():
@@ -124,7 +142,10 @@ def touch(args):
 def _static_modname_to_modpath(modname, **kwargs):
     # Calls static.modname_to_modpath with checks
     had = modname in sys.modules
-    modpath = static.modname_to_modpath(modname, **kwargs)
+    try:
+        modpath = static.modname_to_modpath(modname, **kwargs)
+    except ValueError:
+        modpath = None
     if not had:
         assert modname not in sys.modules, (
             '{} should not be imported'.format(modname))
@@ -474,13 +495,15 @@ def test_modpath_to_modname():
             assert static.modpath_to_modname(sub2_main, hide_main=True, hide_init=False) == '_tmproot.sub1.sub2'
 
             # Non-existant / invalid modules should always be None
-            import itertools as it
             for a, b in it.product([True, False], [True, False]):
-                assert static.modpath_to_modname(join(sub1, '__main__.py'), hide_main=a, hide_init=b) is None
+                with pytest.raises(ValueError):
+                    static.modpath_to_modname(join(sub1, '__main__.py'), hide_main=a, hide_init=b)
                 assert static.modpath_to_modname(b0, hide_main=a, hide_init=b) == 'b0'
                 assert static.modpath_to_modname(b1, hide_main=a, hide_init=b) == 'b1'
-                assert static.modpath_to_modname(bad1, hide_main=a, hide_init=b) is None
-                assert static.modpath_to_modname(bad2, hide_main=a, hide_init=b) is None
+                with pytest.raises(ValueError):
+                    static.modpath_to_modname(bad1, hide_main=a, hide_init=b)
+                with pytest.raises(ValueError):
+                    static.modpath_to_modname(bad2, hide_main=a, hide_init=b)
 
             assert '_tmproot' not in sys.modules
             assert '_tmproot.mod0' not in sys.modules

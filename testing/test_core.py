@@ -334,3 +334,65 @@ def test_multiline_list():
     self = core.DocTest(docsrc=string)
     result = self.run(on_error='raise')
     assert result['passed']
+
+
+def test_collect_module_level():
+    """
+    pytest testing/test_core.py::test_collect_module_level
+
+    Ignore:
+        temp = utils.TempDir()
+    """
+    temp = utils.TempDir()
+    dpath = temp.ensure()
+    modpath = join(dpath, 'test_module_level.py')
+    source = utils.codeblock(
+        '''
+        """
+        >>> pass
+        """
+        ''')
+    with open(modpath, 'w') as file:
+        file.write(source)
+    from xdoctest import core
+    doctests = list(core.module_doctestables(modpath))
+    assert len(doctests) == 1
+    self = doctests[0]
+    assert self.callname == '__doc__'
+    self.config['colored'] = False
+    assert self.format_src(offset_linenos=True).strip().startswith('2')
+    assert self.format_src(offset_linenos=False).strip().startswith('1')
+
+    with utils.PythonPathContext(dpath):
+        status = self.run(verbose=0, on_error='return')
+    assert status['passed']
+    temp.cleanup()
+
+
+def test_collect_module_level_singleline():
+    """
+    pytest testing/test_core.py::test_collect_module_level
+
+    Ignore:
+        temp = utils.TempDir()
+    """
+    temp = utils.TempDir()
+    dpath = temp.ensure()
+    modpath = join(dpath, 'test_module_level.py')
+    source = utils.codeblock(
+        '''">>> pass"''')
+    with open(modpath, 'w') as file:
+        file.write(source)
+    from xdoctest import core
+    doctests = list(core.module_doctestables(modpath))
+    assert len(doctests) == 1
+    self = doctests[0]
+    assert self.callname == '__doc__'
+    self.config['colored'] = False
+    assert self.format_src(offset_linenos=True).strip().startswith('1')
+    assert self.format_src(offset_linenos=False).strip().startswith('1')
+
+    with utils.PythonPathContext(dpath):
+        status = self.run(verbose=0, on_error='return')
+    assert status['passed']
+    temp.cleanup()

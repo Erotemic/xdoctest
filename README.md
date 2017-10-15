@@ -107,6 +107,7 @@ have support for the `# doctest: +ELLIPSES` directive.
 #### Checking:
 - [x] Support got/want testing with stdout.
 - [x] Support got/want testing with evaluated statements.
+- [x] Support got/want testing with `NORMALIZED_WHITESPACE` and `ELLIPSES` by default
 - [ ] Support advanced got/want directives for backwards compatibility (e.g. ELLIPSES)
 
 #### Reporting:
