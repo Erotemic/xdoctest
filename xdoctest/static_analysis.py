@@ -329,7 +329,7 @@ def split_modpath(modpath):
         >>> modpath = modpath.replace('.pyc', '.py')
         >>> dpath, rel_modpath = split_modpath(modpath)
         >>> assert join(dpath, rel_modpath) == modpath
-        >>> assert rel_modpath == 'xdoctest/static_analysis.py'
+        >>> assert rel_modpath == join('xdoctest', 'static_analysis.py')
     """
     modpath_ = abspath(expanduser(modpath))
     if not exists(modpath_):
@@ -345,7 +345,7 @@ def split_modpath(modpath):
         dpath, dname = split(dpath)
         _relmod_parts.append(dname)
     relmod_parts = _relmod_parts[::-1]
-    rel_modpath = '/'.join(relmod_parts)
+    rel_modpath = os.path.sep.join(relmod_parts)
     return dpath, rel_modpath
 
 
@@ -372,7 +372,9 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False):
     """
     modpath_ = abspath(expanduser(modpath))
     dpath, rel_modpath = split_modpath(modpath_)
-    modname = splitext(rel_modpath)[0].replace('/', '.')
+    modname = splitext(rel_modpath)[0]
+    modname = modname.replace('/', '.')
+    modname = modname.replace('\\', '.')
     if hide_init:
         if modname.endswith('.__init__'):
             modname = modname[:-len('.__init__')]
