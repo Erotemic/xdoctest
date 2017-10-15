@@ -382,11 +382,10 @@ class DocTest(object):
                 break
             except:
                 type, value, tb = sys.exc_info()
-                print('type = {!r}'.format(type))
-                # Pop the eval off the stack
                 # CLEAN_TRACEBACK = True
                 CLEAN_TRACEBACK = 0
                 if CLEAN_TRACEBACK:
+                    # Pop the eval off the stack
                     if tb.tb_next is not None:
                         tb = tb.tb_next
                     self.tb_lineno = tb.tb_lineno
