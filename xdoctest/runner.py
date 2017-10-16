@@ -93,7 +93,13 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
         for example in enabled_examples:
             try:
                 summary = example.run(verbose=verbose)
+                if not verbose:
+                    sys.stdout.write('.')
+                    sys.stdout.flush()
             except Exception:
+                if not verbose:
+                    sys.stdout.write('F')
+                    sys.stdout.flush()
                 print('\n'.join(example.repr_failure()))
                 raise
             summaries.append(summary)

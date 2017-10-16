@@ -426,9 +426,9 @@ class DocTest(object):
             # print(self.cmdline)
             if verbose >= 3:
                 print(self.format_src())
-        else:  # nocover
-            sys.stdout.write('.')
-            sys.stdout.flush()
+        # else:  # nocover
+        #     sys.stdout.write('.')
+        #     sys.stdout.flush()
 
     def failed_line_offset(self):
         if self.exc_info is None:
