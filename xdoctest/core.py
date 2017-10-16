@@ -761,7 +761,6 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
     Parses doctests from a docstr and generates example objects.
     The style influences which tests are found.
     """
-    print('style = {!r}'.format(style))
     if style == 'freeform':
         parser = parse_freeform_docstr_examples
     elif style == 'google':

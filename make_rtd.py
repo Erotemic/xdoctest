@@ -2,6 +2,7 @@
 http://docs.readthedocs.io/en/latest/getting_started.html#in-rst
 pip install sphinx sphinx-autobuild
 pip install sphinxcontrib-napoleon
+pip install sphinx_rtd_theme
 
 """
 
@@ -62,23 +63,3 @@ def modify_conf():
     theme_node.value.value = '"sphinx_rtd_theme"'
 
     ub.writeto(conf_path, red.dumps())
-
-
-# extensions = [
-#     'sphinx.ext.autodoc',
-#     'sphinx.ext.mathjax',
-#     'sphinx.ext.ifconfig',
-#     'sphinx.ext.viewcode',
-#     'sphinx.ext.githubpages',
-# ]
-
-# # Add any paths that contain templates here, relative to this directory.
-# templates_path = ['_templates']
-
-# # The suffix(es) of source filenames.
-# # You can specify multiple suffix as a list of string:
-# #
-# # source_suffix = ['.rst', '.md']
-# source_suffix = '.rst'
-
-
