@@ -10,6 +10,18 @@ The `xdoctest` package is a re-write of Python's builtin `doctest` module.
 It replaces the old regex-based parser with a new abstract-syntax-tree based
 parser (using Python's `ast` module). 
 
+## Installation
+
+#### From pypi
+```
+pip install xdoctest
+```
+
+#### From github (bleeding edge)
+```
+pip install git+git://github.com/Erotemic/xdoctest.git@master
+```
+
 
 ## Enhancements 
 

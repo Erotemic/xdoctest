@@ -8,31 +8,32 @@ Developing:
     pip install -e xdoctest
 
 Pypi:
-     # Presetup
-     pip install twine
+    cd ~/code/xdoctest
 
-     # First tag the source-code
-     VERSION=$(python -c "import setup; print(setup.parse_version())")
-     echo $VERSION
-     git tag $VERSION -m "tarball tag $VERSION"
-     git push --tags origin master
+    # Presetup
+    pip install twine
 
-     # NEW API TO UPLOAD TO PYPI
-     # https://packaging.python.org/tutorials/distributing-packages/
+    # First tag the source-code
+    VERSION=$(python -c "import setup; print(setup.parse_version())")
+    echo $VERSION
+    git tag $VERSION -m "tarball tag $VERSION"
+    git push --tags origin master
 
-     # Build wheel or source distribution
-     python setup.py bdist_wheel --universal
+    # NEW API TO UPLOAD TO PYPI
+    # https://packaging.python.org/tutorials/distributing-packages/
 
-     # Use twine to upload. This will prompt for username and password
-     twine upload --username erotemic --skip-existing dist/*
+    # Build wheel or source distribution
+    python setup.py bdist_wheel --universal
 
-     # Check the url to make sure everything worked
-     https://pypi.org/project/xdoctest/
+    # Use twine to upload. This will prompt for username and password
+    twine upload --username erotemic --skip-existing dist/*
 
-     # ---------- OLD ----------------
-     # Check the url to make sure everything worked
-     https://pypi.python.org/pypi?:action=display&name=xdoctest
+    # Check the url to make sure everything worked
+    https://pypi.org/project/xdoctest/
 
+    # ---------- OLD ----------------
+    # Check the url to make sure everything worked
+    https://pypi.python.org/pypi?:action=display&name=xdoctest
 """
 from setuptools import setup
 
