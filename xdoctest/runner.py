@@ -63,7 +63,7 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
         elif '--quiet' in sys.argv:
             verbose = 0
         else:
-            verbose = 2
+            verbose = 3 if len(examples) == 1 else 2
 
     if command == 'list':
         print('Listing tests')
