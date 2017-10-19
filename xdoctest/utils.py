@@ -56,7 +56,8 @@ class CaptureStdout(object):
     Context manager that captures stdout and stores it in an internal stream
 
     Args:
-        enabled (bool): (default = True)
+        supress (bool): if True, stdout is not printed while captured
+            (default = True)
 
     Example:
         >>> from xdoctest.utils import *

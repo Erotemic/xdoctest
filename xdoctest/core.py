@@ -324,11 +324,13 @@ class DocTest(object):
 
         not_evaled = object()  # sentinal value
 
+        self._suppressed_stdout = verbose <= 1
+
         for part in self._parts:
             # Prepare to capture stdout and evaluated values
             self.failed_part = part
             got_eval = not_evaled
-            cap = utils.CaptureStdout(supress=verbose <= 1)
+            cap = utils.CaptureStdout(supress=self._suppressed_stdout)
             try:
                 # Compile code, handle syntax errors
                 mode = 'eval' if part.use_eval else 'exec'
@@ -541,7 +543,8 @@ class DocTest(object):
         colored = self.config['colored']
         if self.exc_info is None:
             if verbose >= 1:
-                self._print_captured()
+                if self._suppressed_stdout:
+                    self._print_captured()
                 success = 'SUCCESS'
                 if colored:
                     success = utils.color_text(success, 'green')
