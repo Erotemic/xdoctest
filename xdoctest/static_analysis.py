@@ -247,6 +247,76 @@ def parse_calldefs(source=None, fpath=None):
         raise
 
 
+def _parse_static_node_value(node):
+    """
+    Extract a constant value from a node if possible
+    """
+    if isinstance(node, ast.Num):
+        value = node.n
+    elif isinstance(node, ast.Str):
+        value = node.s
+    elif isinstance(node, ast.List):
+        value = list(map(_parse_static_node_value, node.elts))
+    elif isinstance(node, ast.Tuple):
+        value = tuple(map(_parse_static_node_value, node.elts))
+    elif isinstance(node, (ast.Dict)):
+        keys = map(_parse_static_node_value, node.keys)
+        values = map(_parse_static_node_value, node.values)
+        value = dict(zip(keys, values))
+    else:
+        raise TypeError('Cannot parse a static value from non-static node '
+                        'of type: {!r}'.format(type(node)))
+    return value
+
+
+def parse_static_value(key, source=None, fpath=None):
+    """
+    Statically parse a constant variable's value from python code.
+
+    TODO: This does not belong here. Move this to an external static analysis
+    library.
+
+    Args:
+        key (str): name of the variable
+        source (str): python text
+        fpath (str): filepath to read if source is not specified
+
+    Example:
+        >>> from xdoctest.static_analysis import parse_static_value
+        >>> key = 'foo'
+        >>> source = 'foo = 123'
+        >>> assert parse_static_value(key, source=source) == 123
+        >>> source = 'foo = "123"'
+        >>> assert parse_static_value(key, source=source) == '123'
+        >>> source = 'foo = [1, 2, 3]'
+        >>> assert parse_static_value(key, source=source) == [1, 2, 3]
+        >>> source = 'foo = (1, 2, "3")'
+        >>> assert parse_static_value(key, source=source) == (1, 2, "3")
+        >>> source = 'foo = {1: 2, 3: 4}'
+        >>> assert parse_static_value(key, source=source) == {1: 2, 3: 4}
+        >>> #parse_static_value('bar', source=source)
+        >>> parse_static_value('bar', source='foo=1; bar = [1, foo]')
+    """
+    if source is None:  # pragma: no branch
+        with open(fpath, 'rb') as file_:
+            source = file_.read().decode('utf-8')
+    pt = ast.parse(source)
+
+    class AssignentVisitor(ast.NodeVisitor):
+        def visit_Assign(self, node):
+            for target in node.targets:
+                if getattr(target, 'id', None) == key:
+                    self.value = _parse_static_node_value(node.value)
+
+    sentinal = object()
+    visitor = AssignentVisitor()
+    visitor.value = sentinal
+    visitor.visit(pt)
+    if visitor.value is sentinal:
+        raise NameError('No static variable named {!r}'.format(key))
+    return visitor.value
+
+
 def _platform_pylib_ext():  # nocover
     if sys.platform.startswith('linux'):  # nocover
         pylib_ext = '.so'
