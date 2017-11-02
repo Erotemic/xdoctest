@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import, unicode_literals
+import re
 import os
 import sys
 import six
@@ -368,15 +369,25 @@ def import_module_from_path(modpath):
 
 
 def strip_ansi(text):
-    """
+    r"""
     Removes all ansi directives from the string.
 
     References:
-        http://stackoverflow.com/questions/14693701remove-ansi
+        http://stackoverflow.com/questions/14693701/remove-ansi
+        https://stackoverflow.com/questions/13506033/filtering-out-ansi-escape-sequences
+
+    Examples:
+        >>> from xdoctest.utils import *
+        >>> line = '\t\u001b[0;35mBlabla\u001b[0m     \u001b[0;36m172.18.0.2\u001b[0m'
+        >>> escaped_line = strip_ansi(line)
+        >>> assert escaped_line == '\tBlabla     172.18.0.2'
     """
-    import re
-    ansi_escape = re.compile(r'\x1b[^m]*m')
-    return ansi_escape.sub('', text)
+    # ansi_escape1 = re.compile(r'\x1b[^m]*m')
+    # text = ansi_escape1.sub('', text)
+    # ansi_escape2 = re.compile(r'\x1b\[([0-9,A-Z]{1,2}(;[0-9]{1,2})?(;[0-9]{3})?)?[m|K]?')
+    ansi_escape3 = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]', flags=re.IGNORECASE)
+    text = ansi_escape3.sub('', text)
+    return text
 
 
 def ensuredir(dpath, mode=0o1777):
