@@ -295,7 +295,7 @@ def parse_static_value(key, source=None, fpath=None):
         >>> source = 'foo = {1: 2, 3: 4}'
         >>> assert parse_static_value(key, source=source) == {1: 2, 3: 4}
         >>> #parse_static_value('bar', source=source)
-        >>> parse_static_value('bar', source='foo=1; bar = [1, foo]')
+        >>> #parse_static_value('bar', source='foo=1; bar = [1, foo]')
     """
     if source is None:  # pragma: no branch
         with open(fpath, 'rb') as file_:
@@ -336,7 +336,8 @@ def _platform_pylib_ext():  # nocover
 #         yield modname
 
 
-def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True):
+def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True,
+                     recursive=True):
     r"""
     Finds sub-packages and sub-modules belonging to a package.
 
@@ -346,6 +347,7 @@ def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True):
             False)
         with_mod (bool): if True includes module files (default = True)
         exclude (list): ignores any module that matches any of these patterns
+        recursive (bool): if False, then only child modules are included
 
     Yields:
         str: module names belonging to the package
@@ -367,6 +369,11 @@ def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True):
         # If input is a file, just return it
         yield pkgpath
     else:
+        if with_pkg:
+            root_path = join(pkgpath, '__init__.py')
+            if exists(root_path):
+                yield root_path
+
         valid_exts = ['.py', _platform_pylib_ext()]
         for dpath, dnames, fnames in os.walk(pkgpath, followlinks=followlinks):
             ispkg = exists(join(dpath, '__init__.py'))
@@ -374,12 +381,20 @@ def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True):
                 if with_mod:
                     for fname in fnames:
                         if splitext(fname)[1] in valid_exts:
-                            # dont yield inits unless with_pkg is True
-                            if with_pkg or fname != '__init__.py':
-                                yield join(dpath, fname)
+                            # dont yield inits. Handled in pkg loop.
+                            if fname != '__init__.py':
+                                path = join(dpath, fname)
+                                yield path
+                if with_pkg:
+                    for dname in dnames:
+                        path = join(dpath, dname, '__init__.py')
+                        if exists(path):
+                            yield path
             else:
                 # Stop recursing when we are out of the package
                 del dnames[:]
+            if not recursive:
+                break
 
 
 def split_modpath(modpath):
