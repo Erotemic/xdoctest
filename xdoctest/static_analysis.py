@@ -66,6 +66,9 @@ class TopLevelVisitor(ast.NodeVisitor):
         # Keep track of when we leave a top level definition
         self._finish_queue = deque()
 
+        # new
+        self.assignments = []
+
     def process_finished(self, node):
         """ process (get ending lineno) for everything marked as finished """
         if self._finish_queue:
@@ -137,15 +140,17 @@ class TopLevelVisitor(ast.NodeVisitor):
         self.generic_visit(node)
         # self._finish_queue.append(calldef)
 
-    # def visit_Assign(self, node):
-    #     # print('VISIT FunctionDef node = %r' % (node,))
-    #     # print('VISIT FunctionDef node = %r' % (node.__dict__,))
-    #     # for target in node.targets:
-    #     #     print('target.id = %r' % (target.id,))
-    #     # print('node.value = %r' % (node.value,))
-    #     # TODO: assign constants to
-    #     # self.const_lookup
-    #     self.generic_visit(node)
+    def visit_Assign(self, node):
+        # print('VISIT FunctionDef node = %r' % (node,))
+        # print('VISIT FunctionDef node = %r' % (node.__dict__,))
+        if self._current_classname is None:
+            for target in node.targets:
+                if hasattr(target, 'id'):
+                    self.assignments.append(target.id)
+            # print('node.value = %r' % (node.value,))
+            # TODO: assign constants to
+            # self.const_lookup
+        self.generic_visit(node)
 
     def visit_If(self, node):
         if isinstance(node.test, ast.Compare):  # pragma: nobranch
@@ -160,6 +165,20 @@ class TopLevelVisitor(ast.NodeVisitor):
             except Exception:  # nocover
                 pass
         self.generic_visit(node)  # nocover
+
+    # def visit_ExceptHandler(self, node):
+    #     pass
+
+    # def visit_TryFinally(self, node):
+    #     pass
+
+    # def visit_TryExcept(self, node):
+    #     pass
+
+    # def visit_Try(self, node):
+    #     TODO: parse a node only if it is visible in all cases
+    #     pass
+    #     # self.generic_visit(node)  # nocover
 
     # -- helpers ---
 
