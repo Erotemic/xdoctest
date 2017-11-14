@@ -64,7 +64,11 @@ class DocTest(object):
     """
 
     def __init__(self, docsrc, modpath=None, callname=None, num=0,
-                 lineno=1, fpath=None):
+                 lineno=1, fpath=None, block_type=None):
+
+        # if we know the google block type it is recorded
+        self.block_type = block_type
+
         self.config = Config()
 
         self.modpath = modpath
@@ -692,7 +696,7 @@ def parse_google_docstr_examples(docstr, callname=None, modpath=None,
             # Add one because offset applies to the google-type label
             lineno_ = lineno + offset + 1
             example = DocTest(docsrc, modpath, callname, num, lineno=lineno_,
-                              fpath=fpath)
+                              fpath=fpath, block_type=type)
             yield example
     except Exception as ex:  # nocover
         msg = ('Cannot scrape callname={} in modpath={}.\n'
