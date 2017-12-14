@@ -73,12 +73,12 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
 
         if len(enabled_examples) == 0:
             # Check for arg-less funcs
-            enabled_examples += list(_zero_arg_examples(command, modpath))
+            enabled_examples += list(_gather_zero_arg_examples(command, modpath))
 
         _run_examples(enabled_examples, verbose)
 
 
-def _zero_arg_examples(command, modpath):
+def _gather_zero_arg_examples(command, modpath):
     """
     Find functions in `modpath` args that match `command` as long as they
     take no args (so we can automatically make a dummy docstring).
@@ -86,10 +86,10 @@ def _zero_arg_examples(command, modpath):
     for calldefs, _modpath in core.package_calldefs(modpath):
         for callname, calldef in calldefs.items():
             if calldef.argnames is not None and len(calldef.argnames) == 0:
-                # Create a dummy doctest example for a no-arg function
+                # Create a dummy doctest example for a zero-arg function
                 docsrc = '>>> {}()'.format(callname)
                 example = core.DocTest(docsrc=docsrc, modpath=_modpath,
-                                       callname=callname, block_type='no-arg')
+                                       callname=callname, block_type='zero-arg')
                 if command in example.valid_testnames:
                     example.mode = 'native'
                     yield example
