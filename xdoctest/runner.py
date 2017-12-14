@@ -53,12 +53,15 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
     # Parse all valid examples
     examples = list(core.parse_doctestables(modpath, exclude=exclude,
                                             style=style))
+    # Signal that we are not running through pytest
+    for e in examples:
+        e.mode = 'native'
 
     if command == 'list':
         if len(examples) == 0:
             print('... no docstrings with examples found')
         else:
-            print('\n'.join([example.native_cmdline for example in examples]))
+            print('\n'.join([example.cmdline for example in examples]))
     else:
         print('gathering tests')
         enabled_examples = []
@@ -70,15 +73,14 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
 
         if len(enabled_examples) == 0:
             # Check for arg-less funcs
-            print('no tests found, checking for zero-arg funcs')
-            _zero_arg_runner(command, modpath, verbose)
-        else:
-            _run_examples(enabled_examples, verbose)
+            enabled_examples += list(_zero_arg_examples(command, modpath))
+
+        _run_examples(enabled_examples, verbose)
 
 
-def _zero_arg_runner(command, modpath, verbose):
+def _zero_arg_examples(command, modpath):
     """
-    Run functions in `modpath` args that match `command` as long as they
+    Find functions in `modpath` args that match `command` as long as they
     take no args (so we can automatically make a dummy docstring).
     """
     for calldefs, _modpath in core.package_calldefs(modpath):
@@ -89,11 +91,8 @@ def _zero_arg_runner(command, modpath, verbose):
                 example = core.DocTest(docsrc=docsrc, modpath=_modpath,
                                        callname=callname, block_type='no-arg')
                 if command in example.valid_testnames:
-                    try:
-                        example.run(verbose)
-                    except Exception:
-                        print('\n'.join(example.repr_failure()))
-                        raise
+                    example.mode = 'native'
+                    yield example
 
 
 def _run_examples(enabled_examples, verbose):

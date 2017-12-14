@@ -64,7 +64,7 @@ class DocTest(object):
     """
 
     def __init__(self, docsrc, modpath=None, callname=None, num=0,
-                 lineno=1, fpath=None, block_type=None):
+                 lineno=1, fpath=None, block_type=None, mode='pytest'):
 
         # if we know the google block type it is recorded
         self.block_type = block_type
@@ -97,6 +97,8 @@ class DocTest(object):
         self.evaled_results = []
         self.module = None
         self.globs = {}
+        # Hint at what is running this doctest
+        self.mode = mode
 
     def __nice__(self):
         parts = []
@@ -414,12 +416,12 @@ class DocTest(object):
 
     @property
     def cmdline(self):
-        # TODO: move to pytest
-        return 'pytest ' + self.node
-
-    @property
-    def native_cmdline(self):
-        return 'python -m ' + self.modname + ' ' + self.unique_callname
+        if self.mode == 'pytest':
+            return 'pytest ' + self.node
+        elif self.mode == 'native':
+            return 'python -m ' + self.modname + ' ' + self.unique_callname
+        else:
+            raise KeyError(self.mode)
 
     def pre_run(self, verbose):
         if verbose >= 1:
