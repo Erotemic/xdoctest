@@ -89,7 +89,11 @@ def _zero_arg_runner(command, modpath, verbose):
                 example = core.DocTest(docsrc=docsrc, modpath=_modpath,
                                        callname=callname, block_type='no-arg')
                 if command in example.valid_testnames:
-                    example.run(verbose)
+                    try:
+                        example.run(verbose)
+                    except Exception:
+                        print('\n'.join(example.repr_failure()))
+                        raise
 
 
 def _run_examples(enabled_examples, verbose):
