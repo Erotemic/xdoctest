@@ -428,7 +428,11 @@ class DocTest(object):
                     print(utils.color_text('============', 'white'))
                 else:
                     print('============')
-            print('* BEGIN DOCTEST : {}'.format(self.node))
+            if self.block_type == 'zero-arg':
+                # zero-arg funcs arent doctests, but we can still run them
+                print('* ZERO-ARG FUNC : {}'.format(self.node))
+            else:
+                print('* BEGIN DOCTEST : {}'.format(self.node))
             if verbose >= 3:
                 print(self.format_src())
 

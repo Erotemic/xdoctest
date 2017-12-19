@@ -15,14 +15,14 @@ from os.path import (join, exists, expanduser, abspath, split, splitext,
 
 class CallDefNode(object):
     def __init__(self, callname, lineno, docstr, doclineno, doclineno_end,
-                 argnames=None):
+                 args=None):
         self.callname = callname
         self.lineno = lineno
         self.docstr = docstr
         self.doclineno = doclineno
         self.doclineno_end = doclineno_end
         self.lineno_end = None
-        self.argnames = argnames
+        self.args = args
 
     # def __str__(self):
     #     return '{}[{}:{}][{}]'.format(
@@ -109,15 +109,10 @@ class TopLevelVisitor(ast.NodeVisitor):
         else:
             callname = self._current_classname + '.' + node.name
 
-        if six.PY2:
-            argnames = [a.id for a in node.args.args]
-        else:
-            argnames = [a.arg for a in node.args.args]
-
         lineno = self._workaround_func_lineno(node)
         docstr, doclineno, doclineno_end = self._get_docstring(node)
         calldef = CallDefNode(callname, lineno, docstr, doclineno,
-                              doclineno_end, argnames=argnames)
+                              doclineno_end, args=node.args)
         self.calldefs[callname] = calldef
 
         self._finish_queue.append(calldef)

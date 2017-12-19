@@ -16,6 +16,9 @@ def ensure_unicode(text):
     References:
         http://stackoverflow.com/questions/12561063/python-extract-data-from-file
 
+    CommandLine:
+        python -m xdoctest.utils ensure_unicode
+
     Example:
         >>> from xdoctest.utils import *
         >>> assert ensure_unicode('my ünicôdé strįng') == 'my ünicôdé strįng'
@@ -133,7 +136,7 @@ def indent(text, prefix='    '):
         str: indented text
 
     CommandLine:
-        python -m util_str indent
+        python -m xdoctest.utils ensure_unicode
 
     Example:
         >>> text = 'Lorem ipsum\ndolor sit amet'
@@ -457,3 +460,11 @@ def color_text(text, color):
         import warnings
         warnings.warn('pygments is not installed')
         return text
+
+if __name__ == '__main__':
+    r"""
+    CommandLine:
+        python -m xdoctest.utils
+    """
+    import xdoctest
+    xdoctest.doctest_module(__file__)

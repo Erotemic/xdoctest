@@ -72,27 +72,31 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
                 enabled_examples.append(example)
 
         if len(enabled_examples) == 0:
-            # Check for arg-less funcs
-            enabled_examples += list(_gather_zero_arg_examples(command, modpath))
+            # Check for zero-arg funcs
+            for example in _gather_zero_arg_examples(modpath):
+                if command in example.valid_testnames:
+                    enabled_examples.append(example)
 
-        _run_examples(enabled_examples, verbose)
+        return _run_examples(enabled_examples, verbose)
 
 
-def _gather_zero_arg_examples(command, modpath):
+def _gather_zero_arg_examples(modpath):
     """
-    Find functions in `modpath` args that match `command` as long as they
-    take no args (so we can automatically make a dummy docstring).
+    Find functions in `modpath` args  with no args (so we can automatically
+    make a dummy docstring).
     """
     for calldefs, _modpath in core.package_calldefs(modpath):
         for callname, calldef in calldefs.items():
-            if calldef.argnames is not None and len(calldef.argnames) == 0:
-                # Create a dummy doctest example for a zero-arg function
-                docsrc = '>>> {}()'.format(callname)
-                example = core.DocTest(docsrc=docsrc, modpath=_modpath,
-                                       callname=callname, block_type='zero-arg')
-                if command in example.valid_testnames:
+            if calldef.args is not None:
+                # The only existing args should have defaults
+                n_args = len(calldef.args.args) - len(calldef.args.defaults)
+                if n_args == 0:
+                    # Create a dummy doctest example for a zero-arg function
+                    docsrc = '>>> {}()'.format(callname)
+                    example = core.DocTest(docsrc=docsrc, modpath=_modpath,
+                                           callname=callname,
+                                           block_type='zero-arg')
                     example.mode = 'native'
-
                     # if True:
                     #     import importlib
                     #     mod = importlib.import_module(example.modname)
@@ -121,10 +125,15 @@ def _run_examples(enabled_examples, verbose):
     if verbose <= 0:
         print('')
     n_passed = sum(s['passed'] for s in summaries)
-    print('Finished doctests')
-    print('%d / %d passed'  % (n_passed, n_total))
 
-    return n_passed == n_total
+    if len(enabled_examples) > 1:
+        print('Finished doctests')
+        print('%d / %d passed'  % (n_passed, n_total))
+
+    return {
+        'n_passed': n_passed,
+        'n_total': n_total
+    }
 
 
 def _parse_commandline(command, style, verbose, argv):
