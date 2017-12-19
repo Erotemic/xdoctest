@@ -84,6 +84,18 @@ class CaptureStdout(object):
         >>> print('dont capture look of disapproval ಠ_ಠ')
         >>> assert isinstance(self.text, six.text_type)
         >>> assert self.text == text + '\n', 'failed capture text'
+
+    Example:
+        >>> self = CaptureStdout(supress=False)
+        >>> with self:
+        ...     print('I am captured and printed in stdout')
+        >>> assert self.text.strip() == 'I am captured and printed in stdout'
+
+    Example:
+        >>> self = CaptureStdout(supress=True, enabled=False)
+        >>> with self:
+        ...     print('dont capture')
+        >>> assert self.text is None
     """
     def __init__(self, supress=True, enabled=True):
         self.enabled = enabled
