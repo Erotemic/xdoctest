@@ -64,7 +64,7 @@ class DocTest(object):
     """
 
     def __init__(self, docsrc, modpath=None, callname=None, num=0,
-                 lineno=1, fpath=None, block_type=None):
+                 lineno=1, fpath=None, block_type=None, mode='pytest'):
 
         # if we know the google block type it is recorded
         self.block_type = block_type
@@ -97,6 +97,8 @@ class DocTest(object):
         self.evaled_results = []
         self.module = None
         self.globs = {}
+        # Hint at what is running this doctest
+        self.mode = mode
 
     def __nice__(self):
         parts = []
@@ -342,8 +344,6 @@ class DocTest(object):
                 code = compile(
                     part.source, mode=mode,
                     filename='<doctest:' + self.node + '>',
-                    # filename='<doctest>',
-                    # self.node,
                     flags=compileflags, dont_inherit=True
                 )
             except KeyboardInterrupt:  # nocover
@@ -414,12 +414,12 @@ class DocTest(object):
 
     @property
     def cmdline(self):
-        # TODO: move to pytest
-        return 'pytest ' + self.node
-
-    @property
-    def native_cmdline(self):
-        return 'python -m ' + self.modname + ' ' + self.unique_callname
+        if self.mode == 'pytest':
+            return 'pytest ' + self.node
+        elif self.mode == 'native':
+            return 'python -m ' + self.modname + ' ' + self.unique_callname
+        else:
+            raise KeyError(self.mode)
 
     def pre_run(self, verbose):
         if verbose >= 1:
@@ -428,13 +428,13 @@ class DocTest(object):
                     print(utils.color_text('============', 'white'))
                 else:
                     print('============')
-            print('* BEGIN DOCTEST : {}'.format(self.node))
-            # print(self.cmdline)
+            if self.block_type == 'zero-arg':
+                # zero-arg funcs arent doctests, but we can still run them
+                print('* ZERO-ARG FUNC : {}'.format(self.node))
+            else:
+                print('* BEGIN DOCTEST : {}'.format(self.node))
             if verbose >= 3:
                 print(self.format_src())
-        # else:  # nocover
-        #     sys.stdout.write('.')
-        #     sys.stdout.flush()
 
     def failed_line_offset(self):
         if self.exc_info is None:
