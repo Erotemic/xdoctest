@@ -39,6 +39,17 @@ class TeeStringIO(StringIO):
         self.redirect = redirect
         super(TeeStringIO, self).__init__()
 
+    def isatty(self):  # nocover
+        """
+        Returns true of the redirect is a terminal.
+
+        Notes:
+            Needed for IPython.embed to work properly when this class is used
+            to override stdout / stderr.
+        """
+        return (self.redirect is not None and
+                hasattr(self.redirect, 'isatty') and self.redirect.isatty())
+
     def write(self, msg):
         if self.redirect is not None:
             self.redirect.write(msg)
@@ -71,7 +82,8 @@ class CaptureStdout(object):
         >>> assert isinstance(self.text, six.text_type)
         >>> assert self.text == text + '\n', 'failed capture text'
     """
-    def __init__(self, supress=True):
+    def __init__(self, supress=True, enabled=True):
+        self.enabled = enabled
         self.supress = supress
         self.orig_stdout = sys.stdout
         if supress:
@@ -89,20 +101,22 @@ class CaptureStdout(object):
         self.text = None
 
     def __enter__(self):
-        sys.stdout = self.cap_stdout
+        if self.enabled:
+            sys.stdout = self.cap_stdout
         return self
 
     def __exit__(self, type_, value, trace):
-        try:
-            self.cap_stdout.seek(0)
-            self.text = self.cap_stdout.read()
-            # if six.PY2:  # nocover
-            #     self.text = self.text.decode('utf8')
-        except Exception:  # nocover
-            raise
-        finally:
-            self.cap_stdout.close()
-            sys.stdout = self.orig_stdout
+        if self.enabled:
+            try:
+                self.cap_stdout.seek(0)
+                self.text = self.cap_stdout.read()
+                # if six.PY2:  # nocover
+                #     self.text = self.text.decode('utf8')
+            except Exception:  # nocover
+                raise
+            finally:
+                self.cap_stdout.close()
+                sys.stdout = self.orig_stdout
         if trace is not None:
             return False  # return a falsey value on error
 

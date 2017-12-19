@@ -93,12 +93,12 @@ def _gather_zero_arg_examples(command, modpath):
                 if command in example.valid_testnames:
                     example.mode = 'native'
 
-                    if True:
-                        import importlib
-                        mod = importlib.import_module(example.modname)
-                        getattr(mod, callname)()
-                    else:
-                        yield example
+                    # if True:
+                    #     import importlib
+                    #     mod = importlib.import_module(example.modname)
+                    #     getattr(mod, callname)()
+                    # else:
+                    yield example
 
 
 def _run_examples(enabled_examples, verbose):

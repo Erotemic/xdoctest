@@ -344,8 +344,6 @@ class DocTest(object):
                 code = compile(
                     part.source, mode=mode,
                     filename='<doctest:' + self.node + '>',
-                    # filename='<doctest>',
-                    # self.node,
                     flags=compileflags, dont_inherit=True
                 )
             except KeyboardInterrupt:  # nocover
