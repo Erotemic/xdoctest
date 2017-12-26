@@ -1,4 +1,5 @@
 Pygments >= 2.2.0
-pytest
 codecov
+colorama
+pytest
 pytest-cov

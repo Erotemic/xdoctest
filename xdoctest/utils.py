@@ -466,6 +466,12 @@ def color_text(text, color):
     try:
         import pygments
         import pygments.console
+
+        if sys.platform.startswith('win32'):
+            # Hack on win32 to support colored output
+            import colorama
+            colorama.init()
+
         ansi_text = pygments.console.colorize(color, text)
         return ansi_text
     except ImportError:  # nocover
