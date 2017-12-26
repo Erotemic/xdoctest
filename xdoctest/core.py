@@ -13,6 +13,7 @@ from xdoctest import static_analysis as static
 from xdoctest import docscrape_google
 from xdoctest import utils
 from xdoctest import parser
+from xdoctest import exceptions
 
 
 DOCTEST_STYLES = [
@@ -699,10 +700,13 @@ def parse_google_docstr_examples(docstr, callname=None, modpath=None,
                               fpath=fpath, block_type=type)
             yield example
     except Exception as ex:  # nocover
-        msg = ('Cannot scrape callname={} in modpath={}.\n'
-               'Caused by={}')
-        msg = msg.format(callname, modpath, ex)
-        raise Exception(msg)
+        msg = ('Cannot scrape callname={} in modpath={} line={}.\n'
+               'Caused by={}\n')
+        msg = msg.format(callname, modpath, lineno, repr(ex))
+        if isinstance(ex, exceptions.MalformedDocstr):
+            warnings.warn(msg)
+        else:
+            raise Exception(msg)
 
 
 def module_calldefs(modpath):

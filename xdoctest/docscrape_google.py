@@ -7,6 +7,7 @@ import re
 import textwrap
 import collections
 import six
+from xdoctest import exceptions
 
 
 def parse_google_args(docstr):
@@ -291,13 +292,14 @@ def split_google_docblocks(docstr):
     indents = [x for x, f in zip(line_indent, is_nonzero) if f]
     if len(indents) >= 1:
         if indents[0] != 0:
+            # debug info
             print('ERROR IN PARSING DOCSTRING')
             print('adjusted = %r' % (adjusted,))
             print('Docstring:')
             print('----------')
             print(docstr)
             print('----------')
-            raise ValueError('Google Style Docstring Missformat')
+            raise exceptions.MalformedDocstr('malformed google docstr')
 
     base_indent = 0
     # We will group lines by their indentation.
