@@ -1,0 +1,2 @@
+class MalformedDocstr(Exception):
+    pass
