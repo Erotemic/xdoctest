@@ -442,6 +442,8 @@ def split_modpath(modpath):
     """
     modpath_ = abspath(expanduser(modpath))
     if not exists(modpath_):
+        if not exists(modpath):
+            raise ValueError('modpath={} does not exist'.format(modpath))
         raise ValueError('modpath={} is not a module'.format(modpath))
     if isdir(modpath_) and not exists(join(modpath, '__init__.py')):
         # dirs without inits are not modules

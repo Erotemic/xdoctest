@@ -366,6 +366,10 @@ def import_module_from_path(modpath):
     Args:
         modpath (str): path to the module
 
+    TODO:
+        move to a submodule named util_import
+        add to ubelt
+
     References:
         https://stackoverflow.com/questions/67631/import-module-given-path
 
