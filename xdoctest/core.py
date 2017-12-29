@@ -61,7 +61,7 @@ class DocTest(object):
         >>> assert self.num == 0
         >>> assert self.modpath == core.__file__
         >>> print(self)
-        <DocTest(xdoctest.core DocTest:0 ln 54)>
+        <DocTest(xdoctest.core DocTest:0 ln ...)>
     """
 
     def __init__(self, docsrc, modpath=None, callname=None, num=0,

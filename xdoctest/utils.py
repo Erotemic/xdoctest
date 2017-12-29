@@ -53,6 +53,13 @@ class TeeStringIO(StringIO):
         return (self.redirect is not None and
                 hasattr(self.redirect, 'isatty') and self.redirect.isatty())
 
+    @property
+    def encoding(self):
+        if self.redirect is not None:
+            return self.redirect.encoding
+        else:
+            return super(TeeStringIO, self).encoding
+
     def write(self, msg):
         if self.redirect is not None:
             self.redirect.write(msg)
