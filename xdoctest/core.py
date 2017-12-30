@@ -371,7 +371,7 @@ class DocTest(object):
                         exec(code, test_globals)
                         self.evaled_results.append(None)
                 if part.want:
-                    got_stdout = cap.parts[-1]
+                    got_stdout = cap.text
                     part.check_got_vs_want(got_stdout, got_eval, not_evaled)
             # Handle anything that could go wrong
             except KeyboardInterrupt:  # nocover
