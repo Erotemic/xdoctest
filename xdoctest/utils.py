@@ -5,7 +5,7 @@ import os
 import sys
 import six
 import textwrap
-from io import StringIO
+import io
 from os.path import join, exists, normpath
 
 
@@ -36,7 +36,7 @@ def ensure_unicode(text):
         raise ValueError('unknown input type {!r}'.format(text))
 
 
-class TeeStringIO(StringIO):
+class TeeStringIO(io.StringIO):
     """ simple class to write to a stdout and a StringIO """
     def __init__(self, redirect=None):
         self.redirect = redirect
@@ -113,32 +113,46 @@ class CaptureStdout(object):
         else:
             redirect = self.orig_stdout
         self.cap_stdout = TeeStringIO(redirect)
-        # not needed when not using cStriongIO
-        # if six.PY2:
-        #     # http://stackoverflow.com/questions/1817695/stringio-accept-utf8
-        #     codecinfo = codecs.lookup('utf8')
-        #     self.cap_stdout = codecs.StreamReaderWriter(
-        #         self.cap_stdout, codecinfo.streamreader,
-        #         codecinfo.streamwriter)
         self.text = None
 
-    def __enter__(self):
+        self._pos = 0  # keep track of how much has been logged
+        self.parts = []
+
+    def log_part(self):
+        self.cap_stdout.seek(self._pos)
+        text = self.cap_stdout.read()
+        self._pos = self.cap_stdout.tell()
+        self.parts.append(text)
+        self.text = text
+
+    def start(self):
         if self.enabled:
+            self.text = ''
             sys.stdout = self.cap_stdout
+
+    def stop(self):
+        if self.enabled:
+            sys.stdout = self.orig_stdout
+
+    def __enter__(self):
+        self.start()
         return self
+
+    def __del__(self):
+        self.close()
+
+    def close(self):
+        self.cap_stdout.close()
+        self.cap_stdout = None
 
     def __exit__(self, type_, value, trace):
         if self.enabled:
             try:
-                self.cap_stdout.seek(0)
-                self.text = self.cap_stdout.read()
-                # if six.PY2:  # nocover
-                #     self.text = self.text.decode('utf8')
+                self.log_part()
             except Exception:  # nocover
                 raise
             finally:
-                self.cap_stdout.close()
-                sys.stdout = self.orig_stdout
+                self.stop()
         if trace is not None:
             return False  # return a falsey value on error
 
