@@ -494,7 +494,7 @@ def color_text(text, color):
         import pygments
         import pygments.console
 
-        if sys.platform.startswith('win32'):
+        if sys.platform.startswith('win32'):  # nocover
             # Hack on win32 to support colored output
             import colorama
             colorama.init()
