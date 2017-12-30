@@ -109,18 +109,22 @@ def _run_examples(enabled_examples, verbose):
     n_total = len(enabled_examples)
     print('running %d test(s)' % n_total)
     summaries = []
+    errors = []
     for example in enabled_examples:
+        summary = None
         try:
             summary = example.run(verbose=verbose)
             if not verbose:
                 sys.stdout.write('.')
                 sys.stdout.flush()
         except Exception:
+            summary = {'passed': False}
             if not verbose:
                 sys.stdout.write('F')
                 sys.stdout.flush()
-            print('\n'.join(example.repr_failure()))
-            raise
+            errors.append('\n'.join(example.repr_failure()))
+            if len(enabled_examples) == 1:
+                raise
         summaries.append(summary)
     if verbose <= 0:
         print('')
@@ -130,34 +134,37 @@ def _run_examples(enabled_examples, verbose):
         print('Finished doctests')
         print('%d / %d passed'  % (n_passed, n_total))
 
+    if errors:
+        for error in errors:
+            print(error)
+
     return {
         'n_passed': n_passed,
         'n_total': n_total
     }
 
 
-def _parse_commandline(command, style, verbose, argv):
+def _parse_commandline(command=None, style='google', verbose=None, argv=None):
     # Determine command via sys.argv if not specified
+    if argv is None:
+        argv = sys.argv[1:]
+
     if command is None:
-        if argv is None:
-            argv = sys.argv
-        argv = argv[1:]
         if len(argv) >= 1:
-            command = argv[0]
-        else:
-            command = None
+            if argv[0] and not argv[0].startswith('-'):
+                command = argv[0]
 
     # Change how docstrs are found
-    if '--freeform' in sys.argv:
+    if '--freeform' in argv:
         style = 'freeform'
-    elif '--google' in sys.argv:
+    elif '--google' in argv:
         style = 'google'
 
     # Parse verbosity flag
     if verbose is None:
-        if '--verbose' in sys.argv:
+        if '--verbose' in argv:
             verbose = 3
-        elif '--quiet' in sys.argv:
+        elif '--quiet' in argv:
             verbose = 0
         else:
             verbose = 2

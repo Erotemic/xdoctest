@@ -333,11 +333,13 @@ class DocTest(object):
 
         self._suppressed_stdout = verbose <= 1
 
+        # Use the same capture object for all parts in the test
+        cap = utils.CaptureStdout(supress=self._suppressed_stdout)
+
         for part in self._parts:
             # Prepare to capture stdout and evaluated values
             self.failed_part = part
             got_eval = not_evaled
-            cap = utils.CaptureStdout(supress=self._suppressed_stdout)
             try:
                 # Compile code, handle syntax errors
                 mode = 'eval' if part.use_eval else 'exec'
