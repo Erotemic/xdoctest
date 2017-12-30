@@ -24,8 +24,11 @@ exclude_lines =
 
 omit = 
     # pytest imports this before we can cover it
+    # How can this help us?:
+    # http://pytest-cov.readthedocs.io/en/latest/plugins.html
     xdoctest/plugin.py
     xdoctest/__main__.py
     xdoctest/__init__.py
+    xdoctest/exceptions.py
     xdoctest/_old*.py
     xdoctest/_grave*.py
