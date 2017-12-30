@@ -6,13 +6,13 @@ from __future__ import print_function, division, absolute_import, unicode_litera
 import re
 from xdoctest import utils
 
-unicode_literal_re = re.compile(r"(\W|^)[uU]([rR]?[\'\"])", re.UNICODE)
-bytes_literal_re = re.compile(r"(\W|^)[bB]([rR]?[\'\"])", re.UNICODE)
+unicode_literal_re = re.compile(r"(\W|^)[uU]([rR]?[\'\"])", re.UNICODE)  # nocover
+bytes_literal_re = re.compile(r"(\W|^)[bB]([rR]?[\'\"])", re.UNICODE)  # nocover
 
-BLANKLINE_MARKER = '<BLANKLINE>'
-ELLIPSIS_MARKER = '...'
+BLANKLINE_MARKER = '<BLANKLINE>'  # nocover
+ELLIPSIS_MARKER = '...'  # nocover
 
-TRAILING_WS = re.compile(r"[ \t]*$", re.UNICODE | re.MULTILINE)
+TRAILING_WS = re.compile(r"[ \t]*$", re.UNICODE | re.MULTILINE)  # nocover
 
 
 def _ellipsis_match(got, want):

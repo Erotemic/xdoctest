@@ -47,7 +47,7 @@ def test_zero_args():
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
-        modpath = join(dpath, 'test_zero.py')
+        modpath = join(dpath, 'test_zero_args.py')
 
         with open(modpath, 'w') as file:
             file.write(source)
@@ -89,7 +89,7 @@ def test_list():
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
-        modpath = join(dpath, 'dummy.py')
+        modpath = join(dpath, 'test_list.py')
 
         with open(modpath, 'w') as file:
             file.write(source)
@@ -126,7 +126,7 @@ def test_example_run():
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
-        modpath = join(dpath, 'dummy.py')
+        modpath = join(dpath, 'test_example_run.py')
 
         with open(modpath, 'w') as file:
             file.write(source)
@@ -161,7 +161,7 @@ def test_all_disabled():
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
-        modpath = join(dpath, 'dummy.py')
+        modpath = join(dpath, 'test_all_disabled.py')
 
         with open(modpath, 'w') as file:
             file.write(source)
@@ -201,7 +201,7 @@ def test_failure():
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
-        modpath = join(dpath, 'dummy.py')
+        modpath = join(dpath, 'test_failure.py')
 
         with open(modpath, 'w') as file:
             file.write(source)
@@ -217,6 +217,42 @@ def test_failure():
         assert '1 / 2 passed' in cap.text
 
 
+def test_run_zero_arg():
+    """
+    pytest testing/test_runner.py::test_run_zero_arg -s
+    """
+    from xdoctest import runner
+
+    source = utils.codeblock(
+        '''
+        def zero_arg_print():
+            print('running zero arg')
+        ''')
+
+    with utils.TempDir() as temp:
+        dpath = temp.dpath
+        modpath = join(dpath, 'test_run_zero_arg.py')
+
+        with open(modpath, 'w') as file:
+            file.write(source)
+
+        # disabled tests dont run in "all" mode
+        with utils.CaptureStdout() as cap:
+            try:
+                runner.doctest_module(modpath, 'all', argv=[''], verbose=3)
+            except Exception:
+                pass
+        assert 'running zero arg' not in cap.text
+
+        with utils.CaptureStdout() as cap:
+            try:
+                runner.doctest_module(modpath, 'zero_arg_print', argv=[''], verbose=3)
+            except Exception:
+                pass
+        # print(cap.text)
+        assert 'running zero arg' in cap.text
+
+
 def test_parse_cmdline():
     """
     pytest testing/test_runner.py::test_parse_cmdline -s
@@ -227,6 +263,7 @@ def test_parse_cmdline():
     # check specifying argv changes style
     assert 'freeform' == runner._parse_commandline(command=None, style=None, verbose=None, argv=['--freeform'])[1]
     assert 'google' == runner._parse_commandline(command=None, style=None, verbose=None, argv=['--google'])[1]
+    assert None is runner._parse_commandline(command=None, style=None, verbose=None, argv=['--google'])[0]
 
 
 if __name__ == '__main__':

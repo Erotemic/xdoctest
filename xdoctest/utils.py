@@ -6,6 +6,7 @@ import sys
 import six
 import textwrap
 import io
+import shutil
 from os.path import join, exists, normpath
 
 
@@ -117,6 +118,7 @@ class CaptureStdout(object):
 
         self._pos = 0  # keep track of how much has been logged
         self.parts = []
+        self.started = False
 
     def log_part(self):
         """ Log what has been captured so far """
@@ -129,10 +131,12 @@ class CaptureStdout(object):
     def start(self):
         if self.enabled:
             self.text = ''
+            self.started = True
             sys.stdout = self.cap_stdout
 
     def stop(self):
         if self.enabled:
+            self.started = False
             sys.stdout = self.orig_stdout
 
     def __enter__(self):
@@ -140,6 +144,8 @@ class CaptureStdout(object):
         return self
 
     def __del__(self):
+        if self.started:
+            self.stop()
         if self.cap_stdout is not None:
             self.close()
 
@@ -306,7 +312,6 @@ class TempDir(object):
         return self.dpath
 
     def cleanup(self):
-        import shutil
         if self.dpath:
             shutil.rmtree(self.dpath)
             self.dpath = None
