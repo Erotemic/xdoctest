@@ -641,6 +641,53 @@ class TestXDoctest(object):
         result = testdir.runpytest(p, *EXTRA_ARGS)
         result.stdout.fnmatch_lines(['* 2 passed *'])
 
+    def test_stdout_capture_no(self, testdir):
+        """
+        Test for xdoctest#3
+
+        pytest -rsxX -p pytester testing/test_plugin.py::TestXDoctest::test_stdout_capture_no
+
+        Ignore:
+            >>> import sys
+            >>> sys.path.append('/home/joncrall/code/xdoctest/testing')
+            >>> from test_plugin import *
+            >>> testdir = explicit_testdir()
+
+        """
+        p = testdir.makepyfile(test_unicode_doctest_module='''
+            def foo():
+                """
+                Example:
+                    >>> foo()
+                    >>> print('in-doctest-print')
+                """
+                print('in-func-print')
+        ''')
+        result = testdir.runpytest(p, '-s', '--xdoctest-modules', *EXTRA_ARGS)
+        result.stdout.fnmatch_lines(['in-doctest-print'])
+        result.stdout.fnmatch_lines(['in-func-print'])
+
+    def test_stdout_capture_yes(self, testdir):
+        """
+        Test for xdoctest#3
+
+        pytest -rsxX -p pytester testing/test_plugin.py::TestXDoctest::test_stdout_capture_yes
+        """
+        p = testdir.makepyfile(test_unicode_doctest_module='''
+            def foo():
+                """
+                Example:
+                    >>> foo()
+                    >>> print('in-doctest-print')
+                """
+                print('in-func-print')
+        ''')
+        result = testdir.runpytest(p, '--xdoctest-modules', *EXTRA_ARGS)
+        assert all('in-doctest-print' not in line
+                   for line in result.stdout.lines)
+        assert all('in-func-print' not in line
+                   for line in result.stdout.lines)
+
 
 class TestXDoctestModuleLevel(object):
 
