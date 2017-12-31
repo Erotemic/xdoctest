@@ -126,7 +126,8 @@ class XDoctestItem(pytest.Item):
     def runtest(self):
         if self.example.is_disabled(pytest=True):
             pytest.skip('doctest encountered skip directive')
-        self.example.run(verbose=0, on_error='raise')
+        # run with verbose=1, because pytest will capture if necessary
+        self.example.run(verbose=1, on_error='raise')
 
     def repr_failure(self, excinfo):
         example = self.example
