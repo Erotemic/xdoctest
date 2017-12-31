@@ -277,7 +277,7 @@ class PythonPathContext(object):
     def __enter__(self):
         sys.path.append(self.dpath)
 
-    def __exit__(self, a, b, c):
+    def __exit__(self, type_, value, trace):
         assert sys.path[-1] == self.dpath
         sys.path.pop()
 
@@ -320,7 +320,7 @@ class TempDir(object):
         self.ensure()
         return self
 
-    def __exit__(self, a, b, c):
+    def __exit__(self, type_, value, trace):
         self.cleanup()
 
 
