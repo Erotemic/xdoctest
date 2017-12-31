@@ -464,12 +464,17 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False):
     r"""
     Determines importable name from file path
 
+    Converts the path to a module (__file__) to the importable python name
+    (__name__) without importing the module.
+
     The filename is converted to a module name, and parent directories are
     recursively included until a directory without an __init__.py file is
     encountered.
 
     Args:
         modpath (str): module filepath
+        hide_init (bool): removes the __init__ suffix (default True)
+        hide_init (bool): removes the __main__ suffix (default False)
 
     Returns:
         str: modname
@@ -502,7 +507,13 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False):
 
 def modname_to_modpath(modname, hide_init=True, hide_main=False):
     r"""
+    Finds the path to a python module from its name.
+
     Determines the path to a python module without directly import it
+
+    Converts the name of a module (__name__) to the path (__file__) where it is
+    located without importing the module. Returns None if the module does not
+    exist.
 
     Args:
         modname (str): module filepath
@@ -511,7 +522,7 @@ def modname_to_modpath(modname, hide_init=True, hide_main=False):
             returned for packages, if it exists.
 
     Returns:
-        str: modpath
+        str: modpath - path to the module, or None if it doesn't exist
 
     CommandLine:
         python -m xdoctest.static_analysis modname_to_modpath:0
@@ -550,6 +561,27 @@ def modname_to_modpath(modname, hide_init=True, hide_main=False):
     return modpath
 
 
+def _pkgutil_modname_to_modpath(modname):  # nocover
+    """
+    faster version of `_syspath_modname_to_modpath` using builtin python
+    mechanisms, but unfortunately it doesn't play nice with pytest.
+
+    Example:
+        >>> # DISABLE_DOCTEST
+        >>> modname = 'xdoctest.static_analysis'
+        >>> _pkgutil_modname_to_modpath(modname)
+    """
+    import pkgutil
+    loader = pkgutil.find_loader(modname)
+    if loader is None:
+       raise Exception('No module named {} in the PYTHONPATH'.format(modname))
+    modpath = loader.get_filename().replace('.pyc', '.py')
+    # if '.' not in basename(modpath):
+    #     modpath = join(modpath, '__init__.py')
+    return modpath
+
+
+
 def _syspath_modname_to_modpath(modname):
     """
     syspath version of modname_to_modpath
@@ -558,6 +590,7 @@ def _syspath_modname_to_modpath(modname):
 
     Example:
         >>> modname = 'xdoctest.static_analysis'
+        >>> _syspath_modname_to_modpath(modname)
     """
 
     def _isvalid(modpath, base):
@@ -569,8 +602,6 @@ def _syspath_modname_to_modpath(modname):
             subdir = dirname(subdir)
         return True
 
-    from os.path import join, isfile, exists
-    import sys
     _fname_we = modname.replace('.', os.path.sep)
     candidate_fnames = [
         _fname_we + '.py',
