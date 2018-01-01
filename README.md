@@ -6,9 +6,11 @@
 
 ## Purpose
 
-The `xdoctest` package is a re-write of Python's builtin `doctest` module. 
-It replaces the old regex-based parser with a new abstract-syntax-tree based
-parser (using Python's `ast` module). 
+The `xdoctest` package is a re-write of Python's builtin `doctest` module.  It
+replaces the old regex-based parser with a new abstract-syntax-tree based
+parser (using Python's `ast` module). The goal is to make doctests easier to
+write, simpler to configure, and encourage the pattern of test driven
+development.
 
 ## Installation
 
@@ -194,7 +196,7 @@ development.
 - [x] CI-via Travis 
 - [x] CI-via AppVeyor
 - [x] Coverage
-- [ ] 95% or better coverage
+- [ ] 95% or better coverage (note reported coverage is artificially small due to issues with coverage of pytest plugins)
 
 #### Documentation:
 - [x] Basic docstring docs
