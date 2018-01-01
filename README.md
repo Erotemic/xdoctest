@@ -22,6 +22,51 @@ pip install xdoctest
 pip install git+git://github.com/Erotemic/xdoctest.git@master
 ```
 
+## Usage
+
+### With pytest interface
+
+When `pytest` is run, `xdoctest` is automatically discovered, but it disabled
+by default. This is because `xdoctest` needs to replace the builtin `doctest`
+plugin.
+
+To enable this plugin, run pytest with `--xdoctest` or `--xdoc`. This should be
+added to your `addopts` options in the `[pytest]` section of your `pytest.ini`
+or `tox.ini` if you use one.
+
+To run a specific doctest, `xdoctest` sets up pytest node names for these
+doctests using the following pattern: `<path/to/file.py>::<callname>:<num>`.
+For example a doctest for a function might look like this
+`mymod.py::funcname:0`, and a class method might look like this:
+`mymod.py::ClassName::method:0`
+
+
+### With the native interface. 
+
+The `xdoctest` module contains a `pytest` plugin, but also contains a native
+interface. This interface is run programmatically using
+`xdoctest.doctest_module(path)`, which can be placed in the `__main__` section
+of any module as such:
+
+
+```python
+if __name__ == '__main__':
+    import xdoctest as xdoc
+    xdoc.doctest_module(__file__)
+```
+
+This sets up the ability to invoke the `xdoctest` command line interface.
+`python -m <modname> <command>`
+
+If `<command>` is `all`, then each enabled doctest in the module is executed:
+`python -m <modname> all`
+
+If `<command>` is `list`, then the names of each enabled doctest is listed.
+
+If `<command>` is a `callname` (name of a function or a class and method), then
+that specific doctest is executed: `python -m <modname> <callname>`. Note: you
+can execute disabled doctests or functions without any arguments this way.
+
 
 ## Enhancements 
 
