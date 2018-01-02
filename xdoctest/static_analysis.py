@@ -574,12 +574,11 @@ def _pkgutil_modname_to_modpath(modname):  # nocover
     import pkgutil
     loader = pkgutil.find_loader(modname)
     if loader is None:
-       raise Exception('No module named {} in the PYTHONPATH'.format(modname))
+        raise Exception('No module named {} in the PYTHONPATH'.format(modname))
     modpath = loader.get_filename().replace('.pyc', '.py')
     # if '.' not in basename(modpath):
     #     modpath = join(modpath, '__init__.py')
     return modpath
-
 
 
 def _syspath_modname_to_modpath(modname):
