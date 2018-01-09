@@ -685,7 +685,11 @@ def extract_comments(source):
                ''')
         >>> comments = list(extract_comments(source))
         >>> assert comments == ['# comment 1', '# comment 2']
+        >>> comments = list(extract_comments(source.splitlines()))
+        >>> assert comments == ['# comment 1', '# comment 2']
     """
+    if not isinstance(source, six.string_types):
+        source = '\n'.join(source)
     if six.PY2:
         try:
             source = source.encode('utf8')
