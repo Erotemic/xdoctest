@@ -180,6 +180,8 @@ def test_all_disabled():
 
 def test_failure():
     """
+    python testing/test_runner.py  test_failure
+    pytest testing/test_runner.py::test_failure -s
     pytest testing/test_runner.py::test_all_disabled -s
     """
     from xdoctest import runner
@@ -199,22 +201,24 @@ def test_failure():
             """
         ''')
 
-    with utils.TempDir() as temp:
-        dpath = temp.dpath
-        modpath = join(dpath, 'test_failure.py')
+    temp = utils.TempDir()
+    temp.ensure()
+    # with utils.TempDir() as temp:
+    dpath = temp.dpath
+    modpath = join(dpath, 'test_failure.py')
 
-        with open(modpath, 'w') as file:
-            file.write(source)
+    with open(modpath, 'w') as file:
+        file.write(source)
 
-        # disabled tests dont run in "all" mode
-        with utils.CaptureStdout() as cap:
-            try:
-                runner.doctest_module(modpath, 'all', argv=[''], verbose=0)
-            except Exception:
-                pass
+    # disabled tests dont run in "all" mode
+    with utils.CaptureStdout() as cap:
+        try:
+            runner.doctest_module(modpath, 'all', argv=[''], verbose=0)
+        except Exception:
+            pass
 
-        assert '.F' in cap.text
-        assert '1 / 2 passed' in cap.text
+    assert '.F' in cap.text
+    assert '1 / 2 passed' in cap.text
 
 
 def test_run_zero_arg():

@@ -449,35 +449,220 @@ def test_repl_comment_in_string():
 
 
 def test_inline_directive():
+    """
+        python ~/code/xdoctest/testing/test_parser.py test_inline_directive
+    """
     string = utils.codeblock(
         '''
-        >>> func_call1(*
+        >>> # doctest: +SKIP
+        >>> func1(*
         >>>    [i for i in range(10)])
-        >>> func_call2(
+        >>> # not a directive
+        >>> func2(  # not a directive
         >>>    a=b
         >>>    )
-        >>> func_call3()  # xdoctest: +SKIP
-        >>> func_call4(a=b,
-        >>>            c=d)
+        >>> func3()  # xdoctest: +SKIP
+        >>> func4()
+        want1
+        >>> func5()  # xdoctest: +SKIP
+        want1
         >>> # xdoctest: +SKIP
-        >>> func_call5(' # doctest: not a directive')
-        >>> func_call6("""
-                       # doctest: still not a directive
-                       """)
+        >>> func6()
+        >>> func7(a=b,
+        >>>            c=d) # xdoctest: +SKIP
+        >>> # xdoctest: +SKIP
+        >>> func8(' # doctest: not a directive')
+        >>> func9("""
+                  # doctest: still not a directive
+                  """)
+        finalwant
         ''')
     source_lines = string.splitlines()
     self = parser.DoctestParser()
     ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
-    assert ps1_linenos == [0, 2, 5, 6, 8, 9, 10]
+    # print(ps1_linenos)
+    # [0, 1, 3, 4, 7, 8, 10, 11, 12]
+    # assert ps1_linenos == [0, 2, 5, 6, 8, 9, 10]
     parts = self.parse(string)
-    # print(ub.repr2(parts))
+    # assert len(parts) ==
+    for part in parts:
+        print('----')
+        print(part.source)
+        print('----')
+    try:
+        import ubelt as ub
+        print(ub.repr2(parts))
+    except ImportError:
+        pass
     # TODO: finsh me
+
+
+def test_block_directive_nowant1():
+    """
+        python ~/code/xdoctest/testing/test_parser.py test_block_directive_nowant1
+    """
+    string = utils.codeblock(
+        '''
+        >>> # doctest: +SKIP
+        >>> func1()
+        >>> func2()
+        ''')
+    source_lines = string.splitlines()
+    self = parser.DoctestParser()
+    ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
+    parts = self.parse(string)
+    print('----')
+    for part in parts:
+        print(part.source)
+        print('----')
+    try:
+        import ubelt as ub
+        print(ub.repr2(parts))
+    except ImportError:
+        pass
+    assert len(parts) == 1
+
+def test_block_directive_nowant2():
+    """
+        python ~/code/xdoctest/testing/test_parser.py test_block_directive_nowant
+    """
+    string = utils.codeblock(
+        '''
+        >>> # doctest: +SKIP
+        >>> func1()
+        >>> func2()
+        >>> # doctest: +SKIP
+        >>> func1()
+        >>> func2()
+        ''')
+    source_lines = string.splitlines()
+    self = parser.DoctestParser()
+    ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
+    parts = self.parse(string)
+    # TODO: finsh me
+    assert len(parts) == 2
+
+
+def test_block_directive_want1_assign():
+    """
+        python ~/code/xdoctest/testing/test_parser.py test_block_directive_want1
+    """
+    string = utils.codeblock(
+        '''
+        >>> # doctest: +SKIP
+        >>> func1()
+        >>> _ = func2()  # assign this line so we dont break it off for eval
+        want
+        ''')
+    source_lines = string.splitlines()
+    self = parser.DoctestParser()
+    ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
+    parts = self.parse(string)
+    print('----')
+    for part in parts:
+        print(part.source)
+        print('----')
+    try:
+        import ubelt as ub
+        print(ub.repr2(parts))
+    except ImportError:
+        pass
+    assert len(parts) == 1
+
+
+def test_block_directive_want1_eval():
+    """
+        python ~/code/xdoctest/testing/test_parser.py test_block_directive_want1
+    """
+    string = utils.codeblock(
+        '''
+        >>> # doctest: +SKIP
+        >>> func1()
+        >>> func2()  # eval this line so it is broken off
+        want
+        ''')
+    source_lines = string.splitlines()
+    self = parser.DoctestParser()
+    ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
+    parts = self.parse(string)
+    assert len(parts) == 2
+
+def test_block_directive_want2_assign():
+    """
+        python ~/code/xdoctest/testing/test_parser.py test_block_directive_want2
+    """
+    string = utils.codeblock(
+        '''
+        >>> func1()
+        >>> # doctest: +SKIP
+        >>> func2()
+        >>> _ = func3()
+        want
+        ''')
+    source_lines = string.splitlines()
+    self = parser.DoctestParser()
+    ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
+    parts = self.parse(string)
+    assert len(parts) == 2
+
+def test_block_directive_want2_eval():
+    """
+        python ~/code/xdoctest/testing/test_parser.py test_block_directive_want2_eval
+    """
+    string = utils.codeblock(
+        '''
+        >>> func1()
+        >>> # doctest: +SKIP
+        >>> func2()
+        >>> func3()
+        want
+        ''')
+    source_lines = string.splitlines()
+    self = parser.DoctestParser()
+    ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
+    parts = self.parse(string)
+    print('----')
+    for part in parts:
+        print(part.source)
+        print('----')
+    try:
+        import ubelt as ub
+        print(ub.repr2(parts))
+    except ImportError:
+        pass
+    assert len(parts) == 3
+
+
+def test_block_directive_want2_eval():
+    """
+        python ~/code/xdoctest/testing/test_parser.py test_block_directive_want2_eval
+    """
+    string = utils.codeblock(
+        '''
+        >>> func1()
+        >>> func1()
+        >>> # doctest: +SKIP
+        >>> func2()
+        >>> func2()
+        >>> # doctest: +SKIP
+        >>> func3()
+        >>> func3()
+        >>> func3()
+        >>> func4()
+        want
+        ''')
+    source_lines = string.splitlines()
+    self = parser.DoctestParser()
+    ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
+    parts = self.parse(string)
+    assert len(parts) == 4
 
 
 if __name__ == '__main__':
     r"""
     CommandLine:
         python ~/code/xdoctest/testing/test_parser.py
+        python ~/code/xdoctest/testing/test_parser.py test_inline_directive
         pytest testing/test_parser.py -vv
     """
     import xdoctest

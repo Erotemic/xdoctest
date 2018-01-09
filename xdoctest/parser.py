@@ -23,6 +23,7 @@ import ast
 import sys
 import re
 import itertools as it
+import warnings
 from xdoctest import utils
 from xdoctest import checker
 from xdoctest import static_analysis as static
@@ -48,6 +49,11 @@ _EXCEPTION_RE = re.compile(r"""
     """, re.VERBOSE | re.MULTILINE | re.DOTALL)   # nocover
 
 
+def named(key, pattern):
+    """ helper for regex """
+    return '(?P<{}>{})'.format(key, pattern)
+
+
 class Directives(object):
     """
     There are two types of directives: block and inline
@@ -59,45 +65,68 @@ class Directives(object):
     influence that line / repl part.
 
     Example:
-        >>> Directives.has_block(' # xdoctest: a-directive')
+        >>> Directives.has_block(' # xdoctest: skip')
         True
         >>> Directives.has_block(' # badprefix: not-a-directive')
         False
-        >>> Directives.has_inline(' # xdoctest: a-directive')
+        >>> Directives.has_inline(' # xdoctest: skip')
         True
         >>> Directives.has_inline(' # badprefix: not-a-directive')
         False
     """
-    PATTERNS = [  # nocover
-        r'\s*\+\s*SKIP',
-        r'\s*x?doctest:.*',
-        r'\s*x?doc:.*',
+    COMMANDS = [
+        'SKIP',
+        # Currently we are only **really** trying to support skip
+        'ELLIPSES',
+        'NORMALIZE_WHITESPACE',
+        'REPORT_UDIFF'
+        'REPORT_NDIFF'
+        'REPORT_CDIFF'
     ]
-    # block patterns are texted in the context of an entire line
-    BLOCK_PAT = '\s*#({})'.format('|'.join(PATTERNS))  # nocover
-    # inline patterns are tested in the context of a parsed comment
-    INLINE_PAT = '|'.join(PATTERNS)  # nocover
+    PATTERNS = [  # nocover
+        #r'\s*\+\s*' + named('cmd1', '.*'),
+        r'\s*x?doctest:\s*' + named('cmd2', '.*'),
+        r'\s*x?doc:\s*' + named('cmd3', '.*'),
+    ]
+    PATTERN = '\s*#({})'.format('|'.join(PATTERNS))  # nocover
+    RE = re.compile(PATTERN, flags=re.IGNORECASE)  # nocover
 
-    BLOCK_RE = re.compile(BLOCK_PAT, flags=re.IGNORECASE)  # nocover
-    INLINE_RE = re.compile(INLINE_PAT, flags=re.IGNORECASE)  # nocover
+    @staticmethod
+    def extract(text):
+        """
+        Directives commands
+
+        CommandLine:
+            python -m xdoctest.parser Directives.extract
+
+        Example:
+            >>> print(list(Directives.extract('# xdoctest: + SKIP')))
+            ['+SKIP']
+            >>> print(list(Directives.extract('# xdoctest: +ELLIPSES, -NORMALIZE_WHITESPACE')))
+            ['+ELLIPSES', '-NORMALIZE_WHITESPACE']
+
+        """
+        for comment in static.extract_comments(text):
+            m = Directives.RE.match(comment)
+            if m:
+                for key, optstr in m.groupdict().items():
+                    if optstr:
+                        for optpart in optstr.upper().split(','):
+                            optpart = optpart.replace(' ', '')
+                            optname = optpart.lstrip('+').lstrip('-').upper()
+                            if optname not in Directives.COMMANDS:
+                                msg = 'Unknown directive: {!r}'.format(optpart)
+                                warnings.warn(msg)
+                            else:
+                                yield optpart
 
     @staticmethod
     def has_inline(lines):
-        if not isinstance(lines, six.string_types):
-            block = '\n'.join(lines)
-        else:
-            block = lines
-        for comment in static.extract_comments(block):
-            # print('comment = {!r}'.format(comment))
-            m = Directives.INLINE_RE.match(comment[1:])
-            if m is not None:
-                return True
-        return False
+        return any(Directives.extract(lines))
 
     @staticmethod
     def has_block(line):
-        m = Directives.BLOCK_RE.match(line)
-        return m is not None
+        return line.strip().startswith('#') and any(Directives.extract(line))
 
 
 class DoctestPart(object):
@@ -335,16 +364,22 @@ class DoctestParser(object):
 
         block_directive_linenos = []
         inline_directive_linenos = []
-
+        # TODO: come up with a better name than break_linenos
+        break_linenos = []
         for s1 in ps1_linenos:
             line = exec_source_lines[s1]
             if Directives.has_block(line):
                 block_directive_linenos.append(s1)
+                break_linenos.append(s1)
 
         for s1, s2 in zip(ps1_linenos, ps1_linenos[1:] + [None]):
-            lines = exec_source_lines[s1:s2]
-            if Directives.has_inline(lines):
-                inline_directive_linenos.append(s1)
+            if s1 not in block_directive_linenos:
+                lines = exec_source_lines[s1:s2]
+                if Directives.has_inline(lines):
+                    inline_directive_linenos.append(s1)
+                    break_linenos.append(s1)
+                    if s2 is not None:
+                        break_linenos.append(s2)
 
         # print('block_directive_linenos = {!r}'.format(block_directive_linenos))
         # print('inline_directive_linenos = {!r}'.format(inline_directive_linenos))
@@ -366,11 +401,21 @@ class DoctestParser(object):
                 yield example
             s1 = s2
         else:
+            # print('break_linenos = {!r}'.format(break_linenos))
+            if break_linenos:
+                break_linenos = sorted(set([0] + break_linenos))
+                # directives are forcing us to further breakup the parts
+                for s1, s2 in zip(break_linenos, break_linenos[1:]):
+                    example = slice_example(s1, s2)
+                    yield example
+                s1 = s2
             if want_lines and eval_final:
-                # break the last line off so we can eval its value, but keep
+                # Whenever the evaluation of the final line needs to be tested
+                # against want, that line must be separated into its own part.
+                # We break the last line off so we can eval its value, but keep
                 # previous groupings.
                 s2 = ps1_linenos[-1]
-                if s2 != s1:
+                if s2 != s1:  # make sure the last line is not the only line
                     example = slice_example(s1, s2)
                     yield example
                     s1 = s2
@@ -625,8 +670,10 @@ class DoctestParser(object):
                         labeled_lines.append((DSRC, part))
                 except SyntaxError:
                     # TODO: need a better error message here
-                    print('SYNTAX ERROR WHEN PARSING DOCSTRING')
-                    print(string)
+                    msg = ('SYNTAX ERROR WHEN PARSING DOCSTRING: \n')
+                    msg += string
+                    print(msg)
+                    # warnings.warn(msg)
                     raise
 
             elif curr_state == WANT:
@@ -645,3 +692,13 @@ def min_indentation(s):
         return min(indents)
     else:
         return 0
+
+
+if __name__ == '__main__':
+    """
+    CommandLine:
+        python -m xdoctest.core
+        python -m xdoctest.core all
+    """
+    import xdoctest as xdoc
+    xdoc.doctest_module()
