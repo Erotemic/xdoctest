@@ -337,6 +337,17 @@ class DocTest(object):
         cap = utils.CaptureStdout(supress=self._suppressed_stdout)
 
         for part in self._parts:
+
+            # TODO: more sophisticated directive handling
+            if '+SKIP' in part.directives():
+                is_inline = False
+                if is_inline:
+                    # inline mode skips just this line
+                    continue
+                else:
+                    # block mode applies to the remainder of parts
+                    break
+
             # Prepare to capture stdout and evaluated values
             self.failed_part = part
             got_eval = not_evaled
