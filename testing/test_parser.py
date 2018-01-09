@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import, unicode_literals
+import pytest
 from xdoctest import parser
 from xdoctest import utils
 
@@ -324,3 +325,160 @@ def test_parse_comment():
     linenos, eval_final = self._locate_ps1_linenos(source_lines)
     parts = self.parse(string)
     assert parts[0].source.strip().startswith('#')
+
+
+def test_text_after_want():
+    string = utils.codeblock('''
+        Example:
+            >>> dsrc()
+            want
+        just some test
+    ''')
+    self = parser.DoctestParser()
+    labeled = self._label_docsrc_lines(string)
+    # print(ub.repr2(labeled))
+    expected = [
+        ('text', 'Example:'),
+        ('dsrc', '    >>> dsrc()'),
+        ('want', '    want'),
+        ('text', 'just some test'),
+    ]
+    assert labeled == expected
+
+
+def test_want_ellipse_with_space():
+    string = utils.codeblock('''
+        Example:
+            >>> dsrc()
+            ...
+    ''')
+    # Add an extra space after the ellipses to be clear what we are testing
+    # and because my editor automatically removes it when I try to save the
+    # file ¯\_(ツ)_/¯
+    string = string + ' '
+    self = parser.DoctestParser()
+    labeled = self._label_docsrc_lines(string)
+    # print(ub.repr2(labeled))
+    expected = [
+        ('text', 'Example:'),
+        ('dsrc', '    >>> dsrc()'),
+        ('want', '    ... '),
+    ]
+    assert labeled == expected
+
+
+def test_syntax_error():
+    string = utils.codeblock('''
+        Example:
+            >>> 03 = dsrc()
+    ''')
+    self = parser.DoctestParser()
+    with pytest.raises(SyntaxError):
+        self.parse(string)
+
+
+def test_nonbalanced_statement():
+    string = utils.codeblock(
+        '''
+        >>> x = [
+        # ] this braket is to make my editor happy and is does not effect the test
+        ''').splitlines()[0]
+
+    self = parser.DoctestParser()
+    with pytest.raises(SyntaxError) as exc_info:
+        self.parse(string)
+    assert exc_info.value.msg == 'ill-formed doctest'
+
+
+def test_bad_indent():
+    string = utils.codeblock(
+        '''
+        Example:
+            >>> x = [
+        # ] bad want indent
+        ''')
+
+    self = parser.DoctestParser()
+    with pytest.raises(SyntaxError) as exc_info:
+        self.parse(string)
+    assert exc_info.value.msg.startswith('Bad indentation in doctest')
+    # assert exc_info.value.msg == 'ill-formed doctest'
+
+
+def test_part_nice_no_lineoff():
+    self = parser.DoctestPart([], [], None)
+    assert str(self) == '<DoctestPart(src="", want=None)>'
+
+
+def test_repl_oneline():
+    string = utils.codeblock(
+        '''
+        >>> x = 1
+        ''')
+    self = parser.DoctestParser(simulate_repl=True)
+    parts = self.parse(string)
+    assert [p.source for p in parts] == ['x = 1']
+
+
+def test_repl_twoline():
+    string = utils.codeblock(
+        '''
+        >>> x = 1
+        >>> x = 2
+        ''')
+    self = parser.DoctestParser(simulate_repl=True)
+    parts = self.parse(string)
+    assert [p.source for p in parts] == ['x = 1', 'x = 2']
+
+
+def test_repl_comment_in_string():
+    source_lines = ['>>> x = """', '    # comment in a string', '    """']
+    self = parser.DoctestParser()
+    assert self._locate_ps1_linenos(source_lines) == ([0], False)
+
+    source_lines = [
+        '>>> x = """',
+        '    # comment in a string',
+        '    """',
+        '>>> x = """',
+        '    # comment in a string',
+        '    """',
+    ]
+    self = parser.DoctestParser()
+    assert self._locate_ps1_linenos(source_lines) == ([0, 3], False)
+
+
+def test_inline_directive():
+    string = utils.codeblock(
+        '''
+        >>> func_call1(*
+        >>>    [i for i in range(10)])
+        >>> func_call2(
+        >>>    a=b
+        >>>    )
+        >>> func_call3()  # xdoctest: +SKIP
+        >>> func_call4(a=b,
+        >>>            c=d)
+        >>> # xdoctest: +SKIP
+        >>> func_call5(' # doctest: not a directive')
+        >>> func_call6("""
+                       # doctest: still not a directive
+                       """)
+        ''')
+    source_lines = string.splitlines()
+    self = parser.DoctestParser()
+    ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
+    assert ps1_linenos == [0, 2, 5, 6, 8, 9, 10]
+    parts = self.parse(string)
+    # print(ub.repr2(parts))
+    # TODO: finsh me
+
+
+if __name__ == '__main__':
+    r"""
+    CommandLine:
+        python ~/code/xdoctest/testing/test_parser.py
+        pytest testing/test_parser.py -vv
+    """
+    import xdoctest
+    xdoctest.doctest_module(__file__)

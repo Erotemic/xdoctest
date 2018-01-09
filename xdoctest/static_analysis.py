@@ -666,6 +666,38 @@ def is_balanced_statement(lines):
         return True
 
 
+def extract_comments(source):
+    """
+    Returns the text in each comment in a block of python code.
+    Uses tokenize to account for quotations.
+
+    CommandLine:
+        python -m xdoctest.static_analysis extract_comments
+
+    Example:
+        >>> from xdoctest import utils
+        >>> source = utils.codeblock(
+        >>>    '''
+               # comment 1
+               a = '# not a comment'  # comment 2
+               c = 3
+               ''')
+        >>> comments = list(extract_comments(source))
+        >>> assert comments == ['# comment 1', '# comment 2']
+    """
+    if six.PY2:
+        try:
+            source = source.encode('utf8')
+        except:
+            pass
+    stream = StringIO()
+    stream.write(source)
+    stream.seek(0)
+    for t in tokenize.generate_tokens(stream.readline):
+        if t[0] == tokenize.COMMENT:
+            yield t[1]
+
+
 if __name__ == '__main__':
     import xdoctest as xdoc
     xdoc.doctest_module()
