@@ -134,7 +134,7 @@ class DoctestPart(object):
     The result of parsing that represents a "logical block" of code.
     If a want statment is defined, it is stored here.
     """
-    def __init__(self, exec_lines, want_lines, line_offset, orig_lines=None):
+    def __init__(self, exec_lines, want_lines=None, line_offset=0, orig_lines=None):
         self.exec_lines = exec_lines
         self.want_lines = want_lines
         self.line_offset = line_offset
@@ -159,6 +159,18 @@ class DoctestPart(object):
     @property
     def source(self):
         return '\n'.join(self.exec_lines)
+
+    def directives(self):
+        """
+        CommandLine:
+            python -m xdoctest.parser DoctestPart.directives
+
+        Example:
+            >>> self = DoctestPart(['# doctest: +SKIP'], None, 0)
+            >>> print(list(self.directives()))
+            ['+SKIP']
+        """
+        return Directives.extract(self.exec_lines)
 
     @property
     def want(self):
