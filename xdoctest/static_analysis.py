@@ -286,7 +286,8 @@ def _parse_static_node_value(node):
     elif isinstance(node, (ast.Dict)):
         keys = map(_parse_static_node_value, node.keys)
         values = map(_parse_static_node_value, node.values)
-        value = dict(zip(keys, values))
+        value = OrderedDict(zip(keys, values))
+        # value = dict(zip(keys, values))
     else:
         raise TypeError('Cannot parse a static value from non-static node '
                         'of type: {!r}'.format(type(node)))

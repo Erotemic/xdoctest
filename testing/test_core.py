@@ -141,7 +141,7 @@ def test_comment():
 def test_mod_lineno():
     with utils.TempDir() as temp:
         dpath = temp.dpath
-        modpath = join(dpath, 'test_lineno.py')
+        modpath = join(dpath, 'test_mod_lineno.py')
         source = utils.codeblock(
             '''
             class Fun(object):  #1
@@ -345,7 +345,7 @@ def test_collect_module_level():
     """
     temp = utils.TempDir()
     dpath = temp.ensure()
-    modpath = join(dpath, 'test_module_level.py')
+    modpath = join(dpath, 'test_collect_module_level.py')
     source = utils.codeblock(
         '''
         """
@@ -378,7 +378,7 @@ def test_collect_module_level_singleline():
     """
     temp = utils.TempDir()
     dpath = temp.ensure()
-    modpath = join(dpath, 'test_module_level.py')
+    modpath = join(dpath, 'test_collect_module_level_singleline.py')
     source = utils.codeblock(
         '''">>> pass"''')
     with open(modpath, 'w') as file:
