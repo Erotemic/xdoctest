@@ -5,12 +5,16 @@ Terms and definitions:
     logical block: a snippet of code that can be executed by itself if given
         the correct global / local variable context.
 
-    PS1 : a line that starts a "logical block" of code. In the original doctest
-        module these all had to be prefixed with ">>>". In xdoctest the prefix
-        is used to simply denote the code is part of a doctest. It does not
-        necessarilly mean a new "logical block" is starting.
+    PS1 : The original meaning is "Prompt String 1". In the context of
+        xdoctest, instead of refering to the prompt prefix, we use PS1 to refer
+        to a line that starts a "logical block" of code. In the original
+        doctest module these all had to be prefixed with ">>>". In xdoctest the
+        prefix is used to simply denote the code is part of a doctest. It does
+        not necessarilly mean a new "logical block" is starting.
 
-    PS2 : a line that continues a "logical block" of code. In the original
+    PS2 : The original meaning is "Prompt String 2". In the context of
+        xdoctest, instead of refering to the prompt prefix, we use PS2 to refer
+        to a line that continues a "logical block" of code. In the original
         doctest module these all had to be prefixed with "...". However,
         xdoctest uses parsing to automatically determine this.
 
@@ -18,21 +22,20 @@ Terms and definitions:
         indicating the desired result of executing the previous block.
 """
 from __future__ import print_function, division, absolute_import, unicode_literals
-import six
 import ast
 import sys
 import re
 import itertools as it
-import warnings
 from xdoctest import utils
 from xdoctest import checker
+from xdoctest import directive
 from xdoctest import static_analysis as static
 
 
-GotWantException = checker.GotWantException  # nocover
+GotWantException = checker.GotWantException
 
 
-INDENT_RE = re.compile('^([ ]*)(?=\S)', re.MULTILINE)  # nocover
+INDENT_RE = re.compile('^([ ]*)(?=\S)', re.MULTILINE)
 
 
 _EXCEPTION_RE = re.compile(r"""
@@ -46,87 +49,7 @@ _EXCEPTION_RE = re.compile(r"""
     \s* $                # toss trailing whitespace on the header.
     (?P<stack> .*?)      # don't blink: absorb stuff until...
     ^ (?P<msg> \w+ .*)   #     a line *starts* with alphanum.
-    """, re.VERBOSE | re.MULTILINE | re.DOTALL)   # nocover
-
-
-def named(key, pattern):
-    """ helper for regex """
-    return '(?P<{}>{})'.format(key, pattern)
-
-
-class Directives(object):
-    """
-    There are two types of directives: block and inline
-
-    Block directives are specified on their own line and influence the behavior
-    of multiple lines of code.
-
-    Inline directives are specified after in the same line of code and only
-    influence that line / repl part.
-
-    Example:
-        >>> Directives.has_block(' # xdoctest: skip')
-        True
-        >>> Directives.has_block(' # badprefix: not-a-directive')
-        False
-        >>> Directives.has_inline(' # xdoctest: skip')
-        True
-        >>> Directives.has_inline(' # badprefix: not-a-directive')
-        False
-    """
-    COMMANDS = [
-        'SKIP',
-        # Currently we are only **really** trying to support skip
-        'ELLIPSES',
-        'NORMALIZE_WHITESPACE',
-        'REPORT_UDIFF'
-        'REPORT_NDIFF'
-        'REPORT_CDIFF'
-    ]
-    PATTERNS = [  # nocover
-        #r'\s*\+\s*' + named('cmd1', '.*'),
-        r'\s*x?doctest:\s*' + named('cmd2', '.*'),
-        r'\s*x?doc:\s*' + named('cmd3', '.*'),
-    ]
-    PATTERN = '\s*#({})'.format('|'.join(PATTERNS))  # nocover
-    RE = re.compile(PATTERN, flags=re.IGNORECASE)  # nocover
-
-    @staticmethod
-    def extract(text):
-        """
-        Directives commands
-
-        CommandLine:
-            python -m xdoctest.parser Directives.extract
-
-        Example:
-            >>> print(list(Directives.extract('# xdoctest: + SKIP')))
-            ['+SKIP']
-            >>> print(list(Directives.extract('# xdoctest: +ELLIPSES, -NORMALIZE_WHITESPACE')))
-            ['+ELLIPSES', '-NORMALIZE_WHITESPACE']
-
-        """
-        for comment in static.extract_comments(text):
-            m = Directives.RE.match(comment)
-            if m:
-                for key, optstr in m.groupdict().items():
-                    if optstr:
-                        for optpart in optstr.upper().split(','):
-                            optpart = optpart.replace(' ', '')
-                            optname = optpart.lstrip('+').lstrip('-').upper()
-                            if optname not in Directives.COMMANDS:
-                                msg = 'Unknown directive: {!r}'.format(optpart)
-                                warnings.warn(msg)
-                            else:
-                                yield optpart
-
-    @staticmethod
-    def has_inline(lines):
-        return any(Directives.extract(lines))
-
-    @staticmethod
-    def has_block(line):
-        return line.strip().startswith('#') and any(Directives.extract(line))
+    """, re.VERBOSE | re.MULTILINE | re.DOTALL)
 
 
 class DoctestPart(object):
@@ -134,12 +57,14 @@ class DoctestPart(object):
     The result of parsing that represents a "logical block" of code.
     If a want statment is defined, it is stored here.
     """
-    def __init__(self, exec_lines, want_lines=None, line_offset=0, orig_lines=None):
+    def __init__(self, exec_lines, want_lines=None, line_offset=0,
+                 orig_lines=None, directives=None):
         self.exec_lines = exec_lines
         self.want_lines = want_lines
         self.line_offset = line_offset
         self.orig_lines = orig_lines
         self.use_eval = False
+        self._directives = directives
 
     @property
     def n_lines(self):
@@ -160,6 +85,7 @@ class DoctestPart(object):
     def source(self):
         return '\n'.join(self.exec_lines)
 
+    @property
     def directives(self):
         """
         CommandLine:
@@ -167,10 +93,12 @@ class DoctestPart(object):
 
         Example:
             >>> self = DoctestPart(['# doctest: +SKIP'], None, 0)
-            >>> print(list(self.directives()))
-            ['+SKIP']
+            >>> print(', '.join(list(map(str, self.directives))))
+            <Directive(+SKIP)>
         """
-        return Directives.extract(self.exec_lines)
+        if self._directives is None:
+            self._directives = list(directive.extract(self.source))
+        return self._directives
 
     @property
     def want(self):
@@ -269,7 +197,7 @@ class DoctestParser(object):
         self.simulate_repl = simulate_repl
 
     def parse(self, string):
-        """
+        r"""
         Divide the given string into examples and intervening text.
 
         Args:
@@ -277,6 +205,9 @@ class DoctestParser(object):
 
         Returns:
             list : a list of `DoctestPart` objects
+
+        CommandLine:
+            python -m xdoctest.parser DoctestParser.parse
 
         Example:
             >>> s = 'I am a dummy example with two parts'
@@ -374,34 +305,34 @@ class DoctestParser(object):
         # There are two types: block directives and inline-directives
         # First find block directives which must exist on there own PS1 line
 
-        block_directive_linenos = []
-        inline_directive_linenos = []
         # TODO: come up with a better name than break_linenos
         break_linenos = []
+        line_to_directives = {}
         for s1 in ps1_linenos:
             line = exec_source_lines[s1]
-            if Directives.has_block(line):
-                block_directive_linenos.append(s1)
+            directives = list(directive.extract(line))
+            if directives:
                 break_linenos.append(s1)
+                line_to_directives[s1] = directives
 
         for s1, s2 in zip(ps1_linenos, ps1_linenos[1:] + [None]):
-            if s1 not in block_directive_linenos:
+            if s1 not in break_linenos:
                 lines = exec_source_lines[s1:s2]
-                if Directives.has_inline(lines):
-                    inline_directive_linenos.append(s1)
+                directives = list(directive.extract('\n'.join(lines)))
+                if directives:
                     break_linenos.append(s1)
+                    line_to_directives[s1] = directives
                     if s2 is not None:
                         break_linenos.append(s2)
-
-        # print('block_directive_linenos = {!r}'.format(block_directive_linenos))
-        # print('inline_directive_linenos = {!r}'.format(inline_directive_linenos))
 
         def slice_example(s1, s2, want_lines=None):
             exec_lines = exec_source_lines[s1:s2]
             orig_lines = source_lines[s1:s2]
+            directives = line_to_directives.get(s1, None)
             example = DoctestPart(exec_lines, want_lines=want_lines,
                                   orig_lines=orig_lines,
-                                  line_offset=lineno + s1)
+                                  line_offset=lineno + s1,
+                                  directives=directives)
             return example
 
         s1 = 0
@@ -413,7 +344,6 @@ class DoctestParser(object):
                 yield example
             s1 = s2
         else:
-            # print('break_linenos = {!r}'.format(break_linenos))
             if break_linenos:
                 break_linenos = sorted(set([0] + break_linenos))
                 # directives are forcing us to further breakup the parts
@@ -710,7 +640,7 @@ if __name__ == '__main__':
     """
     CommandLine:
         python -m xdoctest.core
-        python -m xdoctest.core all
+        python -m xdoctest.parser all
     """
     import xdoctest as xdoc
     xdoc.doctest_module()

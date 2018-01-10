@@ -698,9 +698,12 @@ def extract_comments(source):
     stream = StringIO()
     stream.write(source)
     stream.seek(0)
-    for t in tokenize.generate_tokens(stream.readline):
-        if t[0] == tokenize.COMMENT:
-            yield t[1]
+    try:
+        for t in tokenize.generate_tokens(stream.readline):
+            if t[0] == tokenize.COMMENT:
+                yield t[1]
+    except tokenize.TokenError as ex:
+        pass
 
 
 if __name__ == '__main__':

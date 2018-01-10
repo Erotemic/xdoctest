@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import, unicode_literals
 import __future__
+from collections import OrderedDict
 import traceback
 import textwrap
 import warnings
@@ -327,6 +328,10 @@ class DocTest(object):
 
         self.stdout_results = []
         self.evaled_results = []
+        # TODO:  use these dicts instead of the previous lists
+        self.part_evals = OrderedDict()
+        self.part_stdout = OrderedDict()
+
         self.exc_info = None
 
         not_evaled = object()  # sentinal value
@@ -336,17 +341,30 @@ class DocTest(object):
         # Use the same capture object for all parts in the test
         cap = utils.CaptureStdout(supress=self._suppressed_stdout)
 
-        for part in self._parts:
+        for partx, part in enumerate(self._parts):
+
+            action = None
 
             # TODO: more sophisticated directive handling
-            if '+SKIP' in part.directives():
-                is_inline = False
-                if is_inline:
+            for directive in part.directives:
+                if directive.name == 'SKIP' and directive.positive:
                     # inline mode skips just this line
-                    continue
-                else:
                     # block mode applies to the remainder of parts
-                    break
+                    if directive.inline:
+                        action = 'continue'
+                    else:
+                        action = 'break'
+                elif directive.name == 'REQUIRES' and directive.positive:
+                    # same as SKIP if the requirement is not satisfied
+                    if directive.args[0] not in sys.argv:
+                        if directive.inline:
+                            action = 'continue'
+                        else:
+                            action = 'break'
+            if action == 'continue':
+                continue
+            if action == 'break':
+                break
 
             # Prepare to capture stdout and evaluated values
             self.failed_part = part
@@ -381,6 +399,7 @@ class DocTest(object):
                     else:
                         exec(code, test_globals)
                         self.evaled_results.append(None)
+
                 if part.want:
                     got_stdout = cap.text
                     part.check_got_vs_want(got_stdout, got_eval, not_evaled)
@@ -420,6 +439,8 @@ class DocTest(object):
                 break
             finally:
                 assert cap.text is not None
+                self.part_evals[partx] = got_eval
+                self.part_stdout[partx] = cap.text
                 self.stdout_results.append(cap.text)
 
         if self.exc_info is None:
@@ -491,12 +512,49 @@ class DocTest(object):
         #     '=== LINES ===',
         # ]
 
-        lines += [
-            # 'self.module = {}'.format(self.module),
-            # 'self.modpath = {}'.format(self.modpath),
-            # 'self.modpath = {}'.format(self.modname),
-            # 'self.globs = {}'.format(self.globs.keys()),
-        ]
+        if '--xdoc-debug' in sys.argv:
+
+            lines += ['DEBUG PARTS: ']
+            for partx, part in enumerate(self._parts):
+                lines += [str(partx) + ': ' + str(part)]
+                lines += ['  use_eval: {!r}'.format(part.use_eval)]
+                lines += ['  directives: {!r}'.format(part.directives)]
+                lines += ['  want: {!r}'.format(str(part.want)[0:25])]
+                val = self.part_evals.get(partx, None)
+                lines += ['  eval: ' + repr(val)]
+                val = self.part_stdout.get(partx, None)
+                lines += ['  stdout: ' + repr(val)]
+
+            partx = self._parts.index(self.failed_part)
+            lines += [
+                'failed partx = {}'.format(partx)
+            ]
+
+            failed_part = self.failed_part
+
+            lines += ['----']
+            lines += ['Failed part line offset:']
+            lines += ['{}'.format(failed_part.line_offset)]
+            lines += ['Failed directives:']
+            lines += ['{}'.format(list(failed_part.directives))]
+
+            lines += ['Failed part source:']
+            lines += failed_part.source.splitlines()
+            lines += ['Failed part want:']
+            if failed_part.want_lines:
+                lines += failed_part.want_lines
+            lines += ['Failed part stdout:']
+            lines += self.part_stdout[partx].splitlines()
+            lines += ['Failed part eval:']
+            lines += [repr(self.part_evals[partx])]
+            lines += ['----']
+
+            lines += [
+                # 'self.module = {}'.format(self.module),
+                # 'self.modpath = {}'.format(self.modpath),
+                # 'self.modpath = {}'.format(self.modname),
+                # 'self.globs = {}'.format(self.globs.keys()),
+            ]
 
         # lines += ['Failed doctest in ' + self.callname]
 
@@ -511,6 +569,7 @@ class DocTest(object):
         lines += source_text.splitlines()
 
         if self.stdout_results:
+            lines += ['stdout results:']
             lines += self.stdout_results
 
         #     # '=== LINES ===',
@@ -526,6 +585,7 @@ class DocTest(object):
         if hasattr(value, 'output_difference'):
             # report_choice = _get_report_choice(self.config.getoption("doctestreport"))
             lines += [
+                ('output difference:'),
                 value.output_difference(colored=colored),
                 ('value.got  = {!r}'.format(value.got)),
                 ('value.want = {!r}'.format(value.want)),
@@ -555,6 +615,7 @@ class DocTest(object):
             print('out_text = %r' % (out_text,))
 
     def post_run(self, verbose):
+        print('POST RUN verbose = {!r}'.format(verbose))
         summary = {
             'passed': self.exc_info is None
         }
