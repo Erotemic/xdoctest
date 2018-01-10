@@ -94,12 +94,10 @@ def test_run_multi_want():
     self.run()
 
     result = self.run()
-    self.stdout_results
-    self.evaled_results
 
     assert result['passed']
-    assert self.stdout_results == ['', '', '', 'string\n']
-    assert self.evaled_results == [None, '2', "'string'", 'None']
+    assert list(self.part_stdout.values()) == ['', '', '', 'string\n']
+    assert list(self.part_evals.values()) == [core.NOT_EVALED, 2, 'string', None]
 
 
 def test_comment():
@@ -195,7 +193,7 @@ def test_mod_globals():
         with utils.PythonPathContext(dpath):
             status = self.run(verbose=0, on_error='return')
         assert status['passed']
-        assert self.evaled_results[0] == '10'
+        assert self.part_evals[0] == 10
 
 
 def test_show_entire():
@@ -403,6 +401,7 @@ if __name__ == '__main__':
     CommandLine:
         export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/testing
         python ~/code/xdoctest/testing/test_core.py
+        pytest testing/test_core.py -vv
     """
     import xdoctest
     xdoctest.doctest_module(__file__)

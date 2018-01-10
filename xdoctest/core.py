@@ -17,6 +17,9 @@ from xdoctest import parser
 from xdoctest import exceptions
 
 
+NOT_EVALED = object()  # sentinal value
+
+
 DOCTEST_STYLES = [
     'freeform',
     'google',
@@ -95,8 +98,8 @@ class DocTest(object):
         self.tb_lineno = None
         self.exc_info = None
         self.failed_part = None
-        self.stdout_results = []
-        self.evaled_results = []
+        self.part_evals = OrderedDict()
+        self.part_stdout = OrderedDict()
         self.module = None
         self.globs = {}
         # Hint at what is running this doctest
@@ -326,15 +329,11 @@ class DocTest(object):
         compileflags |= __future__.print_function.compiler_flag
         compileflags |= __future__.division.compiler_flag
 
-        self.stdout_results = []
-        self.evaled_results = []
-        # TODO:  use these dicts instead of the previous lists
+        # TODO: better names?
         self.part_evals = OrderedDict()
         self.part_stdout = OrderedDict()
 
         self.exc_info = None
-
-        not_evaled = object()  # sentinal value
 
         self._suppressed_stdout = verbose <= 1
 
@@ -368,7 +367,7 @@ class DocTest(object):
 
             # Prepare to capture stdout and evaluated values
             self.failed_part = part
-            got_eval = not_evaled
+            got_eval = NOT_EVALED
             try:
                 # Compile code, handle syntax errors
                 mode = 'eval' if part.use_eval else 'exec'
@@ -395,14 +394,12 @@ class DocTest(object):
                     if part.use_eval:
                         # Only capture the repr to allow for gc tests
                         got_eval = eval(code, test_globals)
-                        self.evaled_results.append(repr(got_eval))
                     else:
                         exec(code, test_globals)
-                        self.evaled_results.append(None)
 
                 if part.want:
                     got_stdout = cap.text
-                    part.check_got_vs_want(got_stdout, got_eval, not_evaled)
+                    part.check_got_vs_want(got_stdout, got_eval, NOT_EVALED)
             # Handle anything that could go wrong
             except KeyboardInterrupt:  # nocover
                 raise
@@ -441,7 +438,6 @@ class DocTest(object):
                 assert cap.text is not None
                 self.part_evals[partx] = got_eval
                 self.part_stdout[partx] = cap.text
-                self.stdout_results.append(cap.text)
 
         if self.exc_info is None:
             self.failed_part = None
@@ -568,9 +564,9 @@ class DocTest(object):
         source_text = utils.indent(source_text)
         lines += source_text.splitlines()
 
-        if self.stdout_results:
+        if self.part_evals:
             lines += ['stdout results:']
-            lines += self.stdout_results
+            lines += list(self.part_evals.values())
 
         #     # '=== LINES ===',
         #     'lineno = {!r}'.format(lineno),
@@ -604,7 +600,7 @@ class DocTest(object):
         return lines
 
     def _print_captured(self):
-        out_text = ''.join(self.stdout_results)
+        out_text = ''.join(list(self.part_evals.values()))
         if out_text is not None:
             assert isinstance(out_text, six.text_type), 'do not use ascii'
         try:
