@@ -235,7 +235,7 @@ class GotWantException(AssertionError):
 if __name__ == '__main__':
     """
     CommandLine:
-        python -m xdoctest.checker
+        python -m xdoctest.checker all
     """
     import xdoctest as xdoc
     xdoc.doctest_module()

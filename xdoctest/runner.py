@@ -122,8 +122,10 @@ def _run_examples(enabled_examples, verbose):
             if not verbose:
                 sys.stdout.write('F')
                 sys.stdout.flush()
-            errors.append('\n'.join(example.repr_failure()))
+            error = '\n'.join(example.repr_failure())
+            errors.append(error)
             if len(enabled_examples) == 1:
+                print(error)
                 raise
         summaries.append(summary)
     if verbose <= 0:

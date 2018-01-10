@@ -398,31 +398,11 @@ def test_collect_module_level_singleline():
     temp.cleanup()
 
 
-def test_inline_skip_directive():
+if __name__ == '__main__':
+    r"""
+    CommandLine:
+        export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/testing
+        python ~/code/xdoctest/testing/test_core.py
     """
-    pytest testing/test_core.py::test_inline_skip_directive
-    """
-    string = utils.codeblock(
-        '''
-        >>> x = 0
-        >>> assert False  # doctest: +SKIP
-        >>> y = 0
-        ''')
-    self = core.DocTest(docsrc=string)
-    result = self.run(on_error='raise')
-    assert result['passed']
-
-
-def test_block_skip_directive():
-    """
-    pytest testing/test_core.py::test_block_skip_directive
-    """
-    string = utils.codeblock(
-        '''
-        >>> x = 0
-        >>> # doctest: +SKIP
-        >>> assert False
-        ''')
-    self = core.DocTest(docsrc=string)
-    result = self.run(on_error='raise')
-    assert result['passed']
+    import xdoctest
+    xdoctest.doctest_module(__file__)
