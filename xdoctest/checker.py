@@ -78,7 +78,7 @@ def _ellipsis_match(got, want):
     return True
 
 
-def normalize(got, want):
+def normalize(got, want, options={}):
     """
     Adapated from doctest_nose_plugin.py from the nltk project:
         https://github.com/nltk/nltk

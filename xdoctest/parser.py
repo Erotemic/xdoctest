@@ -24,6 +24,7 @@ Terms and definitions:
 from __future__ import print_function, division, absolute_import, unicode_literals
 import ast
 import sys
+import math
 import re
 import itertools as it
 from xdoctest import utils
@@ -172,6 +173,58 @@ class DoctestPart(object):
             msg = 'got differs with doctest want'
             ex = checker.GotWantException(msg, got, want)
             raise ex
+
+    def format_src(self, linenos=True, want=True, startline=1, n_digits=None,
+                   colored=False):
+        """
+        Customizable formatting of the source and want for this doctest.
+
+        Args:
+            linenos (bool): show line numbers
+            want (bool): include the want value if it exists
+            startline (int): offsets the line numbering
+            n_digits (int): number of digits to use for line numbers
+            colored (bool): pygmentize the colde
+
+        Example:
+            >>> from xdoctest.parser import *
+            >>> self = DoctestPart(['print(123)'], ['123'], 0)
+            >>> print(self.format_src())
+            1 >>> print(123)
+              123
+        """
+        src_text = self.source
+        src_text = utils.indent(src_text, '>>> ')
+        want_text = self.want if self.want else ''
+
+        if n_digits is None:
+            endline = startline + self.n_lines
+            n_digits = math.log(max(1, endline), 10)
+            n_digits = int(math.ceil(n_digits))
+
+        if linenos:
+            src_fmt = '{{:{}d}} {{}}'.format(n_digits)
+            want_fmt = '{} {{}}'.format(' ' * n_digits)
+
+            new_lines = []
+            count = startline + self.line_offset
+            for count, line in enumerate(src_text.splitlines(), start=count):
+                new_lines.append(src_fmt.format(count, line))
+            if want_text:
+                for count, line in enumerate(want_text.splitlines(), start=count):
+                    if want:
+                        new_lines.append(want_fmt.format(line))
+            part_text = '\n'.join(new_lines)
+        else:
+            if want_text:
+                part_text = src_text
+                if want:
+                    part_text = part_text + '\n' + want_text
+            else:
+                part_text = src_text
+        if colored:
+            part_text = utils.highlight_code(part_text, 'python')
+        return part_text
 
 
 class DoctestParser(object):

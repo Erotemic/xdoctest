@@ -96,8 +96,8 @@ def test_run_multi_want():
     result = self.run()
 
     assert result['passed']
-    assert list(self.part_stdout.values()) == ['', '', '', 'string\n']
-    assert list(self.part_evals.values()) == [core.NOT_EVALED, 2, 'string', None]
+    assert list(self.logged_stdout.values()) == ['', '', '', 'string\n']
+    assert list(self.logged_evals.values()) == [core.NOT_EVALED, 2, 'string', None]
 
 
 def test_comment():
@@ -193,7 +193,7 @@ def test_mod_globals():
         with utils.PythonPathContext(dpath):
             status = self.run(verbose=0, on_error='return')
         assert status['passed']
-        assert self.part_evals[0] == 10
+        assert self.logged_evals[0] == 10
 
 
 def test_show_entire():

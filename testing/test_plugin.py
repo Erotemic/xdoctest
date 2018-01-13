@@ -255,7 +255,7 @@ class TestXDoctest(object):
         REASON: Static parsing means we do know this line number.
 
         CommandLine:
-            pytest testing/test_plugin.py::TestXDoctest::test_doctest_property_lineno
+            pytest testing/test_plugin.py::TestXDoctest::test_doctest_property_lineno -v
         """
         testdir.tmpdir.join('hello.py').write(_pytest._code.Source(utils.codeblock(
             """
@@ -268,10 +268,11 @@ class TestXDoctest(object):
                     '''
             """)))
         result = testdir.runpytest("--xdoctest-modules", *EXTRA_ARGS)
+        print('\n'.join(result.stdout.lines))
         result.stdout.fnmatch_lines([
             "*FAILED DOCTEST: ZeroDivisionError*",
-            '*on line 6*',
-            '*on line 2*',
+            '*line 6*',
+            '*line 2*',
             "*1 >>> a = 1*",
             "*2 >>> 1 / 0*",
             "*ZeroDivision*",
