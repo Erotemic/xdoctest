@@ -5,6 +5,7 @@ from collections import OrderedDict
 import traceback
 import textwrap
 import warnings
+import math
 import sys
 import re
 import six
@@ -98,8 +99,10 @@ class DocTest(object):
         self.tb_lineno = None
         self.exc_info = None
         self.failed_part = None
-        self.part_evals = OrderedDict()
-        self.part_stdout = OrderedDict()
+
+        self.logged_evals = OrderedDict()
+        self.logged_stdout = OrderedDict()
+
         self.module = None
         self.globs = {}
         # Hint at what is running this doctest
@@ -176,12 +179,39 @@ class DocTest(object):
             if part.want:
                 yield part.want
 
+    def format_parts(self, linenos=True, colored=None, want=True,
+                     offset_linenos=False):
+        self._parse()
+        colored = self.config.getvalue('colored', colored)
+
+        n_digits = None
+        startline = 1
+        if linenos:
+            if offset_linenos:
+                startline = self.lineno
+            n_lines = sum(p.n_lines for p in self._parts)
+            endline = startline + n_lines
+
+            n_digits = math.log(max(1, endline), 10)
+            n_digits = int(math.ceil(n_digits))
+
+        for part in self._parts:
+            part_text = part.format_src(linenos=linenos, want=want,
+                                        startline=startline, n_digits=n_digits,
+                                        colored=colored)
+            yield part_text
+
     def format_src(self, linenos=True, colored=None, want=True,
                    offset_linenos=False):
         """
         Adds prefix and line numbers to a doctest
 
+        Args:
+            offset_linenos (bool): if True offset line numbers to agree with
+                their position in the source text file (default False).
+
         Example:
+            >>> from xdoctest.core import *
             >>> from xdoctest import core
             >>> testables = module_doctestables(core.__file__)
             >>> self = next(testables)
@@ -190,56 +220,9 @@ class DocTest(object):
             >>> print(self.format_src(linenos=False, colored=False))
             >>> assert not self.is_disabled()
         """
-        self._parse()
-        colored = self.config.getvalue('colored', colored)
-
-        import math
-        # return '\n'.join([p.source for p in self._parts])
-        formated_parts = []
-
-        if linenos:
-            if offset_linenos:
-                startline = 1 if self.lineno is None else self.lineno
-            else:
-                startline = 1
-            n_lines = sum(p.n_lines for p in self._parts)
-            endline = startline + n_lines
-
-            n_digits = math.log(max(1, endline), 10)
-            n_digits = int(math.ceil(n_digits))
-
-            src_fmt = '{{:{}d}} {{}}'.format(n_digits)
-            want_fmt = '{} {{}}'.format(' ' * n_digits)
-
-        for part in self._parts:
-            doctest_src = part.source
-            doctest_src = utils.indent(doctest_src, '>>> ')
-            # doctest_src = '\n'.join(part.orig_lines)
-            # doctest_src = '\n'.join(part.orig_lines)
-            doctest_want = part.want if part.want else ''
-
-            parser
-
-            if linenos:
-                new_lines = []
-                count = startline + part.line_offset
-                for count, line in enumerate(doctest_src.splitlines(), start=count):
-                    new_lines.append(src_fmt.format(count, line))
-                if doctest_want:
-                    for count, line in enumerate(doctest_want.splitlines(), start=count):
-                        if want:
-                            new_lines.append(want_fmt.format(line))
-                new = '\n'.join(new_lines)
-            else:
-                if doctest_want:
-                    new = doctest_src
-                    if want:
-                        new = new + '\n' + doctest_want
-                else:
-                    new = doctest_src
-            if colored:
-                new = utils.highlight_code(new, 'python')
-            formated_parts.append(new)
+        formated_parts = list(self.format_parts(linenos=linenos,
+                                                colored=colored, want=want,
+                                                offset_linenos=offset_linenos))
         full_source = '\n'.join(formated_parts)
         return full_source
 
@@ -305,6 +288,18 @@ class DocTest(object):
                 compileflags |= feature.compiler_flag
         return compileflags
 
+    def _test_globals(self):
+        test_globals = self.globs
+        if self.module is None:
+            compileflags = 0
+        else:
+            test_globals.update(self.module.__dict__)
+            compileflags = self._extract_future_flags(test_globals)
+        # force print function and division futures
+        compileflags |= __future__.print_function.compiler_flag
+        compileflags |= __future__.division.compiler_flag
+        return test_globals, compileflags
+
     def run(self, verbose=None, on_error=None):
         """
         Executes the doctest
@@ -319,32 +314,19 @@ class DocTest(object):
         self._import_module()
 
         # Prepare for actual test run
-        test_globals = self.globs
-        if self.module is None:
-            compileflags = 0
-        else:
-            test_globals.update(self.module.__dict__)
-            compileflags = self._extract_future_flags(test_globals)
-        # force print function and division futures
-        compileflags |= __future__.print_function.compiler_flag
-        compileflags |= __future__.division.compiler_flag
+        test_globals, compileflags = self._test_globals()
 
-        # TODO: better names?
-        self.part_evals = OrderedDict()
-        self.part_stdout = OrderedDict()
-
+        self.logged_evals.clear()
+        self.logged_stdout.clear()
         self.exc_info = None
-
         self._suppressed_stdout = verbose <= 1
 
         # Use the same capture object for all parts in the test
         cap = utils.CaptureStdout(supress=self._suppressed_stdout)
-
         for partx, part in enumerate(self._parts):
 
-            action = None
-
             # TODO: more sophisticated directive handling
+            action = None
             for directive in part.directives:
                 if directive.name == 'SKIP' and directive.positive:
                     # inline mode skips just this line
@@ -379,9 +361,9 @@ class DocTest(object):
                 )
             except KeyboardInterrupt:  # nocover
                 raise
-            except:  # nocover
+            except:
                 self.exc_info = sys.exc_info()
-                type, value, tb = self.exc_info
+                ex_type, ex_value, tb = self.exc_info
                 self.tb_lineno = tb.tb_lineno
                 if on_error == 'raise':
                     raise
@@ -413,7 +395,7 @@ class DocTest(object):
                     raise
                 break
             except:
-                type, value, tb = sys.exc_info()
+                ex_type, ex_value, tb = sys.exc_info()
                 # CLEAN_TRACEBACK = True
                 CLEAN_TRACEBACK = 0
                 if CLEAN_TRACEBACK:
@@ -430,14 +412,14 @@ class DocTest(object):
                         # Use the next because we need to pop the eval of the stack
                         self.tb_lineno = tb.tb_next.tb_lineno
 
-                self.exc_info = (type, value, tb)
+                self.exc_info = (ex_type, ex_value, tb)
                 if on_error == 'raise':
                     raise
                 break
             finally:
                 assert cap.text is not None
-                self.part_evals[partx] = got_eval
-                self.part_stdout[partx] = cap.text
+                self.logged_evals[partx] = got_eval
+                self.logged_stdout[partx] = cap.text
 
         if self.exc_info is None:
             self.failed_part = None
@@ -468,13 +450,15 @@ class DocTest(object):
                 print(self.format_src())
 
     def failed_line_offset(self):
+        """
+        Determine which line in the doctest failed.
+        """
         if self.exc_info is None:
             return None
         else:
-            from xdoctest import parser
-            type, value, tb = self.exc_info
+            ex_type, ex_value, tb = self.exc_info
             offset = self.failed_part.line_offset
-            if isinstance(value, parser.GotWantException):
+            if isinstance(ex_value, parser.GotWantException):
                 # Return the line of the want line
                 offset += self.failed_part.n_exec_lines + 1
             else:
@@ -492,99 +476,159 @@ class DocTest(object):
             return lineno
 
     def repr_failure(self):
-        """
+        r"""
         Constructs lines detailing information about a failed doctest
+
+        CommandLine:
+            python -m xdoctest.core DocTest.repr_failure:0
+            python -m xdoctest.core DocTest.repr_failure:1
+            python -m xdoctest.core DocTest.repr_failure:2
+
+        Example:
+            >>> from xdoctest.core import *
+            >>> docstr = utils.codeblock(
+                '''
+                >>> x = 1
+                >>> print(x + 1)
+                2
+                >>> print(x + 3)
+                3
+                >>> print(x + 100)
+                101
+                ''')
+            >>> parsekw = dict(fpath='foo.txt', callname='bar', lineno=42)
+            >>> self = list(parse_freeform_docstr_examples(docstr, **parsekw))[0]
+            >>> summary = self.run(on_error='return', verbose=0)
+            >>> print('\n'.join(self.repr_failure()))
+
+        Example:
+            >>> from xdoctest.core import *
+            >>> docstr = utils.codeblock(
+                r'''
+                >>> 1
+                1
+                >>> print('.▴  .\n.▴ ▴.') # xdoc: -NORMALIZE_WHITESPACE
+                . ▴ .
+                .▴ ▴.
+                ''')
+            >>> parsekw = dict(fpath='foo.txt', callname='bar', lineno=42)
+            >>> self = list(parse_freeform_docstr_examples(docstr, **parsekw))[0]
+            >>> summary = self.run(on_error='return', verbose=1)
+            >>> print('\n'.join(self.repr_failure()))
+
+        Example:
+            >>> from xdoctest.core import *
+            >>> docstr = utils.codeblock(
+                '''
+                >>> assert True
+                >>> assert False
+                >>> x = 100
+                ''')
+            >>> self = list(parse_freeform_docstr_examples(docstr))[0]
+            >>> summary = self.run(on_error='return', verbose=0)
+            >>> print('\n'.join(self.repr_failure()))
         """
+        #     '=== LINES ===',
+        # ]
+
+        # if '--xdoc-debug' in sys.argv:
+        #     lines += ['DEBUG PARTS: ']
+        #     for partx, part in enumerate(self._parts):
+        #         lines += [str(partx) + ': ' + str(part)]
+        #         lines += ['  use_eval: {!r}'.format(part.use_eval)]
+        #         lines += ['  directives: {!r}'.format(part.directives)]
+        #         lines += ['  want: {!r}'.format(str(part.want)[0:25])]
+        #         val = self.logged_evals.get(partx, None)
+        #         lines += ['  eval: ' + repr(val)]
+        #         val = self.logged_stdout.get(partx, None)
+        #         lines += ['  stdout: ' + repr(val)]
+        #     partx = self._parts.index(self.failed_part)
+        #     lines += [
+        #         'failed partx = {}'.format(partx)
+        #     ]
+        #     failed_part = self.failed_part
+        #     lines += ['----']
+        #     lines += ['Failed part line offset:']
+        #     lines += ['{}'.format(failed_part.line_offset)]
+        #     lines += ['Failed directives:']
+        #     lines += ['{}'.format(list(failed_part.directives))]
+
+        #     lines += ['Failed part source:']
+        #     lines += failed_part.source.splitlines()
+        #     lines += ['Failed part want:']
+        #     if failed_part.want_lines:
+        #         lines += failed_part.want_lines
+        #     lines += ['Failed part stdout:']
+        #     lines += self.logged_stdout[partx].splitlines()
+        #     lines += ['Failed part eval:']
+        #     lines += [repr(self.logged_evals[partx])]
+        #     lines += ['----']
+
+        #     lines += [
+        #         # 'self.module = {}'.format(self.module),
+        #         # 'self.modpath = {}'.format(self.modpath),
+        #         # 'self.modpath = {}'.format(self.modname),
+        #         # 'self.globs = {}'.format(self.globs.keys()),
+        #     ]
+        # lines += ['Failed doctest in ' + self.callname]
+
         if self.exc_info is None:
             return []
-        type, value, tb = self.exc_info
+        ex_type, ex_value, tb = self.exc_info
         fail_offset = self.failed_line_offset()
         fail_lineno = self.failed_lineno()
 
         lines = [
-            'FAILED DOCTEST: {}'.format(type.__name__),
-            'in node ' + self.node,
+            'FAILED DOCTEST: {}'.format(ex_type.__name__),
+            '  Node "{}"'.format(self.node),
         ]
-        #     '=== LINES ===',
-        # ]
-
-        if '--xdoc-debug' in sys.argv:
-
-            lines += ['DEBUG PARTS: ']
-            for partx, part in enumerate(self._parts):
-                lines += [str(partx) + ': ' + str(part)]
-                lines += ['  use_eval: {!r}'.format(part.use_eval)]
-                lines += ['  directives: {!r}'.format(part.directives)]
-                lines += ['  want: {!r}'.format(str(part.want)[0:25])]
-                val = self.part_evals.get(partx, None)
-                lines += ['  eval: ' + repr(val)]
-                val = self.part_stdout.get(partx, None)
-                lines += ['  stdout: ' + repr(val)]
-
-            partx = self._parts.index(self.failed_part)
-            lines += [
-                'failed partx = {}'.format(partx)
-            ]
-
-            failed_part = self.failed_part
-
-            lines += ['----']
-            lines += ['Failed part line offset:']
-            lines += ['{}'.format(failed_part.line_offset)]
-            lines += ['Failed directives:']
-            lines += ['{}'.format(list(failed_part.directives))]
-
-            lines += ['Failed part source:']
-            lines += failed_part.source.splitlines()
-            lines += ['Failed part want:']
-            if failed_part.want_lines:
-                lines += failed_part.want_lines
-            lines += ['Failed part stdout:']
-            lines += self.part_stdout[partx].splitlines()
-            lines += ['Failed part eval:']
-            lines += [repr(self.part_evals[partx])]
-            lines += ['----']
-
-            lines += [
-                # 'self.module = {}'.format(self.module),
-                # 'self.modpath = {}'.format(self.modpath),
-                # 'self.modpath = {}'.format(self.modname),
-                # 'self.globs = {}'.format(self.globs.keys()),
-            ]
-
-        # lines += ['Failed doctest in ' + self.callname]
 
         colored = self.config['colored']
-        source_text = self.format_src(colored=colored, linenos=True,
-                                      want=False)
         if fail_lineno is not None:
-            lines += ['in {} on line {}'.format(self.fpath, fail_lineno)]
-        lines += ['in docsrc of {} on line {}'.format(self.unique_callname, fail_offset + 1)]
+            fpath = '<file?>' if self.fpath is None else self.fpath
+            lines += ['  File "{}", line {},'.format(fpath, fail_lineno)]
 
-        source_text = utils.indent(source_text)
-        lines += source_text.splitlines()
+        lines += ['  in doctest "{}", line {}'.format(self.unique_callname,
+                                                      fail_offset + 1)]
 
-        if self.part_evals:
-            lines += ['stdout results:']
-            lines += list(self.part_evals.values())
+        # source_text = self.format_src(colored=colored, linenos=True,
+        #                               want=False)
+        # source_text = utils.indent(source_text)
+        # lines += source_text.splitlines()
 
-        #     # '=== LINES ===',
-        #     'lineno = {!r}'.format(lineno),
-        #     # 'example.lineno = {!r}'.format(self.lineno),
-        #     # 'example.failed_part.line_offset = {!r}'.format(self._parts[0].line_offset),
-        #     # 'self._parts = {!r}'.format(self._parts)
-        #     # repr(excinfo),
-        #     # str(value),
-        #     # str(message),
-        # ]
+        def r1_strip_nl(text):
+            return text[:-1] if text.endswith('\n') else text
 
-        if hasattr(value, 'output_difference'):
-            # report_choice = _get_report_choice(self.config.getoption("doctestreport"))
+        # if self.logged_stdout:
+        #     lines += ['stdout results:']
+        #     lines += [r1_strip_nl(t) for t in self.logged_stdout.values() if t]
+
+        lines += ['Failed Part:']
+
+        textgen = self.format_parts(colored=colored, linenos=True,
+                                    want=False)
+
+        n_digits = 1
+
+        for partx, (part, part_text) in enumerate(zip(self._parts, textgen)):
+            part_out = r1_strip_nl(self.logged_stdout[partx])
+            lines += [utils.indent(part_text, ' ' * 4)]
+            if part_out:
+                lines += [utils.indent(part_out, ' ' * (5 + n_digits))]
+            if part is self.failed_part:
+                break
+            # part_eval = self.logged_evals[partx]
+            # if part_eval is not NOT_EVALED:
+            #     lines += [repr(part_eval)]
+
+        if hasattr(ex_value, 'output_difference'):
+            # report_choice = _get_report_choice(
+            #     self.config.getoption("doctestreport"))
             lines += [
-                ('output difference:'),
-                value.output_difference(colored=colored),
-                ('value.got  = {!r}'.format(value.got)),
-                ('value.want = {!r}'.format(value.want)),
+                ex_value.output_difference(colored=colored),
+                ('Repr:'),
+                ('    ex_value.got  = {!r}'.format(ex_value.got)),
+                ('    ex_value.want = {!r}'.format(ex_value.want)),
             ]
         else:
             tblines = traceback.format_exception(*self.exc_info)
@@ -596,11 +640,11 @@ class DocTest(object):
             lines += tblines
 
         lines += ['CommandLine:']
-        lines += [self.cmdline]
+        lines += ['    ' + self.cmdline]
         return lines
 
     def _print_captured(self):
-        out_text = ''.join(list(self.part_evals.values()))
+        out_text = ''.join([v for v in self.logged_stdout.values() if v])
         if out_text is not None:
             assert isinstance(out_text, six.text_type), 'do not use ascii'
         try:
@@ -611,7 +655,7 @@ class DocTest(object):
             print('out_text = %r' % (out_text,))
 
     def post_run(self, verbose):
-        print('POST RUN verbose = {!r}'.format(verbose))
+        # print('POST RUN verbose = {!r}'.format(verbose))
         summary = {
             'passed': self.exc_info is None
         }
@@ -626,7 +670,8 @@ class DocTest(object):
                 print('* {}: {}'.format(success, self.node))
         else:
             if verbose >= 1:
-                text = '\n'.join(self.repr_failure())
+                lines = self.repr_failure()
+                text = '\n'.join(lines)
                 print(text)
             summary['exc_info'] = self.exc_info
         return summary

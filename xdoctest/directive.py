@@ -91,7 +91,9 @@ def extract(text):
 
         >>> # Malformatted directives are ignored
         >>> text = '# xdoctest: does_not_exist, skip'
-        >>> print(', '.join(list(map(str, extract(text)))))
+        >>> import pytest
+        >>> with pytest.warns(None) as record:
+        >>>     print(', '.join(list(map(str, extract(text)))))
         <Directive(+SKIP)>
 
         >>> # Two directives in one line
