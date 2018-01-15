@@ -249,12 +249,14 @@ class DoctestParser(object):
     def __init__(self, simulate_repl=False):
         self.simulate_repl = simulate_repl
 
-    def parse(self, string):
+    def parse(self, string, info=None):
         r"""
         Divide the given string into examples and intervening text.
 
         Args:
             string (str): string representing the doctest
+            info (dict): info about where the string came from in case of an
+                error
 
         Returns:
             list : a list of `DoctestPart` objects
@@ -305,11 +307,17 @@ class DoctestParser(object):
         if min_indent > 0:
             string = '\n'.join([l[min_indent:] for l in string.splitlines()])
 
-        labeled_lines = self._label_docsrc_lines(string)
-        grouped_lines = self._group_labeled_lines(labeled_lines)
+        try:
+            labeled_lines = self._label_docsrc_lines(string)
+            grouped_lines = self._group_labeled_lines(labeled_lines)
 
-        output = list(self._package_groups(grouped_lines))
-        return output
+            all_parts = list(self._package_groups(grouped_lines))
+        except Exception as ex:
+            print('Failed to parse string=...')
+            print(string)
+            print(info)
+            raise
+        return all_parts
 
     def _package_groups(self, grouped_lines):
         lineno = 0
