@@ -124,7 +124,7 @@ def _run_examples(enabled_examples, verbose):
                 sys.stdout.flush()
             error = '\n'.join(example.repr_failure())
             errors.append(error)
-            if len(enabled_examples) == 1:
+            if n_total == 1:
                 print(error)
                 raise
         summaries.append(summary)
@@ -132,7 +132,7 @@ def _run_examples(enabled_examples, verbose):
         print('')
     n_passed = sum(s['passed'] for s in summaries)
 
-    if len(enabled_examples) > 1:
+    if n_total > 1 and verbose > 0:
         print('Finished doctests')
         print('%d / %d passed'  % (n_passed, n_total))
 

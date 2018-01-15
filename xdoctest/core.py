@@ -267,7 +267,9 @@ class DocTest(object):
             >>> self.run()
         """
         if not self._parts:
-            self._parts = parser.DoctestParser().parse(self.docsrc)
+            info = dict(callname=self.callname, modpath=self.modpath,
+                        lineno=self.lineno, fpath=self.fpath)
+            self._parts = parser.DoctestParser().parse(self.docsrc, info)
             self._parts = [p for p in self._parts
                            if not isinstance(p, six.string_types)]
 
@@ -757,7 +759,11 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
                 prev.strip().lower().endswith(special_skip_patterns_))
 
     # parse into doctest and plaintext parts
-    all_parts = parser.DoctestParser().parse(docstr)
+    try:
+        info = dict(callname=callname, modpath=modpath, lineno=lineno, fpath=fpath)
+        all_parts = parser.DoctestParser().parse(docstr, info)
+    except Exception:
+        raise StopIteration('failed to parse docstr')
 
     curr_parts = []
     curr_offset = 0
