@@ -35,6 +35,16 @@ many other advantages.
 It is recommended to use `pytest` for automatic testing (e.g. in your CI
 scripts), but for debugging it may be easier to use the native interface.
 
+### Check if xdoctest will work on your package
+
+You can quickly check if `xdocetst` will work on your package out-of-the box by
+installing it via pip and running `python -m xdoctest <pkg> all`, where `<pkg>` is
+the path to your python package / module (or its name if it is installed in
+your `PYTHONPATH`).
+
+For example with you might test if `xdoctest` works on `networkx` or `sklearn`
+as such: `python -m xdoctest networkx all` / `python -m xdoctest sklearn all`.
+
 
 ### Using the pytest interface
 
