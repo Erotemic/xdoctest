@@ -188,7 +188,8 @@ def _run_examples(enabled_examples, verbose):
                 sys.stdout.flush()
             if n_total == 1:
                 print('\n'.join(example.repr_failure()))
-                raise example.exc_info
+                ex_value = example.exc_info[1]
+                raise ex_value
         # except Exception:
         #     summary = {'passed': False}
         #     if verbose == 0:
