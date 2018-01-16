@@ -21,6 +21,7 @@ import re
 import warnings
 from xdoctest import static_analysis as static
 from xdoctest import utils
+from xdoctest import exceptions
 
 
 def named(key, pattern):
@@ -134,7 +135,8 @@ def parse_directive_optstr(optstr, inline=None):
 
         paren_pos = optpart.find('(')
         if paren_pos > -1:
-            # handle simple paren case. TODO expand or remove
+            # handle simple paren case.
+            # TODO expand or remove
             args = [optpart[paren_pos + 1:optpart.find(')')]]
             optpart = optpart[:paren_pos]
         else:

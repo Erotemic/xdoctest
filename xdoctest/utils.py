@@ -300,8 +300,9 @@ class TempDir(object):
         >>> self.cleanup()
         >>> assert not exists(dpath)
     """
-    def __init__(self):
+    def __init__(self, persist=False):
         self.dpath = None
+        self.persist = persist
 
     def __del__(self):
         self.cleanup()
@@ -313,9 +314,10 @@ class TempDir(object):
         return self.dpath
 
     def cleanup(self):
-        if self.dpath:
-            shutil.rmtree(self.dpath)
-            self.dpath = None
+        if not self.persist:
+            if self.dpath:
+                shutil.rmtree(self.dpath)
+                self.dpath = None
 
     def __enter__(self):
         self.ensure()
@@ -366,11 +368,13 @@ def import_module_from_name(modname):
     Returns:
         module: module
 
+    CommandLine:
+        python -m xdoctest.utils import_module_from_name
+
     Example:
         >>> # test with modules that wont be imported in normal circumstances
         >>> # todo write a test where we gaurentee this
         >>> modname_list = [
-        >>>     'test',
         >>>     'pickletools',
         >>>     'lib2to3.fixes.fix_apply',
         >>> ]
@@ -394,10 +398,6 @@ def import_module_from_path(modpath):
     """
     Args:
         modpath (str): path to the module
-
-    TODO:
-        move to a submodule named util_import
-        add to ubelt
 
     References:
         https://stackoverflow.com/questions/67631/import-module-given-path
