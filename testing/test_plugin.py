@@ -1113,6 +1113,9 @@ class TestXDoctestNamespaceFixture(object):
     """
     Not sure why these tests wont work
 
+    FIXME: These dont work because xdoctest does not support running with
+    fixtures yet.
+
     pytest testing/test_plugin.py::TestXDoctestNamespaceFixture
     """
 
@@ -1136,7 +1139,7 @@ class TestXDoctestNamespaceFixture(object):
             >>> print(cl.__name__)
             contextlib
         """)
-        reprec = testdir.inline_run(p)
+        reprec = testdir.inline_run(p, *EXTRA_ARGS)
         reprec.assertoutcome(passed=1)
 
     @pytest.mark.parametrize('scope', SCOPES)
@@ -1162,7 +1165,7 @@ class TestXDoctestNamespaceFixture(object):
                 contextlib
                 '''
         """)
-        reprec = testdir.inline_run(p, "--xdoctest-modules")
+        reprec = testdir.inline_run(p, "--xdoctest-modules", *EXTRA_ARGS)
         reprec.assertoutcome(passed=1)
 
 
