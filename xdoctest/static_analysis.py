@@ -258,8 +258,12 @@ def parse_calldefs(source=None, fpath=None):
         >>> assert 'parse_calldefs' in calldefs
     """
     if source is None:  # pragma: no branch
-        with open(fpath, 'rb') as file_:
-            source = file_.read().decode('utf-8')
+        try:
+            with open(fpath, 'rb') as file_:
+                source = file_.read().decode('utf-8')
+        except Exception as ex:
+            print('Unable to read fpath = {!r}'.format(fpath))
+            raise
     try:
         self = TopLevelVisitor.parse(source)
         return self.calldefs
@@ -362,7 +366,7 @@ def _platform_pylib_ext():  # nocover
 
 
 def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True,
-                     recursive=True):
+                     recursive=True, with_libs=False):
     r"""
     Finds sub-packages and sub-modules belonging to a package.
 
@@ -373,6 +377,7 @@ def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True,
         with_mod (bool): if True includes module files (default = True)
         exclude (list): ignores any module that matches any of these patterns
         recursive (bool): if False, then only child modules are included
+        with_libs (bool): if True then compiled shared libs will be returned as well
 
     Yields:
         str: module names belonging to the package
@@ -399,7 +404,10 @@ def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True,
             if exists(root_path):
                 yield root_path
 
-        valid_exts = ['.py', _platform_pylib_ext()]
+        valid_exts = ['.py']
+        if with_libs:
+            valid_exts += [_platform_pylib_ext()]
+
         for dpath, dnames, fnames in os.walk(pkgpath, followlinks=followlinks):
             ispkg = exists(join(dpath, '__init__.py'))
             if ispkg:
