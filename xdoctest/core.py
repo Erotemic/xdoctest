@@ -327,7 +327,7 @@ class DocTest(object):
 
         self.logged_evals.clear()
         self.logged_stdout.clear()
-        self.skipped_parts.clear()
+        self.skipped_parts = []
         self.exc_info = None
         self._suppressed_stdout = verbose <= 1
 
