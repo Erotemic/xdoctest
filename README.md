@@ -70,14 +70,14 @@ if __name__ == '__main__':
 This sets up the ability to invoke the `xdoctest` command line interface.
 `python -m <modname> <command>`
 
-If `<command>` is `all`, then each enabled doctest in the module is executed:
+* If `<command>` is `all`, then each enabled doctest in the module is executed:
 `python -m <modname> all`
 
-If `<command>` is `list`, then the names of each enabled doctest is listed.
+* If `<command>` is `list`, then the names of each enabled doctest is listed.
 
-If `<command>` is a `callname` (name of a function or a class and method), then
-that specific doctest is executed: `python -m <modname> <callname>`. Note: you
-can execute disabled doctests or functions without any arguments this way.
+* If `<command>` is a `callname` (name of a function or a class and method),
+  then that specific doctest is executed: `python -m <modname> <callname>`.
+  Note: you can execute disabled doctests or functions without any arguments (zero-args) this way.
 
 For example if you created a module `mymod.py` with the following code:
 
