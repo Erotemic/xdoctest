@@ -104,6 +104,7 @@ class DocTest(object):
 
         self.logged_evals = OrderedDict()
         self.logged_stdout = OrderedDict()
+        self.skipped_parts = []
 
         self.module = None
         self.globs = {}
@@ -304,6 +305,10 @@ class DocTest(object):
         compileflags |= __future__.division.compiler_flag
         return test_globals, compileflags
 
+    def anything_ran(self):
+        # If everything was skipped, then there will be no stdout
+        return len(self.logged_stdout) > 0
+
     def run(self, verbose=None, on_error=None):
         """
         Executes the doctest
@@ -322,6 +327,7 @@ class DocTest(object):
 
         self.logged_evals.clear()
         self.logged_stdout.clear()
+        self.skipped_parts.clear()
         self.exc_info = None
         self._suppressed_stdout = verbose <= 1
 
@@ -337,19 +343,20 @@ class DocTest(object):
                         # inline mode skips just this line
                         # block mode applies to the remainder of parts
                         if directive.inline:
-                            action = 'continue'
+                            action = 'skip_part'
                         else:
-                            action = 'break'
+                            action = 'skip_rest'
                     elif directive.name == 'REQUIRES' and directive.positive:
                         # same as SKIP if the requirement is not satisfied
                         if directive.args[0] not in sys.argv:
                             if directive.inline:
-                                action = 'continue'
+                                action = 'skip_part'
                             else:
-                                action = 'break'
-                if action == 'continue':
+                                action = 'skip_rest'
+                if action == 'skip_part':
+                    self.skipped_parts.append(part)
                     continue
-                if action == 'break':
+                if action == 'skip_rest':
                     break
 
                 # Prepare to capture stdout and evaluated values
@@ -617,7 +624,9 @@ class DocTest(object):
         n_digits = 1
 
         for partx, (part, part_text) in enumerate(zip(self._parts, textgen)):
-            part_out = r1_strip_nl(self.logged_stdout[partx])
+            if part in self.skipped_parts:
+                continue
+            part_out = r1_strip_nl(self.logged_stdout.get(partx, ''))
             lines += [utils.indent(part_text, ' ' * 4)]
             if part_out:
                 lines += [utils.indent(part_out, ' ' * (5 + n_digits))]
@@ -843,6 +852,20 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
     """
     Parses doctests from a docstr and generates example objects.
     The style influences which tests are found.
+
+    Example:
+        >>> from xdoctest.core import *
+        >>> docstr = utils.codeblock(
+        ...    '''
+        ...    >>> 1 + 1  # xdoctest: +SKIP
+        ...    2
+        ...    >>> 2 + 2
+        ...    4
+        ...    ''')
+        >>> examples = list(parse_docstr_examples(docstr, 'name', fpath='foo.txt', style='freeform'))
+        >>> print(len(examples))
+        1
+        >>> examples = list(parse_docstr_examples(docstr, fpath='foo.txt'))
     """
     if style == 'freeform':
         parser = parse_freeform_docstr_examples
@@ -930,9 +953,12 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
 
 def parse_doctestables(modpath_or_name, exclude=[], style='google',
                        ignore_syntax_errors=True):
-    """
+    r"""
     Parses all doctests within top-level callables of a module and generates
     example objects.  The style influences which tests are found.
+
+    Yields:
+        xdoctest.core.DocTest : parsed doctest example objects
 
     CommandLine:
         python -m xdoctest.core parse_doctestables
@@ -942,11 +968,25 @@ def parse_doctestables(modpath_or_name, exclude=[], style='google',
         >>> testables = list(parse_doctestables(modpath_or_name))
         >>> this_example = None
         >>> for example in testables:
-        >>>     print(example)
+        >>>     # print(example)
         >>>     if example.callname == 'parse_doctestables':
         >>>         this_example = example
         >>> assert this_example is not None
         >>> assert this_example.callname == 'parse_doctestables'
+
+    Example:
+        >>> docstr = utils.codeblock(
+        ...    '''
+        ...    >>> 1 + 1  # xdoctest: +SKIP
+        ...    2
+        ...    >>> 2 + 2
+        ...    4
+        ...    ''')
+        >>> temp = utils.TempDoctest('test_modfile', docstr)
+        >>> modpath = temp.modpath
+        >>> examples = list(parse_doctestables(modpath, style='freeform'))
+        >>> print(len(examples))
+        1
     """
 
     if style not in DOCTEST_STYLES:

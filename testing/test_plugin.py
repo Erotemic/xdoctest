@@ -14,6 +14,14 @@ import pytest
 EXTRA_ARGS = ['-p', 'pytester', '-p', 'no:doctest', '--xdoctest-nocolor']
 
 
+# def print(text):
+#     """ Hack so we can get stdout when debugging the plugin file """
+#     import os
+#     fpath = os.path.expanduser('~/plugin.stdout.txt')
+#     with open(fpath, 'a') as file:
+#         file.write(str(text) + '\n')
+
+
 def explicit_testdir():
     r"""
     Explicitly constructs a testdir for use in IPython development
@@ -883,6 +891,9 @@ class TestXDoctestSkips(object):
     """
     If all examples in a xdoctest are skipped due to the SKIP option, then
     the tests should be SKIPPED rather than PASSED. (#957)
+
+    CommandLine
+        pytest testing/test_plugin.py::TestXDoctestSkips
     """
 
     def test_xdoctest_skips_diabled(self, testdir):
@@ -911,42 +922,70 @@ class TestXDoctestSkips(object):
 
         return makeit
 
-    @pytest.mark.skip('we dont support the +SKIP directive')
-    def test_one_skipped(self, testdir, makedoctest):
+    def test_one_skipped_passed(self, testdir, makedoctest):
+        """
+        CommandLine:
+            pytest testing/test_plugin.py::TestXDoctestSkips::test_one_skipped_passed
+        """
         makedoctest("""
             >>> 1 + 1  # xdoctest: +SKIP
-            2
+            4
             >>> 2 + 2
             4
         """)
-        reprec = testdir.inline_run("--xdoctest-modules")
+        reprec = testdir.inline_run("--xdoctest-modules", *EXTRA_ARGS)
         reprec.assertoutcome(passed=1)
 
-    @pytest.mark.skip('we dont support the +SKIP directive')
     def test_one_skipped_failed(self, testdir, makedoctest):
+        """
+        CommandLine:
+            pytest testing/test_plugin.py::TestXDoctestSkips::test_one_skipped_failed
+        """
         makedoctest("""
             >>> 1 + 1  # xdoctest: +SKIP
-            2
+            4
             >>> 2 + 2
             200
         """)
-        reprec = testdir.inline_run("--xdoctest-modules")
+        reprec = testdir.inline_run("--xdoctest-modules", *EXTRA_ARGS)
         reprec.assertoutcome(failed=1)
 
-    @pytest.mark.skip('we dont support the +SKIP directive')
     def test_all_skipped(self, testdir, makedoctest):
+        """
+        CommandLine:
+            pytest testing/test_plugin.py::TestXDoctestSkips::test_all_skipped
+        """
         makedoctest("""
             >>> 1 + 1  # xdoctest: +SKIP
             2
             >>> 2 + 2  # xdoctest: +SKIP
             200
         """)
-        reprec = testdir.inline_run("--xdoctest-modules")
-        reprec.assertoutcome(skipped=1)
+        reprec = testdir.inline_run("--xdoctest-modules", *EXTRA_ARGS)
+        # In xdoctest blocks are considered as a whole, so skipped lines do not
+        # count towards completely skipped doctests unless nothing was run, as
+        # is the case here.
+        reprec.assertoutcome(passed=0, skipped=1)
+
+    def test_all_skipped_global(self, testdir, makedoctest):
+        """
+        CommandLine:
+            pytest testing/test_plugin.py::TestXDoctestSkips::test_all_skipped_global
+        """
+        # Test new global directive added in xdoctest
+        makedoctest("""
+            >>> # xdoctest: +SKIP
+            >>> 1 + 1
+            2
+            >>> 2 + 2
+            200
+        """)
+        reprec = testdir.inline_run("--xdoctest-modules", *EXTRA_ARGS)
+        reprec.assertoutcome(passed=0, skipped=1)
 
     def test_vacuous_all_skipped(self, testdir, makedoctest):
         makedoctest('')
-        reprec = testdir.inline_run("--xdoctest-modules")
+        reprec = testdir.inline_run("--xdoctest-modules", *EXTRA_ARGS)
         reprec.assertoutcome(passed=0, skipped=0)
 
 

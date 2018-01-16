@@ -556,6 +556,21 @@ class NiceRepr(object):
             return object.__str__(self)
             #return super(NiceRepr, self).__str__()
 
+
+class TempDoctest(object):
+    """
+    Creates a temporary file containing a doctest for testing
+    """
+
+    def __init__(self, modname, docstr):
+        self.modname = modname
+        self.docstr = docstr
+        self.temp = TempDir()
+        self.dpath = self.temp.ensure()
+        self.modpath = join(self.dpath, self.modname + '.py')
+        with open(self.modpath, 'w') as file:
+            file.write("'''\n%s'''" % self.docstr)
+
 if __name__ == '__main__':
     r"""
     CommandLine:

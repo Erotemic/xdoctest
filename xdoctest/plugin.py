@@ -16,6 +16,14 @@ from xdoctest import core
 # import traceback
 
 
+# def print(text):
+#     """ Hack so we can get stdout when debugging the plugin file """
+#     import os
+#     fpath = os.path.expanduser('~/plugin.stdout.txt')
+#     with open(fpath, 'a') as file:
+#         file.write(str(text) + '\n')
+
+
 ### WE SHALL NOW BE VERY NAUGHTY ###
 def monkey_patch_disable_normal_doctest():
     """
@@ -125,9 +133,11 @@ class XDoctestItem(pytest.Item):
 
     def runtest(self):
         if self.example.is_disabled(pytest=True):
-            pytest.skip('doctest encountered skip directive')
+            pytest.skip('doctest encountered global skip directive')
         # run with verbose=1, because pytest will capture if necessary
         self.example.run(verbose=1, on_error='raise')
+        if not self.example.anything_ran():
+            pytest.skip('doctest is empty or all parts were skipped')
 
     def repr_failure(self, excinfo):
         example = self.example
