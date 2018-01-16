@@ -153,7 +153,7 @@ def test_mod_lineno():
         with open(modpath, 'w') as file:
             file.write(source)
         from xdoctest import core
-        doctests = list(core.module_doctestables(modpath))
+        doctests = list(core.parse_doctestables(modpath, style='freeform'))
         assert len(doctests) == 1
         self = doctests[0]
 
@@ -186,7 +186,7 @@ def test_mod_globals():
         with open(modpath, 'w') as file:
             file.write(source)
         from xdoctest import core
-        doctests = list(core.module_doctestables(modpath))
+        doctests = list(core.parse_doctestables(modpath, style='freeform'))
         assert len(doctests) == 1
         self = doctests[0]
 
@@ -234,7 +234,7 @@ def test_show_entire():
         # all_parts = parser.DoctestParser().parse(docstr)
         # assert docline == 2
 
-        doctests = list(core.module_doctestables(modpath))
+        doctests = list(core.parse_doctestables(modpath, style='freeform'))
         assert len(doctests) == 1
         self = doctests[0]
         self.config['colored'] = False
@@ -353,7 +353,7 @@ def test_collect_module_level():
     with open(modpath, 'w') as file:
         file.write(source)
     from xdoctest import core
-    doctests = list(core.module_doctestables(modpath))
+    doctests = list(core.parse_doctestables(modpath, style='freeform'))
     assert len(doctests) == 1
     self = doctests[0]
     assert self.callname == '__doc__'
@@ -382,7 +382,7 @@ def test_collect_module_level_singleline():
     with open(modpath, 'w') as file:
         file.write(source)
     from xdoctest import core
-    doctests = list(core.module_doctestables(modpath))
+    doctests = list(core.parse_doctestables(modpath, style='freeform'))
     assert len(doctests) == 1
     self = doctests[0]
     assert self.callname == '__doc__'

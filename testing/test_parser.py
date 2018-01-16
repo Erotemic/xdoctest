@@ -3,6 +3,7 @@ from __future__ import print_function, division, absolute_import, unicode_litera
 import pytest
 from xdoctest import parser
 from xdoctest import utils
+from xdoctest import exceptions
 
 
 def test_final_eval_exec():
@@ -373,7 +374,7 @@ def test_syntax_error():
             >>> 03 = dsrc()
     ''')
     self = parser.DoctestParser()
-    with pytest.raises(SyntaxError):
+    with pytest.raises(exceptions.DoctestParseError):
         self.parse(string)
 
 
@@ -385,12 +386,16 @@ def test_nonbalanced_statement():
         ''').splitlines()[0]
 
     self = parser.DoctestParser()
-    with pytest.raises(SyntaxError) as exc_info:
+    with pytest.raises(exceptions.DoctestParseError) as exc_info:
         self.parse(string)
-    assert exc_info.value.msg == 'ill-formed doctest'
+    assert exc_info.value.orig_ex.msg == 'ill-formed doctest'
 
 
 def test_bad_indent():
+    """
+    CommandLine:
+        python testing/test_parser.py test_bad_indent
+    """
     string = utils.codeblock(
         '''
         Example:
@@ -399,10 +404,9 @@ def test_bad_indent():
         ''')
 
     self = parser.DoctestParser()
-    with pytest.raises(SyntaxError) as exc_info:
+    with pytest.raises(exceptions.DoctestParseError) as exc_info:
         self.parse(string)
-    assert exc_info.value.msg.startswith('Bad indentation in doctest')
-    # assert exc_info.value.msg == 'ill-formed doctest'
+    assert exc_info.value.orig_ex.msg.startswith('Bad indentation in doctest')
 
 
 def test_part_nice_no_lineoff():

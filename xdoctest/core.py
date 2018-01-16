@@ -11,6 +11,7 @@ import re
 import six
 import itertools as it
 from os.path import exists
+from fnmatch import fnmatch
 from xdoctest import static_analysis as static
 from xdoctest import docscrape_google
 from xdoctest import utils
@@ -58,7 +59,7 @@ class DocTest(object):
 
     Example:
         >>> from xdoctest import core
-        >>> testables = core.module_doctestables(core.__file__)
+        >>> testables = core.parse_doctestables(core.__file__)
         >>> for test in testables:
         >>>     if test.callname == 'DocTest':
         >>>         self = test
@@ -99,6 +100,7 @@ class DocTest(object):
         self.tb_lineno = None
         self.exc_info = None
         self.failed_part = None
+        self.warn_list = None
 
         self.logged_evals = OrderedDict()
         self.logged_stdout = OrderedDict()
@@ -213,7 +215,7 @@ class DocTest(object):
         Example:
             >>> from xdoctest.core import *
             >>> from xdoctest import core
-            >>> testables = module_doctestables(core.__file__)
+            >>> testables = parse_doctestables(core.__file__)
             >>> self = next(testables)
             >>> self._parse()
             >>> print(self.format_src())
@@ -311,7 +313,7 @@ class DocTest(object):
         if on_error not in {'raise', 'return'}:
             raise KeyError(on_error)
 
-        self._parse()
+        self._parse()  # parse out parts if we have not already done so
         self.pre_run(verbose)
         self._import_module()
 
@@ -325,103 +327,105 @@ class DocTest(object):
 
         # Use the same capture object for all parts in the test
         cap = utils.CaptureStdout(supress=self._suppressed_stdout)
-        for partx, part in enumerate(self._parts):
+        with warnings.catch_warnings(record=True) as self.warn_list:
+            for partx, part in enumerate(self._parts):
 
-            # TODO: more sophisticated directive handling
-            action = None
-            for directive in part.directives:
-                if directive.name == 'SKIP' and directive.positive:
-                    # inline mode skips just this line
-                    # block mode applies to the remainder of parts
-                    if directive.inline:
-                        action = 'continue'
-                    else:
-                        action = 'break'
-                elif directive.name == 'REQUIRES' and directive.positive:
-                    # same as SKIP if the requirement is not satisfied
-                    if directive.args[0] not in sys.argv:
+                # TODO: more sophisticated directive handling
+                action = None
+                for directive in part.directives:
+                    if directive.name == 'SKIP' and directive.positive:
+                        # inline mode skips just this line
+                        # block mode applies to the remainder of parts
                         if directive.inline:
                             action = 'continue'
                         else:
                             action = 'break'
-            if action == 'continue':
-                continue
-            if action == 'break':
-                break
+                    elif directive.name == 'REQUIRES' and directive.positive:
+                        # same as SKIP if the requirement is not satisfied
+                        if directive.args[0] not in sys.argv:
+                            if directive.inline:
+                                action = 'continue'
+                            else:
+                                action = 'break'
+                if action == 'continue':
+                    continue
+                if action == 'break':
+                    break
 
-            # Prepare to capture stdout and evaluated values
-            self.failed_part = part
-            got_eval = NOT_EVALED
-            try:
-                # Compile code, handle syntax errors
-                mode = 'eval' if part.use_eval else 'exec'
+                # Prepare to capture stdout and evaluated values
+                self.failed_part = part
+                got_eval = NOT_EVALED
+                try:
+                    # Compile code, handle syntax errors
+                    mode = 'eval' if part.use_eval else 'exec'
 
-                code = compile(
-                    part.source, mode=mode,
-                    filename='<doctest:' + self.node + '>',
-                    flags=compileflags, dont_inherit=True
-                )
-            except KeyboardInterrupt:  # nocover
-                raise
-            except:
-                self.exc_info = sys.exc_info()
-                ex_type, ex_value, tb = self.exc_info
-                self.tb_lineno = tb.tb_lineno
-                if on_error == 'raise':
+                    code = compile(
+                        part.source, mode=mode,
+                        filename='<doctest:' + self.node + '>',
+                        flags=compileflags, dont_inherit=True
+                    )
+                except KeyboardInterrupt:  # nocover
                     raise
-            try:
-                # Execute the doctest code
-                with cap:
-                    # NOTE: There is no difference between locals/globals in
-                    # eval/exec context. Only pass in one dict, otherwise there
-                    # is weird behavior
-                    if part.use_eval:
-                        # Only capture the repr to allow for gc tests
-                        got_eval = eval(code, test_globals)
-                    else:
-                        exec(code, test_globals)
-
-                if part.want:
-                    got_stdout = cap.text
-                    part.check_got_vs_want(got_stdout, got_eval, NOT_EVALED)
-            # Handle anything that could go wrong
-            except KeyboardInterrupt:  # nocover
-                raise
-            except ExitTestException:
-                if verbose > 0:
-                    print('Test gracefully exists')
-                break
-            except parser.GotWantException:
-                self.exc_info = sys.exc_info()
-                if on_error == 'raise':
-                    raise
-                break
-            except:
-                ex_type, ex_value, tb = sys.exc_info()
-                # CLEAN_TRACEBACK = True
-                CLEAN_TRACEBACK = 0
-                if CLEAN_TRACEBACK:
-                    # Pop the eval off the stack
-                    if tb.tb_next is not None:
-                        tb = tb.tb_next
+                except:
+                    self.exc_info = sys.exc_info()
+                    ex_type, ex_value, tb = self.exc_info
                     self.tb_lineno = tb.tb_lineno
-                    # tb.tb_lineno = tb_lineno + self.failed_part.line_offset + self.lineno
-                else:
-                    if tb.tb_next is None:
-                        # TODO: test and understand this case
-                        self.tb_lineno = tb.tb_lineno
-                    else:
-                        # Use the next because we need to pop the eval of the stack
-                        self.tb_lineno = tb.tb_next.tb_lineno
+                    if on_error == 'raise':
+                        raise
+                try:
+                    # Execute the doctest code
+                    with cap:
+                        # NOTE: There is no difference between locals/globals in
+                        # eval/exec context. Only pass in one dict, otherwise there
+                        # is weird behavior
+                        if part.use_eval:
+                            # Only capture the repr to allow for gc tests
+                            got_eval = eval(code, test_globals)
+                        else:
+                            exec(code, test_globals)
 
-                self.exc_info = (ex_type, ex_value, tb)
-                if on_error == 'raise':
+                    if part.want:
+                        got_stdout = cap.text
+                        part.check_got_vs_want(got_stdout, got_eval, NOT_EVALED)
+                # Handle anything that could go wrong
+                except KeyboardInterrupt:  # nocover
                     raise
-                break
-            finally:
-                assert cap.text is not None
-                self.logged_evals[partx] = got_eval
-                self.logged_stdout[partx] = cap.text
+                except ExitTestException:
+                    if verbose > 0:
+                        print('Test gracefully exists')
+                    break
+                except parser.GotWantException:
+                    self.exc_info = sys.exc_info()
+                    if on_error == 'raise':
+                        raise
+                    break
+                except:
+                    ex_type, ex_value, tb = sys.exc_info()
+                    # CLEAN_TRACEBACK = True
+                    CLEAN_TRACEBACK = 0
+                    if CLEAN_TRACEBACK:
+                        # Pop the eval off the stack
+                        if tb.tb_next is not None:
+                            tb = tb.tb_next
+                        self.tb_lineno = tb.tb_lineno
+                        # tb.tb_lineno = (tb_lineno +
+                        #                 self.failed_part.line_offset + self.lineno)
+                    else:
+                        if tb.tb_next is None:
+                            # TODO: test and understand this case
+                            self.tb_lineno = tb.tb_lineno
+                        else:
+                            # Use the next to pop the eval of the stack
+                            self.tb_lineno = tb.tb_next.tb_lineno
+
+                    self.exc_info = (ex_type, ex_value, tb)
+                    if on_error == 'raise':
+                        raise
+                    break
+                finally:
+                    assert cap.text is not None
+                    self.logged_evals[partx] = got_eval
+                    self.logged_stdout[partx] = cap.text
 
         if self.exc_info is None:
             self.failed_part = None
@@ -499,7 +503,7 @@ class DocTest(object):
                 101
                 ''')
             >>> parsekw = dict(fpath='foo.txt', callname='bar', lineno=42)
-            >>> self = list(parse_freeform_docstr_examples(docstr, **parsekw))[0]
+            >>> self = list(parse_docstr_examples(docstr, **parsekw))[0]
             >>> summary = self.run(on_error='return', verbose=0)
             >>> print('\n'.join(self.repr_failure()))
 
@@ -514,7 +518,7 @@ class DocTest(object):
                 .▴ ▴.
                 ''')
             >>> parsekw = dict(fpath='foo.txt', callname='bar', lineno=42)
-            >>> self = list(parse_freeform_docstr_examples(docstr, **parsekw))[0]
+            >>> self = list(parse_docstr_examples(docstr, **parsekw))[0]
             >>> summary = self.run(on_error='return', verbose=1)
             >>> print('\n'.join(self.repr_failure()))
 
@@ -526,7 +530,7 @@ class DocTest(object):
                 >>> assert False
                 >>> x = 100
                 ''')
-            >>> self = list(parse_freeform_docstr_examples(docstr))[0]
+            >>> self = list(parse_docstr_examples(docstr))[0]
             >>> summary = self.run(on_error='return', verbose=0)
             >>> print('\n'.join(self.repr_failure()))
         """
@@ -672,9 +676,15 @@ class DocTest(object):
                 print('* {}: {}'.format(success, self.node))
         else:
             if verbose >= 1:
-                lines = self.repr_failure()
-                text = '\n'.join(lines)
-                print(text)
+                failure = 'FAILURE'
+                if colored:
+                    failure = utils.color_text(failure, 'red')
+                print('* {}: {}'.format(failure, self.node))
+
+                if verbose >= 2:
+                    lines = self.repr_failure()
+                    text = '\n'.join(lines)
+                    print(text)
             summary['exc_info'] = self.exc_info
         return summary
 
@@ -687,6 +697,9 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
 
     Some care is taken to avoid enabling tests that look like disabled google
     doctests / scripts.
+
+    Raises:
+        exceptions.DoctestParseError: if an error occurs in parsing
 
     Example:
         >>> from xdoctest import core
@@ -759,11 +772,8 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
                 prev.strip().lower().endswith(special_skip_patterns_))
 
     # parse into doctest and plaintext parts
-    try:
-        info = dict(callname=callname, modpath=modpath, lineno=lineno, fpath=fpath)
-        all_parts = parser.DoctestParser().parse(docstr, info)
-    except Exception:
-        raise StopIteration('failed to parse docstr')
+    info = dict(callname=callname, modpath=modpath, lineno=lineno, fpath=fpath)
+    all_parts = list(parser.DoctestParser().parse(docstr, info))
 
     curr_parts = []
     curr_offset = 0
@@ -801,37 +811,68 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         yield example
 
 
-def parse_google_docstr_examples(docstr, callname=None, modpath=None,
-                                 lineno=1, fpath=None):
+def parse_google_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
+                                 fpath=None, eager_parse=True):
     """
     Parses Google-style doctests from a docstr and generates example objects
+
+    Raises:
+        exceptions.MalformedDocstr: if an error occurs in finding google blocks
+        exceptions.DoctestParseError: if an error occurs in parsing
     """
+    blocks = docscrape_google.split_google_docblocks(docstr)
+    example_blocks = []
+    for type, block in blocks:
+        if type.startswith('Example'):
+            example_blocks.append((type, block))
+        if type.startswith('Doctest'):
+            example_blocks.append((type, block))
+    for num, (type, (docsrc, offset)) in enumerate(example_blocks):
+        # Add one because offset applies to the google-type label
+        lineno_ = lineno + offset + 1
+        example = DocTest(docsrc, modpath, callname, num, lineno=lineno_,
+                          fpath=fpath, block_type=type)
+        if eager_parse:
+            # parse on the fly to be consistent with freeform?
+            example._parse()
+        yield example
+
+
+def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
+                          style='freeform', fpath=None):
+    """
+    Parses doctests from a docstr and generates example objects.
+    The style influences which tests are found.
+    """
+    if style == 'freeform':
+        parser = parse_freeform_docstr_examples
+    elif style == 'google':
+        parser = parse_google_docstr_examples
+    # TODO:
+    # elif style == 'numpy':
+    #     parser = parse_numpy_docstr_examples
+    else:
+        raise KeyError('Unknown style={}. Valid styles are {}'.format(
+            style, DOCTEST_STYLES))
+
     try:
-        blocks = docscrape_google.split_google_docblocks(docstr)
-        example_blocks = []
-        for type, block in blocks:
-            if type.startswith('Example'):
-                example_blocks.append((type, block))
-            if type.startswith('Doctest'):
-                example_blocks.append((type, block))
-        for num, (type, (docsrc, offset)) in enumerate(example_blocks):
-            # Add one because offset applies to the google-type label
-            lineno_ = lineno + offset + 1
-            example = DocTest(docsrc, modpath, callname, num, lineno=lineno_,
-                              fpath=fpath, block_type=type)
+        for example in parser(docstr, callname=callname, modpath=modpath,
+                              fpath=fpath, lineno=lineno):
             yield example
-    except Exception as ex:  # nocover
+    except Exception as ex:
         msg = ('Cannot scrape callname={} in modpath={} line={}.\n'
-               'Caused by={}\n')
+               'Caused by: {}\n')
         msg = msg.format(callname, modpath, lineno, repr(ex))
-        if isinstance(ex, exceptions.MalformedDocstr):
-            warnings.warn(msg)
+        if isinstance(ex, (exceptions.MalformedDocstr,
+                           exceptions.DoctestParseError)):
+
+            if isinstance(ex, exceptions.DoctestParseError):
+                msg += '{}\n'.format(ex.string)
+                msg += 'Original Error: {}\n'.format(repr(ex.orig_ex))
+
+            warnings.warn(msg)  # doctest code contained errors
         else:
             raise Exception(msg)
-
-
-def module_calldefs(modpath):
-    return static.parse_calldefs(fpath=modpath)
 
 
 def _rectify_to_modpath(modpath_or_name):
@@ -860,7 +901,6 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
         >>> assert static.modpath_to_modname(modpath) == modpath_or_name
         >>> assert 'package_calldefs' in calldefs
     """
-    from fnmatch import fnmatch
     pkgpath = _rectify_to_modpath(modpath_or_name)
 
     modpaths = static.package_modpaths(pkgpath)
@@ -868,18 +908,19 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
         modname = static.modpath_to_modname(modpath)
         if any(fnmatch(modname, pat) for pat in exclude):
             continue
-        if not exists(modpath):  # nocover
+        if not exists(modpath):
             warnings.warn(
                 'Module {} does not exist. '
                 'Is it an old pyc file?'.format(modname))
             continue
         try:
-            calldefs = module_calldefs(modpath=modpath)
-        except SyntaxError as ex:  # nocover
-            msg = 'Cannot parse module={} at path={}.\nCaused by={}'
+            calldefs = static.parse_calldefs(fpath=modpath)
+        except SyntaxError as ex:
+            # Handle error due to the actual code containing errors
+            msg = 'Cannot parse module={} at path={}.\nCaused by: {}'
             msg = msg.format(modname, modpath, ex)
             if ignore_syntax_errors:
-                warnings.warn(msg)
+                warnings.warn(msg)  # real code contained errors
                 continue
             else:
                 raise SyntaxError(msg)
@@ -887,55 +928,17 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
             yield calldefs, modpath
 
 
-def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
-                          style='freeform', fpath=None):
-    """
-    Parses doctests from a docstr and generates example objects.
-    The style influences which tests are found.
-    """
-    if style == 'freeform':
-        parser = parse_freeform_docstr_examples
-    elif style == 'google':
-        parser = parse_google_docstr_examples
-    # TODO:
-    # elif style == 'numpy':
-    #     parser = parse_numpy_docstr_examples
-    else:
-        raise KeyError('Unknown style={}. Valid styles are {}'.format(
-            style, DOCTEST_STYLES))
-
-    for example in parser(docstr, callname=callname, modpath=modpath,
-                          fpath=fpath, lineno=lineno):
-        yield example
-
-
-def module_doctestables(modpath, style='freeform'):
+def parse_doctestables(modpath_or_name, exclude=[], style='google',
+                       ignore_syntax_errors=True):
     """
     Parses all doctests within top-level callables of a module and generates
     example objects.  The style influences which tests are found.
-    """
-    if style not in DOCTEST_STYLES:
-        raise KeyError('Unknown style={}. Valid styles are {}'.format(
-            style, DOCTEST_STYLES))
 
-    calldefs = module_calldefs(modpath)
-    for callname, calldef in calldefs.items():
-        docstr = calldef.docstr
-        if calldef.docstr is not None:
-            lineno = calldef.doclineno
-            for example in parse_docstr_examples(docstr, callname=callname,
-                                                 modpath=modpath,
-                                                 lineno=lineno, style=style):
-                yield example
-
-
-def parse_doctestables(modpath_or_name, exclude=[], style='google',
-                       ignore_syntax_errors=True):
-    r"""
-    Finds all functions/callables with Google-style example blocks
+    CommandLine:
+        python -m xdoctest.core parse_doctestables
 
     Example:
-        >>> modpath_or_name = 'xdoctest'
+        >>> modpath_or_name = 'xdoctest.core'
         >>> testables = list(parse_doctestables(modpath_or_name))
         >>> this_example = None
         >>> for example in testables:
@@ -945,6 +948,11 @@ def parse_doctestables(modpath_or_name, exclude=[], style='google',
         >>> assert this_example is not None
         >>> assert this_example.callname == 'parse_doctestables'
     """
+
+    if style not in DOCTEST_STYLES:
+        raise KeyError('Unknown style={}. Valid styles are {}'.format(
+            style, DOCTEST_STYLES))
+
     for calldefs, modpath in package_calldefs(modpath_or_name, exclude,
                                               ignore_syntax_errors):
         for callname, calldef in calldefs.items():

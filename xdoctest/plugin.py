@@ -174,7 +174,7 @@ class XDoctestModule(pytest.Module):
         colored = self.config.getvalue('xdoctest_colored')
 
         try:
-            examples = list(core.module_doctestables(modpath, style=style))
+            examples = list(core.parse_doctestables(modpath, style=style))
         except SyntaxError:
             if self.config.getvalue('xdoctest_ignore_syntax_errors'):
                 pytest.skip('unable to import module %r' % self.fspath)
