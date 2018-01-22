@@ -836,6 +836,9 @@ def parse_google_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
             example_blocks.append((type, block))
         if type.startswith('Doctest'):
             example_blocks.append((type, block))
+        if type.startswith('Script'):
+            # note this should be disabled unless explicitly asked for
+            example_blocks.append((type, block))
     for num, (type, (docsrc, offset)) in enumerate(example_blocks):
         # Add one because offset applies to the google-type label
         lineno_ = lineno + offset + 1
