@@ -22,6 +22,7 @@ Terms and definitions:
         indicating the desired result of executing the previous block.
 """
 from __future__ import print_function, division, absolute_import, unicode_literals
+import six
 import ast
 import sys
 import math
@@ -302,6 +303,10 @@ class DoctestParser(object):
         """
         if sys.version_info.major == 2:  # nocover
             string = utils.ensure_unicode(string)
+
+        if not isinstance(string, six.string_types):
+            raise TypeError('Expected string but got {!r}'.format(string))
+
         string = string.expandtabs()
         # If all lines begin with the same indentation, then strip it.
         min_indent = min_indentation(string)
