@@ -171,8 +171,11 @@ def _run_examples(enabled_examples, verbose):
     summaries = []
     failed = []
     warned = []
+    # It is important to raise immediatly within the test to display errors
+    # returned from multiprocessing. Especially in zero-arg mode
+    on_error = 'return' if n_total > 1 else 'raise'
     for example in enabled_examples:
-        summary = example.run(verbose=verbose, on_error='return')
+        summary = example.run(verbose=verbose, on_error=on_error)
         summaries.append(summary)
         if example.warn_list:
             warned.append(example)
