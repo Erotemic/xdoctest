@@ -443,6 +443,11 @@ class DocTest(object):
         if self.mode == 'pytest':
             return 'pytest ' + self.node
         elif self.mode == 'native':
+            # TODO: Determine if the module is in the path and if
+            # it has the appropriate main code.
+            # if has_xdoc_main and not in path
+            # return 'python ' + self.modpath + ' ' + self.unique_callname
+            # if has_xdoc_main and in path
             return 'python -m ' + self.modname + ' ' + self.unique_callname
         else:
             raise KeyError(self.mode)

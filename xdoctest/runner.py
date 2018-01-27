@@ -98,41 +98,52 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
         # report errors
         failed = run_summary.get('failed', [])
         warned = run_summary.get('warned', [])
-        if failed:
-            cprint('\n=== Found {} errors ==='.format(len(failed)), 'red')
-        for fail_idx, example in enumerate(failed, start=1):
-            cprint('--- Error: {} / {} ---'.format(fail_idx, len(failed)), 'red')
-            print(utils.indent('\n'.join(example.repr_failure())))
 
         # report parse-time warnings
         if parse_warnlist:
             cprint('\n=== Found {} parse-time warnings ==='.format(
                 len(parse_warnlist)), 'yellow')
-        for warn_idx, warn in enumerate(parse_warnlist, start=1):
-            cprint('--- Parse Warning: {} / {} ---'.format(
-                warn_idx, len(parse_warnlist)), 'yellow')
-            print(utils.indent(
-                warnings.formatwarning(warn.message, warn.category,
-                                       warn.filename, warn.lineno)))
 
-        # report run-time warnings
-        if warned:
-            cprint('\n=== Found {} run-time warnings ==='.format(len(warned)), 'yellow')
-        for warn_idx, example in enumerate(warned, start=1):
-            cprint('--- Runtime Warning: {} / {} ---'.format(warn_idx, len(warned)),
-                   'yellow')
-            print('example = {!r}'.format(example))
-            for warn in example.warn_list:
+            for warn_idx, warn in enumerate(parse_warnlist, start=1):
+                cprint('--- Parse Warning: {} / {} ---'.format(
+                    warn_idx, len(parse_warnlist)), 'yellow')
                 print(utils.indent(
                     warnings.formatwarning(warn.message, warn.category,
                                            warn.filename, warn.lineno)))
 
+        # report run-time warnings
+        if warned:
+            cprint('\n=== Found {} run-time warnings ==='.format(len(warned)), 'yellow')
+            for warn_idx, example in enumerate(warned, start=1):
+                cprint('--- Runtime Warning: {} / {} ---'.format(warn_idx, len(warned)),
+                       'yellow')
+                print('example = {!r}'.format(example))
+                for warn in example.warn_list:
+                    print(utils.indent(
+                        warnings.formatwarning(warn.message, warn.category,
+                                               warn.filename, warn.lineno)))
+
+        if failed:
+            cprint('\n=== Found {} errors ==='.format(len(failed)), 'red')
+            for fail_idx, example in enumerate(failed, start=1):
+                cprint('--- Error: {} / {} ---'.format(fail_idx, len(failed)), 'red')
+                print(utils.indent('\n'.join(example.repr_failure())))
+
+        # Print command lines to re-run failed tests
+        if failed:
+            cprint('\n=== Failed tests ===', 'red')
+            for example in failed:
+                print(example.cmdline)
+
         # final summary
-        fmtstr = '=== {} failed, {} passed, {} warnings in {:.2f} seconds ==='
         n_passed = run_summary.get('n_passed', 0)
         n_failed = run_summary.get('n_failed', 0)
         n_warnings = len(warned) + len(parse_warnlist)
         n_seconds = toc - tic
+        pairs = zip([n_failed, n_passed, n_warnings],
+                    ['failed', 'passed', 'warnings'])
+        parts = ['{} {}'.format(n, t) for n, t in pairs  if n > 0]
+        fmtstr = '=== ' + ' '.join(parts) + ' in {:.2f} seconds ==='
         summary_line = fmtstr.format(n_failed, n_passed, n_warnings, n_seconds)
         # color text based on worst type of error
         if n_failed > 0:
@@ -142,6 +153,7 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
         else:
             summary_line = utils.color_text(summary_line, 'green')
         print(summary_line)
+
     return run_summary
 
 
@@ -201,6 +213,8 @@ def _run_examples(enabled_examples, verbose):
     if verbose == 0:
         print('')
     n_passed = sum(s['passed'] for s in summaries)
+
+    print(utils.color_text('============', 'white'))
 
     if n_total > 1:
         # and verbose > 0:
