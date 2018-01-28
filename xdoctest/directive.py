@@ -17,11 +17,12 @@ Example:
     >>> any(extract(' # badprefix: not-a-directive'))
     False
 """
+import sys
 import re
 import warnings
 from xdoctest import static_analysis as static
 from xdoctest import utils
-from xdoctest import exceptions
+# from xdoctest import exceptions
 
 
 def named(key, pattern):
@@ -43,6 +44,26 @@ class Directive(utils.NiceRepr):
             return '{}{}({})'.format(prefix, self.name, argstr)
         else:
             return '{}{}'.format(prefix, self.name)
+
+    def get_runtime_action(self, argv=None):
+        action = None
+        if self.name == 'SKIP' and self.positive:
+            # inline mode skips just this line
+            # block mode applies to the remainder of parts
+            if self.inline:
+                action = 'skip_part'
+            else:
+                action = 'skip_rest'
+        elif self.name == 'REQUIRES' and self.positive:
+            if argv is None:
+                argv = sys.argv
+            # same as SKIP if the requirement is not satisfied
+            if self.args[0] not in argv:
+                if self.inline:
+                    action = 'skip_part'
+                else:
+                    action = 'skip_rest'
+        return action
 
 
 COMMANDS = [

@@ -258,7 +258,7 @@ def _parse_commandline(command=None, style='google', verbose=None, argv=None):
         elif '--quiet' in argv:
             verbose = -1
         else:
-            verbose = 2
+            verbose = 3
     return command, style, verbose
 
 

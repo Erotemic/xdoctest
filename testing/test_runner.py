@@ -206,6 +206,15 @@ def test_runner_failures():
         def test3():
             """
                 Example:
+                    >>> pass
+
+                Example:
+                    >>> pass
+            """
+
+        def test4():
+            """
+                Example:
                     >>> assert False, 'test 3'
             """
         ''')
@@ -220,15 +229,19 @@ def test_runner_failures():
         file.write(source)
 
     # disabled tests dont run in "all" mode
-    with utils.CaptureStdout(supress=False) as cap:
+    with utils.CaptureStdout(supress=True) as cap:
         try:
-            runner.doctest_module(modpath, 'all', argv=[''], verbose=0)
+            runner.doctest_module(modpath, 'all', argv=[''], verbose=1)
         except Exception:
             pass
 
-    assert '.FFF' in cap.text
-    assert '1 / 4 passed' in cap.text
-    assert '3 failed 1 passed' in cap.text
+    print('\nNOTE: the following output is part of a test')
+    print(utils.indent(cap.text, '... '))
+    print('NOTE: above output is part of a test')
+
+    # assert '.FFF' in cap.text
+    assert '3 / 6 passed' in cap.text
+    assert '3 failed 3 passed' in cap.text
 
 
 def test_run_zero_arg():
@@ -283,6 +296,7 @@ def test_parse_cmdline():
 if __name__ == '__main__':
     r"""
     CommandLine:
+        pytest testing/test_runner.py -s
         pytest testing/test_runner.py -s
         python testing/test_runner.py test_zero_args
     """

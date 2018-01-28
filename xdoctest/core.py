@@ -335,28 +335,14 @@ class DocTest(object):
         cap = utils.CaptureStdout(supress=self._suppressed_stdout)
         with warnings.catch_warnings(record=True) as self.warn_list:
             for partx, part in enumerate(self._parts):
-
-                # TODO: more sophisticated directive handling
-                action = None
-                for directive in part.directives:
-                    if directive.name == 'SKIP' and directive.positive:
-                        # inline mode skips just this line
-                        # block mode applies to the remainder of parts
-                        if directive.inline:
-                            action = 'skip_part'
-                        else:
-                            action = 'skip_rest'
-                    elif directive.name == 'REQUIRES' and directive.positive:
-                        # same as SKIP if the requirement is not satisfied
-                        if directive.args[0] not in sys.argv:
-                            if directive.inline:
-                                action = 'skip_part'
-                            else:
-                                action = 'skip_rest'
-                if action == 'skip_part':
+                # Extract runtime actions
+                actions = [directive.get_runtime_action()
+                           for directive in part.directives]
+                # Handle runtime actions
+                if 'skip_part' in actions:
                     self.skipped_parts.append(part)
                     continue
-                if action == 'skip_rest':
+                if 'skip_rest' in actions:
                     break
 
                 # Prepare to capture stdout and evaluated values
@@ -455,10 +441,8 @@ class DocTest(object):
     def pre_run(self, verbose):
         if verbose >= 1:
             if verbose >= 2:
-                if self.config['colored']:
-                    print(utils.color_text('============', 'white'))
-                else:
-                    print('============')
+                barrier = self._color('============', 'white')
+                print(barrier)
             if self.block_type == 'zero-arg':
                 # zero-arg funcs arent doctests, but we can still run them
                 print('* ZERO-ARG FUNC : {}'.format(self.node))
@@ -674,25 +658,27 @@ class DocTest(object):
             print('type(out_text) = %r' % (type(out_text),))
             print('out_text = %r' % (out_text,))
 
+    def _color(self, text, color, enabled=None):
+        """ conditionally color text based on config and flags """
+        colored = self.config.getvalue('colored', enabled)
+        if colored:
+            text = utils.color_text(text, color)
+        return text
+
     def post_run(self, verbose):
         # print('POST RUN verbose = {!r}'.format(verbose))
         summary = {
             'passed': self.exc_info is None
         }
-        colored = self.config['colored']
         if self.exc_info is None:
             if verbose >= 1:
                 if self._suppressed_stdout:
                     self._print_captured()
-                success = 'SUCCESS'
-                if colored:
-                    success = utils.color_text(success, 'green')
+                success = self._color('SUCCESS', 'green')
                 print('* {}: {}'.format(success, self.node))
         else:
             if verbose >= 1:
-                failure = 'FAILURE'
-                if colored:
-                    failure = utils.color_text(failure, 'red')
+                failure = self._color('FAILURE', 'red')
                 print('* {}: {}'.format(failure, self.node))
 
                 if verbose >= 2:
