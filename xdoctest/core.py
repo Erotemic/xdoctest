@@ -18,6 +18,13 @@ from xdoctest import utils
 from xdoctest import parser
 from xdoctest import exceptions
 
+import _pytest
+# # try:
+#     Skipped = _pytest.outcomes.Skipped
+# except:
+#     class Skipped(Exception):
+#         pass
+
 
 NOT_EVALED = object()  # sentinal value
 
@@ -383,7 +390,7 @@ class DocTest(object):
                 # Handle anything that could go wrong
                 except KeyboardInterrupt:  # nocover
                     raise
-                except ExitTestException:
+                except (ExitTestException, _pytest.outcomes.Skipped):
                     if verbose > 0:
                         print('Test gracefully exists')
                     break
