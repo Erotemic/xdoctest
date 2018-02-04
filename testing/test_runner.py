@@ -4,6 +4,9 @@ from xdoctest import utils
 
 
 def test_zero_args():
+    """
+    python testing/test_runner.py test_zero_args
+    """
     from xdoctest import runner
 
     source = utils.codeblock(

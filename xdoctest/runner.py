@@ -6,6 +6,7 @@ results of running doctests. This is an alternative to running through pytest.
 from __future__ import absolute_import, division, print_function, unicode_literals
 from xdoctest import dynamic_analysis as dynamic
 from xdoctest import core
+from xdoctest import doctest_example
 from xdoctest import utils
 import time
 import warnings
@@ -170,9 +171,10 @@ def _gather_zero_arg_examples(modpath):
                 if n_args == 0:
                     # Create a dummy doctest example for a zero-arg function
                     docsrc = '>>> {}()'.format(callname)
-                    example = core.DocTest(docsrc=docsrc, modpath=_modpath,
-                                           callname=callname,
-                                           block_type='zero-arg')
+                    example = doctest_example.DocTest(docsrc=docsrc,
+                                                      modpath=_modpath,
+                                                      callname=callname,
+                                                      block_type='zero-arg')
                     example.mode = 'native'
                     yield example
 
@@ -187,7 +189,12 @@ def _run_examples(enabled_examples, verbose):
     # returned from multiprocessing. Especially in zero-arg mode
     on_error = 'return' if n_total > 1 else 'raise'
     for example in enabled_examples:
-        summary = example.run(verbose=verbose, on_error=on_error)
+        try:
+            summary = example.run(verbose=verbose, on_error=on_error)
+        except Exception:
+            print('\n'.join(example.repr_failure(with_tb=False)))
+            raise
+
         summaries.append(summary)
         if example.warn_list:
             warned.append(example)
@@ -256,6 +263,8 @@ def _parse_commandline(command=None, style='google', verbose=None, argv=None):
         if '--verbose' in argv:
             verbose = 3
         elif '--quiet' in argv:
+            verbose = 0
+        elif '--silent' in argv:
             verbose = -1
         else:
             verbose = 3

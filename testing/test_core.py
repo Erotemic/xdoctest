@@ -5,137 +5,6 @@ from xdoctest import core
 from xdoctest import utils
 
 
-def test_failure():
-    string = utils.codeblock(
-        '''
-        >>> i = 0
-        >>> 0 / i
-        2
-        ''')
-    self = core.DocTest(docsrc=string, lineno=1000)
-    self._parse()
-    try:
-        self.run(on_error='raise')
-    except ZeroDivisionError as ex:
-        pass
-    else:
-        raise AssertionError('should have gotten zero division')
-
-    result = self.run(on_error='return')
-    assert not result['passed']
-
-
-def test_format_src():
-    string = utils.codeblock(
-        '''
-        >>> i = 0
-        >>> 0 / i
-        2
-        ''')
-    string_with_lineno = utils.codeblock(
-        '''
-        1 >>> i = 0
-        2 >>> 0 / i
-          2
-        ''').replace('!', ' ')
-    self = core.DocTest(docsrc=string)
-    self._parse()
-
-    assert self.format_src(colored=0, linenos=1) == string_with_lineno
-    assert self.format_src(colored=0, linenos=0) == string
-    assert utils.strip_ansi(self.format_src(colored=1, linenos=1)) == string_with_lineno
-    assert utils.strip_ansi(self.format_src(colored=1, linenos=0)) == string
-
-
-def test_eval_expr_capture():
-    docsrc = utils.codeblock(
-        '''
-        >>> x = 3
-        >>> y = x + 2
-        >>> y + 2
-        2
-        ''')
-    self = core.DocTest(docsrc=docsrc)
-    self._parse()
-    p1, p2 = self._parts
-
-    # test_globals = {}
-    # code1 = compile(p1.source, '<string>', 'exec')
-    # exec(code1, test_globals)
-    # code2 = compile(p2.source, '<string>', 'eval')
-    # result = eval(code2, test_globals)
-    try:
-        self.run()
-    except Exception as ex:
-        assert hasattr(ex, 'output_difference')
-        msg = ex.output_difference()
-        print(msg)
-        assert msg == utils.codeblock(
-            '''
-            Expected:
-                2
-            Got:
-                7
-            ''')
-
-
-def test_run_multi_want():
-    docsrc = utils.codeblock(
-        '''
-        >>> x = 2
-        >>> x
-        2
-        >>> 'string'
-        'string'
-        >>> print('string')
-        string
-        ''')
-    self = core.DocTest(docsrc=docsrc)
-    self.run()
-
-    result = self.run()
-
-    assert result['passed']
-    assert list(self.logged_stdout.values()) == ['', '', '', 'string\n']
-    assert list(self.logged_evals.values()) == [core.NOT_EVALED, 2, 'string', None]
-
-
-def test_comment():
-    docsrc = utils.codeblock(
-        '''
-        >>> # foobar
-        ''')
-    self = core.DocTest(docsrc=docsrc)
-    self._parse()
-    assert len(self._parts) == 1
-    self.run(verbose=0)
-
-    docsrc = utils.codeblock(
-        '''
-        >>> # foobar
-        >>> # bazbiz
-        ''')
-    self = core.DocTest(docsrc=docsrc)
-    self._parse()
-    assert len(self._parts) == 1
-    self.run(verbose=0)
-
-    docsrc = utils.codeblock(
-        '''
-        >>> # foobar
-        >>> x = 0
-        >>> x / 0
-        >>> # bazbiz
-        ''')
-    self = core.DocTest(docsrc=docsrc, lineno=1)
-    self._parse()
-    assert len(self._parts) == 1
-    result = self.run(on_error='return', verbose=0)
-    assert not result['passed']
-
-    assert self.failed_lineno() == 3
-
-
 def test_mod_lineno():
     with utils.TempDir() as temp:
         dpath = temp.dpath
@@ -152,7 +21,6 @@ def test_mod_lineno():
             ''')
         with open(modpath, 'w') as file:
             file.write(source)
-        from xdoctest import core
         doctests = list(core.parse_doctestables(modpath, style='freeform'))
         assert len(doctests) == 1
         self = doctests[0]
@@ -197,56 +65,63 @@ def test_mod_globals():
 
 
 def test_show_entire():
-    with utils.TempDir() as temp:
-        dpath = temp.dpath
-        modpath = join(dpath, 'test_show_entire.py')
-        source = utils.codeblock(
-            '''
-            def foo():
-                """
-                Prefix
+    """
+    pytest testing/test_core.py::test_show_entire
+    """
+    temp = utils.TempDir()
+    dpath = temp.ensure()
+    modpath = join(dpath, 'test_show_entire.py')
+    source = utils.codeblock(
+        '''
+        def foo():
+            """
+            Prefix
 
-                Example:
-                    >>> x = 4
-                    >>> x = 5 + x
-                    >>> x = 6 + x
-                    >>> x = 7 + x
-                    >>> x
-                    22
-                    >>> x = 8 + x
-                    >>> x = 9 + x
-                    >>> x = 10 + x
-                    >>> x = 11 + x
-                    >>> x = 12 + x
-                    >>> x
-                    42
+            Example:
+                >>> x = 4
+                >>> x = 5 + x
+                >>> x = 6 + x
+                >>> x = 7 + x
+                >>> x
+                22
+                >>> x = 8 + x
+                >>> x = 9 + x
+                >>> x = 10 + x
+                >>> x = 11 + x
+                >>> x = 12 + x
+                >>> x
+                42
 
-                text-line-after
-                """
-            ''')
-        with open(modpath, 'w') as file:
-            file.write(source)
-        from xdoctest import core
+            text-line-after
+            """
+        ''')
+    with open(modpath, 'w') as file:
+        file.write(source)
+    from xdoctest import core
 
-        # calldefs = core.module_calldefs(modpath)
-        # docline = calldefs['foo'].doclineno
-        # docstr = calldefs['foo'].docstr
-        # all_parts = parser.DoctestParser().parse(docstr)
-        # assert docline == 2
+    # calldefs = core.module_calldefs(modpath)
+    # docline = calldefs['foo'].doclineno
+    # docstr = calldefs['foo'].docstr
+    # all_parts = parser.DoctestParser().parse(docstr)
+    # assert docline == 2
 
-        doctests = list(core.parse_doctestables(modpath, style='freeform'))
-        assert len(doctests) == 1
-        self = doctests[0]
-        self.config['colored'] = False
-        print(self.lineno)
-        print(self._parts[0].line_offset)
-        print(self.format_src())
-        assert self.format_src(offset_linenos=True).strip().startswith('6')
-        assert self.format_src(offset_linenos=False).strip().startswith('1')
+    doctests = list(core.parse_doctestables(modpath, style='freeform'))
+    assert len(doctests) == 1
+    self = doctests[0]
+    self.config['colored'] = False
+    print(self.lineno)
+    print(self._parts[0].line_offset)
+    print(self.format_src())
 
-        with utils.PythonPathContext(dpath):
-            status = self.run(verbose=0, on_error='return')
-        assert not status['passed']
+    src_offset = self.format_src(offset_linenos=True).strip()
+    src_nooffset = self.format_src(offset_linenos=False).strip()
+    assert src_offset.startswith('6')
+    assert src_nooffset.startswith('1')
+
+    with utils.PythonPathContext(dpath):
+        status = self.run(verbose=0, on_error='return')
+    assert not status['passed']
+    temp.cleanup()
 
 
 def test_freeform_parse_lineno():
@@ -302,41 +177,9 @@ def test_freeform_parse_lineno():
             offset += p.n_lines
 
 
-def test_exit_test_exception():
-    """
-    pytest testing/test_core.py::test_exit_test_exception
-    """
-    string = utils.codeblock(
-        '''
-        >>> from xdoctest.core import ExitTestException
-        >>> raise ExitTestException()
-        >>> 0 / 0  # should never reach this
-        2
-        ''')
-    self = core.DocTest(docsrc=string)
-    result = self.run(on_error='raise')
-    assert result['passed']
-
-
-def test_multiline_list():
-    """
-    pytest testing/test_core.py::test_multiline_list
-    """
-    string = utils.codeblock(
-        '''
-        >>> x = [1, 2, 3,
-        >>>      4, 5, 6]
-        >>> print(len(x))
-        6
-        ''')
-    self = core.DocTest(docsrc=string)
-    result = self.run(on_error='raise')
-    assert result['passed']
-
-
 def test_collect_module_level():
     """
-    pytest testing/test_core.py::test_collect_module_level
+    pytest testing/test_core.py::test_collect_module_level -s -vv
 
     Ignore:
         temp = utils.TempDir()
@@ -358,8 +201,11 @@ def test_collect_module_level():
     self = doctests[0]
     assert self.callname == '__doc__'
     self.config['colored'] = False
-    assert self.format_src(offset_linenos=True).strip().startswith('2')
-    assert self.format_src(offset_linenos=False).strip().startswith('1')
+
+    src_offset = self.format_src(offset_linenos=True).strip()
+    src_nooffset = self.format_src(offset_linenos=False).strip()
+    assert src_offset.startswith('2')
+    assert src_nooffset.startswith('1')
 
     with utils.PythonPathContext(dpath):
         status = self.run(verbose=0, on_error='return')

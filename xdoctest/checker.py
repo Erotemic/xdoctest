@@ -4,7 +4,10 @@ Checks for got-vs-want statments
 """
 from __future__ import print_function, division, absolute_import, unicode_literals
 import re
+import difflib
 from xdoctest import utils
+from xdoctest import constants
+from xdoctest import directive
 
 unicode_literal_re = re.compile(r"(\W|^)[uU]([rR]?[\'\"])", re.UNICODE)  # nocover
 bytes_literal_re = re.compile(r"(\W|^)[bB]([rR]?[\'\"])", re.UNICODE)  # nocover
@@ -13,6 +16,77 @@ BLANKLINE_MARKER = '<BLANKLINE>'  # nocover
 ELLIPSIS_MARKER = '...'  # nocover
 
 TRAILING_WS = re.compile(r"[ \t]*$", re.UNICODE | re.MULTILINE)  # nocover
+
+
+def check_got_vs_want(want, got_stdout, got_eval=constants.NOT_EVALED,
+                      runstate=None):
+    """
+    Determines to check against either got_stdout or got_eval, and then does
+    the comparison.
+
+    If both stdout and eval "got" outputs are specified, then the "want"
+    target may match either value.
+
+    Args:
+        want (str): target to match against
+        got_stdout (str): output from stdout
+        got_eval (str): output from an eval statement.
+
+    Raises:
+        GotWantException - If the "got" differs from this parts want.
+    """
+    # If we did not want anything than ignore eval and stdout
+    if got_eval is constants.NOT_EVALED:
+        # if there was no eval, check stdout
+        got = got_stdout
+        flag = check_output(got, want, runstate)
+    else:
+        if not got_stdout:
+            # If there was no stdout then use eval value.
+            got = repr(got_eval)
+            flag = check_output(got, want, runstate)
+        else:
+            # If there was eval and stdout, defer to stdout
+            # but allow fallback on the eval.
+            got = got_stdout
+            flag = check_output(got, want, runstate)
+            if not flag:
+                # allow eval to fallback and save us, but if it fails, do a
+                # diff with stdout
+                got = repr(got_eval)
+                flag = check_output(got, want, runstate)
+                if not flag:
+                    got = got_stdout
+    if not flag:
+        msg = 'got differs with doctest want'
+        ex = GotWantException(msg, got, want)
+        # print(ex.output_difference(runstate))
+        # import sys
+        # sys.exit(1)
+
+        raise ex
+    return flag
+
+
+def check_output(got, want, runstate=None):
+    """
+    Does the actual comparison between `got` and `want`
+    """
+    if not want:  # nocover
+        return True
+    if want:
+        # Try default
+        if got == want:
+            return True
+
+        got, want = normalize(got, want, runstate)
+        if got == want:
+            return True
+
+        if runstate['ELLIPSIS']:
+            if _ellipsis_match(got, want):
+                return True
+    return False
 
 
 def _ellipsis_match(got, want):
@@ -33,12 +107,18 @@ def _ellipsis_match(got, want):
         True
         >>> _ellipsis_match('suffix-anything', 'prefix-...')
         False
+        >>> _ellipsis_match('foo', '... foo')
+        True
     """
     if ELLIPSIS_MARKER not in want:
         return want == got
 
     # Find "the real" strings.
-    ws = want.split(ELLIPSIS_MARKER)
+    # ws = want.split(ELLIPSIS_MARKER)
+    # MODIFICATION: the ellipsis consumes all whitespace around it
+    # for compatibility with whitespace normalization.
+    ws = re.split('\s*{}\s*'.format(re.escape(ELLIPSIS_MARKER)), want,
+                  flags=re.MULTILINE)
     assert len(ws) >= 2
 
     # Deal with exact matches possibly needed at one or both ends.
@@ -78,13 +158,20 @@ def _ellipsis_match(got, want):
     return True
 
 
-def normalize(got, want, options={}):
-    """
+def normalize(got, want, runstate=None):
+    r"""
     Adapated from doctest_nose_plugin.py from the nltk project:
         https://github.com/nltk/nltk
 
     Further extended to also support byte literals.
+
+    Example:
+        >>> want = "...\n(0, 2, {'weight': 1})\n(0, 3, {'weight': 2})"
+        >>> got = "(0, 2, {'weight': 1})\n(0, 3, {'weight': 2})"
     """
+    if runstate is None:
+        runstate = directive.RuntimeState()
+
     def remove_prefixes(regex, text):
         return re.sub(regex, r'\1\2', text)
 
@@ -94,142 +181,143 @@ def normalize(got, want, options={}):
         return [line for line in lines if not line.endswith('\r')]
 
     # Remove terminal colors
-    got = utils.strip_ansi(got)
-    want = utils.strip_ansi(want)
+    if True:
+        got = utils.strip_ansi(got)
+        want = utils.strip_ansi(want)
 
     # normalize python 2/3 byte/unicode prefixes
-    got = remove_prefixes(unicode_literal_re, got)
-    want = remove_prefixes(unicode_literal_re, want)
+    if True:
+        got = remove_prefixes(unicode_literal_re, got)
+        want = remove_prefixes(unicode_literal_re, want)
 
-    got = remove_prefixes(bytes_literal_re, got)
-    want = remove_prefixes(bytes_literal_re, want)
+        got = remove_prefixes(bytes_literal_re, got)
+        want = remove_prefixes(bytes_literal_re, want)
 
     # remove trailing whitepsace
-    got = re.sub(TRAILING_WS, '', got)
-    want = re.sub(TRAILING_WS, '', want)
+    if runstate['NORMALIZE_WHITESPACE'] or runstate['IGNORE_WHITESPACE']:
+        got = re.sub(TRAILING_WS, '', got)
+        want = re.sub(TRAILING_WS, '', want)
 
-    got_lines = got.splitlines(True)
-    want_lines = want.splitlines(True)
+        got_lines = got.splitlines(True)
+        want_lines = want.splitlines(True)
 
-    got_lines = visible_text(got_lines)
-    want_lines = visible_text(want_lines)
+        got_lines = visible_text(got_lines)
+        want_lines = visible_text(want_lines)
 
-    want = ''.join(want_lines)
-    got = ''.join(got_lines)
+        want = ''.join(want_lines)
+        got = ''.join(got_lines)
 
-    # normalize endling newlines
-    want = want.rstrip()
-    got = got.rstrip()
+        # normalize endling newlines
+        want = want.rstrip()
+        got = got.rstrip()
 
-    # all whitespace normalization
-    got = ' '.join(got.split())
-    want = ' '.join(want.split())
+        # all whitespace normalization
+        # treat newlines and all whitespace as a single space
+        got = ' '.join(got.split())
+        want = ' '.join(want.split())
+
+    if runstate['IGNORE_WHITESPACE']:
+        # Completely remove whitespace
+        got = re.sub('\s', '', got, flags=re.MULTILINE)
+        want = re.sub('\s', '', want, flags=re.MULTILINE)
     return got, want
-
-
-def check_output(got, want):
-    if not want:  # nocover
-        return True
-    if want:
-        # Try default
-        if got == want:
-            return True
-
-        got, want = normalize(got, want)
-        if got == want:
-            return True
-
-        if _ellipsis_match(got, want):
-            return True
-
-    return False
 
 
 class GotWantException(AssertionError):
     def __init__(self, msg, got, want):
+        super(GotWantException, self).__init__(msg)
         self.got = got
         self.want = want
-        super(GotWantException, self).__init__(msg)
 
-    def _do_a_fancy_diff(self, optionflags=0):
+    def _do_a_fancy_diff(self, runstate=None):
         # Not unless they asked for a fancy diff.
         got = self.got
         want = self.want
-        # if not optionflags & (REPORT_UDIFF |
-        #                       REPORT_CDIFF |
-        #                       REPORT_NDIFF):
-        #     return False
+
+        if runstate is None:
+            runstate = directive.RuntimeState()
 
         # ndiff does intraline difference marking, so can be useful even
         # for 1-line differences.
-        # if optionflags & REPORT_NDIFF:
-        #     return True
+        if runstate['REPORT_NDIFF']:
+            return True
 
         # The other diff types need at least a few lines to be helpful.
-        return want.count('\n') > 2 and got.count('\n') > 2
+        if runstate['REPORT_UDIFF'] or runstate['REPORT_CDIFF']:
+            return want.count('\n') > 2 and got.count('\n') > 2
 
-    def output_difference(self, optionflags=0, colored=True):
+        return False
+
+    def output_difference(self, runstate=None, colored=True):
         """
-        Return a string describing the differences between the
-        expected output for a given example (`example`) and the actual
-        output (`got`).  `optionflags` is the set of option flags used
-        to compare `want` and `got`.
+        Return a string describing the differences between the expected output
+        for a given example (`example`) and the actual output (`got`).
+        The `runstate` contains option flags used to compare `want` and `got`.
         """
-        import difflib
         got = self.got
         want = self.want
+
+        if runstate is None:
+            runstate = directive.RuntimeState()
+
+        got, want = normalize(got, want, runstate)
+
         # If <BLANKLINE>s are being used, then replace blank lines
         # with <BLANKLINE> in the actual output string.
-        # if not (optionflags & DONT_ACCEPT_BLANKLINE):
-        if True:
+        if not runstate['DONT_ACCEPT_BLANKLINE']:
             got = re.sub('(?m)^[ ]*(?=\n)', BLANKLINE_MARKER, got)
 
-        # TODO: colored differences
-        # TODO: consolidate with checker
+        got = utils.ensure_unicode(got)
 
         # Check if we should use diff.
-        if self._do_a_fancy_diff(optionflags):
-            # if six.PY2:
-            got = utils.ensure_unicode(got)
+        if self._do_a_fancy_diff(runstate):
             # Split want & got into lines.
             want_lines = want.splitlines(True)
             got_lines = got.splitlines(True)
             # Use difflib to find their differences.
-            # if optionflags & REPORT_UDIFF:
-            if True:
+            if runstate['REPORT_UDIFF']:
                 diff = difflib.unified_diff(want_lines, got_lines, n=2)
                 diff = list(diff)[2:]  # strip the diff header
                 kind = 'unified diff with -expected +actual'
-            # elif optionflags & REPORT_CDIFF:
-            #     diff = difflib.context_diff(want_lines, got_lines, n=2)
-            #     diff = list(diff)[2:] # strip the diff header
-            #     kind = 'context diff with expected followed by actual'
-            # elif optionflags & REPORT_NDIFF:
-            #     engine = difflib.Differ(charjunk=difflib.IS_CHARACTER_JUNK)
-            #     diff = list(engine.compare(want_lines, got_lines))
-            #     kind = 'ndiff with -expected +actual'
+            elif runstate['REPORT_CDIFF']:
+                diff = difflib.context_diff(want_lines, got_lines, n=2)
+                diff = list(diff)[2:]  # strip the diff header
+                kind = 'context diff with expected followed by actual'
+            elif runstate['REPORT_NDIFF']:
+                engine = difflib.Differ(charjunk=difflib.IS_CHARACTER_JUNK)
+                diff = list(engine.compare(want_lines, got_lines))
+                kind = 'ndiff with -expected +actual'
             else:
-                assert 0, 'Bad diff option'
+                raise ValueError('Invalid difflib option')
+
             # Remove trailing whitespace on diff output.
             diff = [line.rstrip() + '\n' for line in diff]
             diff_text = ''.join(diff)
             if colored:
                 diff_text = utils.highlight_code(diff_text, lexer_name='diff')
 
-            return 'Differences (%s):\n' % kind + utils.indent(diff_text)
-
-        # If we're not using diff, then simply list the expected
-        # output followed by the actual output.
-        if want and got:
-            return 'Expected:\n%s\nGot:\n%s' % (utils.indent(want), utils.indent(got))
-        elif want:
-            return 'Expected:\n%s\nGot nothing\n' % utils.indent(want)
-        elif got:  # nocover
-            assert False, 'impossible state'
-            return 'Expected nothing\nGot:\n%s' % utils.indent(got)
-        else:  # nocover
-            assert False, 'impossible state'
-            return 'Expected nothing\nGot nothing\n'
+            text = 'Differences (%s):\n' % kind + utils.indent(diff_text)
+        else:
+            # If we're not using diff, then simply list the expected
+            # output followed by the actual output.
+            if want and got:
+                if colored:
+                    got = utils.color_text(got, 'red')
+                    want = utils.color_text(want, 'red')
+                text = 'Expected:\n%s\nGot:\n%s' % (
+                    utils.indent(want), utils.indent(got))
+            elif want:
+                if colored:
+                    got = utils.color_text(got, 'red')
+                    want = utils.color_text(want, 'red')
+                text = 'Expected:\n%s\nGot nothing\n' % utils.indent(want)
+            elif got:  # nocover
+                raise AssertionError('impossible state')
+                text = 'Expected nothing\nGot:\n%s' % utils.indent(got)
+            else:  # nocover
+                raise AssertionError('impossible state')
+                text = 'Expected nothing\nGot nothing\n'
+        return text
 
 
 if __name__ == '__main__':

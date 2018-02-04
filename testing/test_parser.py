@@ -410,7 +410,8 @@ def test_bad_indent():
 
 
 def test_part_nice_no_lineoff():
-    self = parser.DoctestPart([], [], None)
+    from xdoctest import doctest_part
+    self = doctest_part.DoctestPart([], [], None)
     assert str(self) == '<DoctestPart(src="", want=None)>'
 
 

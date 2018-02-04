@@ -16,3 +16,17 @@ class DoctestParseError(Exception):
         self.string = string
         self.info = info
         self.orig_ex = orig_ex
+
+
+class ExitTestException(Exception):
+    pass
+
+try:
+    import _pytest
+    import _pytest.outcomes
+except ImportError:  # nocover
+    # Define dummy skipped exception if pytest is not available
+    class _pytest(object):
+        class outcomes(object):
+            class Skipped(Exception):
+                pass

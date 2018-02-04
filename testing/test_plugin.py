@@ -407,11 +407,13 @@ class TestXDoctest(object):
         result.stdout.fnmatch_lines([
             '*1 *>>> i = 0',
             '*2 *>>> i + 1',
+            '**',
             '*Expected:',
             "*    2",
             "*Got:",
             "*    1",
-            "*:6: GotWantException"
+            '**',
+            "*:6: GotWantException",
         ])
 
     def test_txtfile_failing(self, testdir):
@@ -428,10 +430,12 @@ class TestXDoctest(object):
         result.stdout.fnmatch_lines([
             '*1 >>> i = 0',
             '*2 >>> i + 1',
+            '**',
             'Expected:',
             "    2",
             "Got:",
             "    1",
+            '**',
             "*test_txtfile_failing.txt:3: GotWantException"
         ])
 
@@ -557,7 +561,22 @@ class TestXDoctest(object):
         result = testdir.runpytest(p, '--xdoctest-modules', *EXTRA_ARGS)
         result.stdout.fnmatch_lines(['* 1 passed *'])
 
+    def test_xdoctest_multiline_list(self, testdir):
+        p = testdir.maketxtfile(test_xdoctest_multiline_string="""
+            .. xdoctest::
+
+                >>> x = [1, 2, 3,
+                >>>      4, 5, 6]
+                >>> print(len(x))
+                6
+        """)
+        result = testdir.runpytest(p, *EXTRA_ARGS)
+        result.stdout.fnmatch_lines(['* 1 passed *'])
+
     def test_xdoctest_multiline_string(self, testdir):
+        """
+        pytest -rsxX -p pytester testing/test_plugin.py::TestXDoctest::test_xdoctest_multiline_string
+        """
         import textwrap
         p = testdir.maketxtfile(test_xdoctest_multiline_string=textwrap.dedent(
             """
@@ -587,18 +606,6 @@ class TestXDoctest(object):
             """).lstrip())
         result = testdir.runpytest(p, *EXTRA_ARGS)
         result.stdout.fnmatch_lines(['* 3 passed *'])
-
-    def test_xdoctest_multiline_list(self, testdir):
-        p = testdir.maketxtfile(test_xdoctest_multiline_string="""
-            .. xdoctest::
-
-                >>> x = [1, 2, 3,
-                >>>      4, 5, 6]
-                >>> print(len(x))
-                6
-        """)
-        result = testdir.runpytest(p, *EXTRA_ARGS)
-        result.stdout.fnmatch_lines(['* 1 passed *'])
 
     def test_xdoctest_trycatch(self, testdir):
         """
@@ -637,15 +644,15 @@ class TestXDoctest(object):
 
                 # Old way
                 >>> def func():
-                ...     print('we used to be slaves to regexes')
+                ...     print('before doctests were nice for the regex parser')
                 >>> func()
-                we used to be slaves to regexes
+                before doctests were nice for the regex parser
 
                 # New way
                 >>> def func():
-                >>>     print('but now we can write code like humans')
+                >>>     print('now the ast parser makes doctests nice for us')
                 >>> func()
-                but now we can write code like humans
+                now the ast parser makes doctests nice for us
         """)
         result = testdir.runpytest(p, *EXTRA_ARGS)
         result.stdout.fnmatch_lines(['* 2 passed *'])

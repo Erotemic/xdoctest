@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import, unicode_literals
-from xdoctest import core
+from xdoctest import doctest_example
 from xdoctest import utils
 
 
@@ -14,7 +14,7 @@ def test_inline_skip_directive():
         >>> assert False, 'should be skipped'  # doctest: +SKIP
         >>> y = 0
         ''')
-    self = core.DocTest(docsrc=string)
+    self = doctest_example.DocTest(docsrc=string)
     result = self.run(on_error='raise')
     # TODO: ensure that lines after the inline are run
     assert result['passed']
@@ -30,7 +30,7 @@ def test_block_skip_directive():
         >>> # doctest: +SKIP
         >>> assert False, 'should be skipped'
         ''')
-    self = core.DocTest(docsrc=string)
+    self = doctest_example.DocTest(docsrc=string)
     result = self.run(on_error='raise')
     assert result['passed']
 

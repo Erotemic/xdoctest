@@ -22,6 +22,7 @@ import re
 import warnings
 from xdoctest import static_analysis as static
 from xdoctest import utils
+from collections import OrderedDict
 # from xdoctest import exceptions
 
 
@@ -30,7 +31,107 @@ def named(key, pattern):
     return '(?P<{}>{})'.format(key, pattern)
 
 
+DEFAULT_RUNTIME_STATE = {
+    'DONT_ACCEPT_BLANKLINE': False,
+    'ELLIPSIS': True,
+    'IGNORE_WHITESPACE': False,
+    'NORMALIZE_WHITESPACE': True,
+
+    'REPORT_CDIFF': False,
+    'REPORT_NDIFF': False,
+    'REPORT_UDIFF': True,
+
+    'SKIP': False,
+
+    # Original directives we are currently not supporting:
+    # DONT_ACCEPT_TRUE_FOR_1
+    # IGNORE_EXCEPTION_DETAIL
+    # REPORT_ONLY_FIRST_FAILURE
+}
+
+
+class RuntimeState(utils.NiceRepr):
+    """
+    Maintains the runtime state for a single `run()` of an example
+
+    Inline directives are pushed and popped after the line is run.
+    Otherwise directives persist until another directive disables it.
+
+    Example:
+        >>> from xdoctest.directive import *
+        >>> runstate = RuntimeState()
+        >>> assert not runstate['IGNORE_WHITESPACE']
+        >>> # Directives modify the runtime state
+        >>> directives = list(extract('# xdoc: -ELLIPSIS, +IGNORE_WHITESPACE'))
+        >>> runstate.update(directives)
+        >>> assert not runstate['ELLIPSIS']
+        >>> assert runstate['IGNORE_WHITESPACE']
+        >>> # Inline directives only persist until the next update
+        >>> directives = [Directive('IGNORE_WHITESPACE', False, inline=True)]
+        >>> runstate.update(directives)
+        >>> assert not runstate['IGNORE_WHITESPACE']
+        >>> runstate.update({})
+        >>> assert runstate['IGNORE_WHITESPACE']
+
+    Example:
+        >>> # xdoc: +IGNORE_WHITESPACE
+        >>> print(str(RuntimeState()))
+        <RuntimeState({
+            DONT_ACCEPT_BLANKLINE: False,
+            ELLIPSIS: True,
+            IGNORE_WHITESPACE: False,
+            NORMALIZE_WHITESPACE: True,
+            REPORT_CDIFF: False,
+            REPORT_NDIFF: False,
+            REPORT_UDIFF: True,
+            SKIP: False
+        })>
+    """
+    def __init__(self):
+        self._global_state = DEFAULT_RUNTIME_STATE.copy()
+        self._inline_state = {}
+
+    def to_dict(self):
+        state = self._global_state.copy()
+        state.update(self._inline_state)
+        state = OrderedDict(sorted(state.items()))
+        return state
+
+    def __nice__(self):
+        return '{' + ', '.join(['{}: {}'.format(*item)
+                               for item in self.to_dict().items()]) + '}'
+
+    def __getitem__(self, key):
+        if key not in self._global_state:
+            raise KeyError('Unknown key: {}'.format(key))
+        if key in self._inline_state:
+            return self._inline_state[key]
+        else:
+            return self._global_state[key]
+
+    def update(self, directives):
+        self._inline_state.clear()
+        for directive in directives:
+            key, value = directive.state_item()
+            if key not in self._global_state:
+                warnings.warn('Unknown state: {}'.format(key))
+            if directive.inline:
+                state = self._inline_state
+            else:
+                state = self._global_state
+
+            if key.startswith('REPORT') and value:
+                # When enabling a report flag, toggle all others off
+                for k in state.keys():
+                    if k.startswith('REPORT_'):
+                        state[k] = False
+            state[key] = value
+
+
 class Directive(utils.NiceRepr):
+    """
+    Directives modify the runtime state.
+    """
     def __init__(self, name, positive=True, args=[], inline=None):
         self.name = name
         self.args = args
@@ -45,37 +146,34 @@ class Directive(utils.NiceRepr):
         else:
             return '{}{}'.format(prefix, self.name)
 
-    def get_runtime_action(self, argv=None):
-        action = None
-        if self.name == 'SKIP' and self.positive:
-            # inline mode skips just this line
-            # block mode applies to the remainder of parts
-            if self.inline:
-                action = 'skip_part'
-            else:
-                action = 'skip_rest'
-        elif self.name == 'REQUIRES' and self.positive:
+    def state_item(self, argv=None):
+        """
+        Example:
+            >>> Directive('SKIP').state_item()
+            ('SKIP', True)
+            >>> Directive('SKIP', inline=True).state_item()
+            ('SKIP', True)
+            >>> Directive('REQUIRES', args=['-s']).state_item(argv=['-s'])
+            ('SKIP', True)
+            >>> Directive('REQUIRES', args=['-s']).state_item(argv=[])
+            ('SKIP', False)
+            >>> Directive('ELLIPSIS', args=['-s']).state_item(argv=[])
+        """
+        if self.name == 'REQUIRES':
+            # requires conditionally behaves like skip
             if argv is None:
                 argv = sys.argv
-            # same as SKIP if the requirement is not satisfied
-            if self.args[0] not in argv:
-                if self.inline:
-                    action = 'skip_part'
-                else:
-                    action = 'skip_rest'
-        return action
+            key = 'SKIP'
+            value = self.positive and self.args[0] in argv
+        else:
+            key = self.name
+            value = self.positive
+        return key, value
 
 
-COMMANDS = [
-    'SKIP',
+COMMANDS = list(DEFAULT_RUNTIME_STATE.keys()) + [
+    # Define extra commands that can resolve to a runtime state modification
     'REQUIRES',
-
-    # Currently we are only **really** trying to support skip
-    'ELLIPSES',
-    'NORMALIZE_WHITESPACE',
-    'REPORT_UDIFF'
-    'REPORT_NDIFF'
-    'REPORT_CDIFF'
 ]
 DIRECTIVE_PATTERNS = [
     #r'\s*\+\s*' + named('style1', '.*'),
@@ -102,7 +200,7 @@ def extract(text):
         python -m xdoctest.directive extract
 
     Example:
-        >>> text = '# xdoctest: + SKIP'
+        >>> text = '# xdoc: + SKIP'
         >>> print(', '.join(list(map(str, extract(text)))))
         <Directive(+SKIP)>
 
@@ -119,9 +217,9 @@ def extract(text):
         <Directive(+SKIP)>
 
         >>> # Two directives in one line
-        >>> text = '# xdoctest: +ELLIPSES, -NORMALIZE_WHITESPACE'
+        >>> text = '# xdoctest: +ELLIPSIS, -NORMALIZE_WHITESPACE'
         >>> print(', '.join(list(map(str, extract(text)))))
-        <Directive(+ELLIPSES)>, <Directive(-NORMALIZE_WHITESPACE)>
+        <Directive(+ELLIPSIS)>, <Directive(-NORMALIZE_WHITESPACE)>
 
     """
     # The extracted directives are inline if the text only contains comments
