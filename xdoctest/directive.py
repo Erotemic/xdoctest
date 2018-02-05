@@ -109,6 +109,24 @@ class RuntimeState(utils.NiceRepr):
         else:
             return self._global_state[key]
 
+    def set_report(self, reportchoice, state=None):
+        """
+        Example:
+            >>> from xdoctest.directive import *
+            >>> runstate = RuntimeState()
+            >>> assert runstate['REPORT_UDIFF']
+            >>> runstate.set_report('ndiff')
+            >>> assert not runstate['REPORT_UDIFF']
+            >>> assert runstate['REPORT_NDIFF']
+        """
+        # When enabling a report flag, toggle all others off
+        if state is None:
+            state = self._global_state
+        for k in state.keys():
+            if k.startswith('REPORT_'):
+                state[k] = False
+        state['REPORT_' + reportchoice.upper()] = True
+
     def update(self, directives):
         self._inline_state.clear()
         for directive in directives:
@@ -120,11 +138,8 @@ class RuntimeState(utils.NiceRepr):
             else:
                 state = self._global_state
 
-            if key.startswith('REPORT') and value:
-                # When enabling a report flag, toggle all others off
-                for k in state.keys():
-                    if k.startswith('REPORT_'):
-                        state[k] = False
+            if key.startswith('REPORT_') and value:
+                self.set_report(key.replace('REPORT_', ''))
             state[key] = value
 
 

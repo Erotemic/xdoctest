@@ -250,6 +250,31 @@ degree of specificity in the got/want checker, it may just be better to use an
 `assert` statement.
 
 
+## Backwards Incompatibility
+
+There are a few cases that are currently backwards incompatible.
+
+Evaluating multiple items in a for loop no longer words
+```python
+    >>> for i in range(2):
+    ...     '%s' % i
+    ...
+    '0'
+    '1'
+```
+
+Instead do: 
+```python
+    >>> for i in range(2):
+    ...     print('%s' % i)
+    ...
+    0
+    1
+```
+
+
+
+
 ## Current Limitations and TODO:
 
 This module is in a working state and can be used, but it is still under
@@ -264,11 +289,12 @@ development.
 - [x] Support got/want testing with stdout.
 - [x] Support got/want testing with evaluated statements.
 - [x] Support got/want testing with `NORMALIZED_WHITESPACE` and `ELLIPSES` by default
-- [ ] Support toggling got/want directives for backwards compatibility?
+- [x] Support toggling got/want directives for backwards compatibility?
+- [x] Support got/want testing with exceptions.
 
 #### Reporting:
 - [x] Optional colored output
-- [ ] Support advanced got/want reporting directive for backwards compatibility (e.g udiff, ndiff)
+- [x] Support advanced got/want reporting directive for backwards compatibility (e.g udiff, ndiff)
 
 #### Running:
 - [x] Standalone `doctest_module` entry point.
@@ -278,10 +304,10 @@ development.
 - [x] multi-line directives (new feature, not in doctest)
 - [x] `# doctest: +SKIP` inline directive 
 - [x] `# doctest: +SKIP` global directive 
-- [ ] `# doctest: -NORMALIZED_WHITESPACE` inline directive 
-- [ ] `# doctest: -ELLIPSES` inline directive 
-- [ ] `# doctest: +REPORT_NDIFF` inline directive 
-- [ ] `# doctest: +REPORT_UDIFF` inline directive 
+- [x] `# doctest: -NORMALIZED_WHITESPACE` inline directive 
+- [x] `# doctest: -ELLIPSES` inline directive 
+- [x] `# doctest: +REPORT_NDIFF` inline directive 
+- [x] `# doctest: +REPORT_UDIFF` inline directive 
 
 
 #### Testing:

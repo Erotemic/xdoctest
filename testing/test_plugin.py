@@ -1181,11 +1181,12 @@ class TestXDoctestNamespaceFixture(object):
 
 
 class TestXDoctestReportingOption(object):
-    @pytest.mark.skip
+
     def _run_doctest_report(self, testdir, format):
         testdir.makepyfile("""
             def foo():
                 '''
+                >>> # xdoc: -NORMALIZE_WHITESPACE
                 >>> foo()
                    a  b
                 0  1  4
@@ -1197,11 +1198,13 @@ class TestXDoctestReportingOption(object):
                       '1  2  5\\n'
                       '2  3  6')
             """)
-        return testdir.runpytest("--xdoctest-modules", "--xdoctest-report", format)
+        return testdir.runpytest("--xdoctest-modules", "--xdoctest-report", format, *EXTRA_ARGS)
 
     @pytest.mark.parametrize('format', ['udiff', 'UDIFF', 'uDiFf'])
-    @pytest.mark.skip
     def test_doctest_report_udiff(self, testdir, format):
+        """
+        pytest testing/test_plugin.py::TestXDoctestReportingOption::test_doctest_report_udiff
+        """
         result = self._run_doctest_report(testdir, format)
         result.stdout.fnmatch_lines([
             '     0  1  4',
@@ -1210,8 +1213,10 @@ class TestXDoctestReportingOption(object):
             '     2  3  6',
         ])
 
-    @pytest.mark.skip
     def test_doctest_report_cdiff(self, testdir):
+        """
+        pytest testing/test_plugin.py::TestXDoctestReportingOption::test_doctest_report_cdiff
+        """
         result = self._run_doctest_report(testdir, 'cdiff')
         result.stdout.fnmatch_lines([
             '         a  b',
@@ -1225,8 +1230,10 @@ class TestXDoctestReportingOption(object):
             '      2  3  6',
         ])
 
-    @pytest.mark.skip
     def test_doctest_report_ndiff(self, testdir):
+        """
+        pytest testing/test_plugin.py::TestXDoctestReportingOption::test_doctest_report_ndiff
+        """
         result = self._run_doctest_report(testdir, 'ndiff')
         result.stdout.fnmatch_lines([
             '         a  b',
@@ -1239,8 +1246,10 @@ class TestXDoctestReportingOption(object):
         ])
 
     @pytest.mark.parametrize('format', ['none', 'only_first_failure'])
-    @pytest.mark.skip
     def test_doctest_report_none_or_only_first_failure(self, testdir, format):
+        """
+        pytest testing/test_plugin.py::TestXDoctestReportingOption::test_doctest_report_none_or_only_first_failure
+        """
         result = self._run_doctest_report(testdir, format)
         result.stdout.fnmatch_lines([
             'Expected:',
@@ -1255,12 +1264,13 @@ class TestXDoctestReportingOption(object):
             '    2  3  6',
         ])
 
-    @pytest.mark.skip
-    @pytest.mark.skip
     def test_doctest_report_invalid(self, testdir):
+        """
+        pytest testing/test_plugin.py::TestXDoctestReportingOption::test_doctest_report_invalid
+        """
         result = self._run_doctest_report(testdir, 'obviously_invalid_format')
         result.stderr.fnmatch_lines([
-            "*error: argument --xdoctest-report: invalid choice: 'obviously_invalid_format' (choose from*"
+            "*error: argument --xdoctest-report/--xdoc-report: invalid choice: 'obviously_invalid_format' (choose from*"
         ])
 
 

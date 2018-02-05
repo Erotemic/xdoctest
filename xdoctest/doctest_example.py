@@ -16,6 +16,7 @@ from xdoctest import directive
 from xdoctest import constants
 from xdoctest import static_analysis as static
 from xdoctest import parser
+from xdoctest import checker
 from xdoctest import exceptions
 
 
@@ -30,6 +31,7 @@ class Config(dict):
             'colored': True,
             # 'colored': False,
             'on_error': 'raise',
+            'reportchoice': 'udiff',
             'verbose': 1,
         })
 
@@ -327,6 +329,8 @@ class DocTest(object):
 
         # Initialize a new runtime state
         runstate = self._runstate = directive.RuntimeState()
+        # setup reporting choice
+        runstate.set_report(self.config['reportchoice'])
 
         # Use the same capture object for all parts in the test
         cap = utils.CaptureStdout(supress=self._suppressed_stdout)
@@ -362,19 +366,31 @@ class DocTest(object):
                         raise
                 try:
                     # Execute the doctest code
-                    with cap:
-                        # NOTE: There is no difference between locals/globals
-                        # in eval/exec context. Only pass in one dict,
-                        # otherwise there is weird behavior
-                        if part.use_eval:
-                            # Only capture the repr to allow for gc tests
-                            got_eval = eval(code, test_globals)
+                    try:
+                        with cap:
+                            # NOTE: There is no difference between locals/globals
+                            # in eval/exec context. Only pass in one dict,
+                            # otherwise there is weird behavior
+                            if part.use_eval:
+                                # Only capture the repr to allow for gc tests
+                                got_eval = eval(code, test_globals)
+                            else:
+                                exec(code, test_globals)
+                    except Exception as ex:
+                        # Dont fail if the traceback matches a want message
+                        if part.want:
+                            m = checker._EXCEPTION_RE.match(part.want)
+                            exc_want = m.group('msg') if m else None
+                            if exc_want is None:
+                                raise
+                            exc_got = traceback.format_exception_only(type(ex), ex)[-1]
+                            checker.check_output(exc_got, exc_want, runstate)
                         else:
-                            exec(code, test_globals)
-
-                    if part.want:
-                        got_stdout = cap.text
-                        part.check(got_stdout, got_eval, runstate)
+                            raise
+                    else:
+                        if part.want:
+                            got_stdout = cap.text
+                            part.check(got_stdout, got_eval, runstate)
                 # Handle anything that could go wrong
                 except KeyboardInterrupt:  # nocover
                     raise

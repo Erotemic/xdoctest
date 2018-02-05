@@ -41,20 +41,6 @@ GotWantException = checker.GotWantException
 INDENT_RE = re.compile('^([ ]*)(?=\S)', re.MULTILINE)
 
 
-# _EXCEPTION_RE = re.compile(r"""
-#     # Grab the traceback header.  Different versions of Python have
-#     # said different things on the first traceback line.
-#     ^(?P<hdr> Traceback\ \(
-#         (?: most\ recent\ call\ last
-#         |   innermost\ last
-#         ) \) :
-#     )
-#     \s* $                # toss trailing whitespace on the header.
-#     (?P<stack> .*?)      # don't blink: absorb stuff until...
-#     ^ (?P<msg> \w+ .*)   #     a line *starts* with alphanum.
-#     """, re.VERBOSE | re.MULTILINE | re.DOTALL)
-
-
 class DoctestParser(object):
     r"""
     Breaks docstrings into parts useing the `parse` method.

@@ -18,6 +18,20 @@ ELLIPSIS_MARKER = '...'  # nocover
 TRAILING_WS = re.compile(r"[ \t]*$", re.UNICODE | re.MULTILINE)  # nocover
 
 
+_EXCEPTION_RE = re.compile(r"""
+    # Grab the traceback header.  Different versions of Python have
+    # said different things on the first traceback line.
+    ^(?P<hdr> Traceback\ \(
+        (?: most\ recent\ call\ last
+        |   innermost\ last
+        ) \) :
+    )
+    \s* $                # toss trailing whitespace on the header.
+    (?P<stack> .*?)      # don't blink: absorb stuff until...
+    ^ (?P<msg> \w+ .*)   #     a line *starts* with alphanum.
+    """, re.VERBOSE | re.MULTILINE | re.DOTALL)
+
+
 def check_got_vs_want(want, got_stdout, got_eval=constants.NOT_EVALED,
                       runstate=None):
     """
@@ -193,23 +207,22 @@ def normalize(got, want, runstate=None):
         got = remove_prefixes(bytes_literal_re, got)
         want = remove_prefixes(bytes_literal_re, want)
 
-    # remove trailing whitepsace
+    # always remove trailing whitepsace
+    got = re.sub(TRAILING_WS, '', got)
+    want = re.sub(TRAILING_WS, '', want)
+    # normalize endling newlines
+    want = want.rstrip()
+    got = got.rstrip()
+
+    # Always remove invisible text
+    got_lines = got.splitlines(True)
+    want_lines = want.splitlines(True)
+    got_lines = visible_text(got_lines)
+    want_lines = visible_text(want_lines)
+    want = ''.join(want_lines)
+    got = ''.join(got_lines)
+
     if runstate['NORMALIZE_WHITESPACE'] or runstate['IGNORE_WHITESPACE']:
-        got = re.sub(TRAILING_WS, '', got)
-        want = re.sub(TRAILING_WS, '', want)
-
-        got_lines = got.splitlines(True)
-        want_lines = want.splitlines(True)
-
-        got_lines = visible_text(got_lines)
-        want_lines = visible_text(want_lines)
-
-        want = ''.join(want_lines)
-        got = ''.join(got_lines)
-
-        # normalize endling newlines
-        want = want.rstrip()
-        got = got.rstrip()
 
         # all whitespace normalization
         # treat newlines and all whitespace as a single space
