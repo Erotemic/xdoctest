@@ -75,9 +75,62 @@ def check_got_vs_want(want, got_stdout, got_eval=constants.NOT_EVALED,
         msg = 'got differs with doctest want'
         ex = GotWantException(msg, got, want)
         # print(ex.output_difference(runstate))
-        # import sys
-        # sys.exit(1)
+        raise ex
+    return flag
 
+
+def _strip_exception_details(msg):
+    # Support for IGNORE_EXCEPTION_DETAIL.
+    # Get rid of everything except the exception name; in particular, drop
+    # the possibly dotted module path (if any) and the exception message (if
+    # any).  We assume that a colon is never part of a dotted name, or of an
+    # exception name.
+    # E.g., given
+    #    "foo.bar.MyError: la di da"
+    # return "MyError"
+    # Or for "abc.def" or "abc.def:\n" return "def".
+
+    start, end = 0, len(msg)
+    # The exception name must appear on the first line.
+    i = msg.find("\n")
+    if i >= 0:
+        end = i
+    # retain up to the first colon (if any)
+    i = msg.find(':', 0, end)
+    if i >= 0:
+        end = i
+    # retain just the exception name
+    i = msg.rfind('.', 0, end)
+    if i >= 0:
+        start = i + 1
+    return msg[start: end]
+
+
+def check_exception(exc_got, want, runstate=None):
+    """
+    Checks want against an exception
+
+    Raises:
+        GotWantException - If the "got" differs from this parts want.
+    """
+    m = _EXCEPTION_RE.match(want)
+    exc_want = m.group('msg') if m else None
+    if exc_want is None:
+        raise
+    flag = check_output(exc_got, exc_want, runstate)
+
+    if not flag and runstate['IGNORE_EXCEPTION_DETAIL']:
+        exc_got1 = _strip_exception_details(exc_got)
+        exc_want1 = _strip_exception_details(exc_want)
+        flag = check_output(exc_got1, exc_want1, runstate)
+        if flag:
+            exc_got = exc_got1
+            exc_want = exc_want1
+
+    if not flag:
+        msg = 'exception message is different'
+        ex = GotWantException(msg, exc_got, exc_want)
+        # print(ex.output_difference(runstate))
         raise ex
     return flag
 

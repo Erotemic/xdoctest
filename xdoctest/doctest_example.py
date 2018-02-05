@@ -379,12 +379,9 @@ class DocTest(object):
                     except Exception as ex:
                         # Dont fail if the traceback matches a want message
                         if part.want:
-                            m = checker._EXCEPTION_RE.match(part.want)
-                            exc_want = m.group('msg') if m else None
-                            if exc_want is None:
-                                raise
-                            exc_got = traceback.format_exception_only(type(ex), ex)[-1]
-                            checker.check_output(exc_got, exc_want, runstate)
+                            exception = sys.exc_info()
+                            exc_got = traceback.format_exception_only(*exception[:2])[-1]
+                            checker.check_exception(exc_got, part.want, runstate)
                         else:
                             raise
                     else:
@@ -677,8 +674,9 @@ class DocTest(object):
             lines += [
                 ex_value.output_difference(self._runstate, colored=colored),
                 ('Repr:'),
-                ('    ex_value.got  = {!r}'.format(ex_value.got)),
-                ('    ex_value.want = {!r}'.format(ex_value.want)),
+                # TODO: get a semi-normalized output before showing repr?
+                ('    ex_value.got  = {!r}'.format(ex_value.got.rstrip())),
+                ('    ex_value.want = {!r}'.format(ex_value.want.rstrip())),
             ]
         else:
             if with_tb:

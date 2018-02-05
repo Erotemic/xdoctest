@@ -43,9 +43,9 @@ DEFAULT_RUNTIME_STATE = {
 
     'SKIP': False,
 
+    'IGNORE_EXCEPTION_DETAIL': True
     # Original directives we are currently not supporting:
     # DONT_ACCEPT_TRUE_FOR_1
-    # IGNORE_EXCEPTION_DETAIL
     # REPORT_ONLY_FIRST_FAILURE
 }
 

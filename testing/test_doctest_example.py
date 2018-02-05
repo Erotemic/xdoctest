@@ -3,6 +3,7 @@ from __future__ import print_function, division, absolute_import, unicode_litera
 from xdoctest import doctest_example
 from xdoctest import utils
 from xdoctest import constants
+from xdoctest import checker
 
 
 def test_exit_test_exception():
@@ -168,3 +169,47 @@ def test_comment():
     assert not result['passed']
 
     assert self.failed_lineno() == 3
+
+
+def test_want_error_msg():
+    """
+    python testing/test_doctest_example.py test_want_error_msg
+    pytest testing/test_doctest_example.py::test_want_error_msg
+    """
+    string = utils.codeblock(
+        '''
+        >>> raise Exception('everything is fine')
+        Traceback (most recent call last):
+        Exception: everything is fine
+        ''')
+    self = doctest_example.DocTest(docsrc=string)
+    result = self.run(on_error='raise')
+    assert result['passed']
+
+
+def test_want_error_msg_failure():
+    """
+    python testing/test_doctest_example.py test_want_error_msg_failure
+    pytest testing/test_doctest_example.py::test_want_error_msg_failure
+    """
+    string = utils.codeblock(
+        '''
+        >>> raise Exception('everything is NOT fine')
+        Traceback (most recent call last):
+        Exception: everything is fine
+        ''')
+
+    self = doctest_example.DocTest(docsrc=string)
+    import pytest
+    with pytest.raises(checker.GotWantException):
+        self.run(on_error='raise')
+
+
+if __name__ == '__main__':
+    r"""
+    CommandLine:
+        export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/testing
+        python ~/code/xdoctest/testing/test_doctest_example.py
+    """
+    import xdoctest
+    xdoctest.doctest_module(__file__)
