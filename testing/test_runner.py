@@ -4,6 +4,9 @@ from xdoctest import utils
 
 
 def test_zero_args():
+    """
+    python testing/test_runner.py test_zero_args
+    """
     from xdoctest import runner
 
     source = utils.codeblock(
@@ -178,8 +181,10 @@ def test_all_disabled():
         assert 'all will not print this' in cap.text
 
 
-def test_failure():
+def test_runner_failures():
     """
+    python testing/test_runner.py  test_runner_failures
+    pytest testing/test_runner.py::test_runner_failures -s
     pytest testing/test_runner.py::test_all_disabled -s
     """
     from xdoctest import runner
@@ -195,26 +200,51 @@ def test_failure():
         def test2():
             """
                 Example:
-                    >>> assert False
+                    >>> assert False, 'test 2.1'
+
+                Example:
+                    >>> assert False, 'test 2.2'
+            """
+
+        def test3():
+            """
+                Example:
+                    >>> pass
+
+                Example:
+                    >>> pass
+            """
+
+        def test4():
+            """
+                Example:
+                    >>> assert False, 'test 3'
             """
         ''')
 
-    with utils.TempDir() as temp:
-        dpath = temp.dpath
-        modpath = join(dpath, 'test_failure.py')
+    temp = utils.TempDir()
+    temp.ensure()
+    # with utils.TempDir() as temp:
+    dpath = temp.dpath
+    modpath = join(dpath, 'test_runner_failures.py')
 
-        with open(modpath, 'w') as file:
-            file.write(source)
+    with open(modpath, 'w') as file:
+        file.write(source)
 
-        # disabled tests dont run in "all" mode
-        with utils.CaptureStdout() as cap:
-            try:
-                runner.doctest_module(modpath, 'all', argv=[''], verbose=0)
-            except Exception:
-                pass
+    # disabled tests dont run in "all" mode
+    with utils.CaptureStdout(supress=True) as cap:
+        try:
+            runner.doctest_module(modpath, 'all', argv=[''], verbose=1)
+        except Exception:
+            pass
 
-        assert '.F' in cap.text
-        assert '1 / 2 passed' in cap.text
+    print('\nNOTE: the following output is part of a test')
+    print(utils.indent(cap.text, '... '))
+    print('NOTE: above output is part of a test')
+
+    # assert '.FFF' in cap.text
+    assert '3 / 6 passed' in cap.text
+    assert '3 failed 3 passed' in cap.text
 
 
 def test_run_zero_arg():
@@ -270,9 +300,10 @@ if __name__ == '__main__':
     r"""
     CommandLine:
         pytest testing/test_runner.py -s
+        pytest testing/test_runner.py -s
         python testing/test_runner.py test_zero_args
     """
-    import pytest
-    pytest.main([__file__])
-    # import xdoctest
-    # xdoctest.doctest_module(__file__)
+    # import pytest
+    # pytest.main([__file__])
+    import xdoctest
+    xdoctest.doctest_module(__file__)

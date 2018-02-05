@@ -14,6 +14,14 @@ import pytest
 EXTRA_ARGS = ['-p', 'pytester', '-p', 'no:doctest', '--xdoctest-nocolor']
 
 
+# def print(text):
+#     """ Hack so we can get stdout when debugging the plugin file """
+#     import os
+#     fpath = os.path.expanduser('~/plugin.stdout.txt')
+#     with open(fpath, 'a') as file:
+#         file.write(str(text) + '\n')
+
+
 def explicit_testdir():
     r"""
     Explicitly constructs a testdir for use in IPython development
@@ -255,7 +263,7 @@ class TestXDoctest(object):
         REASON: Static parsing means we do know this line number.
 
         CommandLine:
-            pytest testing/test_plugin.py::TestXDoctest::test_doctest_property_lineno
+            pytest testing/test_plugin.py::TestXDoctest::test_doctest_property_lineno -v
         """
         testdir.tmpdir.join('hello.py').write(_pytest._code.Source(utils.codeblock(
             """
@@ -268,10 +276,11 @@ class TestXDoctest(object):
                     '''
             """)))
         result = testdir.runpytest("--xdoctest-modules", *EXTRA_ARGS)
+        print('\n'.join(result.stdout.lines))
         result.stdout.fnmatch_lines([
             "*FAILED DOCTEST: ZeroDivisionError*",
-            '*on line 6*',
-            '*on line 2*',
+            '*line 6*',
+            '*line 2*',
             "*1 >>> a = 1*",
             "*2 >>> 1 / 0*",
             "*ZeroDivision*",
@@ -398,11 +407,13 @@ class TestXDoctest(object):
         result.stdout.fnmatch_lines([
             '*1 *>>> i = 0',
             '*2 *>>> i + 1',
+            '**',
             '*Expected:',
             "*    2",
             "*Got:",
             "*    1",
-            "*:6: GotWantException"
+            '**',
+            "*:6: GotWantException",
         ])
 
     def test_txtfile_failing(self, testdir):
@@ -419,10 +430,12 @@ class TestXDoctest(object):
         result.stdout.fnmatch_lines([
             '*1 >>> i = 0',
             '*2 >>> i + 1',
+            '**',
             'Expected:',
             "    2",
             "Got:",
             "    1",
+            '**',
             "*test_txtfile_failing.txt:3: GotWantException"
         ])
 
@@ -548,7 +561,22 @@ class TestXDoctest(object):
         result = testdir.runpytest(p, '--xdoctest-modules', *EXTRA_ARGS)
         result.stdout.fnmatch_lines(['* 1 passed *'])
 
+    def test_xdoctest_multiline_list(self, testdir):
+        p = testdir.maketxtfile(test_xdoctest_multiline_string="""
+            .. xdoctest::
+
+                >>> x = [1, 2, 3,
+                >>>      4, 5, 6]
+                >>> print(len(x))
+                6
+        """)
+        result = testdir.runpytest(p, *EXTRA_ARGS)
+        result.stdout.fnmatch_lines(['* 1 passed *'])
+
     def test_xdoctest_multiline_string(self, testdir):
+        """
+        pytest -rsxX -p pytester testing/test_plugin.py::TestXDoctest::test_xdoctest_multiline_string
+        """
         import textwrap
         p = testdir.maketxtfile(test_xdoctest_multiline_string=textwrap.dedent(
             """
@@ -576,18 +604,6 @@ class TestXDoctest(object):
                 >>> '''.strip())
                 Just prefix everything with >>> and the xdoctest should work
             """).lstrip())
-        result = testdir.runpytest(p, *EXTRA_ARGS)
-        result.stdout.fnmatch_lines(['* 3 passed *'])
-
-    def test_xdoctest_multiline_list(self, testdir):
-        p = testdir.maketxtfile(test_xdoctest_multiline_string="""
-            .. xdoctest::
-
-                >>> x = [1, 2, 3,
-                >>>      4, 5, 6]
-                >>> print(len(x))
-                6
-        """)
         result = testdir.runpytest(p, *EXTRA_ARGS)
         result.stdout.fnmatch_lines(['* 1 passed *'])
 
@@ -620,26 +636,30 @@ class TestXDoctest(object):
                 bar
         """)
         result = testdir.runpytest(p, *EXTRA_ARGS)
-        result.stdout.fnmatch_lines(['* 2 passed *'])
+        result.stdout.fnmatch_lines(['* 1 passed *'])
 
     def test_xdoctest_functions(self, testdir):
+        """
+        CommandLine:
+            pytest -rsxX -p pytester testing/test_plugin.py::TestXDoctest::test_xdoctest_functions
+        """
         p = testdir.maketxtfile(test_xdoctest_multiline_string="""
             .. xdoctest::
 
                 # Old way
                 >>> def func():
-                ...     print('we used to be slaves to regexes')
+                ...     print('before doctests were nice for the regex parser')
                 >>> func()
-                we used to be slaves to regexes
+                before doctests were nice for the regex parser
 
                 # New way
                 >>> def func():
-                >>>     print('but now we can write code like humans')
+                >>>     print('now the ast parser makes doctests nice for us')
                 >>> func()
-                but now we can write code like humans
+                now the ast parser makes doctests nice for us
         """)
         result = testdir.runpytest(p, *EXTRA_ARGS)
-        result.stdout.fnmatch_lines(['* 2 passed *'])
+        result.stdout.fnmatch_lines(['* 1 passed *'])
 
     def test_stdout_capture_no(self, testdir):
         """
@@ -882,6 +902,9 @@ class TestXDoctestSkips(object):
     """
     If all examples in a xdoctest are skipped due to the SKIP option, then
     the tests should be SKIPPED rather than PASSED. (#957)
+
+    CommandLine
+        pytest testing/test_plugin.py::TestXDoctestSkips
     """
 
     def test_xdoctest_skips_diabled(self, testdir):
@@ -910,42 +933,70 @@ class TestXDoctestSkips(object):
 
         return makeit
 
-    @pytest.mark.skip('we dont support the +SKIP directive')
-    def test_one_skipped(self, testdir, makedoctest):
+    def test_one_skipped_passed(self, testdir, makedoctest):
+        """
+        CommandLine:
+            pytest testing/test_plugin.py::TestXDoctestSkips::test_one_skipped_passed
+        """
         makedoctest("""
             >>> 1 + 1  # xdoctest: +SKIP
-            2
+            4
             >>> 2 + 2
             4
         """)
-        reprec = testdir.inline_run("--xdoctest-modules")
+        reprec = testdir.inline_run("--xdoctest-modules", *EXTRA_ARGS)
         reprec.assertoutcome(passed=1)
 
-    @pytest.mark.skip('we dont support the +SKIP directive')
     def test_one_skipped_failed(self, testdir, makedoctest):
+        """
+        CommandLine:
+            pytest testing/test_plugin.py::TestXDoctestSkips::test_one_skipped_failed
+        """
         makedoctest("""
             >>> 1 + 1  # xdoctest: +SKIP
-            2
+            4
             >>> 2 + 2
             200
         """)
-        reprec = testdir.inline_run("--xdoctest-modules")
+        reprec = testdir.inline_run("--xdoctest-modules", *EXTRA_ARGS)
         reprec.assertoutcome(failed=1)
 
-    @pytest.mark.skip('we dont support the +SKIP directive')
     def test_all_skipped(self, testdir, makedoctest):
+        """
+        CommandLine:
+            pytest testing/test_plugin.py::TestXDoctestSkips::test_all_skipped
+        """
         makedoctest("""
             >>> 1 + 1  # xdoctest: +SKIP
             2
             >>> 2 + 2  # xdoctest: +SKIP
             200
         """)
-        reprec = testdir.inline_run("--xdoctest-modules")
-        reprec.assertoutcome(skipped=1)
+        reprec = testdir.inline_run("--xdoctest-modules", *EXTRA_ARGS)
+        # In xdoctest blocks are considered as a whole, so skipped lines do not
+        # count towards completely skipped doctests unless nothing was run, as
+        # is the case here.
+        reprec.assertoutcome(passed=0, skipped=1)
+
+    def test_all_skipped_global(self, testdir, makedoctest):
+        """
+        CommandLine:
+            pytest testing/test_plugin.py::TestXDoctestSkips::test_all_skipped_global
+        """
+        # Test new global directive added in xdoctest
+        makedoctest("""
+            >>> # xdoctest: +SKIP
+            >>> 1 + 1
+            2
+            >>> 2 + 2
+            200
+        """)
+        reprec = testdir.inline_run("--xdoctest-modules", *EXTRA_ARGS)
+        reprec.assertoutcome(passed=0, skipped=1)
 
     def test_vacuous_all_skipped(self, testdir, makedoctest):
         makedoctest('')
-        reprec = testdir.inline_run("--xdoctest-modules")
+        reprec = testdir.inline_run("--xdoctest-modules", *EXTRA_ARGS)
         reprec.assertoutcome(passed=0, skipped=0)
 
 
@@ -1073,6 +1124,9 @@ class TestXDoctestNamespaceFixture(object):
     """
     Not sure why these tests wont work
 
+    FIXME: These dont work because xdoctest does not support running with
+    fixtures yet.
+
     pytest testing/test_plugin.py::TestXDoctestNamespaceFixture
     """
 
@@ -1096,7 +1150,7 @@ class TestXDoctestNamespaceFixture(object):
             >>> print(cl.__name__)
             contextlib
         """)
-        reprec = testdir.inline_run(p)
+        reprec = testdir.inline_run(p, *EXTRA_ARGS)
         reprec.assertoutcome(passed=1)
 
     @pytest.mark.parametrize('scope', SCOPES)
@@ -1122,16 +1176,17 @@ class TestXDoctestNamespaceFixture(object):
                 contextlib
                 '''
         """)
-        reprec = testdir.inline_run(p, "--xdoctest-modules")
+        reprec = testdir.inline_run(p, "--xdoctest-modules", *EXTRA_ARGS)
         reprec.assertoutcome(passed=1)
 
 
 class TestXDoctestReportingOption(object):
-    @pytest.mark.skip
+
     def _run_doctest_report(self, testdir, format):
         testdir.makepyfile("""
             def foo():
                 '''
+                >>> # xdoc: -NORMALIZE_WHITESPACE
                 >>> foo()
                    a  b
                 0  1  4
@@ -1143,11 +1198,13 @@ class TestXDoctestReportingOption(object):
                       '1  2  5\\n'
                       '2  3  6')
             """)
-        return testdir.runpytest("--xdoctest-modules", "--xdoctest-report", format)
+        return testdir.runpytest("--xdoctest-modules", "--xdoctest-report", format, *EXTRA_ARGS)
 
     @pytest.mark.parametrize('format', ['udiff', 'UDIFF', 'uDiFf'])
-    @pytest.mark.skip
     def test_doctest_report_udiff(self, testdir, format):
+        """
+        pytest testing/test_plugin.py::TestXDoctestReportingOption::test_doctest_report_udiff
+        """
         result = self._run_doctest_report(testdir, format)
         result.stdout.fnmatch_lines([
             '     0  1  4',
@@ -1156,8 +1213,10 @@ class TestXDoctestReportingOption(object):
             '     2  3  6',
         ])
 
-    @pytest.mark.skip
     def test_doctest_report_cdiff(self, testdir):
+        """
+        pytest testing/test_plugin.py::TestXDoctestReportingOption::test_doctest_report_cdiff
+        """
         result = self._run_doctest_report(testdir, 'cdiff')
         result.stdout.fnmatch_lines([
             '         a  b',
@@ -1171,8 +1230,10 @@ class TestXDoctestReportingOption(object):
             '      2  3  6',
         ])
 
-    @pytest.mark.skip
     def test_doctest_report_ndiff(self, testdir):
+        """
+        pytest testing/test_plugin.py::TestXDoctestReportingOption::test_doctest_report_ndiff
+        """
         result = self._run_doctest_report(testdir, 'ndiff')
         result.stdout.fnmatch_lines([
             '         a  b',
@@ -1185,8 +1246,10 @@ class TestXDoctestReportingOption(object):
         ])
 
     @pytest.mark.parametrize('format', ['none', 'only_first_failure'])
-    @pytest.mark.skip
     def test_doctest_report_none_or_only_first_failure(self, testdir, format):
+        """
+        pytest testing/test_plugin.py::TestXDoctestReportingOption::test_doctest_report_none_or_only_first_failure
+        """
         result = self._run_doctest_report(testdir, format)
         result.stdout.fnmatch_lines([
             'Expected:',
@@ -1201,12 +1264,13 @@ class TestXDoctestReportingOption(object):
             '    2  3  6',
         ])
 
-    @pytest.mark.skip
-    @pytest.mark.skip
     def test_doctest_report_invalid(self, testdir):
+        """
+        pytest testing/test_plugin.py::TestXDoctestReportingOption::test_doctest_report_invalid
+        """
         result = self._run_doctest_report(testdir, 'obviously_invalid_format')
         result.stderr.fnmatch_lines([
-            "*error: argument --xdoctest-report: invalid choice: 'obviously_invalid_format' (choose from*"
+            "*error: argument --xdoctest-report/--xdoc-report: invalid choice: 'obviously_invalid_format' (choose from*"
         ])
 
 

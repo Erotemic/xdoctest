@@ -16,6 +16,14 @@ from xdoctest import core
 # import traceback
 
 
+# def print(text):
+#     """ Hack so we can get stdout when debugging the plugin file """
+#     import os
+#     fpath = os.path.expanduser('~/plugin.stdout.txt')
+#     with open(fpath, 'a') as file:
+#         file.write(str(text) + '\n')
+
+
 ### WE SHALL NOW BE VERY NAUGHTY ###
 def monkey_patch_disable_normal_doctest():
     """
@@ -69,7 +77,7 @@ def pytest_addoption(parser):
                     type=str.lower, default='udiff',
                     help='choose another output format for diffs on xdoctest failure',
                     choices=DOCTEST_REPORT_CHOICES,
-                    dest='xdoctestreport')
+                    dest='xdoctest_report')
 
     group.addoption('--xdoctest-nocolor', '--xdoc-nocolor',
                     action='store_false', default=True,
@@ -125,9 +133,11 @@ class XDoctestItem(pytest.Item):
 
     def runtest(self):
         if self.example.is_disabled(pytest=True):
-            pytest.skip('doctest encountered skip directive')
+            pytest.skip('doctest encountered global skip directive')
         # run with verbose=1, because pytest will capture if necessary
         self.example.run(verbose=1, on_error='raise')
+        if not self.example.anything_ran():
+            pytest.skip('doctest is empty or all parts were skipped')
 
     def repr_failure(self, excinfo):
         example = self.example
@@ -159,10 +169,12 @@ class XDoctestTextfile(pytest.Module):
 
         style = self.config.getvalue('xdoctest_style')
         colored = self.config.getvalue('xdoctest_colored')
+        reportchoice = self.config.getoption("xdoctest_report")
 
         for example in core.parse_docstr_examples(text, name, fpath=filename, style=style):
             example.globs.update(globs)
             example.config['colored'] = colored
+            example.config['reportchoice'] = reportchoice
             yield XDoctestItem(name, self, example)
 
 
@@ -172,9 +184,10 @@ class XDoctestModule(pytest.Module):
 
         style = self.config.getvalue('xdoctest_style')
         colored = self.config.getvalue('xdoctest_colored')
+        reportchoice = self.config.getoption("xdoctest_report")
 
         try:
-            examples = list(core.module_doctestables(modpath, style=style))
+            examples = list(core.parse_doctestables(modpath, style=style))
         except SyntaxError:
             if self.config.getvalue('xdoctest_ignore_syntax_errors'):
                 pytest.skip('unable to import module %r' % self.fspath)
@@ -188,6 +201,7 @@ class XDoctestModule(pytest.Module):
 
         for example in examples:
             example.config['colored'] = colored
+            example.config['reportchoice'] = reportchoice
             # example.module = module
             name = example.unique_callname
             yield XDoctestItem(name, self, example)
@@ -281,20 +295,6 @@ def _setup_fixtures(xdoctest_item):
 #     return doctest.register_optionflag('ALLOW_BYTES')
 
 
-# def _get_report_choice(key):
-#     """
-#     This function returns the actual `doctest` module flag value, we want to do it as late as possible to avoid
-#     importing `doctest` and all its dependencies when parsing options, as it adds overhead and breaks tests.
-#     """
-#     import doctest
-
-#     return {
-#         DOCTEST_REPORT_CHOICE_UDIFF: doctest.REPORT_UDIFF,
-#         DOCTEST_REPORT_CHOICE_CDIFF: doctest.REPORT_CDIFF,
-#         DOCTEST_REPORT_CHOICE_NDIFF: doctest.REPORT_NDIFF,
-#         DOCTEST_REPORT_CHOICE_ONLY_FIRST_FAILURE: doctest.REPORT_ONLY_FIRST_FAILURE,
-#         DOCTEST_REPORT_CHOICE_NONE: 0,
-#     }[key]
 DOCTEST_REPORT_CHOICE_NONE = 'none'
 DOCTEST_REPORT_CHOICE_CDIFF = 'cdiff'
 DOCTEST_REPORT_CHOICE_NDIFF = 'ndiff'

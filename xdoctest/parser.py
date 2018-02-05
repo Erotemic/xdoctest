@@ -1,11 +1,37 @@
 # -*- coding: utf-8 -*-
+"""
+Terms and definitions:
+
+    logical block: a snippet of code that can be executed by itself if given
+        the correct global / local variable context.
+
+    PS1 : The original meaning is "Prompt String 1". In the context of
+        xdoctest, instead of refering to the prompt prefix, we use PS1 to refer
+        to a line that starts a "logical block" of code. In the original
+        doctest module these all had to be prefixed with ">>>". In xdoctest the
+        prefix is used to simply denote the code is part of a doctest. It does
+        not necessarilly mean a new "logical block" is starting.
+
+    PS2 : The original meaning is "Prompt String 2". In the context of
+        xdoctest, instead of refering to the prompt prefix, we use PS2 to refer
+        to a line that continues a "logical block" of code. In the original
+        doctest module these all had to be prefixed with "...". However,
+        xdoctest uses parsing to automatically determine this.
+
+    want statement: Lines directly after a logical block of code in a doctest
+        indicating the desired result of executing the previous block.
+"""
 from __future__ import print_function, division, absolute_import, unicode_literals
+import six
 import ast
 import sys
 import re
 import itertools as it
 from xdoctest import utils
 from xdoctest import checker
+from xdoctest import directive
+from xdoctest import exceptions
+from xdoctest import doctest_part
 from xdoctest import static_analysis as static
 
 
@@ -15,145 +41,42 @@ GotWantException = checker.GotWantException
 INDENT_RE = re.compile('^([ ]*)(?=\S)', re.MULTILINE)
 
 
-_EXCEPTION_RE = re.compile(r"""
-    # Grab the traceback header.  Different versions of Python have
-    # said different things on the first traceback line.
-    ^(?P<hdr> Traceback\ \(
-        (?: most\ recent\ call\ last
-        |   innermost\ last
-        ) \) :
-    )
-    \s* $                # toss trailing whitespace on the header.
-    (?P<stack> .*?)      # don't blink: absorb stuff until...
-    ^ (?P<msg> \w+ .*)   #     a line *starts* with alphanum.
-    """, re.VERBOSE | re.MULTILINE | re.DOTALL)
-
-
-class memoize_method(object):
-    """
-    References:
-        http://code.activestate.com/recipes/577452-a-memoize-decorator-for-instance-methods/
-    """
-    def __init__(self, function):
-        self._function = function
-        self._cacheName = '_cache__' + function.__name__
-    def __get__(self, instance, cls=None):
-        self._instance = instance
-        return self
-    def __call__(self, *args):
-        cache = self._instance.__dict__.setdefault(self._cacheName, {})
-        if args in cache:
-            return cache[args]
-        else:
-            object = cache[args] = self._function(self._instance, *args)
-            return object
-
-
-class DoctestPart(object):
-    def __init__(self, exec_lines, want_lines, line_offset, orig_lines=None):
-        self.exec_lines = exec_lines
-        self.want_lines = want_lines
-        self.line_offset = line_offset
-        self.orig_lines = orig_lines
-        self.use_eval = False
-
-    @property
-    def n_lines(self):
-        return self.n_exec_lines + self.n_want_lines
-
-    @property
-    def n_exec_lines(self):
-        return len(self.exec_lines)
-
-    @property
-    def n_want_lines(self):
-        if self.want_lines:
-            return len(self.want_lines)
-        else:
-            return 0
-
-    @property
-    def source(self):
-        return '\n'.join(self.exec_lines)
-
-    @property
-    def want(self):
-        # options = self._find_options(source, name, lineno + s1)
-        # example = DoctestPart(source, None, None, lineno=lineno + s1,
-        #                       indent=indent, options=options)
-        # the last part has a want
-        # todo: If `want` contains a traceback message, then extract it.
-        # m = _EXCEPTION_RE.match(want)
-        # exc_msg = m.group('msg') if m else None
-        if self.want_lines:
-            return '\n'.join(self.want_lines)
-        else:
-            return None
-
-    def __nice__(self):
-        parts = []
-        if self.line_offset is not None:
-            parts.append('ln %s' % (self.line_offset))
-        head_src = self.source.splitlines()[0][0:8]
-        parts.append('src="%s..."' % (head_src,))
-        if self.want is None:
-            parts.append('want=None')
-        else:
-            head_wnt = self.want.splitlines()[0][0:8]
-            parts.append('want="%s..."' % (head_wnt,))
-        return ', '.join(parts)
-
-    def __repr__(self):
-        classname = self.__class__.__name__
-        devnice = self.__nice__()
-        return '<%s(%s) at %s>' % (classname, devnice, hex(id(self)))
-
-    def __str__(self):
-        classname = self.__class__.__name__
-        devnice = self.__nice__()
-        return '<%s(%s)>' % (classname, devnice)
-
-    def check_got_vs_want(part, got_stdout, got_eval, not_evaled):
-        # If we did not want anything than ignore eval and stdout
-        if got_eval is not_evaled:
-            # if there was no eval, check stdout
-            got = got_stdout
-            flag = checker.check_output(got, part.want)
-        else:
-            if not got_stdout:
-                # If there was no stdout then use eval value.
-                got = repr(got_eval)
-                flag = checker.check_output(got, part.want)
-            else:
-                # If there was eval and stdout, defer to stdout
-                # but allow fallback on the eval.
-                got = got_stdout
-                flag = checker.check_output(got, part.want)
-                if not flag:
-                    # allow eval to fallback and save us, but if it fails, do a
-                    # diff with stdout
-                    got = repr(got_eval)
-                    flag = checker.check_output(got, part.want)
-                    if not flag:
-                        got = got_stdout
-        if not flag:
-            # print('got = {!r}'.format(got))
-            # print('part.want = {!r}'.format(part.want))
-            # msg += output_difference(part.want, got)
-            got, want = checker.normalize(got, part.want)
-            msg = 'got differs with doctest want'
-            ex = checker.GotWantException(msg, got, want)
-            raise ex
-
-
 class DoctestParser(object):
+    r"""
+    Breaks docstrings into parts useing the `parse` method.
+
+    Example:
+        >>> parser = DoctestParser()
+        >>> doctest_parts = parser.parse(
+        >>>     '''
+        >>>     >>> j = 0
+        >>>     >>> for i in range(10):
+        >>>     >>>     j += 1
+        >>>     >>> print(j)
+        >>>     10
+        >>>     '''.lstrip('\n'))
+        >>> print('\n'.join(list(map(str, doctest_parts))))
+        <DoctestPart(ln 0, src="j = 0...", want=None)>
+        <DoctestPart(ln 3, src="print(j)...", want="10...")>
+    """
 
     def __init__(self, simulate_repl=False):
         self.simulate_repl = simulate_repl
 
-    def parse(self, string):
+    def parse(self, string, info=None):
         """
         Divide the given string into examples and intervening text.
+
+        Args:
+            string (str): string representing the doctest
+            info (dict): info about where the string came from in case of an
+                error
+
+        Returns:
+            list : a list of `DoctestPart` objects
+
+        CommandLine:
+            python -m xdoctest.parser DoctestParser.parse
 
         Example:
             >>> s = 'I am a dummy example with two parts'
@@ -192,17 +115,29 @@ class DoctestParser(object):
         """
         if sys.version_info.major == 2:  # nocover
             string = utils.ensure_unicode(string)
+
+        if not isinstance(string, six.string_types):
+            raise TypeError('Expected string but got {!r}'.format(string))
+
         string = string.expandtabs()
         # If all lines begin with the same indentation, then strip it.
         min_indent = min_indentation(string)
         if min_indent > 0:
             string = '\n'.join([l[min_indent:] for l in string.splitlines()])
 
-        labeled_lines = self._label_docsrc_lines(string)
-        grouped_lines = self._group_labeled_lines(labeled_lines)
+        try:
+            labeled_lines = self._label_docsrc_lines(string)
+            grouped_lines = self._group_labeled_lines(labeled_lines)
 
-        output = list(self._package_groups(grouped_lines))
-        return output
+            all_parts = list(self._package_groups(grouped_lines))
+        except Exception as orig_ex:
+            # print('Failed to parse string=...')
+            # print(string)
+            # print(info)
+            raise exceptions.DoctestParseError('Failed to parse doctest',
+                                               string=string, info=info,
+                                               orig_ex=orig_ex)
+        return all_parts
 
     def _package_groups(self, grouped_lines):
         lineno = 0
@@ -246,30 +181,67 @@ class DoctestParser(object):
         # Find the line number of each standalone statment
         ps1_linenos, eval_final = self._locate_ps1_linenos(source_lines)
 
+        # Find all directives here:
+        # A directive necessarilly will split a doctest into multiple parts
+        # There are two types: block directives and inline-directives
+        # First find block directives which must exist on there own PS1 line
+        break_linenos = []
+        line_to_directives = {}
+        for s1 in ps1_linenos:
+            line = exec_source_lines[s1]
+            directives = list(directive.extract(line))
+            if directives:
+                break_linenos.append(s1)
+                line_to_directives[s1] = directives
+
+        for s1, s2 in zip(ps1_linenos, ps1_linenos[1:] + [None]):
+            if s1 not in break_linenos:
+                lines = exec_source_lines[s1:s2]
+                directives = list(directive.extract('\n'.join(lines)))
+                if directives:
+                    break_linenos.append(s1)
+                    line_to_directives[s1] = directives
+                    if s2 is not None:
+                        break_linenos.append(s2)
+
         def slice_example(s1, s2, want_lines=None):
             exec_lines = exec_source_lines[s1:s2]
             orig_lines = source_lines[s1:s2]
-            example = DoctestPart(exec_lines, want_lines=want_lines,
-                                  orig_lines=orig_lines,
-                                  line_offset=lineno + s1)
+            directives = line_to_directives.get(s1, None)
+            example = doctest_part.DoctestPart(exec_lines,
+                                               want_lines=want_lines,
+                                               orig_lines=orig_lines,
+                                               line_offset=lineno + s1,
+                                               directives=directives)
             return example
 
+        s1 = 0
+        s2 = 0
         if self.simulate_repl:
             # Break down first parts which dont have any want
             for s1, s2 in zip(ps1_linenos, ps1_linenos[1:]):
                 example = slice_example(s1, s2)
                 yield example
+            s1 = s2
         else:
-            s1 = 0
+            if break_linenos:
+                break_linenos = sorted(set([0] + break_linenos))
+                # directives are forcing us to further breakup the parts
+                for s1, s2 in zip(break_linenos, break_linenos[1:]):
+                    example = slice_example(s1, s2)
+                    yield example
+                s1 = s2
             if want_lines and eval_final:
-                # break the last line off so we can eval its value, but keep
+                # Whenever the evaluation of the final line needs to be tested
+                # against want, that line must be separated into its own part.
+                # We break the last line off so we can eval its value, but keep
                 # previous groupings.
                 s2 = ps1_linenos[-1]
-                if s2 != s1:
+                if s2 != s1:  # make sure the last line is not the only line
                     example = slice_example(s1, s2)
                     yield example
                     s1 = s2
-            s2 = None
+        s2 = None
 
         example = slice_example(s1, s2, want_lines)
         example.use_eval = bool(want_lines) and eval_final
@@ -303,6 +275,8 @@ class DoctestParser(object):
 
     def _locate_ps1_linenos(self, source_lines):
         """
+        Determines which lines in the source begin a "logical block" of code.
+
         Args:
             source_lines (list): lines belonging only to the doctest src
                 these will be unindented, prefixed, and without any want.
@@ -321,10 +295,13 @@ class DoctestParser(object):
             >>> assert linenos == [0, 2]
             >>> assert eval_final is True
         """
+        # print('source_lines = {!r}'.format(source_lines))
         # Strip indentation (and PS1 / PS2 from source)
         exec_source_lines = [p[4:] for p in source_lines]
 
         # Hack to make comments appear like executable statements
+        # note, this hack never leaves this function because we only are
+        # returning line numbers.
         exec_source_lines = ['_._  = None' if p.startswith('#') else p
                              for p in exec_source_lines]
 
@@ -333,17 +310,17 @@ class DoctestParser(object):
         statement_nodes = pt.body
         ps1_linenos = [node.lineno - 1 for node in statement_nodes]
         NEED_16806_WORKAROUND = True
-        if NEED_16806_WORKAROUND:
+        if NEED_16806_WORKAROUND:  # pragma: nobranch
             ps1_linenos = self._workaround_16806(
                 ps1_linenos, exec_source_lines)
-        # Respect any line explicitly defined as PS2
+        # Respect any line explicitly defined as PS2 (via its prefix)
         ps2_linenos = {
             x for x, p in enumerate(source_lines) if p[:4] != '>>> '
         }
         ps1_linenos = sorted(ps1_linenos.difference(ps2_linenos))
 
         # Is the last statement evaluatable?
-        if sys.version_info.major == 2:
+        if sys.version_info.major == 2:  # nocover
             eval_final = isinstance(statement_nodes[-1], (
                 ast.Expr, ast.Print))
         else:
@@ -427,7 +404,7 @@ class DoctestParser(object):
             source_parts = [suffix]
             while not static.is_balanced_statement(source_parts):
                 try:
-                    linex, next_line = next(line_iter)
+                    line_idx, next_line = next(line_iter)
                 except StopIteration:
                     raise SyntaxError('ill-formed doctest')
                 norm_line = next_line[state_indent:]
@@ -436,7 +413,7 @@ class DoctestParser(object):
                 if prefix.strip() not in {'>>>', '...', ''}:  # nocover
                     raise SyntaxError(
                         'Bad indentation in doctest on line {}: {!r}'.format(
-                            linex, next_line))
+                            line_idx, next_line))
                 source_parts.append(suffix)
                 yield next_line
 
@@ -456,7 +433,13 @@ class DoctestParser(object):
         prev_state = TEXT
         curr_state = None
         line_iter = enumerate(string.splitlines())
-        for linex, line in line_iter:
+
+        def hasprefix(line, prefixes):
+            if not isinstance(prefixes, tuple):
+                prefixes = [prefixes]
+            return any(line == p or line.startswith(p + ' ') for p in prefixes)
+
+        for line_idx, line in line_iter:
             match = INDENT_RE.search(line)
             line_indent = 0 if match is None else (match.end() - match.start())
             norm_line = line[state_indent:]  # Normalize line indentation
@@ -466,7 +449,7 @@ class DoctestParser(object):
             if prev_state == TEXT:
                 # text transitions to source whenever a PS1 line is encountered
                 # the PS1(>>>) can be at an arbitrary indentation
-                if strip_line.startswith('>>> '):
+                if hasprefix(strip_line, '>>>'):
                     curr_state = DSRC
                 else:
                     curr_state = TEXT
@@ -475,23 +458,26 @@ class DoctestParser(object):
                 if len(strip_line) == 0:
                     curr_state = TEXT
                 # source-inconsistent indentation terminates want
-                elif line.strip().startswith('>>> '):
+                elif hasprefix(line.strip(), '>>>'):
                     curr_state = DSRC
                 elif line_indent < state_indent:
                     curr_state = TEXT
                 else:
                     curr_state = WANT
-            elif prev_state == DSRC:
+            elif prev_state == DSRC:  # pragma: nobranch
                 if len(strip_line) == 0 or line_indent < state_indent:
                     curr_state = TEXT
                 # allow source to continue with either PS1 or PS2
-                elif norm_line.startswith(('>>> ', '... ')):
+                elif hasprefix(norm_line, ('>>>', '...')):
                     if strip_line == '...':
                         curr_state = WANT
                     else:
                         curr_state = DSRC
                 else:
                     curr_state = WANT
+            else:  # nocover
+                # This should never happen
+                raise AssertionError('Unknown state prev_state={}'.format(prev_state))
 
             # Handle transitions
             if prev_state != curr_state:
@@ -510,11 +496,16 @@ class DoctestParser(object):
                 try:
                     for part in _complete_source(line, state_indent, line_iter):
                         labeled_lines.append((DSRC, part))
-                except SyntaxError:
-                    # TODO: need a better error message here
-                    print('SYNTAX ERROR WHEN PARSING DOCSTRING')
-                    print(string)
+                except SyntaxError as orig_ex:
                     raise
+                    # msg = ('SYNTAX ERROR WHEN PARSING DOCSTRING: \n')
+                    # msg += string
+                    # print(msg)
+                    # ex = exceptions.DoctestParseError('Syntax Error',
+                    #                                   string=string,
+                    #                                   orig_ex=orig_ex)
+                    # raise ex
+                    # warnings.warn(msg)
 
             elif curr_state == WANT:
                 labeled_lines.append((WANT, line))
@@ -532,3 +523,13 @@ def min_indentation(s):
         return min(indents)
     else:
         return 0
+
+
+if __name__ == '__main__':
+    """
+    CommandLine:
+        python -m xdoctest.core
+        python -m xdoctest.parser all
+    """
+    import xdoctest as xdoc
+    xdoc.doctest_module()

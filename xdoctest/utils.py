@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import, unicode_literals
+import warnings
 import re
 import os
 import sys
@@ -299,8 +300,9 @@ class TempDir(object):
         >>> self.cleanup()
         >>> assert not exists(dpath)
     """
-    def __init__(self):
+    def __init__(self, persist=False):
         self.dpath = None
+        self.persist = persist
 
     def __del__(self):
         self.cleanup()
@@ -312,9 +314,10 @@ class TempDir(object):
         return self.dpath
 
     def cleanup(self):
-        if self.dpath:
-            shutil.rmtree(self.dpath)
-            self.dpath = None
+        if not self.persist:
+            if self.dpath:
+                shutil.rmtree(self.dpath)
+                self.dpath = None
 
     def __enter__(self):
         self.ensure()
@@ -365,11 +368,13 @@ def import_module_from_name(modname):
     Returns:
         module: module
 
+    CommandLine:
+        python -m xdoctest.utils import_module_from_name
+
     Example:
         >>> # test with modules that wont be imported in normal circumstances
         >>> # todo write a test where we gaurentee this
         >>> modname_list = [
-        >>>     'test',
         >>>     'pickletools',
         >>>     'lib2to3.fixes.fix_apply',
         >>> ]
@@ -393,10 +398,6 @@ def import_module_from_path(modpath):
     """
     Args:
         modpath (str): path to the module
-
-    TODO:
-        move to a submodule named util_import
-        add to ubelt
 
     References:
         https://stackoverflow.com/questions/67631/import-module-given-path
@@ -507,14 +508,73 @@ def color_text(text, color):
         ansi_text = pygments.console.colorize(color, text)
         return ansi_text
     except ImportError:  # nocover
-        import warnings
         warnings.warn('pygments is not installed')
         return text
+
+
+class NiceRepr(object):
+    """
+    Defines `__str__` and `__repr__` in terms of `__nice__` function
+    Classes that inherit `NiceRepr` must define `__nice__`
+
+    Example:
+        >>> class Foo(NiceRepr):
+        ...    pass
+        >>> class Bar(NiceRepr):
+        ...    def __nice__(self):
+        ...        return 'info'
+        >>> foo = Foo()
+        >>> bar = Bar()
+        >>> assert str(bar) == '<Bar(info)>'
+        >>> assert repr(bar).startswith('<Bar(info) at ')
+        >>> assert 'object at' in str(foo)
+        >>> assert 'object at' in repr(foo)
+    """
+    def __repr__(self):
+        try:
+            classname = self.__class__.__name__
+            devnice = self.__nice__()
+            return '<%s(%s) at %s>' % (classname, devnice, hex(id(self)))
+        except AttributeError:
+            if hasattr(self, '__nice__'):
+                raise
+            # warnings.warn('Define the __nice__ method for %r' %
+            #               (self.__class__,), category=RuntimeWarning)
+            return object.__repr__(self)
+            #return super(NiceRepr, self).__repr__()
+
+    def __str__(self):
+        try:
+            classname = self.__class__.__name__
+            devnice = self.__nice__()
+            return '<%s(%s)>' % (classname, devnice)
+        except AttributeError:
+            if hasattr(self, '__nice__'):
+                raise
+            # warnings.warn('Define the __nice__ method for %r' %
+            #               (self.__class__,), category=RuntimeWarning)
+            return object.__str__(self)
+            #return super(NiceRepr, self).__str__()
+
+
+class TempDoctest(object):
+    """
+    Creates a temporary file containing a doctest for testing
+    """
+
+    def __init__(self, modname, docstr):
+        self.modname = modname
+        self.docstr = docstr
+        self.temp = TempDir()
+        self.dpath = self.temp.ensure()
+        self.modpath = join(self.dpath, self.modname + '.py')
+        with open(self.modpath, 'w') as file:
+            file.write("'''\n%s'''" % self.docstr)
 
 if __name__ == '__main__':
     r"""
     CommandLine:
-        python -m xdoctest.utils
+        python -m xdoctest.utils all
     """
     import xdoctest
     xdoctest.doctest_module(__file__)

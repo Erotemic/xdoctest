@@ -24,26 +24,46 @@ pip install xdoctest
 pip install git+git://github.com/Erotemic/xdoctest.git@master
 ```
 
-## Usage
+## Getting Started
 
-### With pytest interface
+There are two ways to use `xdoctest`: via `pytest` or via the native interface.
+The native interface is less opaque and implicit, but its purpose is to run
+doctests. The other option is to use the widely used `pytest` package. This
+allows you to run both unit tests and doctests with the same command and has
+many other advantages.
+
+It is recommended to use `pytest` for automatic testing (e.g. in your CI
+scripts), but for debugging it may be easier to use the native interface.
+
+### Check if xdoctest will work on your package
+
+You can quickly check if `xdocetst` will work on your package out-of-the box by
+installing it via pip and running `python -m xdoctest <pkg> all`, where `<pkg>` is
+the path to your python package / module (or its name if it is installed in
+your `PYTHONPATH`).
+
+For example with you might test if `xdoctest` works on `networkx` or `sklearn`
+as such: `python -m xdoctest networkx all` / `python -m xdoctest sklearn all`.
+
+
+### Using the pytest interface
 
 When `pytest` is run, `xdoctest` is automatically discovered, but it disabled
 by default. This is because `xdoctest` needs to replace the builtin `doctest`
 plugin.
 
-To enable this plugin, run pytest with `--xdoctest` or `--xdoc`. This should be
-added to your `addopts` options in the `[pytest]` section of your `pytest.ini`
-or `tox.ini` if you use one.
+To enable this plugin, run `pytest` with `--xdoctest` or `--xdoc`. This can
+either be specified on the command line or added to your `addopts` options in
+the `[pytest]` section of your `pytest.ini` or `tox.ini`.
 
-To run a specific doctest, `xdoctest` sets up pytest node names for these
+To run a specific doctest, `xdoctest` sets up `pytest` node names for these
 doctests using the following pattern: `<path/to/file.py>::<callname>:<num>`.
 For example a doctest for a function might look like this
 `mymod.py::funcname:0`, and a class method might look like this:
 `mymod.py::ClassName::method:0`
 
 
-### With the native interface. 
+### Using the native interface. 
 
 The `xdoctest` module contains a `pytest` plugin, but also contains a native
 interface. This interface is run programmatically using
@@ -60,14 +80,77 @@ if __name__ == '__main__':
 This sets up the ability to invoke the `xdoctest` command line interface.
 `python -m <modname> <command>`
 
-If `<command>` is `all`, then each enabled doctest in the module is executed:
+* If `<command>` is `all`, then each enabled doctest in the module is executed:
 `python -m <modname> all`
 
-If `<command>` is `list`, then the names of each enabled doctest is listed.
+* If `<command>` is `list`, then the names of each enabled doctest is listed.
 
-If `<command>` is a `callname` (name of a function or a class and method), then
-that specific doctest is executed: `python -m <modname> <callname>`. Note: you
-can execute disabled doctests or functions without any arguments this way.
+* If `<command>` is a `callname` (name of a function or a class and method),
+  then that specific doctest is executed: `python -m <modname> <callname>`.
+  Note: you can execute disabled doctests or functions without any arguments (zero-args) this way.
+
+For example if you created a module `mymod.py` with the following code:
+
+```python
+
+def func1():
+    """
+    Example:
+        >>> assert func1() == 1
+    """
+    return 1
+
+def func2(a):
+    """
+    Example:
+        >>> assert func2(1) == 2
+        >>> assert func2(2) == 3
+    """
+    return a + 1
+
+if __name__ == '__main__':
+    import xdoctest as xdoc
+    xdoc.doctest_module(__file__)
+```
+
+You could 
+* Use the command `python -m mymod list` to list the names of all functions with doctests
+* Use the command `python -m mymod all` to run all functions with doctests
+* Use the command `python -m mymod func1` to run only func1's doctest
+* Use the command `python -m mymod func2` to run only func2's doctest
+
+Lastly, by running the command `xdoc.doctest_module(<pkgname>)`, `xdoctest`
+will recursively find and execute all doctests within the modules belonging to
+the package.
+
+
+#### Zero-args runner
+
+A benefit of using the native interface is the "zero-args" mode in the
+`xdoctest` runner. This allows you to run functions in your modules via the
+command line as long as they take no arguments.  The purpose is to create a
+quick entry point to functions in your code (because `xdoctest` is taking the
+space in the `__main__` block). 
+
+For example, you might create a
+module `mymod.py` with the following code:
+
+```python
+def myfunc():
+    print('hello world')
+
+if __name__ == '__main__':
+    import xdoctest as xdoc
+    xdoc.doctest_module(__file__)
+```
+
+Even though `myfunc` has no doctest it can still be run using the command
+`python -m mymod myfunc`. 
+
+Note, even though "zero-arg" functions can be run via this interface they are
+not run by `python -m mymod all`, nor are they listed by `python -m mymod
+list`.
+
 
 
 ## Enhancements 
@@ -167,6 +250,31 @@ degree of specificity in the got/want checker, it may just be better to use an
 `assert` statement.
 
 
+## Backwards Incompatibility
+
+There are a few cases that are currently backwards incompatible.
+
+Evaluating multiple items in a for loop no longer words
+```python
+    >>> for i in range(2):
+    ...     '%s' % i
+    ...
+    '0'
+    '1'
+```
+
+Instead do: 
+```python
+    >>> for i in range(2):
+    ...     print('%s' % i)
+    ...
+    0
+    1
+```
+
+
+
+
 ## Current Limitations and TODO:
 
 This module is in a working state and can be used, but it is still under
@@ -181,14 +289,26 @@ development.
 - [x] Support got/want testing with stdout.
 - [x] Support got/want testing with evaluated statements.
 - [x] Support got/want testing with `NORMALIZED_WHITESPACE` and `ELLIPSES` by default
-- [ ] Support toggling got/want directives for backwards compatibility?
+- [x] Support toggling got/want directives for backwards compatibility?
+- [x] Support got/want testing with exceptions.
 
 #### Reporting:
 - [x] Optional colored output
+- [x] Support advanced got/want reporting directive for backwards compatibility (e.g udiff, ndiff)
 
 #### Running:
 - [x] Standalone `doctest_module` entry point.
 - [x] Plugin based `pytest` entry point.
+
+### Directives
+- [x] multi-line directives (new feature, not in doctest)
+- [x] `# doctest: +SKIP` inline directive 
+- [x] `# doctest: +SKIP` global directive 
+- [x] `# doctest: -NORMALIZED_WHITESPACE` inline directive 
+- [x] `# doctest: -ELLIPSES` inline directive 
+- [x] `# doctest: +REPORT_NDIFF` inline directive 
+- [x] `# doctest: +REPORT_UDIFF` inline directive 
+
 
 #### Testing:
 - [x] Tests of core module components
@@ -200,11 +320,11 @@ development.
 
 #### Documentation:
 - [x] Basic docstring docs
-- [ ] Auto-generate read-the-docs Documentation
 - [x] Basic readme
-- [ ] Improve readme
+- [x] Improve readme
+- [ ] Further improve readme
+- [ ] Auto-generate read-the-docs Documentation
+- [ ] Getting Started documentation in read-the-docs
 
 #### Undecided:
-- [ ] allow for inline directives (e.g. `# doctest: +SKIP`)?
 - [ ] Rename to something better than `xdoctest`?
-- [ ] Support advanced got/want reporting directive for backwards compatibility (e.g udiff, ndiff)?
