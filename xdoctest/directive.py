@@ -35,6 +35,7 @@ DEFAULT_RUNTIME_STATE = {
     'DONT_ACCEPT_BLANKLINE': False,
     'ELLIPSIS': True,
     'IGNORE_WHITESPACE': False,
+    'IGNORE_EXCEPTION_DETAIL': False,
     'NORMALIZE_WHITESPACE': True,
 
     'REPORT_CDIFF': False,
@@ -43,7 +44,6 @@ DEFAULT_RUNTIME_STATE = {
 
     'SKIP': False,
 
-    'IGNORE_EXCEPTION_DETAIL': True
     # Original directives we are currently not supporting:
     # DONT_ACCEPT_TRUE_FOR_1
     # REPORT_ONLY_FIRST_FAILURE
@@ -79,6 +79,7 @@ class RuntimeState(utils.NiceRepr):
         <RuntimeState({
             DONT_ACCEPT_BLANKLINE: False,
             ELLIPSIS: True,
+            IGNORE_EXCEPTION_DETAIL: False,
             IGNORE_WHITESPACE: False,
             NORMALIZE_WHITESPACE: True,
             REPORT_CDIFF: False,

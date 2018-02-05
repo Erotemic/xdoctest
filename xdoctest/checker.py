@@ -118,6 +118,9 @@ def check_exception(exc_got, want, runstate=None):
     if exc_want is None:
         raise
     flag = check_output(exc_got, exc_want, runstate)
+    # print('exc_want = {!r}'.format(exc_want))
+    # print('exc_got = {!r}'.format(exc_got))
+    # print('flag = {!r}'.format(flag))
 
     if not flag and runstate['IGNORE_EXCEPTION_DETAIL']:
         exc_got1 = _strip_exception_details(exc_got)
