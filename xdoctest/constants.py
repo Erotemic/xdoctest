@@ -1,1 +1,2 @@
-NOT_EVALED = object()  # sentinal value
+# sentinal value
+NOT_EVALED = object()  # nocover

@@ -115,8 +115,9 @@ def test_show_entire():
 
     src_offset = self.format_src(offset_linenos=True).strip()
     src_nooffset = self.format_src(offset_linenos=False).strip()
-    assert src_offset.startswith('6')
-    assert src_nooffset.startswith('1')
+
+    assert src_offset[:4].startswith('6')
+    assert src_nooffset[:4].startswith('1')
 
     with utils.PythonPathContext(dpath):
         status = self.run(verbose=0, on_error='return')
@@ -125,6 +126,10 @@ def test_show_entire():
 
 
 def test_freeform_parse_lineno():
+    """
+        python ~/code/xdoctest/testing/test_core.py test_freeform_parse_lineno
+
+    """
     docstr = utils.codeblock(
         '''
         >>> print('line1')  # test.line=1, offset=0
@@ -155,15 +160,20 @@ def test_freeform_parse_lineno():
         ''')
 
     from xdoctest import core
-    doctests = list(core.parse_freeform_docstr_examples(docstr, lineno=1))
+    doctests = list(core.parse_freeform_docstr_examples(docstr, lineno=1, asone=False))
     assert  [test.lineno for test in doctests] == [1, 4, 10, 14, 20]
 
+    # This asserts if the lines are consecutive. Should we enforce this?
+    # Perhaps its ok if they are not.
     for test in doctests:
         assert test._parts[0].line_offset == 0
         offset = 0
         for p in test._parts:
             assert p.line_offset == offset
             offset += p.n_lines
+
+    doctests = list(core.parse_freeform_docstr_examples(docstr, lineno=1, asone=True))
+    assert  [test.lineno for test in doctests] == [1]
 
     doctests = list(core.parse_google_docstr_examples(docstr, lineno=1))
     assert  [test.lineno for test in doctests] == [4, 10, 14]
@@ -204,8 +214,8 @@ def test_collect_module_level():
 
     src_offset = self.format_src(offset_linenos=True).strip()
     src_nooffset = self.format_src(offset_linenos=False).strip()
-    assert src_offset.startswith('2')
-    assert src_nooffset.startswith('1')
+    assert src_offset[:4].startswith('2')
+    assert src_nooffset[:4].startswith('1')
 
     with utils.PythonPathContext(dpath):
         status = self.run(verbose=0, on_error='return')

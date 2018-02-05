@@ -605,7 +605,7 @@ class TestXDoctest(object):
                 Just prefix everything with >>> and the xdoctest should work
             """).lstrip())
         result = testdir.runpytest(p, *EXTRA_ARGS)
-        result.stdout.fnmatch_lines(['* 3 passed *'])
+        result.stdout.fnmatch_lines(['* 1 passed *'])
 
     def test_xdoctest_trycatch(self, testdir):
         """
@@ -636,9 +636,13 @@ class TestXDoctest(object):
                 bar
         """)
         result = testdir.runpytest(p, *EXTRA_ARGS)
-        result.stdout.fnmatch_lines(['* 2 passed *'])
+        result.stdout.fnmatch_lines(['* 1 passed *'])
 
     def test_xdoctest_functions(self, testdir):
+        """
+        CommandLine:
+            pytest -rsxX -p pytester testing/test_plugin.py::TestXDoctest::test_xdoctest_functions
+        """
         p = testdir.maketxtfile(test_xdoctest_multiline_string="""
             .. xdoctest::
 
@@ -655,7 +659,7 @@ class TestXDoctest(object):
                 now the ast parser makes doctests nice for us
         """)
         result = testdir.runpytest(p, *EXTRA_ARGS)
-        result.stdout.fnmatch_lines(['* 2 passed *'])
+        result.stdout.fnmatch_lines(['* 1 passed *'])
 
     def test_stdout_capture_no(self, testdir):
         """

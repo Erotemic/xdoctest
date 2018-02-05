@@ -25,7 +25,7 @@ DOCTEST_STYLES = [
 
 
 def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
-                                   lineno=1, fpath=None):
+                                   lineno=1, fpath=None, asone=True):
     """
     Finds free-form doctests in a docstring. This is similar to the original
     doctests because these tests do not requires a google/numpy style header.
@@ -33,8 +33,15 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
     Some care is taken to avoid enabling tests that look like disabled google
     doctests / scripts.
 
+    Args:
+        asone (bool): if False doctests are broken into multiple examples
+           based on spacing. (default True)
+
     Raises:
         xdoctest.exceptions.DoctestParseError: if an error occurs in parsing
+
+    CommandLine:
+        python -m xdoctest.core parse_freeform_docstr_examples
 
     Example:
         >>> from xdoctest import core
@@ -60,11 +67,14 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
                 >>> 'general case, parse me'
                 want
             ''')
-        >>> examples = list(parse_freeform_docstr_examples(docstr))
+        >>> examples = list(parse_freeform_docstr_examples(docstr, asone=True))
+        >>> assert len(examples) == 1
+        >>> examples = list(parse_freeform_docstr_examples(docstr, asone=False))
         >>> assert len(examples) == 3
 
     """
     def doctest_from_parts(parts, num, curr_offset):
+        # FIXME; this will cause line numbers to become misaligned
         nested = [
             p.orig_lines
             if p.want is None else
@@ -87,8 +97,8 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
 
     respect_google_headers = True
     if respect_google_headers:
-        # These are google doctest patterns that disable a test from being run
-        # try to respect these even in freeform mode.
+        # When in freeform mode we still try to respect google doctest patterns
+        # that prevent a test from being run.
         special_skip_patterns = [
             'DisableDoctest:',
             'DisableExample:',
@@ -118,23 +128,23 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
     prev_part = None
     ignoring = False
 
-    # Experiment with only returning one example per freeform doctest
-    # This should provide greater compatibility.
-    FREEFORM_ONE_EXAMPLE = True
-
     for part in all_parts:
         if isinstance(part, six.string_types):
             # Part is a plaintext
-            # if not FREEFORM_ONE_EXAMPLE:  # nocover
-            if curr_parts:
-                # Group the current parts into a single DocTest
-                example = doctest_from_parts(curr_parts, num, curr_offset)
-                yield example
-                # Initialize empty parts for a new DocTest
-                curr_offset += sum(p.n_lines for p in curr_parts)
-                num += 1
-                curr_parts = []
-            curr_offset += part.count('\n') + 1
+            if asone:
+                # Lump all doctest parts into one example
+                if not curr_parts:
+                    curr_offset += part.count('\n') + 1
+            else:  # nocover
+                if curr_parts:
+                    # Group the current parts into a single DocTest
+                    example = doctest_from_parts(curr_parts, num, curr_offset)
+                    yield example
+                    # Initialize empty parts for a new DocTest
+                    curr_offset += sum(p.n_lines for p in curr_parts)
+                    num += 1
+                    curr_parts = []
+                curr_offset += part.count('\n') + 1
             # stop ignoring
             ignoring = False
         else:
@@ -143,7 +153,11 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
             # begins. (different doctest blocks are separated by plaintext)
             if ignoring or _start_ignoring(prev_part):
                 ignoring = True
-                curr_offset += part.n_lines
+                if asone:
+                    if not curr_parts:
+                        curr_offset += part.n_lines
+                else:
+                    curr_offset += part.n_lines
             else:
                 # Append part to the current parts
                 curr_parts.append(part)
