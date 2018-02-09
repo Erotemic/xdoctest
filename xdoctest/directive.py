@@ -132,6 +132,8 @@ class RuntimeState(utils.NiceRepr):
         self._inline_state.clear()
         for directive in directives:
             key, value = directive.state_item()
+            if key == 'NOOP':
+                continue
             if key not in self._global_state:
                 warnings.warn('Unknown state: {}'.format(key))
             if directive.inline:
@@ -170,17 +172,22 @@ class Directive(utils.NiceRepr):
             >>> Directive('SKIP', inline=True).state_item()
             ('SKIP', True)
             >>> Directive('REQUIRES', args=['-s']).state_item(argv=['-s'])
-            ('SKIP', True)
+            ('NOOP', True)
             >>> Directive('REQUIRES', args=['-s']).state_item(argv=[])
-            ('SKIP', False)
+            ('SKIP', True)
             >>> Directive('ELLIPSIS', args=['-s']).state_item(argv=[])
+            ('ELLIPSIS', True)
         """
         if self.name == 'REQUIRES':
             # requires conditionally behaves like skip
             if argv is None:
                 argv = sys.argv
-            key = 'SKIP'
-            value = self.positive and self.args[0] in argv
+            if self.positive and self.args[0] not in argv:
+                key = 'SKIP'
+                value = True
+            else:
+                key = 'NOOP'
+                value = True
         else:
             key = self.name
             value = self.positive
@@ -297,7 +304,7 @@ def parse_directive_optstr(optstr, inline=None):
 if __name__ == '__main__':
     r"""
     CommandLine:
-        python -m xdoctest.directive
+        python -m xdoctest.directive all
     """
     import xdoctest
     xdoctest.doctest_module(__file__)
