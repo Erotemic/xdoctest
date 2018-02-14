@@ -15,6 +15,7 @@ from xdoctest import docscrape_google
 from xdoctest import parser
 from xdoctest import exceptions
 from xdoctest import doctest_example
+from xdoctest import utils  # NOQA
 
 
 DOCTEST_STYLES = [
@@ -281,7 +282,9 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
     """
     pkgpath = _rectify_to_modpath(modpath_or_name)
 
-    modpaths = static.package_modpaths(pkgpath)
+    modpaths = static.package_modpaths(pkgpath, with_pkg=True)
+    modpaths = list(modpaths)
+    print('modpaths = {!r}'.format(modpaths))
     for modpath in modpaths:
         modname = static.modpath_to_modname(modpath)
         if any(fnmatch(modname, pat) for pat in exclude):
@@ -291,19 +294,37 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
                 'Module {} does not exist. '
                 'Is it an old pyc file?'.format(modname))
             continue
-        try:
-            calldefs = static.parse_calldefs(fpath=modpath)
-        except SyntaxError as ex:
-            # Handle error due to the actual code containing errors
-            msg = 'Cannot parse module={} at path={}.\nCaused by: {}'
-            msg = msg.format(modname, modpath, ex)
-            if ignore_syntax_errors:
-                warnings.warn(msg)  # real code contained errors
-                continue
-            else:
-                raise SyntaxError(msg)
-        else:
+        import sys
+        DYNAMIC = '--xdoc-dynamic' in sys.argv
+        if DYNAMIC:
+            # Possible option for dynamic parsing
+            mod = utils.import_module_from_path(modpath)
+            calldefs = {}
+            for key, val in vars(mod).items():
+                if hasattr(val, '__doc__') and hasattr(val, '__name__'):
+                    calldefs[key] = static.CallDefNode(
+                        callname=val.__name__,
+                        docstr=val.__doc__,
+                        lineno=0,
+                        doclineno=1,
+                        doclineno_end=1,
+                        args=None
+                    )
             yield calldefs, modpath
+        else:
+            try:
+                calldefs = static.parse_calldefs(fpath=modpath)
+            except SyntaxError as ex:
+                # Handle error due to the actual code containing errors
+                msg = 'Cannot parse module={} at path={}.\nCaused by: {}'
+                msg = msg.format(modname, modpath, ex)
+                if ignore_syntax_errors:
+                    warnings.warn(msg)  # real code contained errors
+                    continue
+                else:
+                    raise SyntaxError(msg)
+            else:
+                yield calldefs, modpath
 
 
 def parse_doctestables(modpath_or_name, exclude=[], style='google',
