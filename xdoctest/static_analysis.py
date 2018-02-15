@@ -346,16 +346,39 @@ def parse_static_value(key, source=None, fpath=None):
     return visitor.value
 
 
-def _platform_pylib_ext():  # nocover
-    if sys.platform.startswith('linux'):  # nocover
-        pylib_ext = '.so'
-    elif sys.platform.startswith('win32'):  # nocover
-        pylib_ext = '.pyd'
-    elif sys.platform.startswith('darwin'):  # nocover
-        pylib_ext = '.dylib'
+def _platform_pylib_exts():  # nocover
+    """
+    Returns .so, .pyd, or .dylib depending on linux, win or mac.
+    On python3 return the previous with and without abi (e.g.
+    .cpython-35m-x86_64-linux-gnu) flags. On python2 returns with
+    and without multiarch.
+    """
+    import sysconfig
+    valid_exts = []
+    if six.PY2:
+        # see also 'SHLIB_EXT'
+        pylib_ext = sysconfig.get_config_var('SO').split('.')[-1]
+        multiarch = sysconfig.get_config_var('MULTIARCH')
+        if multiarch is not None:
+            valid_exts.append('.' + multiarch + '.' + pylib_ext)
+        valid_exts.append(pylib_ext)
     else:
-        pylib_ext = '.so'
-    return pylib_ext
+        # return with and without API flags
+        # handle PEP 3149 -- ABI version tagged .so files
+        pylib_ext_abi = sysconfig.get_config_var('EXT_SUFFIX')
+        pylib_ext = '.' + pylib_ext_abi.split('.')[-1]
+        valid_exts = [pylib_ext_abi]
+        if pylib_ext_abi != pylib_ext:
+            valid_exts.append(pylib_ext)
+    return valid_exts
+    # if sys.platform.startswith('linux'):  # nocover
+    #     pylib_ext = '.so'
+    # elif sys.platform.startswith('win32'):  # nocover
+    #     pylib_ext = '.pyd'
+    # elif sys.platform.startswith('darwin'):  # nocover
+    #     pylib_ext = '.dylib'
+    # else:
+    #     pylib_ext = '.so'
 
 
 # def package_modnames(package_name, with_pkg=False, with_mod=True):
@@ -406,7 +429,7 @@ def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True,
 
         valid_exts = ['.py']
         if with_libs:
-            valid_exts += [_platform_pylib_ext()]
+            valid_exts += _platform_pylib_exts()
 
         for dpath, dnames, fnames in os.walk(pkgpath, followlinks=followlinks):
             ispkg = exists(join(dpath, '__init__.py'))
@@ -544,6 +567,8 @@ def modname_to_modpath(modname, hide_init=True, hide_main=False):
         >>> modname = 'xdoctest'
         >>> modpath = modname_to_modpath(modname, hide_init=False)
         >>> assert modpath.endswith('__init__.py')
+        >>> modpath = basename(modname_to_modpath('_ctypes'))
+        >>> assert 'ctypes' in modpath
     """
     modpath = _syspath_modname_to_modpath(modname)
     if modpath is None:
@@ -579,6 +604,12 @@ def _pkgutil_modname_to_modpath(modname):  # nocover
         >>> # DISABLE_DOCTEST
         >>> modname = 'xdoctest.static_analysis'
         >>> _pkgutil_modname_to_modpath(modname)
+        ...static_analysis.py
+        >>> _pkgutil_modname_to_modpath('_ctypes')
+        ..._ctypes...
+
+    Ignore:
+        >>> _pkgutil_modname_to_modpath('cv2')
     """
     import pkgutil
     loader = pkgutil.find_loader(modname)
@@ -599,6 +630,14 @@ def _syspath_modname_to_modpath(modname):
     Example:
         >>> modname = 'xdoctest.static_analysis'
         >>> _syspath_modname_to_modpath(modname)
+        ...static_analysis.py
+        >>> modname = '_ctypes'
+        >>> _syspath_modname_to_modpath(modname)
+        ..._ctypes...
+
+    Ignore:
+        >>> modname = 'cv2'
+        >>> _syspath_modname_to_modpath(modname)
     """
 
     def _isvalid(modpath, base):
@@ -615,8 +654,10 @@ def _syspath_modname_to_modpath(modname):
         _fname_we + '.py',
         # _fname_we + '.pyc',
         # _fname_we + '.pyo',
-        _fname_we + _platform_pylib_ext()
     ]
+    # Add extension library suffixes
+    candidate_fnames += [_fname_we + ext for ext in _platform_pylib_exts()]
+
     candidate_dpaths = ['.'] + sys.path
     for dpath in candidate_dpaths:
         # Check for directory-based modules (has presidence over files)
