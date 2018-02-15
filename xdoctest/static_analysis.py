@@ -4,8 +4,9 @@ import os
 import sys
 import ast
 import re
-import tokenize
 import six
+import tokenize
+import sysconfig
 from six.moves import cStringIO as StringIO
 from collections import deque, OrderedDict
 from xdoctest import utils
@@ -346,6 +347,25 @@ def parse_static_value(key, source=None, fpath=None):
     return visitor.value
 
 
+def _extension_module_tags():
+    """
+    Returns valid tags an extension module might have
+    """
+    tags = []
+    if six.PY2:
+        # see also 'SHLIB_EXT'
+        multiarch = sysconfig.get_config_var('MULTIARCH')
+        if multiarch is not None:
+            tags.append(multiarch)
+    else:
+        # handle PEP 3149 -- ABI version tagged .so files
+        # ABI = application binary interface
+        tags.append(sysconfig.get_config_var('SOABI'))
+        tags.append('abi3')  # not sure why this one is valid but it is
+    tags = [t for t in tags if t]
+    return tags
+
+
 def _platform_pylib_exts():  # nocover
     """
     Returns .so, .pyd, or .dylib depending on linux, win or mac.
@@ -353,23 +373,17 @@ def _platform_pylib_exts():  # nocover
     .cpython-35m-x86_64-linux-gnu) flags. On python2 returns with
     and without multiarch.
     """
-    import sysconfig
     valid_exts = []
     if six.PY2:
         # see also 'SHLIB_EXT'
-        pylib_ext = sysconfig.get_config_var('SO').split('.')[-1]
-        multiarch = sysconfig.get_config_var('MULTIARCH')
-        if multiarch is not None:
-            valid_exts.append('.' + multiarch + '.' + pylib_ext)
-        valid_exts.append(pylib_ext)
+        base_ext = '.' + sysconfig.get_config_var('SO').split('.')[-1]
     else:
         # return with and without API flags
         # handle PEP 3149 -- ABI version tagged .so files
-        pylib_ext_abi = sysconfig.get_config_var('EXT_SUFFIX')
-        pylib_ext = '.' + pylib_ext_abi.split('.')[-1]
-        valid_exts = [pylib_ext_abi]
-        if pylib_ext_abi != pylib_ext:
-            valid_exts.append(pylib_ext)
+        base_ext = '.' + sysconfig.get_config_var('EXT_SUFFIX').split('.')[-1]
+    for tag in _extension_module_tags():
+        valid_exts.append('.' + tag + base_ext)
+    valid_exts.append(base_ext)
     return valid_exts
     # if sys.platform.startswith('linux'):  # nocover
     #     pylib_ext = '.so'
@@ -517,10 +531,17 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False):
         >>> modpath = modpath.replace('.pyc', '.py')
         >>> modname = modpath_to_modname(modpath)
         >>> assert modname == 'xdoctest.static_analysis'
+
+    Example:
+        >>> modpath = modname_to_modpath('_ctypes')
+        >>> modname = modpath_to_modname(modpath)
+        >>> assert modname == '_ctypes'
     """
     modpath_ = abspath(expanduser(modpath))
     dpath, rel_modpath = split_modpath(modpath_)
     modname = splitext(rel_modpath)[0]
+    if '.' in modname:
+        modname, abi_tag = modname.split('.')
     modname = modname.replace('/', '.')
     modname = modname.replace('\\', '.')
     if hide_init:
