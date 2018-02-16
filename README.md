@@ -1,6 +1,6 @@
 [![Travis](https://img.shields.io/travis/Erotemic/xdoctest/master.svg?label=Travis%20CI)](https://travis-ci.org/Erotemic/xdoctest)
 [![Codecov](https://codecov.io/github/Erotemic/xdoctest/badge.svg?branch=master&service=github)](https://codecov.io/github/Erotemic/xdoctest?branch=master)
-[![Appveyor](https://ci.appveyor.com/api/projects/status/github/Erotemic/xdoctest?svg=True)](https://ci.appveyor.com/project/Erotemic/xdoctest/branch/master)
+[![Appveyor](https://ci.appveyor.com/api/projects/status/github/Erotemic/xdoctest?branch=master&svg=True)](https://ci.appveyor.com/project/Erotemic/xdoctest/branch/master)
 [![Pypi](https://img.shields.io/pypi/v/xdoctest.svg)](https://pypi.python.org/pypi/xdoctest)
 
 
