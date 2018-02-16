@@ -14,15 +14,24 @@ class DoctestPart(object):
     """
     The result of parsing that represents a "logical block" of code.
     If a want statment is defined, it is stored here.
+
+    Attributes:
+        exec_lines (list): executable lines in this part
+        want_lines (list): lines that the result of the execution should match
+        line_offset (int): line number relative to the start of the doctest
+        orig_lines (list): the original text parsed into exec and want
+        _directives (list): directives that this part will apply before being run
+        partno (int): identifies the part number in the larger example
     """
     def __init__(self, exec_lines, want_lines=None, line_offset=0,
-                 orig_lines=None, directives=None):
+                 orig_lines=None, directives=None, partno=None):
         self.exec_lines = exec_lines
         self.want_lines = want_lines
         self.line_offset = line_offset
         self.orig_lines = orig_lines
         self.use_eval = False
         self._directives = directives
+        self.partno = partno
 
     @property
     def n_lines(self):
@@ -117,9 +126,12 @@ class DoctestPart(object):
                                          runstate)
 
     def format_src(self, linenos=True, want=True, startline=1, n_digits=None,
-                   colored=False):
+                   colored=False, partnos=False):
         """
         Customizable formatting of the source and want for this doctest.
+
+        CommandLine:
+            python -m xdoctest.doctest_part DoctestPart.format_src
 
         Args:
             linenos (bool): show line numbers
@@ -127,13 +139,15 @@ class DoctestPart(object):
             startline (int): offsets the line numbering
             n_digits (int): number of digits to use for line numbers
             colored (bool): pygmentize the colde
+            partnos (bool): if True, shows the part number in the string
 
         Example:
             >>> from xdoctest.parser import *
-            >>> self = DoctestPart(['print(123)'], ['123'], 0)
-            >>> print(self.format_src())
-            1 >>> print(123)
-              123
+            >>> self = DoctestPart(['print(123)'], ['123'], 0, partno=1)
+            >>> # xdoctest: -NORMALIZE_WHITESPACE
+            >>> print(self.format_src(partnos=True))
+            (p1) 1 >>> print(123)
+                   123
         """
         src_text = self.source
         src_text = utils.indent(src_text, '>>> ')
@@ -144,26 +158,33 @@ class DoctestPart(object):
             n_digits = math.log(max(1, endline), 10)
             n_digits = int(math.ceil(n_digits))
 
-        if linenos:
-            src_fmt = '{{:{}d}} {{}}'.format(n_digits)
-            want_fmt = '{} {{}}'.format(' ' * n_digits)
+        part_lines = src_text.splitlines()
+        n_spaces = 0
 
-            new_lines = []
+        if linenos:
+            src_fmt = '{count:{n_digits}d} {line}'
+            n_spaces += n_digits + 1
+
             count = startline + self.line_offset
-            for count, line in enumerate(src_text.splitlines(), start=count):
-                new_lines.append(src_fmt.format(count, line))
-            if want_text:
-                for count, line in enumerate(want_text.splitlines(), start=count):
-                    if want:
-                        new_lines.append(want_fmt.format(line))
-            part_text = '\n'.join(new_lines)
-        else:
-            if want_text:
-                part_text = src_text
+            part_lines = [
+                src_fmt.format(n_digits=n_digits, count=count, line=line)
+                for count, line in enumerate(part_lines, start=count)
+            ]
+
+        if partnos:
+            part_lines = [
+                '(p{}) {}'.format(self.partno, line)
+                for line in part_lines
+            ]
+            n_spaces += 4 + 1  # could be more robust if more than 9 parts
+
+        if want_text:
+            want_fmt = ' ' * n_spaces + '{line}'
+            for line in want_text.splitlines():
                 if want:
-                    part_text = part_text + '\n' + want_text
-            else:
-                part_text = src_text
+                    part_lines.append(want_fmt.format(line=line))
+        part_text = '\n'.join(part_lines)
+
         if colored:
             part_text = utils.highlight_code(part_text, 'python')
         return part_text

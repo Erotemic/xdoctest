@@ -204,6 +204,9 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
     Parses doctests from a docstr and generates example objects.
     The style influences which tests are found.
 
+    CommandLine:
+        python -m xdoctest.core parse_docstr_examples
+
     Example:
         >>> from xdoctest.core import *
         >>> from xdoctest import utils
@@ -238,16 +241,16 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
         msg = ('Cannot scrape callname={} in modpath={} line={}.\n'
                'Caused by: {}\n')
         msg = msg.format(callname, modpath, lineno, repr(ex))
-        if isinstance(ex, (exceptions.MalformedDocstr,
-                           exceptions.DoctestParseError)):
+        if isinstance(ex, exceptions.DoctestParseError):
+            msg += '{}\n'.format(ex.string)
+            msg += 'Original Error: {}\n'.format(repr(ex.orig_ex))
 
-            if isinstance(ex, exceptions.DoctestParseError):
-                msg += '{}\n'.format(ex.string)
-                msg += 'Original Error: {}\n'.format(repr(ex.orig_ex))
-
-            warnings.warn(msg)  # doctest code contained errors
-        else:
-            raise Exception(msg)
+        # Always warn when something bad is happening.
+        # However, dont error if the docstr simply has bad syntax
+        warnings.warn(msg)
+        if not isinstance(ex, (exceptions.MalformedDocstr,
+                               exceptions.DoctestParseError)):
+            raise
 
 
 def _rectify_to_modpath(modpath_or_name):

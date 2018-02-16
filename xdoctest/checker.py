@@ -148,14 +148,18 @@ def check_output(got, want, runstate=None):
         # Try default
         if got == want:
             return True
-
         got, want = normalize(got, want, runstate)
-        if got == want:
-            return True
+        return _check_match(got, want, runstate)
+    return False
 
-        if runstate['ELLIPSIS']:
-            if _ellipsis_match(got, want):
-                return True
+
+def _check_match(got, want, runstate):
+    if got == want:
+        return True
+
+    if runstate['ELLIPSIS']:
+        if _ellipsis_match(got, want):
+            return True
     return False
 
 
@@ -289,6 +293,19 @@ def normalize(got, want, runstate=None):
         # Completely remove whitespace
         got = re.sub('\s', '', got, flags=re.MULTILINE)
         want = re.sub('\s', '', want, flags=re.MULTILINE)
+
+    if runstate['NORMALIZE_REPR']:
+        def norm_repr(a, b):
+            # If removing quotes would allow for a match, remove them.
+            if not _check_match(a, b, runstate):
+                for q in ['"', "'"]:
+                    if a.startswith(q) and a.endswith(q):
+                        if _check_match(a[1:-1], b, runstate):
+                            return a[1:-1]
+            return a
+        got = norm_repr(got, want)
+        want = norm_repr(want, got)
+
     return got, want
 
 

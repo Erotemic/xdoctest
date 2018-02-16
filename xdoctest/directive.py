@@ -7,17 +7,80 @@ of multiple lines of code.
 Inline directives are specified after in the same line of code and only
 influence that line / repl part.
 
+Basic Directives
+----------------
+
+Basic directives correspond directly to an xdoctest runtime state attribute.
+These can be modified by directly using the xdoctest directive syntax.
+The following documents all supported basic directives.
+
+
+Advanced Directives
+-------------------
+
+Advanced directives may take arguments and are more conditional in nature. The
+names of the advanced directives do not correspond to a runtime state
+attribute. Instead they represent a conditional modification of a basic runtime
+state attribute.  For example, the advanced directive `+REQUIRES(flag)` will
+correspond to a `+SKIP` directive if the condition (a command line argument or
+platform name) represented by `flag` is satisfied.
+
+
+CommandLine:
+    python -m xdoctest.directive __doc__
+
+
 Example:
-    >>> any(extract(' # xdoctest: skip'))
-    True
-    >>> any(extract(' # badprefix: not-a-directive'))
-    False
-    >>> any(extract(' # xdoctest: skip'))
-    True
-    >>> any(extract(' # badprefix: not-a-directive'))
-    False
+    The following example shows how the `+SKIP` directives may be used to
+    bypass certain places in the code.
+
+    >>> # An inline directive appears on the same line as a command and
+    >>> # only applies to the current line.
+    >>> raise AssertionError('this will not be run (a)')  # xdoctest: +SKIP
+    >>> print('This line will print: (A)')
+    >>> print('This line will print: (B)')
+    >>> # However, if a directive appears on its own line, then it applies
+    >>> # too all subsequent lines.
+    >>> # xdoctest: +SKIP
+    >>> raise AssertionError('this will not be run (b)')
+    >>> print('This line will not print: (A)')
+    >>> # Note, that SKIP is simply a state and can be disabled to allow
+    >>> # the program to continue executing.
+    >>> # xdoctest: -SKIP
+    >>> print('This line will print: (C)')
+    >>> print('This line will print: (D)')
+    >>> # This applies to inline directives as well
+    >>> # xdoctest: +SKIP
+    >>> raise AssertionError('this will not be run (c)')
+    >>> print('This line will print: (E)')  # xdoctest: -SKIP
+    >>> raise AssertionError('this will not be run (d)')
+    >>> # xdoctest: -SKIP
+    >>> print('This line will print: (F)')
+
+Example:
+    This next examples illustrates how to use the advanced `+REQURIES()`
+    directive. Note, REQUIRES currently only modifies SKIP, but in the
+    future it may track its own state.
+
+    >>> import sys
+    >>> count = 0
+    >>> # xdoctest: +REQUIRES(WIN32)
+    >>> assert sys.platform.startswith('win32')
+    >>> count += 1
+    >>> # xdoctest: +REQUIRES(LINUX)
+    >>> assert sys.platform.startswith('linux')
+    >>> count += 1
+    >>> # xdoctest: +REQUIRES(DARWIN)
+    >>> assert sys.platform.startswith('darwin')
+    >>> count += 1
+    >>> # xdoctest: -SKIP
+    >>> print(count)
+    >>> assert count == 1, 'Exactly one of the above parts should have run'
+    >>> # xdoctest: +REQUIRES(--verbose)
+    >>> print('This is only printed if you run with --verbose')
 """
 import sys
+import os
 import re
 import warnings
 from xdoctest import static_analysis as static
@@ -37,6 +100,8 @@ DEFAULT_RUNTIME_STATE = {
     'IGNORE_WHITESPACE': False,
     'IGNORE_EXCEPTION_DETAIL': False,
     'NORMALIZE_WHITESPACE': True,
+
+    'NORMALIZE_REPR': True,
 
     'REPORT_CDIFF': False,
     'REPORT_NDIFF': False,
@@ -81,6 +146,7 @@ class RuntimeState(utils.NiceRepr):
             ELLIPSIS: True,
             IGNORE_EXCEPTION_DETAIL: False,
             IGNORE_WHITESPACE: False,
+            NORMALIZE_REPR: True,
             NORMALIZE_WHITESPACE: True,
             REPORT_CDIFF: False,
             REPORT_NDIFF: False,
@@ -110,13 +176,13 @@ class RuntimeState(utils.NiceRepr):
         else:
             return self._global_state[key]
 
-    def set_report(self, reportchoice, state=None):
+    def set_report_style(self, reportchoice, state=None):
         """
         Example:
             >>> from xdoctest.directive import *
             >>> runstate = RuntimeState()
             >>> assert runstate['REPORT_UDIFF']
-            >>> runstate.set_report('ndiff')
+            >>> runstate.set_report_style('ndiff')
             >>> assert not runstate['REPORT_UDIFF']
             >>> assert runstate['REPORT_NDIFF']
         """
@@ -142,7 +208,7 @@ class RuntimeState(utils.NiceRepr):
                 state = self._global_state
 
             if key.startswith('REPORT_') and value:
-                self.set_report(key.replace('REPORT_', ''))
+                self.set_report_style(key.replace('REPORT_', ''))
             state[key] = value
 
 
@@ -164,6 +230,14 @@ class Directive(utils.NiceRepr):
         else:
             return '{}{}'.format(prefix, self.name)
 
+    def unpack_args(self, num):
+        nargs = self.args
+        if len(nargs) != 1:
+            raise TypeError(
+                '{} directive expected exactly {} argument(s), '
+                'got {}'.format(self.name, num, nargs))
+        return self.args
+
     def state_item(self, argv=None):
         """
         Example:
@@ -172,19 +246,44 @@ class Directive(utils.NiceRepr):
             >>> Directive('SKIP', inline=True).state_item()
             ('SKIP', True)
             >>> Directive('REQUIRES', args=['-s']).state_item(argv=['-s'])
-            ('NOOP', True)
+            ('SKIP', False)
             >>> Directive('REQUIRES', args=['-s']).state_item(argv=[])
             ('SKIP', True)
             >>> Directive('ELLIPSIS', args=['-s']).state_item(argv=[])
             ('ELLIPSIS', True)
         """
         if self.name == 'REQUIRES':
+            # TODO: We should probably change requires so it keeps track
+            # of what you require, so we could add and remove requirements e.g.
+            # +REQUIRES(WIN32)
+            # we now require windows
+            # +REQUIRES(--flag)
+            # we now require windows AND a flag
+            # -REQUIRES(WIN32)
+            # we no longer require windows, but we still require the argflag
+
+            # TODO: register these advanced directives dynamically
             # requires conditionally behaves like skip
             if argv is None:
                 argv = sys.argv
-            if self.positive and self.args[0] not in argv:
+
+            arg, = self.unpack_args(1)
+
+            SYS_PLATFORM_TAGS = ['win32', 'linux', 'darwin', 'cywgin']
+            OS_NAME_TAGS = ['posix', 'nt', 'java']
+
+            if self.positive:
                 key = 'SKIP'
-                value = True
+                if arg.startswith('-'):
+                    value = arg not in argv
+                elif arg.lower() in SYS_PLATFORM_TAGS:
+                    value = not sys.platform.startswith(arg.lower())
+                elif arg.lower() in OS_NAME_TAGS:
+                    value = not os.name.startswith(arg.lower())
+                else:
+                    ValueError(
+                        'Argument to REQUIRES must be an PLATFORM tag or a '
+                        'command line flag')
             else:
                 key = 'NOOP'
                 value = True
@@ -244,6 +343,15 @@ def extract(text):
         >>> print(', '.join(list(map(str, extract(text)))))
         <Directive(+ELLIPSIS)>, <Directive(-NORMALIZE_WHITESPACE)>
 
+    Example:
+        >>> any(extract(' # xdoctest: skip'))
+        True
+        >>> any(extract(' # badprefix: not-a-directive'))
+        False
+        >>> any(extract(' # xdoctest: skip'))
+        True
+        >>> any(extract(' # badprefix: not-a-directive'))
+        False
     """
     # The extracted directives are inline if the text only contains comments
     inline = not all(line.strip().startswith('#')
