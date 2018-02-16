@@ -31,6 +31,10 @@ class Config(dict):
             'colored': True,
             # 'colored': False,
             'on_error': 'raise',
+
+            'partnos': False,
+            # 'partnos': True,
+
             'reportchoice': 'udiff',
             'verbose': 1,
         })
@@ -180,6 +184,7 @@ class DocTest(object):
                      offset_linenos=False):
         self._parse()
         colored = self.config.getvalue('colored', colored)
+        partnos = self.config.getvalue('partnos')
 
         n_digits = None
         startline = 1
@@ -195,7 +200,7 @@ class DocTest(object):
         for part in self._parts:
             part_text = part.format_src(linenos=linenos, want=want,
                                         startline=startline, n_digits=n_digits,
-                                        colored=colored)
+                                        colored=colored, partnos=partnos)
             yield part_text
 
     def format_src(self, linenos=True, colored=None, want=True,
@@ -271,6 +276,9 @@ class DocTest(object):
             self._parts = parser.DoctestParser().parse(self.docsrc, info)
             self._parts = [p for p in self._parts
                            if not isinstance(p, six.string_types)]
+        # Ensure part numbers are given
+        for partno, part in enumerate(self._parts):
+            part.partno = partno
 
     def _import_module(self):
         if self.module is None:
@@ -330,7 +338,7 @@ class DocTest(object):
         # Initialize a new runtime state
         runstate = self._runstate = directive.RuntimeState()
         # setup reporting choice
-        runstate.set_report(self.config['reportchoice'])
+        runstate.set_report_style(self.config['reportchoice'])
 
         # Use the same capture object for all parts in the test
         cap = utils.CaptureStdout(supress=self._suppressed_stdout)

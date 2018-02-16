@@ -184,30 +184,27 @@ class DoctestParser(object):
         # Find all directives here:
         # A directive necessarilly will split a doctest into multiple parts
         # There are two types: block directives and inline-directives
+        # * Block directives must exist on their own PS1 line
+        # * Block directives insert a breakpoint before
+        # * Inline directives may be on a PS1 or PS2 line
+        # * Inline directives inserts a breakpoint before and after
         # First find block directives which must exist on there own PS1 line
         break_linenos = []
-        line_to_directives = {}
-        for s1 in ps1_linenos:
-            line = exec_source_lines[s1]
-            directives = list(directive.extract(line))
-            if directives:
-                break_linenos.append(s1)
-                line_to_directives[s1] = directives
-
+        ps1_to_directive = {}
         for s1, s2 in zip(ps1_linenos, ps1_linenos[1:] + [None]):
-            if s1 not in break_linenos:
-                lines = exec_source_lines[s1:s2]
-                directives = list(directive.extract('\n'.join(lines)))
-                if directives:
-                    break_linenos.append(s1)
-                    line_to_directives[s1] = directives
+            lines = exec_source_lines[s1:s2]
+            directives = list(directive.extract('\n'.join(lines)))
+            if directives:
+                ps1_to_directive[s1] = directives
+                break_linenos.append(s1)
+                if directives[0].inline:
                     if s2 is not None:
                         break_linenos.append(s2)
 
         def slice_example(s1, s2, want_lines=None):
             exec_lines = exec_source_lines[s1:s2]
             orig_lines = source_lines[s1:s2]
-            directives = line_to_directives.get(s1, None)
+            directives = ps1_to_directive.get(s1, None)
             example = doctest_part.DoctestPart(exec_lines,
                                                want_lines=want_lines,
                                                orig_lines=orig_lines,

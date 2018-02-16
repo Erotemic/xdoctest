@@ -59,6 +59,11 @@ def test_failure():
 
 
 def test_format_src():
+    """
+    python testing/test_doctest_example.py test_format_src
+
+    pytest testing/test_doctest_example.py::test_format_src -s -v
+    """
     string = utils.codeblock(
         '''
         >>> i = 0
