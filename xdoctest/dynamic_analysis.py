@@ -1,6 +1,61 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 import inspect
+import os
+import types
+import six
+
+
+def parse_dynamic_calldefs(modpath=None):
+    """
+    Dynamic parsing of module doctestable items.
+
+    While this does execute module code it is needed for testing extension
+    libraries.
+
+    CommandLine:
+        python -m xdoctest.dynamic_analysis parse_dynamic_calldefs
+
+    Example:
+        >>> from xdoctest import dynamic_analysis
+        >>> module = dynamic_analysis
+        >>> calldefs = parse_dynamic_calldefs(module.__file__)
+        >>> for key, calldef in sorted(calldefs.items()):
+        ...     print('key = {!r}'.format(key))
+        ...     print(' * calldef.callname = {}'.format(calldef.callname))
+        ...     if calldef.docstr is None:
+        ...         print(' * len(calldef.docstr) = {}'.format(calldef.docstr))
+        ...     else:
+        ...         print(' * len(calldef.docstr) = {}'.format(len(calldef.docstr)))
+    """
+    from xdoctest import static_analysis as static
+    from xdoctest import utils  # NOQA
+    # Possible option for dynamic parsing
+    module = utils.import_module_from_path(modpath)
+    calldefs = {}
+
+    if getattr(module, '__doc__'):
+        calldefs['__doc__'] = static.CallDefNode(
+            callname='__doc__',
+            docstr=module.__doc__,
+            lineno=0,
+            doclineno=1,
+            doclineno_end=1,
+            args=None
+        )
+
+    for key, val in iter_module_doctestables(module):
+        # if hasattr(val, '__doc__'):
+        if hasattr(val, '__doc__') and hasattr(val, '__name__'):
+            calldefs[key] = static.CallDefNode(
+                callname=val.__name__,
+                docstr=val.__doc__,
+                lineno=0,
+                doclineno=1,
+                doclineno_end=1,
+                args=None
+            )
+    return calldefs
 
 
 def get_stack_frame(n=0, strict=True):
@@ -65,6 +120,155 @@ def get_parent_frame(n=0):
     """
     parent_frame = get_stack_frame(n=n + 2)
     return parent_frame
+
+
+def iter_module_doctestables(module):
+    r"""
+    Yeilds doctestable objects that belong to a live python module
+
+    Args:
+        module (module): live python module
+
+    Yeilds:
+        tuple (str, callable): (funcname, func) doctestable
+
+    CommandLine:
+        python -m xdoctest.dynamic_analysis iter_module_doctestables
+
+    Example:
+        >>> from xdoctest import dynamic_analysis
+        >>> module = dynamic_analysis
+        >>> doctestable_list = list(iter_module_doctestables(module))
+        >>> items = sorted([str(item) for item in doctestable_list])
+        >>> print('[' + '\n'.join(items) + ']')
+    """
+    valid_func_types = (
+        types.FunctionType,
+        types.BuiltinFunctionType,
+        types.MethodType,
+        classmethod,
+        staticmethod,
+        property,
+    )
+
+    if six.PY2:
+        valid_class_types = (types.ClassType,  types.TypeType,)
+    else:
+        valid_class_types = six.class_types
+
+    def _recurse(item, module):
+        return is_defined_by_module(item, module)
+
+    #modpath = static.modpath_to_modname(module.__file__)
+    for key, val in module.__dict__.items():
+        if isinstance(val, valid_func_types):
+            if not _recurse(val, module):
+                continue
+            yield key, val
+        elif isinstance(val, valid_class_types):
+            if not _recurse(val, module):
+                continue
+            # Yield the class itself
+            yield key, val
+            # Yield methods of the class
+            for subkey, subval in six.iteritems(val.__dict__):
+                # Unbound methods are still typed as functions
+                if isinstance(subval, valid_func_types):
+                    if not _recurse(subval, module):
+                        continue
+                    # unpack underlying function
+                    if isinstance(subval, property):
+                        item = subval.fget
+                    elif isinstance(subval, staticmethod):
+                        item = subval.__func__
+                    elif isinstance(subval, classmethod):
+                        item = subval.__func__
+                    else:
+                        item = subval
+                    yield key + '.' + subkey, item
+
+
+def _func_globals(func):
+    if six.PY2:
+        return getattr(func, 'func_globals')
+    else:
+        return getattr(func, '__globals__')
+
+
+def is_defined_by_module(item, module):
+    """
+    Check if item is directly defined by a module.
+
+    This check may not always work, especially for decorated functions.
+
+    Example:
+        >>> from xdoctest import dynamic_analysis
+        >>> item = dynamic_analysis.is_defined_by_module
+        >>> module = dynamic_analysis
+        >>> assert is_defined_by_module(item, module)
+        >>> item = dynamic_analysis.six
+        >>> assert not is_defined_by_module(item, module)
+        >>> item = dynamic_analysis.six.print_
+        >>> assert not is_defined_by_module(item, module)
+        >>> assert not is_defined_by_module(print, module)
+        >>> import _ctypes
+        >>> item = _ctypes.Array
+        >>> module = _ctypes
+        >>> assert is_defined_by_module(item, module)
+        >>> item = _ctypes.CFuncPtr.restype
+        >>> module = _ctypes
+        >>> assert is_defined_by_module(item, module)
+
+    """
+    from xdoctest import static_analysis as static
+    target_modname = module.__name__
+
+    # invalid_types = (int, float, list, tuple, set)
+    # if isinstance(item, invalid_types) or isinstance(item, six.string_type):
+    #     raise TypeError('can only test definitions for classes and functions')
+
+    flag = False
+    if isinstance(item, types.ModuleType):
+        if not hasattr(item, '__file__'):
+            try:
+                # hack for cv2 and xfeatures2d
+                name = static.modpath_to_modname(module.__file__)
+                flag = name in str(item)
+            except:
+                flag = False
+        else:
+            item_modpath = os.path.realpath(os.path.dirname(item.__file__))
+            mod_fpath = module.__file__.replace('.pyc', '.py')
+            if not mod_fpath.endswith('__init__.py'):
+                flag = False
+            else:
+                modpath = os.path.realpath(os.path.dirname(mod_fpath))
+                modpath = modpath.replace('.pyc', '.py')
+                flag = item_modpath.startswith(modpath)
+    else:
+        # unwrap static/class/property methods
+        if isinstance(item, property):
+            item = item.fget
+        if isinstance(item, staticmethod):
+            item = item.__func__
+        if isinstance(item, classmethod):
+            item = item.__func__
+
+        if getattr(item, '__module__', None) == target_modname:
+            flag = True
+        elif hasattr(item, '__objclass__'):
+            # should we just unwrap objclass?
+            parent = item.__objclass__
+            if getattr(parent, '__module__', None) == target_modname:
+                flag = True
+        if not flag:
+            try:
+                item_modname = _func_globals(item)['__name__']
+                if item_modname == target_modname:
+                    flag = True
+            except  AttributeError:
+                pass
+    return flag
 
 
 if __name__ == '__main__':

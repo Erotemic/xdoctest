@@ -297,20 +297,16 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
         import sys
         DYNAMIC = '--xdoc-dynamic' in sys.argv
         if DYNAMIC:
-            # Possible option for dynamic parsing
-            mod = utils.import_module_from_path(modpath)
-            calldefs = {}
-            for key, val in vars(mod).items():
-                if hasattr(val, '__doc__') and hasattr(val, '__name__'):
-                    calldefs[key] = static.CallDefNode(
-                        callname=val.__name__,
-                        docstr=val.__doc__,
-                        lineno=0,
-                        doclineno=1,
-                        doclineno_end=1,
-                        args=None
-                    )
-            yield calldefs, modpath
+            from xdoctest import dynamic_analysis as dynamic
+            try:
+                calldefs = dynamic.parse_dynamic_calldefs(modpath)
+            except Exception as ex:
+                msg = 'Cannot dynamically parse module={} at path={}.\nCaused by: {}'
+                msg = msg.format(modname, modpath, ex)
+                warnings.warn(msg)  # real code contained errors
+                raise
+            else:
+                yield calldefs, modpath
         else:
             try:
                 calldefs = static.parse_calldefs(fpath=modpath)
