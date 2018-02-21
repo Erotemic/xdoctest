@@ -299,6 +299,10 @@ development.
 #### Running:
 - [x] Standalone `doctest_module` entry point.
 - [x] Plugin based `pytest` entry point.
+- [x] Defaults to static parsing doctests
+- [x] Ability to dynamically parse doctests
+- [x] Can run tests in extension modules
+- [ ] Add dynamic parsing to pytest plugin
 
 ### Directives
 - [x] multi-line directives (new feature, not in doctest)
@@ -316,6 +320,7 @@ development.
 - [x] CI-via Travis 
 - [x] CI-via AppVeyor
 - [x] Coverage
+- [ ] Add a small pybind11 extension module that demonstrates how tests can be defined and run in extension modules
 - [ ] 95% or better coverage (note reported coverage is artificially small due to issues with coverage of pytest plugins)
 
 #### Documentation:
