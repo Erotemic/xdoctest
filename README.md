@@ -24,6 +24,19 @@ pip install xdoctest
 pip install git+git://github.com/Erotemic/xdoctest.git@master
 ```
 
+## Quick Start
+After installing, the fastest way to run all doctests in your project is:
+```
+python -m xdoctest /path/to/your/pkg-or-module.py
+```
+
+or if your module has been pip-installed / is in the PYTHONPATH run
+
+```
+python -m xdoctest yourmodname
+```
+
+
 ## Getting Started
 
 There are two ways to use `xdoctest`: via `pytest` or via the native interface.
