@@ -453,7 +453,10 @@ class DocTest(object):
 
             # TODO: Determine if the module is in the path and if
             # HACK: currently using a heuristic to determine the above
-            has_xdoc_main = '.doctest_module' in open(self.modpath, 'r').read()
+            if self.modpath and self.modpath.endswith('.py'):
+                has_xdoc_main = '.doctest_module' in open(self.modpath, 'r').read()
+            else:
+                has_xdoc_main = False
             in_path = True
             if has_xdoc_main and in_path:
                 return 'python -m ' + self.modname + ' ' + self.unique_callname

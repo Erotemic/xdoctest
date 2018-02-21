@@ -413,7 +413,12 @@ def import_module_from_path(modpath):
     dpath, rel_modpath = static.split_modpath(modpath)
     modname = static.modpath_to_modname(modpath)
     with PythonPathContext(dpath):
-        module = import_module_from_name(modname)
+        try:
+            module = import_module_from_name(modname)
+        except Exception:
+            print('Failed to import modname={} with modpath={}'.format(
+                modname, modpath))
+            raise
     # TODO: use this implementation once pytest fixes importlib
     # if six.PY2:  # nocover
     #     import imp

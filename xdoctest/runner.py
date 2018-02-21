@@ -48,8 +48,8 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
 
     if command is None:
         # Display help if command is not specified
-        print('Not testname given. Use `all` to run everything or')
-        print('Pick from a list of valid choices:')
+        print('Not testname given. Use `all` to run everything or'
+              ' pick from a list of valid choices:')
         command = 'list'
 
     run_all = (command == 'all')
@@ -69,7 +69,8 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
         if len(examples) == 0:
             print('... no docstrings with examples found')
         else:
-            print('\n'.join([example.cmdline for example in examples]))
+            print('    ' + '\n    '.join([example.cmdline
+                                          for example in examples]))
         run_summary = {'action': 'list'}
     else:
         print('gathering tests')

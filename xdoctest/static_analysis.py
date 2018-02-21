@@ -387,7 +387,7 @@ def _platform_pylib_exts():  # nocover
     for tag in _extension_module_tags():
         valid_exts.append('.' + tag + base_ext)
     valid_exts.append(base_ext)
-    return valid_exts
+    return tuple(valid_exts)
     # if sys.platform.startswith('linux'):  # nocover
     #     pylib_ext = '.so'
     # elif sys.platform.startswith('win32'):  # nocover
