@@ -4,12 +4,14 @@ Core methods used by xdoctest runner and plugin code to statically extract
 doctests from a module or package.
 """
 from __future__ import print_function, division, absolute_import, unicode_literals
+import sys
 import textwrap
 import warnings
 import six
 import itertools as it
 from os.path import exists
 from fnmatch import fnmatch
+from xdoctest import dynamic_analysis as dynamic
 from xdoctest import static_analysis as static
 from xdoctest import docscrape_google
 from xdoctest import parser
@@ -256,12 +258,12 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
 
 def _rectify_to_modpath(modpath_or_name):
     """ if modpath_or_name is a name, statically converts it to a path """
-    if exists(modpath_or_name):
-        modpath = modpath_or_name
-    else:
-        modname = modpath_or_name
-        modpath = static.modname_to_modpath(modname)
-        assert modpath is not None, 'cannot find module={}'.format(modname)
+    modpath = static.modname_to_modpath(modpath_or_name)
+    if modpath is None:
+        if exists(modpath_or_name):
+            modpath = modpath_or_name
+        else:
+            raise ValueError('Cannot find module={}'.format(modpath_or_name))
     return modpath
 
 
@@ -282,9 +284,8 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
     """
     pkgpath = _rectify_to_modpath(modpath_or_name)
 
-    modpaths = static.package_modpaths(pkgpath, with_pkg=True)
+    modpaths = static.package_modpaths(pkgpath, with_pkg=True, with_libs=True)
     modpaths = list(modpaths)
-    print('modpaths = {!r}'.format(modpaths))
     for modpath in modpaths:
         modname = static.modpath_to_modname(modpath)
         if any(fnmatch(modname, pat) for pat in exclude):
@@ -294,10 +295,20 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
                 'Module {} does not exist. '
                 'Is it an old pyc file?'.format(modname))
             continue
-        import sys
-        DYNAMIC = '--xdoc-dynamic' in sys.argv
-        if DYNAMIC:
-            from xdoctest import dynamic_analysis as dynamic
+
+        FORCE_DYNAMIC = '--xdoc-force-dynamic' in sys.argv
+        # if false just skip extension modules
+        ALLOW_DYNAMIC = '--no-xdoc-dynamic' not in sys.argv
+
+        if FORCE_DYNAMIC:
+            # Force dynamic parsing for everything
+            do_dynamic = True
+        else:
+            # Some modules can only be parsed dynamically
+            needs_dynamic = modpath.endswith(static._platform_pylib_exts())
+            do_dynamic = needs_dynamic and ALLOW_DYNAMIC
+
+        if do_dynamic:
             try:
                 calldefs = dynamic.parse_dynamic_calldefs(modpath)
             except Exception as ex:
