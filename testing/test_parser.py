@@ -132,8 +132,6 @@ def test_label_indented_lines():
         ('text', '            text'),
         ('text', '    '),    # FIXME: weird that this space has an indent
     ]
-    # print('labeled = ' + ub.repr2(labeled))
-    # print('expected = ' + ub.repr2(expected))
     assert labeled == expected
 
 
@@ -337,7 +335,6 @@ def test_text_after_want():
     ''')
     self = parser.DoctestParser()
     labeled = self._label_docsrc_lines(string)
-    # print(ub.repr2(labeled))
     expected = [
         ('text', 'Example:'),
         ('dsrc', '    >>> dsrc()'),
@@ -359,7 +356,6 @@ def test_want_ellipse_with_space():
     string = string + ' '
     self = parser.DoctestParser()
     labeled = self._label_docsrc_lines(string)
-    # print(ub.repr2(labeled))
     expected = [
         ('text', 'Example:'),
         ('dsrc', '    >>> dsrc()'),
@@ -495,8 +491,7 @@ def test_inline_directive():
         print(part.source)
         print('----')
     try:
-        import ubelt as ub
-        print(ub.repr2(parts))
+        print(parts)
     except ImportError:
         pass
     # TODO: finsh me
@@ -521,8 +516,7 @@ def test_block_directive_nowant1():
         print(part.source)
         print('----')
     try:
-        import ubelt as ub
-        print(ub.repr2(parts))
+        print(parts)
     except ImportError:
         pass
     assert len(parts) == 1
@@ -568,8 +562,7 @@ def test_block_directive_want1_assign():
         print(part.source)
         print('----')
     try:
-        import ubelt as ub
-        print(ub.repr2(parts))
+        print(parts)
     except ImportError:
         pass
     assert len(parts) == 1
@@ -631,8 +624,7 @@ def test_block_directive_want2_eval():
         print(part.source)
         print('----')
     try:
-        import ubelt as ub
-        print(ub.repr2(parts))
+        print(parts)
     except ImportError:
         pass
     assert len(parts) == 3
