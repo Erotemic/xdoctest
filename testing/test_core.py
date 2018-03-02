@@ -252,6 +252,28 @@ def test_collect_module_level_singleline():
     temp.cleanup()
 
 
+def test_no_docstr():
+    """
+    CommandLine:
+        python -m test_core test_no_docstr
+    """
+    with utils.TempDir() as temp:
+        dpath = temp.dpath
+        modpath = join(dpath, 'test_no_docstr.py')
+        source = utils.codeblock(
+            '''
+            def get_scales(kpts):
+                """ Gets average scale (does not take into account elliptical shape """
+                _scales = np.sqrt(get_sqrd_scales(kpts))
+                return _scales
+            ''')
+        with open(modpath, 'w') as file:
+            file.write(source)
+        from xdoctest import core
+        doctests = list(core.parse_doctestables(modpath, style='freeform'))
+        assert len(doctests) == 0
+
+
 if __name__ == '__main__':
     r"""
     CommandLine:
