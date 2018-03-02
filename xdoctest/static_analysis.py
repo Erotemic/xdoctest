@@ -194,22 +194,23 @@ class TopLevelVisitor(ast.NodeVisitor):
     def _docstr_line_workaround(self, docnode):
         # lineno points to the last line of a string
         endpos = docnode.lineno - 1
+        docstr = utils.ensure_unicode(docnode.value.s)
         # First assume we have a single quoted string
         startpos = endpos
         # See if we can check for the tripple quote
         # This is a hueristic, and is not robust
         trips = ('"""', "'''")
-        endline = self.sourcelines[endpos]
+        endline = re.escape(self.sourcelines[endpos])
         for trip in trips:
             # try to account for comments
-            endline = re.sub(endline, trip + '\s*#.*$', trip).strip()
-            if endline.endswith(trip):
+            endline_ = re.sub(endline, trip + '\s*#.*$', trip).strip()
+            if endline_.endswith(trip):
                 # Hack: we can count the number of lines in the str, but we can
                 # be 100% sure that its a multiline string
                 #
                 # there are pathological cases this wont work for
                 # (i.e. think nestings: """ # ''' # """)
-                nlines = utils.ensure_unicode(docnode.value.s).count('\n')
+                nlines = docstr.count('\n')
                 startline = self.sourcelines[endpos - nlines]
                 if not startline.strip().startswith(trip):
                     startpos = endpos - nlines

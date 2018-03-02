@@ -478,9 +478,9 @@ def test_inline_directive():
                   """)
         finalwant
         ''')
-    source_lines = string.splitlines()
+    # source_lines = string.splitlines()
     self = parser.DoctestParser()
-    ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
+    # ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
     # print(ps1_linenos)
     # [0, 1, 3, 4, 7, 8, 10, 11, 12]
     # assert ps1_linenos == [0, 2, 5, 6, 8, 9, 10]
@@ -507,9 +507,9 @@ def test_block_directive_nowant1():
         >>> func1()
         >>> func2()
         ''')
-    source_lines = string.splitlines()
+    # source_lines = string.splitlines()
     self = parser.DoctestParser()
-    ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
+    # ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
     parts = self.parse(string)
     print('----')
     for part in parts:
@@ -520,6 +520,7 @@ def test_block_directive_nowant1():
     except ImportError:
         pass
     assert len(parts) == 1
+
 
 def test_block_directive_nowant2():
     """
@@ -534,9 +535,9 @@ def test_block_directive_nowant2():
         >>> func1()
         >>> func2()
         ''')
-    source_lines = string.splitlines()
+    # source_lines = string.splitlines()
     self = parser.DoctestParser()
-    ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
+    # ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
     parts = self.parse(string)
     # TODO: finsh me
     assert len(parts) == 2
@@ -553,9 +554,9 @@ def test_block_directive_want1_assign():
         >>> _ = func2()  # assign this line so we dont break it off for eval
         want
         ''')
-    source_lines = string.splitlines()
+    # source_lines = string.splitlines()
     self = parser.DoctestParser()
-    ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
+    # ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
     parts = self.parse(string)
     print('----')
     for part in parts:
@@ -585,6 +586,7 @@ def test_block_directive_want1_eval():
     parts = self.parse(string)
     assert len(parts) == 2
 
+
 def test_block_directive_want2_assign():
     """
         python ~/code/xdoctest/testing/test_parser.py test_block_directive_want2
@@ -602,6 +604,7 @@ def test_block_directive_want2_assign():
     ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
     parts = self.parse(string)
     assert len(parts) == 2
+
 
 def test_block_directive_want2_eval():
     """
@@ -630,7 +633,7 @@ def test_block_directive_want2_eval():
     assert len(parts) == 3
 
 
-def test_block_directive_want2_eval():
+def test_block_directive_want2_eval2():
     """
         python ~/code/xdoctest/testing/test_parser.py test_block_directive_want2_eval
     """
