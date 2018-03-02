@@ -1,0 +1,8 @@
+Version 0.2.1
+-------------
+* Fix issue in _docstr_line_workaround
+
+
+Version 0.2.0
+-------------
+* Starting a whats new changelog
