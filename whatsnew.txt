@@ -1,5 +1,7 @@
 Version 0.2.1
 -------------
+* The default runtime state can be customized with the `--xdoc-options` command line argument.
+* Fix crash when trying to read binary files
 * Fix issue in _docstr_line_workaround
 
 
