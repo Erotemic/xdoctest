@@ -36,6 +36,7 @@ class Config(dict):
             # 'partnos': True,
 
             'reportchoice': 'udiff',
+            'default_runtime_state': {},
             'verbose': 1,
         })
 
@@ -336,7 +337,8 @@ class DocTest(object):
         self._suppressed_stdout = verbose <= 1
 
         # Initialize a new runtime state
-        runstate = self._runstate = directive.RuntimeState()
+        default_state = self.config['default_runtime_state']
+        runstate = self._runstate = directive.RuntimeState(default_state)
         # setup reporting choice
         runstate.set_report_style(self.config['reportchoice'])
 
@@ -439,6 +441,13 @@ class DocTest(object):
 
         if self.exc_info is None:
             self.failed_part = None
+
+        if len(self.skipped_parts) == len(self._parts):
+            # we skipped everything
+            if self.mode == 'pytest':
+                import pytest
+                pytest.skip()
+
         return self.post_run(verbose)
 
     @property
@@ -453,10 +462,10 @@ class DocTest(object):
 
             # TODO: Determine if the module is in the path and if
             # HACK: currently using a heuristic to determine the above
-            if self.modpath and self.modpath.endswith('.py'):
-                has_xdoc_main = '.doctest_module' in open(self.modpath, 'r').read()
-            else:
-                has_xdoc_main = False
+            # if self.modpath and self.modpath.endswith('.py'):
+            #     has_xdoc_main = '.doctest_module' in open(self.modpath, 'r').read()
+            # else:
+            has_xdoc_main = False
             in_path = True
             if has_xdoc_main and in_path:
                 return 'python -m ' + self.modname + ' ' + self.unique_callname
@@ -727,7 +736,10 @@ class DocTest(object):
             if verbose >= 1:
                 if self._suppressed_stdout:
                     self._print_captured()
-                success = self._color('SUCCESS', 'green')
+                if len(self.skipped_parts) == len(self._parts):
+                    success = self._color('SKIPPED', 'yellow')
+                else:
+                    success = self._color('SUCCESS', 'green')
                 print('* {}: {}'.format(success, self.node))
         else:
             if verbose >= 1:

@@ -25,6 +25,9 @@ def main():
     parser.add_argument('argv', nargs='*', help='What do?')
     parser.add_argument(*('--style',), type=str, help='choose your style',
                         default='freeform')
+    parser.add_argument(*('--options',), type=str,
+                        help='specify the default directive state',
+                        default=None)
     args = parser.parse_args()
     ns = args.__dict__.copy()
 
@@ -41,10 +44,29 @@ def main():
 
     style = ub.argval('--style', default=ns['style'])
 
+    if ns['options'] is None:
+        from os.path import exists
+        if exists('pytest.ini'):
+            from six.moves import configparser
+            parser = configparser.ConfigParser()
+            parser.read('pytest.ini')
+
+            ns['options'] = parser.get('pytest', 'xdoctest_options')
+        else:
+            ns['options'] = ''
+
+    from xdoctest.directive import parse_directive_optstr
+    default_runtime_state = {}
+    for optpart in ns['options'].split(','):
+        directive = parse_directive_optstr(optpart)
+        default_runtime_state[directive.name] = directive.positive
+
+    config = {
+        'default_runtime_state': default_runtime_state
+    }
+
     import xdoctest
-    # xdoctest.doctest_module(modname, command='all', argv=argv, style='freeform')
-    # xdoctest.doctest_module(modname, argv=argv, style='freeform')
-    xdoctest.doctest_module(modname, argv=argv, style=style)
+    xdoctest.doctest_module(modname, argv=argv, style=style, config=config)
 
 
 if __name__ == '__main__':

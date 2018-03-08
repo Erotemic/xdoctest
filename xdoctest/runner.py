@@ -14,7 +14,7 @@ import sys
 
 
 def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
-                   style='google', verbose=None):
+                   style='google', verbose=None, config=None):
     """
     Executes requestsed google-style doctests in a package or module.
     Main entry point into the testing framework.
@@ -27,6 +27,7 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
         verbose (bool):  verbosity flag
         exclude (list): ignores any modname matching any of these
             glob-like patterns
+        config (dict): modifies each examples configuration
 
     Example:
         >>> modname = 'xdoctest.dynamic_analysis'
@@ -86,6 +87,10 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
             for example in _gather_zero_arg_examples(modpath):
                 if command in example.valid_testnames:
                     enabled_examples.append(example)
+
+        if config:
+            for example in enabled_examples:
+                example.config.update(config)
 
         run_summary = _run_examples(enabled_examples, verbose)
 

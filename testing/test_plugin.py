@@ -212,6 +212,28 @@ class TestXDoctest(object):
             '*1 passed*',
         ])
 
+    def test_xdoctest_options(self, testdir):
+        """Test support for xdoctest_encoding ini option.
+
+        CommandLine:
+            pytest testing/test_plugin.py::TestXDoctest::test_xdoctest_options
+        """
+        # Add command line that skips all doctests by default
+        testdir.makeini('''
+            [pytest]
+            addopts= --xdoc-options=SKIP
+        ''')
+        p = testdir.makepyfile('''
+            def add_one(x):
+                """
+                >>> add_one(1)
+                2
+                """
+                return x + 1
+        ''')
+        reprec = testdir.inline_run(p, "--xdoctest-modules", *EXTRA_ARGS)
+        reprec.assertoutcome(skipped=1, failed=0, passed=0)
+
     def test_doctest_unexpected_exception(self, testdir):
         """
         CommandLine:

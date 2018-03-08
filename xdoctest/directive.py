@@ -99,7 +99,7 @@ def named(key, pattern):
 DEFAULT_RUNTIME_STATE = {
     'DONT_ACCEPT_BLANKLINE': False,
     'ELLIPSIS': True,
-    'IGNORE_WHITESPACE': True,
+    'IGNORE_WHITESPACE': False,
     'IGNORE_EXCEPTION_DETAIL': False,
     'NORMALIZE_WHITESPACE': True,
 
@@ -156,8 +156,10 @@ class RuntimeState(utils.NiceRepr):
             SKIP: False
         })>
     """
-    def __init__(self):
+    def __init__(self, default_state=None):
         self._global_state = DEFAULT_RUNTIME_STATE.copy()
+        if default_state:
+            self._global_state.update(default_state)
         self._inline_state = {}
 
     def to_dict(self):
@@ -366,11 +368,13 @@ def extract(text):
         if m:
             for key, optstr in m.groupdict().items():
                 if optstr:
-                    for directive in parse_directive_optstr(optstr, inline):
-                        yield directive
+                    for optpart in optstr.split(','):
+                        directive = parse_directive_optstr(optpart, inline)
+                        if directive:
+                            yield directive
 
 
-def parse_directive_optstr(optstr, inline=None):
+def parse_directive_optstr(optpart, inline=None):
     """
     Parses the information in the directive
 
@@ -379,36 +383,39 @@ def parse_directive_optstr(optstr, inline=None):
         comma separated
         may contain one paren enclosed argument (experimental)
         all spaces are ignored
+
+    Example:
+        >>> print(str(parse_directive_optstr('+IGNORE_WHITESPACE')))
+        <Directive(+IGNORE_WHITESPACE)>
     """
-    for optpart in optstr.split(','):
-        optpart = optpart.strip()
-        # all spaces are ignored
-        optpart = optpart.replace(' ', '')
+    optpart = optpart.strip()
+    # all spaces are ignored
+    optpart = optpart.replace(' ', '')
 
-        paren_pos = optpart.find('(')
-        if paren_pos > -1:
-            # handle simple paren case.
-            # TODO expand or remove
-            args = [optpart[paren_pos + 1:optpart.find(')')]]
-            optpart = optpart[:paren_pos]
-        else:
-            args = []
+    paren_pos = optpart.find('(')
+    if paren_pos > -1:
+        # handle simple paren case.
+        # TODO expand or remove
+        args = [optpart[paren_pos + 1:optpart.find(')')]]
+        optpart = optpart[:paren_pos]
+    else:
+        args = []
 
-        # Determine if the option starts with + or - (we assume + by default)
-        if optpart.startswith(('+', '-')):
-            positive = not optpart.startswith('-')
-            name = optpart[1:]
-        else:
-            positive = True
-            name = optpart
+    # Determine if the option starts with + or - (we assume + by default)
+    if optpart.startswith(('+', '-')):
+        positive = not optpart.startswith('-')
+        name = optpart[1:]
+    else:
+        positive = True
+        name = optpart
 
-        name = name.upper()
-        if name not in COMMANDS:
-            msg = 'Unknown directive: {!r}'.format(optpart)
-            warnings.warn(msg)
-        else:
-            directive = Directive(name, positive, args, inline)
-            yield directive
+    name = name.upper()
+    if name not in COMMANDS:
+        msg = 'Unknown directive: {!r}'.format(optpart)
+        warnings.warn(msg)
+    else:
+        directive = Directive(name, positive, args, inline)
+        return directive
 
 
 if __name__ == '__main__':
