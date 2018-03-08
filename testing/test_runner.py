@@ -296,6 +296,38 @@ def test_parse_cmdline():
     assert None is runner._parse_commandline(command=None, style=None, verbose=None, argv=['--google'])[0]
 
 
+def test_runner_config():
+    """
+    pytest testing/test_runner.py::test_runner_config -s
+    """
+    from xdoctest import runner
+
+    source = utils.codeblock(
+        '''
+        def foo():
+            """
+                Example:
+                    >>> print('i wanna see this')
+            """
+        ''')
+
+    config = {
+        'default_runtime_state': {'SKIP': True},
+    }
+
+    with utils.TempDir() as temp:
+        dpath = temp.dpath
+        modpath = join(dpath, 'test_example_run.py')
+
+        with open(modpath, 'w') as file:
+            file.write(source)
+
+        with utils.CaptureStdout() as cap:
+            runner.doctest_module(modpath, 'foo', argv=[''], config=config)
+
+    assert 'SKIPPED' in cap.text
+
+
 if __name__ == '__main__':
     r"""
     CommandLine:

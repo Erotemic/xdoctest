@@ -52,8 +52,8 @@ monkey_patch_disable_normal_doctest()
 def pytest_addoption(parser):
     group = parser.getgroup('collect')
     parser.addini('xdoctest_encoding', 'encoding used for xdoctest files', default='utf-8')
-    # parser.addini('xdoctest_optionflags', 'option flags for xdoctests',
-    #               type='args', default=['ELLIPSIS'])
+    # parser.addini('xdoctest_options', 'default directive flags for doctests',
+    #               type="args", default=["+ELLIPSIS"])
     group.addoption('--xdoctest-modules', '--xdoctest', '--xdoc',
                     action='store_true', default=False,
                     help='run doctests in all .py modules using new style parsing',
@@ -72,6 +72,11 @@ def pytest_addoption(parser):
                     help='basic style used to write doctests',
                     choices=core.DOCTEST_STYLES,
                     dest='xdoctest_style')
+
+    group.addoption('--xdoctest-options', '--xdoc-options',
+                    type=str.lower, default=None,
+                    help='default directive flags for doctests',
+                    dest='xdoctest_options')
 
     group.addoption('--xdoctest-report', '--xdoc-report',
                     type=str.lower, default='udiff',
@@ -156,7 +161,26 @@ class XDoctestItem(pytest.Item):
         return self.fspath, self.example.lineno, "[xdoctest] %s" % self.name
 
 
-class XDoctestTextfile(pytest.Module):
+class _XDoctestBase(pytest.Module):
+
+    def _prepare_internal_config(self):
+        from xdoctest.directive import parse_directive_optstr
+        # directive_optparts = self.config.getini('xdoctest_options")
+        directive_optstr = self.config.getvalue('xdoctest_options')
+        default_runtime_state = {}
+        if directive_optstr:
+            for optpart in directive_optstr.split(','):
+                directive = parse_directive_optstr(optpart)
+                default_runtime_state[directive.name] = directive.positive
+
+        self._examp_conf = {
+            'default_runtime_state': default_runtime_state,
+            'colored': self.config.getvalue('xdoctest_colored'),
+            'reportchoice': self.config.getoption("xdoctest_report"),
+        }
+
+
+class XDoctestTextfile(_XDoctestBase):
     obj = None
 
     def collect(self):
@@ -167,24 +191,22 @@ class XDoctestTextfile(pytest.Module):
         name = self.fspath.basename
         globs = {'__name__': '__main__'}
 
+        self._prepare_internal_config()
+
         style = self.config.getvalue('xdoctest_style')
-        colored = self.config.getvalue('xdoctest_colored')
-        reportchoice = self.config.getoption("xdoctest_report")
 
         for example in core.parse_docstr_examples(text, name, fpath=filename, style=style):
             example.globs.update(globs)
-            example.config['colored'] = colored
-            example.config['reportchoice'] = reportchoice
+            example.config.update(self._examp_conf)
             yield XDoctestItem(name, self, example)
 
 
-class XDoctestModule(pytest.Module):
+class XDoctestModule(_XDoctestBase):
     def collect(self):
         modpath = str(self.fspath)
 
         style = self.config.getvalue('xdoctest_style')
-        colored = self.config.getvalue('xdoctest_colored')
-        reportchoice = self.config.getoption("xdoctest_report")
+        self._prepare_internal_config()
 
         try:
             examples = list(core.parse_doctestables(modpath, style=style))
@@ -194,15 +216,8 @@ class XDoctestModule(pytest.Module):
             else:
                 raise
 
-        # if self.fspath.basename == "conftest.py":
-        #     module = self.config.pluginmanager._importconftest(self.fspath)
-        # else:
-        #     module = self.fspath.pyimport()
-
         for example in examples:
-            example.config['colored'] = colored
-            example.config['reportchoice'] = reportchoice
-            # example.module = module
+            example.config.update(self._examp_conf)
             name = example.unique_callname
             yield XDoctestItem(name, self, example)
 
@@ -349,7 +364,6 @@ DOCTEST_REPORT_CHOICES = (
 
 
 # def get_optionflags(parent):
-#     optionflags_str = parent.config.getini("xdoctest_optionflags")
 #     flag_lookup_table = _get_flag_lookup()
 #     flag_acc = 0
 #     for flag in optionflags_str:
