@@ -94,10 +94,12 @@ def named(key, pattern):
     return '(?P<{}>{})'.format(key, pattern)
 
 
+# TODO: modify global directive defaults
+
 DEFAULT_RUNTIME_STATE = {
     'DONT_ACCEPT_BLANKLINE': False,
     'ELLIPSIS': True,
-    'IGNORE_WHITESPACE': False,
+    'IGNORE_WHITESPACE': True,
     'IGNORE_EXCEPTION_DETAIL': False,
     'NORMALIZE_WHITESPACE': True,
 

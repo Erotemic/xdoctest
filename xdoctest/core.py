@@ -311,6 +311,11 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
         if do_dynamic:
             try:
                 calldefs = dynamic.parse_dynamic_calldefs(modpath)
+            except ImportError as ex:
+                # Some modules are just c modules
+                msg = 'Cannot dynamically parse module={} at path={}.\nCaused by: {}'
+                msg = msg.format(modname, modpath, ex)
+                warnings.warn(msg)  # real code contained errors
             except Exception as ex:
                 msg = 'Cannot dynamically parse module={} at path={}.\nCaused by: {}'
                 msg = msg.format(modname, modpath, ex)
