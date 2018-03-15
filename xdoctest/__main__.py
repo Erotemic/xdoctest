@@ -11,7 +11,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 def main():
     """
     python -m xdoctest xdoctest all
-    python -m xdoctest networkx all
+    python -m xdoctest networkx all --options=+IGNORE_WHITESPACE
     """
     # TODO: argparse
     import ubelt as ub
