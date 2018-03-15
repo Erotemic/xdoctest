@@ -13,22 +13,24 @@ def main():
     python -m xdoctest xdoctest all
     python -m xdoctest networkx all --options=+IGNORE_WHITESPACE
     """
-    # TODO: argparse
-    import ubelt as ub
+    # import ubelt as ub
     import argparse
-    description = ub.codeblock(
+    from xdoctest import utils
+    description = utils.codeblock(
         '''
-        This is the description
+        discover and run doctests within a python package
         ''')
 
-    parser = argparse.ArgumentParser(description=description)
-    parser.add_argument('argv', nargs='*', help='What do?')
+    parser = argparse.ArgumentParser(prog='python -m xdoctest', description=description)
+    parser.add_argument('modname', help='what files to run')
+    parser.add_argument('command', nargs='?', help='a doctest name or a command (list|all)', default='list')
     parser.add_argument(*('--style',), type=str, help='choose your style',
                         default='freeform')
     parser.add_argument(*('--options',), type=str,
                         help='specify the default directive state',
                         default=None)
-    args = parser.parse_args()
+
+    args, unknown = parser.parse_known_args()
     ns = args.__dict__.copy()
 
     # ... postprocess args
@@ -36,13 +38,11 @@ def main():
     # import sys
     # argv = sys.argv[1:]
 
-    argv = ns['argv']
-    if len(argv) == 0:
-        raise ValueError('Supply xdoctest with a module name or path')
-    modname = argv[0]
-    argv = argv[1:]
+    modname = ns['modname']
+    command = ns['command']
+    style = ns['style']
 
-    style = ub.argval('--style', default=ns['style'])
+    # style = ub.argval('--style', default=ns['style'])
 
     if ns['options'] is None:
         from os.path import exists
@@ -69,7 +69,7 @@ def main():
     }
 
     import xdoctest
-    xdoctest.doctest_module(modname, argv=argv, style=style, config=config)
+    xdoctest.doctest_module(modname, argv=[command], style=style, config=config)
 
 
 if __name__ == '__main__':
