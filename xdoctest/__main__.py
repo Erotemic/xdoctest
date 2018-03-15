@@ -46,20 +46,23 @@ def main():
 
     if ns['options'] is None:
         from os.path import exists
+        ns['options'] = ''
         if exists('pytest.ini'):
             from six.moves import configparser
             parser = configparser.ConfigParser()
             parser.read('pytest.ini')
-
-            ns['options'] = parser.get('pytest', 'xdoctest_options')
-        else:
-            ns['options'] = ''
+            try:
+                ns['options'] = parser.get('pytest', 'xdoctest_options')
+            except configparser.NoOptionError:
+                pass
 
     from xdoctest.directive import parse_directive_optstr
     default_runtime_state = {}
     for optpart in ns['options'].split(','):
-        directive = parse_directive_optstr(optpart)
-        default_runtime_state[directive.name] = directive.positive
+        if optpart:
+            directive = parse_directive_optstr(optpart)
+            if directive is not None:
+                default_runtime_state[directive.name] = directive.positive
 
     config = {
         'default_runtime_state': default_runtime_state
