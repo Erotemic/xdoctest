@@ -13,7 +13,6 @@ def main():
     python -m xdoctest xdoctest all
     python -m xdoctest networkx all --options=+IGNORE_WHITESPACE
     """
-    # import ubelt as ub
     import argparse
     from xdoctest import utils
     description = utils.codeblock(
@@ -34,15 +33,9 @@ def main():
     ns = args.__dict__.copy()
 
     # ... postprocess args
-
-    # import sys
-    # argv = sys.argv[1:]
-
     modname = ns['modname']
     command = ns['command']
     style = ns['style']
-
-    # style = ub.argval('--style', default=ns['style'])
 
     if ns['options'] is None:
         from os.path import exists
