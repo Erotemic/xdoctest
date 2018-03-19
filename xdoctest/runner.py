@@ -193,7 +193,9 @@ def _run_examples(enabled_examples, verbose):
     warned = []
     # It is important to raise immediatly within the test to display errors
     # returned from multiprocessing. Especially in zero-arg mode
+
     on_error = 'return' if n_total > 1 else 'raise'
+    on_error = 'return'
     for example in enabled_examples:
         try:
             summary = example.run(verbose=verbose, on_error=on_error)
@@ -214,10 +216,13 @@ def _run_examples(enabled_examples, verbose):
             if verbose == 0:
                 sys.stdout.write('F')
                 sys.stdout.flush()
-            if n_total == 1:
+            if on_error == 'raise':
+                # What happens if we don't re-raise here?
+                # If it is necessary, write a message explaining why
                 print('\n'.join(example.repr_failure()))
                 ex_value = example.exc_info[1]
                 raise ex_value
+
         # except Exception:
         #     summary = {'passed': False}
         #     if verbose == 0:
