@@ -1,3 +1,8 @@
+Version 0.2.3
+-------------
+* Print correct doctest line number in the traceback
+* Runner on_error will now default to return instead of raise
+
 Version 0.2.2
 -------------
 * Fixed option parsing bug in __main__ script
