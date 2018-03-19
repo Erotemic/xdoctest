@@ -361,9 +361,11 @@ class DocTest(object):
                     # Compile code, handle syntax errors
                     mode = 'eval' if part.use_eval else 'exec'
 
+                    self._partfilename = '<doctest:' + self.node + '>'
+
                     code = compile(
                         part.source, mode=mode,
-                        filename='<doctest:' + self.node + '>',
+                        filename=self._partfilename,
                         flags=compileflags, dont_inherit=True
                     )
                 except KeyboardInterrupt:  # nocover
@@ -700,7 +702,37 @@ class DocTest(object):
             ]
         else:
             if with_tb:
+                # TODO: enhance formatting to show an IPython-like output of
+                # where the error occurred in the doctest
                 tblines = traceback.format_exception(*self.exc_info)
+                if True:
+                    new_tblines = []
+                    for line in tblines:
+                        if self._partfilename in line:
+                            # Intercept the line corresponding to the doctest
+                            tbparts = line.split(',')
+                            tb_lineno = int(tbparts[-2].strip().split()[1])
+                            # modify the line number to match the doctest
+                            linepart = tbparts[-2].split(' ')
+
+                            new_lineno = self.failed_part.line_offset + tb_lineno
+                            linepart = linepart[:-1] + [str(new_lineno)]
+                            tbparts[-2] = ' '.join(linepart)
+                            new_line = ','.join(tbparts)
+
+                            # Add in failed doctest context
+                            # TODO: add more context to the traceback
+                            failed_ctx = self.failed_part.exec_lines[tb_lineno - 1]
+                            extra = '    ---> ' + failed_ctx
+                            new_tblines.append(new_line + extra + '\n')
+
+                            # import utool
+                            # utool.embed()
+                        else:
+                            new_tblines.append(line)
+
+                    tblines = new_tblines
+
                 if colored:
                     tbtext = '\n'.join(tblines)
                     tbtext = utils.highlight_code(tbtext, lexer_name='pytb',
