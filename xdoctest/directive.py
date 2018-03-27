@@ -103,6 +103,8 @@ DEFAULT_RUNTIME_STATE = {
     'IGNORE_EXCEPTION_DETAIL': False,
     'NORMALIZE_WHITESPACE': True,
 
+    'IGNORE_WANT': False,
+
     'NORMALIZE_REPR': True,
 
     'REPORT_CDIFF': False,
@@ -147,6 +149,7 @@ class RuntimeState(utils.NiceRepr):
             DONT_ACCEPT_BLANKLINE: False,
             ELLIPSIS: True,
             IGNORE_EXCEPTION_DETAIL: False,
+            IGNORE_WANT: False,
             IGNORE_WHITESPACE: False,
             NORMALIZE_REPR: True,
             NORMALIZE_WHITESPACE: True,
