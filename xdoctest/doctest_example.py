@@ -458,24 +458,13 @@ class DocTest(object):
         if self.mode == 'pytest':
             return 'pytest ' + self.node
         elif self.mode == 'native':
-            # TODO: Determine if the module is in the path and if
-            # it has the appropriate main code.
-            # if has_xdoc_main and not in path
-            # return 'python ' + self.modpath + ' ' + self.unique_callname
-
-            # TODO: Determine if the module is in the path and if
-            # HACK: currently using a heuristic to determine the above
-            # if self.modpath and self.modpath.endswith('.py'):
-            #     has_xdoc_main = '.doctest_module' in open(self.modpath, 'r').read()
-            # else:
-            has_xdoc_main = False
-            in_path = True
-            if has_xdoc_main and in_path:
-                return 'python -m ' + self.modname + ' ' + self.unique_callname
-            elif in_path:
+            in_path = static.is_modname_importable(self.modname)
+            if in_path:
+                # should be able to find the module by name
                 return 'python -m xdoctest ' + self.modname + ' ' + self.unique_callname
             else:
-                return 'python xdoctest ' + self.modpath + ' ' + self.unique_callname
+                # needs the full path to be able to run the module
+                return 'python -m xdoctest ' + self.modpath + ' ' + self.unique_callname
         else:
             raise KeyError(self.mode)
 
