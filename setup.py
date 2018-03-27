@@ -34,6 +34,11 @@ Pypi:
     # ---------- OLD ----------------
     # Check the url to make sure everything worked
     https://pypi.python.org/pypi?:action=display&name=xdoctest
+
+Notes:
+    In case you need to delete a tag
+    git push --delete origin tagname
+    git tag --delete tagname
 """
 from setuptools import setup
 

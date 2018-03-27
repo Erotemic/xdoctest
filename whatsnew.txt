@@ -1,3 +1,7 @@
+Version 0.2.5
+-------------
+* example command lines now use the full path if the module is not in the PYTHONPATH
+
 Version 0.2.4
 -------------
 * added IGNORE_WANT directive

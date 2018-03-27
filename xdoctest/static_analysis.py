@@ -700,6 +700,23 @@ def _syspath_modname_to_modpath(modname):
                     return modpath
 
 
+def is_modname_importable(modname):
+    """
+    Determines if a modname is importable based on your current sys.path
+
+    Example:
+        >>> is_modname_importable('xdoctest')
+        True
+        >>> is_modname_importable('not_a_real_module')
+        False
+    """
+    modpath = _syspath_modname_to_modpath(modname)
+    if modpath is None:
+        return False
+    else:
+        return True
+
+
 def is_balanced_statement(lines):
     """
     Checks if the lines have balanced parens, brakets, curlies and strings
