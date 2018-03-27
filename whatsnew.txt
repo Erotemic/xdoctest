@@ -1,3 +1,8 @@
+Version 0.2.4
+-------------
+* added IGNORE_WANT directive
+* added separator between printout of docsrc and its stdout
+
 Version 0.2.3
 -------------
 * Print correct doctest line number in the traceback

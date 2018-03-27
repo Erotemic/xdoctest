@@ -399,7 +399,8 @@ class DocTest(object):
                     else:
                         if part.want:
                             got_stdout = cap.text
-                            part.check(got_stdout, got_eval, runstate)
+                            if not runstate['IGNORE_WANT']:
+                                part.check(got_stdout, got_eval, runstate)
                 # Handle anything that could go wrong
                 except KeyboardInterrupt:  # nocover
                     raise
@@ -490,6 +491,7 @@ class DocTest(object):
                 print('* BEGIN DOCTEST : {}'.format(self.node))
             if verbose >= 3:
                 print(self.format_src())
+                print(self._color('* ----------', 'white'))
 
     def failed_line_offset(self):
         """
