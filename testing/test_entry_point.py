@@ -14,6 +14,7 @@ def cmd(command):
     out, err = proc.communicate()
     ret = proc.wait()
     info = {
+        'proc': proc,
         'out': out,
         'err': err,
         'ret': ret,
@@ -30,19 +31,25 @@ def skip_if_not_installed():
 
 def test_xdoc_console_script_location():
     skip_if_not_installed()
-    if not sys.platform.startswith('win32'):
+    if sys.platform.startswith('win32'):
+        info = cmd('where xdoctest.exe')
+    else:
         info = cmd('which xdoctest')
-        print('info = {!r}'.format(info))
-        out = info['out']
-        print('out = {!r}'.format(out))
-        script_fpath = out.strip()
-        print('script_fpath = {!r}'.format(script_fpath))
-        script_fname = os.path.basename(script_fpath)
-        print('script_fname = {!r}'.format(script_fname))
-        assert script_fname.startswith('xdoctest')
+    print('info = {!r}'.format(info))
+    out = info['out']
+    print('out = {!r}'.format(out))
+    script_fpath = out.strip()
+    print('script_fpath = {!r}'.format(script_fpath))
+    script_fname = os.path.basename(script_fpath)
+    print('script_fname = {!r}'.format(script_fname))
+    assert script_fname.startswith('xdoctest')
 
 
 def test_xdoc_console_script_exec():
     skip_if_not_installed()
-    info = cmd('xdoctest')
+    if sys.platform.startswith('win32'):
+        info = cmd('xdoctest.exe')
+    else:
+        info = cmd('xdoctest')
+    print('info = {!r}'.format(info))
     assert 'usage' in info['err']
