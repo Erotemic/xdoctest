@@ -94,10 +94,14 @@ if __name__ == '__main__':
             'all': parse_requirements('optional-requirements.txt')
         },
         # long_description=parse_description(),
-        # the following makes a plugin available to pytest
         entry_points={
+            # the pytest11 entry point makes the plugin available to pytest
             'pytest11': [
                 'xdoctest = xdoctest.plugin',
+            ],
+            # the console_scripts entry point creates the xdoctest executable
+            'console_scripts': [
+                'xdoctest = xdoctest.__main__:main'
             ]
         },
         # custom PyPI classifier for pytest plugins
