@@ -646,11 +646,16 @@ def _pkgutil_modname_to_modpath(modname):  # nocover
     return modpath
 
 
-def _syspath_modname_to_modpath(modname):
+def _syspath_modname_to_modpath(modname, include_cwd=True):
     """
     syspath version of modname_to_modpath
 
     Note, this is much slower than the pkgutil mechanisms.
+
+    Args:
+        modname (str): name of module to find
+        include_cwd (bool): if True include current directory in seach
+            otherwise only use sys.path (default True)
 
     Example:
         >>> modname = 'xdoctest.static_analysis'
@@ -683,7 +688,11 @@ def _syspath_modname_to_modpath(modname):
     # Add extension library suffixes
     candidate_fnames += [_fname_we + ext for ext in _platform_pylib_exts()]
 
-    candidate_dpaths = ['.'] + sys.path
+    if include_cwd:
+        candidate_dpaths = ['.'] + sys.path
+    else:
+        candidate_dpaths = sys.path
+
     for dpath in candidate_dpaths:
         # Check for directory-based modules (has presidence over files)
         modpath = join(dpath, _fname_we)
@@ -700,9 +709,14 @@ def _syspath_modname_to_modpath(modname):
                     return modpath
 
 
-def is_modname_importable(modname):
+def is_modname_importable(modname, include_cwd=True):
     """
     Determines if a modname is importable based on your current sys.path
+
+    Args:
+        modname (str): name of module to check
+        include_cwd (bool): if True include current directory in seach
+            otherwise only use sys.path (default True)
 
     Example:
         >>> is_modname_importable('xdoctest')
@@ -710,7 +724,7 @@ def is_modname_importable(modname):
         >>> is_modname_importable('not_a_real_module')
         False
     """
-    modpath = _syspath_modname_to_modpath(modname)
+    modpath = _syspath_modname_to_modpath(modname, include_cwd)
     if modpath is None:
         return False
     else:
