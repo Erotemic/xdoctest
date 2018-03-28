@@ -1,4 +1,4 @@
-# XDoctest - Extended Doctests
+# XDoctest - Extended Doctest
 
 [![Travis](https://img.shields.io/travis/Erotemic/xdoctest/master.svg?label=Travis%20CI)](https://travis-ci.org/Erotemic/xdoctest)
 [![Appveyor](https://ci.appveyor.com/api/projects/status/github/Erotemic/xdoctest?branch=master&svg=True)](https://ci.appveyor.com/project/Erotemic/xdoctest/branch/master)
