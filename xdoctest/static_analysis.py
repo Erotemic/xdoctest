@@ -480,7 +480,7 @@ def split_modpath(modpath):
         modpath (str): module filepath
 
     Returns:
-        str: directory
+        tuple: (directory, rel_modpath)
 
     Example:
         >>> from xdoctest import static_analysis
