@@ -342,6 +342,10 @@ class DocTest(object):
         # setup reporting choice
         runstate.set_report_style(self.config['reportchoice'])
 
+        # Can't do this because we can't force execution of SCRIPTS
+        # if self.is_disabled():
+        #     runstate['SKIP'] = True
+
         # Use the same capture object for all parts in the test
         cap = utils.CaptureStdout(supress=self._suppressed_stdout)
         with warnings.catch_warnings(record=True) as self.warn_list:
@@ -370,7 +374,7 @@ class DocTest(object):
                     )
                 except KeyboardInterrupt:  # nocover
                     raise
-                except:
+                except Exception:
                     self.exc_info = sys.exc_info()
                     ex_type, ex_value, tb = self.exc_info
                     self.tb_lineno = tb.tb_lineno

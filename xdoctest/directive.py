@@ -183,6 +183,11 @@ class RuntimeState(utils.NiceRepr):
         else:
             return self._global_state[key]
 
+    def __setitem__(self, key, value):
+        if key not in self._global_state:
+            raise KeyError('Unknown key: {}'.format(key))
+        self._global_state[key] = value
+
     def set_report_style(self, reportchoice, state=None):
         """
         Example:

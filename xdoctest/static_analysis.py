@@ -11,7 +11,7 @@ from six.moves import cStringIO as StringIO
 from collections import deque, OrderedDict
 from xdoctest import utils
 from os.path import (join, exists, expanduser, abspath, split, splitext,
-                     isfile, dirname, basename, isdir)
+                     isfile, dirname, basename, isdir, realpath)
 
 
 class CallDefNode(object):
@@ -389,21 +389,6 @@ def _platform_pylib_exts():  # nocover
         valid_exts.append('.' + tag + base_ext)
     valid_exts.append(base_ext)
     return tuple(valid_exts)
-    # if sys.platform.startswith('linux'):  # nocover
-    #     pylib_ext = '.so'
-    # elif sys.platform.startswith('win32'):  # nocover
-    #     pylib_ext = '.pyd'
-    # elif sys.platform.startswith('darwin'):  # nocover
-    #     pylib_ext = '.dylib'
-    # else:
-    #     pylib_ext = '.so'
-
-
-# def package_modnames(package_name, with_pkg=False, with_mod=True):
-#     pkgpath = modname_to_modpath(package_name)
-#     for modpath in package_modpaths(pkgpath):
-#         modname = modpath_to_modname(modpath, hide_main=False)
-#         yield modname
 
 
 def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True,
@@ -524,7 +509,7 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False):
     Args:
         modpath (str): module filepath
         hide_init (bool): removes the __init__ suffix (default True)
-        hide_init (bool): removes the __main__ suffix (default False)
+        hide_main (bool): removes the __main__ suffix (default False)
 
     Returns:
         str: modname
@@ -562,7 +547,7 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False):
     return modname
 
 
-def modname_to_modpath(modname, hide_init=True, hide_main=False):
+def modname_to_modpath(modname, hide_init=True, hide_main=False, sys_path=None):
     r"""
     Finds the path to a python module from its name.
 
@@ -577,6 +562,7 @@ def modname_to_modpath(modname, hide_init=True, hide_main=False):
         hide_init (bool): if False, __init__.py will be returned for packages
         hide_main (bool): if False, and hide_init is True, __main__.py will be
             returned for packages, if it exists.
+        sys_path (list): if specified overrides `sys.path` (default None)
 
     Returns:
         str: modpath - path to the module, or None if it doesn't exist
@@ -595,7 +581,7 @@ def modname_to_modpath(modname, hide_init=True, hide_main=False):
         >>> modpath = basename(modname_to_modpath('_ctypes'))
         >>> assert 'ctypes' in modpath
     """
-    modpath = _syspath_modname_to_modpath(modname)
+    modpath = _syspath_modname_to_modpath(modname, sys_path)
     if modpath is None:
         return None
     if hide_init:
@@ -613,10 +599,6 @@ def modname_to_modpath(modname, hide_init=True, hide_main=False):
             parallel_init = join(dirname(modpath), '__init__.py')
             if exists(parallel_init):
                 modpath = dirname(modpath)
-    # else:
-    #     modpath_with_main = join(modpath, '__main__.py')
-    #     if exists(modpath_with_main):
-    #         modpath = modpath_with_main
     return modpath
 
 
@@ -626,7 +608,7 @@ def _pkgutil_modname_to_modpath(modname):  # nocover
     mechanisms, but unfortunately it doesn't play nice with pytest.
 
     Example:
-        >>> # DISABLE_DOCTEST
+        >>> # xdoctest: +SKIP
         >>> modname = 'xdoctest.static_analysis'
         >>> _pkgutil_modname_to_modpath(modname)
         ...static_analysis.py
@@ -641,12 +623,10 @@ def _pkgutil_modname_to_modpath(modname):  # nocover
     if loader is None:
         raise Exception('No module named {} in the PYTHONPATH'.format(modname))
     modpath = loader.get_filename().replace('.pyc', '.py')
-    # if '.' not in basename(modpath):
-    #     modpath = join(modpath, '__init__.py')
     return modpath
 
 
-def _syspath_modname_to_modpath(modname, include_cwd=True):
+def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
     """
     syspath version of modname_to_modpath
 
@@ -654,16 +634,25 @@ def _syspath_modname_to_modpath(modname, include_cwd=True):
 
     Args:
         modname (str): name of module to find
-        include_cwd (bool): if True include current directory in seach
-            otherwise only use sys.path (default True)
+        sys_path (list): if specified overrides `sys.path` (default None)
+        exclude (list): list of directory paths. if specified prevents these
+            directories from being searched.
 
     Example:
-        >>> modname = 'xdoctest.static_analysis'
-        >>> _syspath_modname_to_modpath(modname)
+        >>> _syspath_modname_to_modpath('xdoctest.static_analysis')
         ...static_analysis.py
-        >>> modname = '_ctypes'
-        >>> _syspath_modname_to_modpath(modname)
+        >>> _syspath_modname_to_modpath('xdoctest')
+        ...xdoctest
+        >>> _syspath_modname_to_modpath('_ctypes')
         ..._ctypes...
+        >>> modname = 'xdoctest.static_analysis'
+        >>> modpath = _syspath_modname_to_modpath(modname)
+        >>> exclude = [split_modpath(modpath)[0]]
+        >>> assert _syspath_modname_to_modpath(modname, exclude=exclude) is None
+        >>> assert _syspath_modname_to_modpath('xdoctest', sys_path=[]) is None
+        >>> assert _syspath_modname_to_modpath('xdoctest.static_analysis', sys_path=[]) is None
+        >>> assert _syspath_modname_to_modpath('_ctypes', sys_path=[]) is None
+        >>> assert _syspath_modname_to_modpath('this', sys_path=[]) is None
 
     Ignore:
         >>> modname = 'cv2'
@@ -688,10 +677,18 @@ def _syspath_modname_to_modpath(modname, include_cwd=True):
     # Add extension library suffixes
     candidate_fnames += [_fname_we + ext for ext in _platform_pylib_exts()]
 
-    if include_cwd:
-        candidate_dpaths = ['.'] + sys.path
-    else:
-        candidate_dpaths = sys.path
+    if sys_path is None:
+        sys_path = sys.path
+
+    # the empty string in sys.path indicates cwd. Change this to a '.'
+    candidate_dpaths = ['.' if p == '' else p for p in sys_path]
+
+    if exclude:
+        # Keep only the paths not in exclude
+        real_exclude = {realpath(p) for p in exclude}
+        list(map(realpath, candidate_dpaths))
+        candidate_dpaths = [p for p in candidate_dpaths
+                            if realpath(p) not in real_exclude]
 
     for dpath in candidate_dpaths:
         # Check for directory-based modules (has presidence over files)
@@ -709,26 +706,31 @@ def _syspath_modname_to_modpath(modname, include_cwd=True):
                     return modpath
 
 
-def is_modname_importable(modname, include_cwd=True):
+def is_modname_importable(modname, sys_path=None, exclude=None):
     """
     Determines if a modname is importable based on your current sys.path
 
     Args:
         modname (str): name of module to check
-        include_cwd (bool): if True include current directory in seach
-            otherwise only use sys.path (default True)
+        sys_path (list): if specified overrides `sys.path` (default None)
+        exclude (list): list of directory paths. if specified prevents these
+            directories from being searched.
+
+    Returns:
+        bool: True if the module could be imported
 
     Example:
         >>> is_modname_importable('xdoctest')
         True
         >>> is_modname_importable('not_a_real_module')
         False
+        >>> is_modname_importable('xdoctest', sys_path=[])
+        False
     """
-    modpath = _syspath_modname_to_modpath(modname, include_cwd)
-    if modpath is None:
-        return False
-    else:
-        return True
+    modpath = _syspath_modname_to_modpath(modname, sys_path=sys_path,
+                                          exclude=exclude)
+    flag = bool(modpath is not None)
+    return flag
 
 
 def is_balanced_statement(lines):
@@ -798,7 +800,7 @@ def extract_comments(source):
     if six.PY2:
         try:
             source = source.encode('utf8')
-        except:
+        except Exception:
             pass
     stream = StringIO()
     stream.write(source)
