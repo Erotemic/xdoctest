@@ -142,7 +142,8 @@ def test_example_run():
 
 def test_all_disabled():
     """
-    pytest testing/test_runner.py::test_all_disabled -s
+    pytest testing/test_runner.py::test_all_disabled -s -vv
+    python testing/test_runner.py test_all_disabled
     """
     from xdoctest import runner
 
@@ -152,13 +153,13 @@ def test_all_disabled():
             """
                 Example:
                     >>> # DISABLE_DOCTEST
-                    >>> print('all will not print this')
+                    >>> print('all will' + ' not print this')
             """
 
         def bar():
             """
                 Example:
-                    >>> print('all will print this')
+                    >>> print('all will' + ' print this')
             """
         ''')
 
@@ -173,11 +174,13 @@ def test_all_disabled():
         with utils.CaptureStdout() as cap:
             runner.doctest_module(modpath, 'all', argv=[''])
         assert 'all will print this' in cap.text
+        # print('    ' + cap.text.replace('\n', '\n    '))
         assert 'all will not print this' not in cap.text
 
         # Running an disabled example explicitly should work
         with utils.CaptureStdout() as cap:
             runner.doctest_module(modpath, 'foo', argv=[''])
+        # print('    ' + cap.text.replace('\n', '\n    '))
         assert 'all will not print this' in cap.text
 
 

@@ -1,5 +1,6 @@
 Version 0.2.5
 -------------
+* Can now override sys.path when calling modname_to_modpath and is_modname_importable
 * Added entry point script
 * example command lines now use the full path if the module is not in the PYTHONPATH
 
