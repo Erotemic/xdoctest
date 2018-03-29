@@ -34,6 +34,10 @@ def test_xdoc_console_script_location():
     path = os.path.realpath(sys.argv[0])
     print('path = {!r}'.format(path))
 
+    site_packages = os.path.dirname(path)
+    print('site_packages = {!r}'.format(site_packages))
+    print(os.listdir(site_packages))
+
     if sys.platform.startswith('win32'):
         info = cmd('where xdoctest.bat')
     else:
@@ -52,6 +56,10 @@ def test_xdoc_console_script_exec():
     skip_if_not_installed()
     path = os.path.realpath(sys.argv[0])
     print('path = {!r}'.format(path))
+
+    site_packages = os.path.dirname(path)
+    print('site_packages = {!r}'.format(site_packages))
+    print(os.listdir(site_packages))
 
     if sys.platform.startswith('win32'):
         info = cmd('xdoctest.bat')
