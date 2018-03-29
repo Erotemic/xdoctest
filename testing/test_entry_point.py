@@ -32,7 +32,7 @@ def skip_if_not_installed():
 def test_xdoc_console_script_location():
     skip_if_not_installed()
     if sys.platform.startswith('win32'):
-        info = cmd('where xdoctest.exe')
+        info = cmd('where xdoctest.bat')
     else:
         info = cmd('which xdoctest')
     print('info = {!r}'.format(info))
@@ -48,7 +48,7 @@ def test_xdoc_console_script_location():
 def test_xdoc_console_script_exec():
     skip_if_not_installed()
     if sys.platform.startswith('win32'):
-        info = cmd('xdoctest.exe')
+        info = cmd('xdoctest.bat')
     else:
         info = cmd('xdoctest')
     print('info = {!r}'.format(info))
