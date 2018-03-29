@@ -31,6 +31,9 @@ def skip_if_not_installed():
 
 def test_xdoc_console_script_location():
     skip_if_not_installed()
+    path = os.path.realpath(sys.argv[0])
+    print('path = {!r}'.format(path))
+
     if sys.platform.startswith('win32'):
         info = cmd('where xdoctest.bat')
     else:
@@ -47,6 +50,9 @@ def test_xdoc_console_script_location():
 
 def test_xdoc_console_script_exec():
     skip_if_not_installed()
+    path = os.path.realpath(sys.argv[0])
+    print('path = {!r}'.format(path))
+
     if sys.platform.startswith('win32'):
         info = cmd('xdoctest.bat')
     else:
