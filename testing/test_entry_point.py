@@ -33,46 +33,32 @@ def test_xdoc_console_script_location():
     skip_if_not_installed()
 
     if sys.platform.startswith('win32'):
+        pytest.skip()
         path = os.path.realpath(sys.argv[0])
-        print('path = {!r}'.format(path))
         site_packages = os.path.dirname(path)
-        print('site_packages = {!r}'.format(site_packages))
-        print(os.listdir(site_packages))
         pythondir = os.path.dirname(os.path.dirname(site_packages))
         scriptdir = os.path.join(pythondir, 'Scripts')
-        print('pythondir = {!r}'.format(pythondir))
-        print('scriptdir = {!r}'.format(scriptdir))
-        print(os.listdir(scriptdir))
-
-        info = cmd('where xdoctest')
+        script_path = os.path.join(scriptdir, 'xdoctest.exe')
+        assert os.path.exists(script_path)
+        # info = cmd('where xdoctest.exe')
+        return
     else:
         info = cmd('which xdoctest')
-    print('info = {!r}'.format(info))
+
     out = info['out']
-    print('out = {!r}'.format(out))
     script_fpath = out.strip()
-    print('script_fpath = {!r}'.format(script_fpath))
     script_fname = os.path.basename(script_fpath)
-    print('script_fname = {!r}'.format(script_fname))
     assert script_fname.startswith('xdoctest')
 
 
 def test_xdoc_console_script_exec():
     skip_if_not_installed()
-
     if sys.platform.startswith('win32'):
         path = os.path.realpath(sys.argv[0])
-        print('path = {!r}'.format(path))
         site_packages = os.path.dirname(path)
-        print('site_packages = {!r}'.format(site_packages))
-        print(os.listdir(site_packages))
         pythondir = os.path.dirname(os.path.dirname(site_packages))
         scriptdir = os.path.join(pythondir, 'Scripts')
-        print('pythondir = {!r}'.format(pythondir))
-        print('scriptdir = {!r}'.format(scriptdir))
-        print(os.listdir(scriptdir))
-
-        info = cmd('xdoctest')
+        info = cmd(os.path.join(scriptdir, 'xdoctest.exe'))
     else:
         info = cmd('xdoctest')
     print('info = {!r}'.format(info))
