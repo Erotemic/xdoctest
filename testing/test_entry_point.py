@@ -34,10 +34,13 @@ def test_xdoc_console_script_location():
 
     if sys.platform.startswith('win32'):
         pytest.skip()
-        path = os.path.realpath(sys.argv[0])
-        site_packages = os.path.dirname(path)
-        pythondir = os.path.dirname(os.path.dirname(site_packages))
-        scriptdir = os.path.join(pythondir, 'Scripts')
+        path = os.path.realpath(sys.executable)
+        for i in range(4):
+            path = os.path.dirname(path)
+            print('path = {!r}'.format(path))
+            scriptdir = os.path.join(path, 'Scripts')
+            if os.path.exists(scriptdir):
+                break
         script_path = os.path.join(scriptdir, 'xdoctest.exe')
         assert os.path.exists(script_path)
         # info = cmd('where xdoctest.exe')
@@ -54,10 +57,13 @@ def test_xdoc_console_script_location():
 def test_xdoc_console_script_exec():
     skip_if_not_installed()
     if sys.platform.startswith('win32'):
-        path = os.path.realpath(sys.argv[0])
-        site_packages = os.path.dirname(path)
-        pythondir = os.path.dirname(os.path.dirname(site_packages))
-        scriptdir = os.path.join(pythondir, 'Scripts')
+        path = os.path.realpath(sys.executable)
+        for i in range(4):
+            path = os.path.dirname(path)
+            print('path = {!r}'.format(path))
+            scriptdir = os.path.join(path, 'Scripts')
+            if os.path.exists(scriptdir):
+                break
         info = cmd(os.path.join(scriptdir, 'xdoctest.exe'))
     else:
         info = cmd('xdoctest')
