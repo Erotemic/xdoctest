@@ -684,11 +684,15 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
     candidate_dpaths = ['.' if p == '' else p for p in sys_path]
 
     if exclude:
+        def normalize(p):
+            if sys.platform.startswith('win32'):
+                return realpath(p).lower()
+            else:
+                return realpath(p)
         # Keep only the paths not in exclude
-        real_exclude = {realpath(p) for p in exclude}
-        list(map(realpath, candidate_dpaths))
+        real_exclude = {normalize(p) for p in exclude}
         candidate_dpaths = [p for p in candidate_dpaths
-                            if realpath(p) not in real_exclude]
+                            if normalize(p) not in real_exclude]
 
     for dpath in candidate_dpaths:
         # Check for directory-based modules (has presidence over files)
