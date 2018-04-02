@@ -639,20 +639,20 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
             directories from being searched.
 
     Example:
-        >>> _syspath_modname_to_modpath('xdoctest.static_analysis')
+        >>> print(_syspath_modname_to_modpath('xdoctest.static_analysis'))
         ...static_analysis.py
-        >>> _syspath_modname_to_modpath('xdoctest')
+        >>> print(_syspath_modname_to_modpath('xdoctest'))
         ...xdoctest
-        >>> _syspath_modname_to_modpath('_ctypes')
+        >>> print(_syspath_modname_to_modpath('_ctypes'))
         ..._ctypes...
-        >>> modname = 'xdoctest.static_analysis'
-        >>> modpath = _syspath_modname_to_modpath(modname)
-        >>> exclude = [split_modpath(modpath)[0]]
-        >>> assert _syspath_modname_to_modpath(modname, exclude=exclude + ['.']) is None
         >>> assert _syspath_modname_to_modpath('xdoctest', sys_path=[]) is None
         >>> assert _syspath_modname_to_modpath('xdoctest.static_analysis', sys_path=[]) is None
         >>> assert _syspath_modname_to_modpath('_ctypes', sys_path=[]) is None
         >>> assert _syspath_modname_to_modpath('this', sys_path=[]) is None
+        >>> modname = 'xdoctest.static_analysis'
+        >>> modpath = _syspath_modname_to_modpath(modname)
+        >>> exclude = [split_modpath(modpath)[0]]
+        >>> assert _syspath_modname_to_modpath(modname, exclude=exclude + ['.']) is None
 
     Ignore:
         >>> modname = 'cv2'
