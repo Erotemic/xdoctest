@@ -245,8 +245,15 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
                'Caused by: {}\n')
         msg = msg.format(callname, modpath, lineno, repr(ex))
         if isinstance(ex, exceptions.DoctestParseError):
+            # TODO: Can we print a nicer syntax error here?
+
             msg += '{}\n'.format(ex.string)
             msg += 'Original Error: {}\n'.format(repr(ex.orig_ex))
+
+            if isinstance(ex.orig_ex, SyntaxError):
+                err_ptr = ' ' * (ex.orig_ex.offset - 1) + '^'
+                extra_help = ex.orig_ex.text + err_ptr
+                msg += '\n' + extra_help
 
         # Always warn when something bad is happening.
         # However, dont error if the docstr simply has bad syntax

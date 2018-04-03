@@ -1,3 +1,7 @@
+Version 0.3.1
+-------------
+* Improved doctest syntax error message
+
 Version 0.3.0
 -------------
 * Can now override sys.path when calling modname_to_modpath and is_modname_importable (api change)
