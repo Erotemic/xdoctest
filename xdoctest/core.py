@@ -99,7 +99,7 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         return example
 
     respect_google_headers = True
-    if respect_google_headers:
+    if respect_google_headers:  # pragma: nobranch
         # When in freeform mode we still try to respect google doctest patterns
         # that prevent a test from being run.
         special_skip_patterns = [
@@ -111,7 +111,7 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
             'Sympy:',
         ]
     else:
-        special_skip_patterns = []
+        special_skip_patterns = []  # nocover
     special_skip_patterns_ = tuple([
         p.lower() for p in special_skip_patterns
     ])
@@ -251,9 +251,13 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
             msg += 'Original Error: {}\n'.format(repr(ex.orig_ex))
 
             if isinstance(ex.orig_ex, SyntaxError):
-                err_ptr = ' ' * (ex.orig_ex.offset - 1) + '^'
-                extra_help = ex.orig_ex.text + err_ptr
-                msg += '\n' + extra_help
+                extra_help = ''
+                if ex.orig_ex.text:
+                    extra_help += ex.orig_ex.text
+                if ex.orig_ex.offset is not None:
+                    extra_help += ' ' * (ex.orig_ex.offset - 1) + '^'
+                if extra_help:
+                    msg += '\n' + extra_help
 
         # Always warn when something bad is happening.
         # However, dont error if the docstr simply has bad syntax
