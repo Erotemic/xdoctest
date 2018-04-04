@@ -9,6 +9,51 @@ from xdoctest import exceptions
 from xdoctest import utils
 
 
+# def _check_syntaxerror_behavior():
+#     import ubelt as ub
+#     source_block = ub.codeblock(
+#         '''
+#         x = 3
+#         3 = 5
+#         ''')
+#     try:
+#         compile(source_block, filename='<string>', mode='exec')
+#     except SyntaxError as ex1:
+#         print('ex1.text = {!r}'.format(ex1.text))
+#         print('ex1.offset = {!r}'.format(ex1.offset))
+#         print('ex1.lineno = {!r}'.format(ex1.lineno))
+
+#     import ast
+#     try:
+#         pt = ast.parse(source_block)
+#     except SyntaxError as ex2:
+#         print('ex2.text = {!r}'.format(ex2.text))
+#         print('ex2.offset = {!r}'.format(ex2.offset))
+#         print('ex2.lineno = {!r}'.format(ex2.lineno))
+
+#     fpath = join(ub.ensure_app_cache_dir('xdoctest', 'test'), 'source.py')
+#     ub.writeto(fpath, source_block)
+#     try:
+#         compile(source_block, filename=fpath, mode='exec')
+#     except SyntaxError as ex2:
+#         print('ex2.text = {!r}'.format(ex2.text))
+#         print('ex2.offset = {!r}'.format(ex2.offset))
+#         print('ex2.lineno = {!r}'.format(ex2.lineno))
+
+#     import tempfile
+#     import ast
+#     temp = tempfile.NamedTemporaryFile()
+#     temp.file.write((source_block + '\n').encode('utf8'))
+#     temp.file.seek(0)
+#     try:
+#         ast.parse(source_block, temp.name)
+#     except SyntaxError as ex2:
+#         print('ex2.text = {!r}'.format(ex2.text))
+#         print('ex2.offset = {!r}'.format(ex2.offset))
+#         print('ex2.lineno = {!r}'.format(ex2.lineno))
+#         raise
+
+
 def test_parse_syntax_error():
     """
     CommandLine:
@@ -32,6 +77,12 @@ def test_parse_syntax_error():
     with warnings.catch_warnings(record=True) as g_warnlist:
         g_doctests = list(core.parse_docstr_examples(docstr, style='google',
                                                      **info))
+
+    for w in g_warnlist:
+        print(w.message)
+
+    for w in f_warnlist:
+        print(w.message)
 
     assert len(g_warnlist) == 1
     assert len(f_warnlist) == 1

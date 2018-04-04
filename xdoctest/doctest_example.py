@@ -394,6 +394,43 @@ class DocTest(object):
                                 exec(code, test_globals)
                     except Exception as ex:
                         # Dont fail if the traceback matches a want message
+                        """
+                        TODO:
+                            [ ] - Delay got-want failure until the end of the
+                            doctest. Allow the rest of the code to run.  If
+                            multiple errors occur, show them both.
+
+                            [ ] - Implement a greedy got - want matching
+                            procedure where the user can print to stdout as
+                            much as they want, and no error is thrown unless
+                            there is no match at the end of the doctest.
+
+                            e.g. the following cases should pass
+
+                                Case1:
+                                    >>> print('some text')
+                                    >>> print('more text')
+                                    some text
+                                    more text
+
+                                Case2:
+                                    >>> print('some text')
+                                    some text
+                                    >>> print('more text')
+                                    more text
+
+                                However, this should not pass
+                                    >>> print('some text')
+                                    some text
+                                    more text
+                                    >>> print('more text')
+
+                            In other words, want lines are allows to match any
+                            of the got lines that came before it. UNLESS...
+                            those got lines were already matched by a previous
+                            want. A want should try to match as quickly as it
+                            can, but delay failure if it can't.
+                        """
                         if part.want:
                             exception = sys.exc_info()
                             exc_got = traceback.format_exception_only(*exception[:2])[-1]
@@ -418,7 +455,7 @@ class DocTest(object):
                     if on_error == 'raise':
                         raise
                     break
-                except:
+                except Exception:
                     ex_type, ex_value, tb = sys.exc_info()
                     # CLEAN_TRACEBACK = True
                     CLEAN_TRACEBACK = 0
