@@ -305,25 +305,16 @@ class DoctestParser(object):
         source_block = '\n'.join(exec_source_lines)
         try:
             pt = ast.parse(source_block, filename='<source_block>')
-        except SyntaxError as ex1:
-            # Assign missing information. Is there a better way to do this?
-            if True:
-                # Popluate manually
-                if ex1.text is None:
-                    if ex1.lineno is not None:
-                        # Grab the line where the error occurs
-                        # (why is this not populated in SyntaxError by default?)
-                        # (because filename does not point to a valid loc)
-                        line = source_block.split('\n')[ex1.lineno - 1]
-                        ex1.text = line  + '\n'
-                raise ex1
-            else:
-                # Use a tempfile to have it populated in the SyntaxError
-                import tempfile
-                temp = tempfile.NamedTemporaryFile()
-                temp.file.write(source_block.encode('utf8'))
-                temp.file.seek(0)
-                ast.parse(source_block, temp.name)
+        except SyntaxError as syn_ex:
+            # Assign missing information to the syntax error.
+            if syn_ex.text is None:
+                if syn_ex.lineno is not None:
+                    # Grab the line where the error occurs
+                    # (why is this not populated in SyntaxError by default?)
+                    # (because filename does not point to a valid loc)
+                    line = source_block.split('\n')[syn_ex.lineno - 1]
+                    syn_ex.text = line  + '\n'
+            raise syn_ex
 
         statement_nodes = pt.body
         ps1_linenos = [node.lineno - 1 for node in statement_nodes]
