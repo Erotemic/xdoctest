@@ -274,13 +274,18 @@ class PythonPathContext(object):
     """
     def __init__(self, dpath):
         self.dpath = dpath
+        self._insert_index = None
 
     def __enter__(self):
+        self._insert_index = len(sys.path)
         sys.path.append(self.dpath)
 
     def __exit__(self, type_, value, trace):
-        assert sys.path[-1] == self.dpath
-        sys.path.pop()
+        if sys.path[self._insert_index] != self.dpath:
+            raise AssertionError('path significantly changed while in PythonPathContext')
+        # if len(sys.path) != self._insert_index - 1:
+        #     warnings.warn('path changed while in PythonPathContext')
+        sys.path.pop(self._insert_index)
 
 
 class TempDir(object):
