@@ -186,6 +186,9 @@ def _gather_zero_arg_examples(modpath):
 
 
 def _run_examples(enabled_examples, verbose):
+    """
+    Internal helper, loops over each example, runs it, returns a summary
+    """
     n_total = len(enabled_examples)
     print('running %d test(s)' % n_total)
     summaries = []
