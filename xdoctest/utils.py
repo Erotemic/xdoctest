@@ -275,12 +275,22 @@ class PythonPathContext(object):
     Args:
         dpath (str): directory to insert into the PYTHONPATH
         index (int): position to add to. Typically either -1 or 0.
+
+    Example:
+        >>> with PythonPathContext('foo', -1):
+        >>>     assert sys.path[-1] == 'foo'
+        >>> assert sys.path[-1] != 'foo'
+        >>> with PythonPathContext('bar', 0):
+        >>>     assert sys.path[0] == 'bar'
+        >>> assert sys.path[0] != 'bar'
     """
     def __init__(self, dpath, index=-1):
         self.dpath = dpath
         self.index = index
 
     def __enter__(self):
+        if self.index < 0:
+            self.index = len(sys.path) + self.index + 1
         sys.path.insert(self.index, self.dpath)
 
     def __exit__(self, type, value, trace):
