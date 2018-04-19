@@ -270,22 +270,24 @@ def codeblock(block_str):
 
 class PythonPathContext(object):
     """
-    Context for temporarilly adding a dir to the PYTHONPATH. Used in testing
+    Context for temporarily adding a dir to the PYTHONPATH. Used in testing
+
+    Args:
+        dpath (str): directory to insert into the PYTHONPATH
+        index (int): position to add to. Typically either -1 or 0.
     """
-    def __init__(self, dpath):
+    def __init__(self, dpath, index=-1):
         self.dpath = dpath
-        self._insert_index = None
+        self.index = index
 
     def __enter__(self):
-        self._insert_index = len(sys.path)
-        sys.path.append(self.dpath)
+        sys.path.insert(self.index, self.dpath)
 
-    def __exit__(self, type_, value, trace):
-        if sys.path[self._insert_index] != self.dpath:
-            raise AssertionError('path significantly changed while in PythonPathContext')
-        # if len(sys.path) != self._insert_index - 1:
-        #     warnings.warn('path changed while in PythonPathContext')
-        sys.path.pop(self._insert_index)
+    def __exit__(self, type, value, trace):
+        if len(sys.path) <= self.index or sys.path[self.index] != self.dpath:
+            raise AssertionError(
+                'sys.path significantly changed while in PythonPathContext')
+        sys.path.pop(self.index)
 
 
 class TempDir(object):
