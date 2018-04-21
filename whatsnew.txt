@@ -3,6 +3,7 @@ Version 0.3.1
 * Improved doctest syntax error message
 * PythonPathContext no longer breaks if small changes to the path occur in its context.
 * PythonPathContext can now insert into front or back of sys.path
+* Flags can now be specified before or after positional arguments when using the __main__ script
 
 Version 0.3.0
 -------------
