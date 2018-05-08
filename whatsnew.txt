@@ -1,5 +1,6 @@
 Version 0.3.2
 -------------
+* API update to facilitate mkinit
 
 Version 0.3.1
 -------------

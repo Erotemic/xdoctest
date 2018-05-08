@@ -427,6 +427,7 @@ def test_modpath_to_modname():
     """
     CommandLine:
         pytest testing/test_static.py::test_modpath_to_modname -s
+        python testing/test_static.py test_modpath_to_modname
     """
     with utils.TempDir() as temp:
         dpath = temp.dpath
@@ -511,3 +512,12 @@ def test_modpath_to_modname():
             assert '_tmproot.sub1.mod1' not in sys.modules
             assert '_tmproot.sub1.sub2' not in sys.modules
             assert '_tmproot.sub1.mod2.mod2' not in sys.modules
+
+
+if __name__ == '__main__':
+    """
+    CommandLine:
+        python -B %HOME%/code/xdoctest/testing/test_static.py all
+    """
+    import xdoctest
+    xdoctest.doctest_module(__file__)
