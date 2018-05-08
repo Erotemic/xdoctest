@@ -11,7 +11,7 @@ from six.moves import cStringIO as StringIO
 from collections import deque, OrderedDict
 from xdoctest import utils
 from os.path import (join, exists, expanduser, abspath, split, splitext,
-                     isfile, dirname, basename, isdir, realpath)
+                     isfile, dirname, basename, isdir, realpath, relpath)
 
 
 class CallDefNode(object):
@@ -246,7 +246,7 @@ class TopLevelVisitor(ast.NodeVisitor):
 
 
 def parse_calldefs(source=None, fpath=None):
-    r"""
+    """
     Statically finds top-level callable functions and methods in python source
 
     Args:
@@ -391,8 +391,47 @@ def _platform_pylib_exts():  # nocover
     return tuple(valid_exts)
 
 
+def normalize_modpath(modpath, hide_init=True, hide_main=False):
+    """
+    Normalizes __init__ and __main__ paths.
+
+    Adds __init__ if reasonable, but only removes __main__
+
+    Example:
+        >>> import xdoctest.static_analysis as static
+        >>> modpath = static.__file__
+        >>> assert static.normalize_modpath(modpath) == modpath
+        >>> dpath = dirname(modpath)
+        >>> res0 = static.normalize_modpath(dpath, hide_init=0, hide_main=0)
+        >>> res1 = static.normalize_modpath(dpath, hide_init=0, hide_main=1)
+        >>> res2 = static.normalize_modpath(dpath, hide_init=1, hide_main=0)
+        >>> res3 = static.normalize_modpath(dpath, hide_init=1, hide_main=1)
+        >>> assert res0.endswith('__init__.py')
+        >>> assert res1.endswith('__init__.py')
+        >>> assert not res2.endswith('.py')
+        >>> assert not res3.endswith('.py')
+    """
+    if hide_init:
+        if basename(modpath) == '__init__.py':
+            modpath = dirname(modpath)
+            hide_main = True
+    else:
+        # add in init, if reasonable
+        modpath_with_init = join(modpath, '__init__.py')
+        if exists(modpath_with_init):
+            modpath = modpath_with_init
+    if hide_main:
+        # We can remove main, but dont add it
+        if basename(modpath) == '__main__.py':
+            # corner case where main might just be a module name not in a pkg
+            parallel_init = join(dirname(modpath), '__init__.py')
+            if exists(parallel_init):
+                modpath = dirname(modpath)
+    return modpath
+
+
 def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True,
-                     recursive=True, with_libs=False):
+                     recursive=True, with_libs=False, check=True):
     r"""
     Finds sub-packages and sub-modules belonging to a package.
 
@@ -404,6 +443,8 @@ def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True,
         exclude (list): ignores any module that matches any of these patterns
         recursive (bool): if False, then only child modules are included
         with_libs (bool): if True then compiled shared libs will be returned as well
+        check (bool): if False, then then pkgpath is considered a module even
+            if it does not contain an __init__ file.
 
     Yields:
         str: module names belonging to the package
@@ -421,13 +462,14 @@ def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True,
         >>> assert 'xdoctest' not in names
         >>> print('\n'.join(names))
     """
+    pkgpath = normalize_modpath(pkgpath, hide_init=True)
     if isfile(pkgpath):
         # If input is a file, just return it
         yield pkgpath
     else:
         if with_pkg:
             root_path = join(pkgpath, '__init__.py')
-            if exists(root_path):
+            if not check or exists(root_path):
                 yield root_path
 
         valid_exts = ['.py']
@@ -436,7 +478,8 @@ def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True,
 
         for dpath, dnames, fnames in os.walk(pkgpath, followlinks=followlinks):
             ispkg = exists(join(dpath, '__init__.py'))
-            if ispkg:
+            if ispkg or not check:
+                check = True  # always check subdirs
                 if with_mod:
                     for fname in fnames:
                         if splitext(fname)[1] in valid_exts:
@@ -456,16 +499,21 @@ def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True,
                 break
 
 
-def split_modpath(modpath):
+def split_modpath(modpath, check=True):
     """
     Splits the modpath into the dir that must be in PYTHONPATH for the module
     to be imported and the modulepath relative to this directory.
 
     Args:
         modpath (str): module filepath
+        check (bool): if False, does not raise an error if modpath is a
+            directory and does not contain an `__init__.py` file.
 
     Returns:
         tuple: (directory, rel_modpath)
+
+    Raises:
+        ValueError: if modpath does not exist or is not a package
 
     Example:
         >>> from xdoctest import static_analysis
@@ -476,13 +524,14 @@ def split_modpath(modpath):
         >>> assert rel_modpath == join('xdoctest', 'static_analysis.py')
     """
     modpath_ = abspath(expanduser(modpath))
-    if not exists(modpath_):
-        if not exists(modpath):
-            raise ValueError('modpath={} does not exist'.format(modpath))
-        raise ValueError('modpath={} is not a module'.format(modpath))
-    if isdir(modpath_) and not exists(join(modpath, '__init__.py')):
-        # dirs without inits are not modules
-        raise ValueError('modpath={} is not a module'.format(modpath))
+    if check:
+        if not exists(modpath_):
+            if not exists(modpath):
+                raise ValueError('modpath={} does not exist'.format(modpath))
+            raise ValueError('modpath={} is not a module'.format(modpath))
+        if isdir(modpath_) and not exists(join(modpath, '__init__.py')):
+            # dirs without inits are not modules
+            raise ValueError('modpath={} is not a module'.format(modpath))
     full_dpath, fname_ext = split(modpath_)
     _relmod_parts = [fname_ext]
     # Recurse down directories until we are out of the package
@@ -495,8 +544,9 @@ def split_modpath(modpath):
     return dpath, rel_modpath
 
 
-def modpath_to_modname(modpath, hide_init=True, hide_main=False):
-    r"""
+def modpath_to_modname(modpath, hide_init=True, hide_main=False, check=True,
+                       relativeto=None):
+    """
     Determines importable name from file path
 
     Converts the path to a module (__file__) to the importable python name
@@ -510,9 +560,16 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False):
         modpath (str): module filepath
         hide_init (bool): removes the __init__ suffix (default True)
         hide_main (bool): removes the __main__ suffix (default False)
+        check (bool): if False, does not raise an error if modpath is a dir
+            and does not contain an __init__ file.
+        relativeto (str, optional): if specified, all checks are ignored and
+            this is considered the path to the root module.
 
     Returns:
         str: modname
+
+    Raises:
+        ValueError: if check is True and the path does not exist
 
     Example:
         >>> from xdoctest import static_analysis
@@ -526,29 +583,41 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False):
         >>> modname = modpath_to_modname(modpath)
         >>> assert modname == '_ctypes'
     """
+    if check:
+        if not exists(modpath):
+            raise ValueError('modpath={} does not exist'.format(modpath))
     modpath_ = abspath(expanduser(modpath))
-    dpath, rel_modpath = split_modpath(modpath_)
+    modpath_ = normalize_modpath(modpath_, hide_init=hide_init,
+                                 hide_main=hide_main)
+    if relativeto:
+        dpath = dirname(abspath(expanduser(relativeto)))
+        rel_modpath = relpath(modpath_, dpath)
+    else:
+        dpath, rel_modpath = split_modpath(modpath_, check=check)
+
     modname = splitext(rel_modpath)[0]
     if '.' in modname:
         modname, abi_tag = modname.split('.')
     modname = modname.replace('/', '.')
     modname = modname.replace('\\', '.')
-    if hide_init:
-        if modname.endswith('.__init__'):
-            modname = modname[:-len('.__init__')]
-    else:
-        # add in init, if reasonable
-        if not modname.endswith('.__init__'):
-            if exists(join(modpath_, '__init__.py')):
-                modname = modname + '.__init__'
 
-    if hide_main:
-        modname = modname.replace('.__main__', '').strip()
+    # if False:
+    #     if hide_init:
+    #         if modname.endswith('.__init__'):
+    #             modname = modname[:-len('.__init__')]
+    #     else:
+    #         # add in init, if reasonable
+    #         if not modname.endswith('.__init__'):
+    #             if exists(join(modpath_, '__init__.py')):
+    #                 modname = modname + '.__init__'
+    #
+    #     if hide_main:
+    #         modname = modname.replace('.__main__', '').strip()
     return modname
 
 
 def modname_to_modpath(modname, hide_init=True, hide_main=False, sys_path=None):
-    r"""
+    """
     Finds the path to a python module from its name.
 
     Determines the path to a python module without directly import it
@@ -584,21 +653,8 @@ def modname_to_modpath(modname, hide_init=True, hide_main=False, sys_path=None):
     modpath = _syspath_modname_to_modpath(modname, sys_path)
     if modpath is None:
         return None
-    if hide_init:
-        if basename(modpath) == '__init__.py':
-            modpath = dirname(modpath)
-            hide_main = True
-    else:
-        modpath_with_init = join(modpath, '__init__.py')
-        if exists(modpath_with_init):
-            modpath = modpath_with_init
-    if hide_main:
-        # We can remove main, but dont add it
-        if basename(modpath) == '__main__.py':
-            # corner case where main might just be a module name not in a pkg
-            parallel_init = join(dirname(modpath), '__init__.py')
-            if exists(parallel_init):
-                modpath = dirname(modpath)
+    modpath = normalize_modpath(modpath, hide_init=hide_init,
+                                hide_main=hide_main)
     return modpath
 
 
