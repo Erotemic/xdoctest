@@ -89,7 +89,7 @@ def get_stack_frame(n=0, strict=True):
 
 
 def get_parent_frame(n=0):
-    r"""
+    """
     Returns the frame of that called you.
     This is equivalent to `get_stack_frame(n=1)`
 
