@@ -1,3 +1,8 @@
+Version 0.3.3
+-------------
+* Fixed bug where pytest would collect all tests twice 
+  (because the __init__.py file was normalized to a directory in package_modpaths)
+
 Version 0.3.2
 -------------
 * API update to facilitate mkinit

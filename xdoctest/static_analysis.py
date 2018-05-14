@@ -395,7 +395,14 @@ def normalize_modpath(modpath, hide_init=True, hide_main=False):
     """
     Normalizes __init__ and __main__ paths.
 
-    Adds __init__ if reasonable, but only removes __main__
+    Notes:
+        Adds __init__ if reasonable, but only removes __main__ by default
+
+    Args:
+        hide_init (bool): if True, always return package modules
+           as __init__.py files otherwise always return the dpath.
+        hide_init (bool): if True, always strip away main files otherwise
+           ignore __main__.py.
 
     Example:
         >>> import xdoctest.static_analysis as static
@@ -456,13 +463,13 @@ def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True,
         >>> from xdoctest.static_analysis import *
         >>> pkgpath = modname_to_modpath('xdoctest')
         >>> paths = list(package_modpaths(pkgpath))
+        >>> print('\n'.join(paths))
         >>> names = list(map(modpath_to_modname, paths))
         >>> assert 'xdoctest.core' in names
         >>> assert 'xdoctest.__main__' in names
         >>> assert 'xdoctest' not in names
         >>> print('\n'.join(names))
     """
-    pkgpath = normalize_modpath(pkgpath, hide_init=True)
     if isfile(pkgpath):
         # If input is a file, just return it
         yield pkgpath
@@ -579,6 +586,11 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False, check=True,
         >>> assert modname == 'xdoctest.static_analysis'
 
     Example:
+        >>> import xdoctest
+        >>> assert modpath_to_modname(xdoctest.__file__) == 'xdoctest'
+        >>> assert modpath_to_modname(dirname(xdoctest.__file__)) == 'xdoctest'
+
+    Example:
         >>> modpath = modname_to_modpath('_ctypes')
         >>> modname = modpath_to_modname(modpath)
         >>> assert modname == '_ctypes'
@@ -587,6 +599,7 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False, check=True,
         if not exists(modpath):
             raise ValueError('modpath={} does not exist'.format(modpath))
     modpath_ = abspath(expanduser(modpath))
+
     modpath_ = normalize_modpath(modpath_, hide_init=hide_init,
                                  hide_main=hide_main)
     if relativeto:
@@ -600,19 +613,6 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False, check=True,
         modname, abi_tag = modname.split('.')
     modname = modname.replace('/', '.')
     modname = modname.replace('\\', '.')
-
-    # if False:
-    #     if hide_init:
-    #         if modname.endswith('.__init__'):
-    #             modname = modname[:-len('.__init__')]
-    #     else:
-    #         # add in init, if reasonable
-    #         if not modname.endswith('.__init__'):
-    #             if exists(join(modpath_, '__init__.py')):
-    #                 modname = modname + '.__init__'
-    #
-    #     if hide_main:
-    #         modname = modname.replace('.__main__', '').strip()
     return modname
 
 
@@ -653,6 +653,7 @@ def modname_to_modpath(modname, hide_init=True, hide_main=False, sys_path=None):
     modpath = _syspath_modname_to_modpath(modname, sys_path)
     if modpath is None:
         return None
+
     modpath = normalize_modpath(modpath, hide_init=hide_init,
                                 hide_main=hide_main)
     return modpath
