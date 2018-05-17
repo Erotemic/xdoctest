@@ -161,7 +161,7 @@ def test_runner_syntax_error():
 
 
 if __name__ == '__main__':
-    r"""
+    """
     CommandLine:
         export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/testing
         python ~/code/xdoctest/testing/test_errors.py

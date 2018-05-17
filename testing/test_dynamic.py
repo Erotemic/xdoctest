@@ -195,7 +195,7 @@ def test_defined_by_module():
 
 
 if __name__ == '__main__':
-    r"""
+    """
     CommandLine:
         python testing/test_dynamic.py
         pytest testing/test_dynamic.py

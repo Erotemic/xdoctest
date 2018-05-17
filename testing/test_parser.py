@@ -659,7 +659,7 @@ def test_block_directive_want2_eval2():
 
 
 if __name__ == '__main__':
-    r"""
+    """
     CommandLine:
         python ~/code/xdoctest/testing/test_parser.py
         python ~/code/xdoctest/testing/test_parser.py test_inline_directive

@@ -211,7 +211,7 @@ def test_want_error_msg_failure():
 
 
 if __name__ == '__main__':
-    r"""
+    """
     CommandLine:
         export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/testing
         python ~/code/xdoctest/testing/test_doctest_example.py

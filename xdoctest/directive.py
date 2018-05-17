@@ -427,7 +427,7 @@ def parse_directive_optstr(optpart, inline=None):
 
 
 if __name__ == '__main__':
-    r"""
+    """
     CommandLine:
         python -m xdoctest.directive all
     """

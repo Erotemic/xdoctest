@@ -23,7 +23,7 @@ EXTRA_ARGS = ['-p', 'pytester', '-p', 'no:doctest', '--xdoctest-nocolor']
 
 
 def explicit_testdir():
-    r"""
+    """
     Explicitly constructs a testdir for use in IPython development
     Note used by any tests.
 

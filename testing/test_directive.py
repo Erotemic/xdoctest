@@ -36,7 +36,7 @@ def test_block_skip_directive():
 
 
 if __name__ == '__main__':
-    r"""
+    """
     CommandLine:
         python ~/code/xdoctest/testing/test_directive.py
         pytest ~/code/xdoctest/testing/test_directive.py

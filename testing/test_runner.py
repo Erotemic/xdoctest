@@ -332,7 +332,7 @@ def test_runner_config():
 
 
 if __name__ == '__main__':
-    r"""
+    """
     CommandLine:
         pytest testing/test_runner.py -s
         pytest testing/test_runner.py -s

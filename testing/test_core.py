@@ -275,7 +275,7 @@ def test_no_docstr():
 
 
 if __name__ == '__main__':
-    r"""
+    """
     CommandLine:
         export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/testing
         python ~/code/xdoctest/testing/test_core.py
