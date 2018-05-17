@@ -687,13 +687,14 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
     """
     syspath version of modname_to_modpath
 
-    Note, this is much slower than the pkgutil mechanisms.
-
     Args:
         modname (str): name of module to find
         sys_path (list): if specified overrides `sys.path` (default None)
         exclude (list): list of directory paths. if specified prevents these
             directories from being searched.
+
+    Notes:
+        This is much slower than the pkgutil mechanisms.
 
     CommandLine:
         python -m xdoctest.static_analysis _syspath_modname_to_modpath
@@ -709,15 +710,15 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
         >>> assert _syspath_modname_to_modpath('xdoctest.static_analysis', sys_path=[]) is None
         >>> assert _syspath_modname_to_modpath('_ctypes', sys_path=[]) is None
         >>> assert _syspath_modname_to_modpath('this', sys_path=[]) is None
+
+    Example:
+        >>> # test what happens when the module is not visible in the path
         >>> modname = 'xdoctest.static_analysis'
         >>> modpath = _syspath_modname_to_modpath(modname)
         >>> exclude = [split_modpath(modpath)[0]]
         >>> found = _syspath_modname_to_modpath(modname, exclude=exclude)
-        >>> assert found is None
-
-    Ignore:
-        >>> modname = 'cv2'
-        >>> _syspath_modname_to_modpath(modname)
+        >>> # this only works if installed in dev mode, pypi fails
+        >>> assert found is None, 'should not have found {}'.format(found)
     """
 
     def _isvalid(modpath, base):

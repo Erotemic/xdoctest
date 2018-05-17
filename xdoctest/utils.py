@@ -12,7 +12,7 @@ from os.path import join, exists, normpath
 
 
 def ensure_unicode(text):
-    r"""
+    """
     Casts bytes into utf8 (mostly for python2 compatibility)
 
     References:
@@ -22,7 +22,6 @@ def ensure_unicode(text):
         python -m xdoctest.utils ensure_unicode
 
     Example:
-        >>> from xdoctest.utils import *
         >>> assert ensure_unicode('my ünicôdé strįng') == 'my ünicôdé strįng'
         >>> assert ensure_unicode('text1') == 'text1'
         >>> assert ensure_unicode('text1'.encode('utf8')) == 'text1'
@@ -84,7 +83,6 @@ class CaptureStdout(object):
             (default = True)
 
     Example:
-        >>> from xdoctest.utils import *
         >>> self = CaptureStdout(supress=True)
         >>> print('dont capture the table flip (╯°□°）╯︵ ┻━┻')
         >>> with self:
@@ -190,7 +188,7 @@ def indent(text, prefix='    '):
 
 
 def highlight_code(text, lexer_name='python', **kwargs):
-    r"""
+    """
     Highlights a block of text using ansi tags based on language syntax.
 
     Args:
@@ -234,7 +232,7 @@ def highlight_code(text, lexer_name='python', **kwargs):
 
 
 def codeblock(block_str):
-    r"""
+    """
     Wraps multiline string blocks and returns unindented code.
     Useful for templated code defined in indented parts of code.
 
@@ -378,7 +376,7 @@ class TempDir(object):
 
 
 def import_module_from_name(modname):
-    r"""
+    """
     Args:
         modname (str):  module name
 
@@ -475,7 +473,7 @@ def strip_ansi(text):
 
 
 def ensuredir(dpath, mode=0o1777):
-    r"""
+    """
     Ensures that directory will exist. creates new dir with sticky bits by
     default
 
@@ -594,7 +592,7 @@ class TempDoctest(object):
             file.write("'''\n%s'''" % self.docstr)
 
 if __name__ == '__main__':
-    r"""
+    """
     CommandLine:
         python -m xdoctest.utils all
     """
