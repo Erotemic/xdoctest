@@ -348,3 +348,7 @@ development.
 #### Undecided:
 - [x] Rename to something better than `xdoctest`? - No, `xdoctest` works
   because its an eXtension of the original doctest module. 
+
+
+#### Uncategorized:
+- [ ] Make a new default mode: auto, which first tries google-style, and then fallback to freeform mode if no doctests are found or if an error occurs.
