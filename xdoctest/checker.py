@@ -74,7 +74,6 @@ def check_got_vs_want(want, got_stdout, got_eval=constants.NOT_EVALED,
     if not flag:
         msg = 'got differs with doctest want'
         ex = GotWantException(msg, got, want)
-        # print(ex.output_difference(runstate))
         raise ex
     return flag
 
@@ -133,7 +132,6 @@ def check_exception(exc_got, want, runstate=None):
     if not flag:
         msg = 'exception message is different'
         ex = GotWantException(msg, exc_got, exc_want)
-        # print(ex.output_difference(runstate))
         raise ex
     return flag
 
@@ -339,6 +337,11 @@ class GotWantException(AssertionError):
         Return a string describing the differences between the expected output
         for a given example (`example`) and the actual output (`got`).
         The `runstate` contains option flags used to compare `want` and `got`.
+
+        Notes:
+            This does not check if got matches want, it only outputs the raw
+            differences. Got/Want normalization may make the differences appear
+            more exagerated than they are.
         """
         got = self.got
         want = self.want
@@ -346,7 +349,13 @@ class GotWantException(AssertionError):
         if runstate is None:
             runstate = directive.RuntimeState()
 
-        got, want = normalize(got, want, runstate)
+        # Don't normalize because it usually removes the newlines
+        runstate_ = runstate.to_dict()
+
+        # Don't normalize whitespaces in report for better visibility
+        runstate_['NORMALIZE_WHITESPACE'] = False
+        runstate_['IGNORE_WHITESPACE'] = False
+        got, want = normalize(got, want, runstate_)
 
         # If <BLANKLINE>s are being used, then replace blank lines
         # with <BLANKLINE> in the actual output string.
@@ -370,6 +379,8 @@ class GotWantException(AssertionError):
                 diff = list(diff)[2:]  # strip the diff header
                 kind = 'context diff with expected followed by actual'
             elif runstate['REPORT_NDIFF']:
+                # TODO: Is there a way to make Differ ignore whitespace if that
+                # runtime directive is specified?
                 engine = difflib.Differ(charjunk=difflib.IS_CHARACTER_JUNK)
                 diff = list(engine.compare(want_lines, got_lines))
                 kind = 'ndiff with -expected +actual'

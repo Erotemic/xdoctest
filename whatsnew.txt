@@ -1,3 +1,8 @@
+Version 0.3.4
+-------------
+* The reported difference between got and want now preserves newlines for
+  better visibility.
+
 Version 0.3.3
 -------------
 * Fixed bug where pytest would collect all tests twice 
