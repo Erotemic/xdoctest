@@ -278,6 +278,11 @@ class DoctestParser(object):
             source_lines (list): lines belonging only to the doctest src
                 these will be unindented, prefixed, and without any want.
 
+        Returns:
+            (list, bool): a list of indices indicating which lines
+               are considered "PS1" and a flag indicating if the final line
+               should be considered for a got/want assertion.
+
         Example:
             >>> self = DoctestParser()
             >>> source_lines = ['>>> def foo():', '>>>     return 0', '>>> 3']
@@ -328,14 +333,17 @@ class DoctestParser(object):
         }
         ps1_linenos = sorted(ps1_linenos.difference(ps2_linenos))
 
-        # Is the last statement evaluatable?
-        if sys.version_info.major == 2:  # nocover
-            eval_final = isinstance(statement_nodes[-1], (
-                ast.Expr, ast.Print))
+        if len(statement_nodes) == 0:
+            eval_final = False
         else:
-            # This should just be an Expr in python3
-            # (todo: ensure this is true)
-            eval_final = isinstance(statement_nodes[-1], ast.Expr)
+            # Is the last statement evaluatable?
+            if sys.version_info.major == 2:  # nocover
+                eval_final = isinstance(statement_nodes[-1], (
+                    ast.Expr, ast.Print))
+            else:
+                # This should just be an Expr in python3
+                # (todo: ensure this is true)
+                eval_final = isinstance(statement_nodes[-1], ast.Expr)
 
         return ps1_linenos, eval_final
 
