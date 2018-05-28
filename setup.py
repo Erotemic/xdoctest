@@ -122,7 +122,7 @@ if __name__ == '__main__':
         # custom PyPI classifier for pytest plugins
         classifiers=[
             'Framework :: Pytest',
-            'Development Status :: 3 - Alpha',
+            'Development Status :: 4 - Beta',
             'Intended Audience :: Developers',
             'Topic :: Software Development :: Libraries :: Python Modules',
             'Topic :: Utilities',

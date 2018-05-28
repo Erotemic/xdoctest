@@ -1,3 +1,8 @@
+Version 0.3.5
+-------------
+* Changed development status to Beta
+
+
 Version 0.3.4
 -------------
 * The reported difference between got and want now preserves newlines for
