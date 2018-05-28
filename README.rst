@@ -59,7 +59,7 @@ CI scripts), but for debugging it may be easier to use the native
 interface.
 
 Check if xdoctest will work on your package
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can quickly check if ``xdocetst`` will work on your package
 out-of-the box by installing it via pip and running
@@ -72,7 +72,7 @@ For example with you might test if ``xdoctest`` works on ``networkx`` or
 ``python -m xdoctest sklearn all``.
 
 Using the pytest interface
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When ``pytest`` is run, ``xdoctest`` is automatically discovered, but it
 disabled by default. This is because ``xdoctest`` needs to replace the
@@ -90,7 +90,7 @@ function might look like this ``mymod.py::funcname:0``, and a class
 method might look like this: ``mymod.py::ClassName::method:0``
 
 Using the native interface.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``xdoctest`` module contains a ``pytest`` plugin, but also contains
 a native interface. This interface is run programmatically using
