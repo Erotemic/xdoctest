@@ -359,8 +359,12 @@ class GotWantException(AssertionError):
 
         # If <BLANKLINE>s are being used, then replace blank lines
         # with <BLANKLINE> in the actual output string.
+        # if not runstate['DONT_ACCEPT_BLANKLINE']:
+        #     got = re.sub('(?m)^[ ]*(?=\n)', BLANKLINE_MARKER, got)
+
+        # Replace <BLANKLINE>s if it is being used.
         if not runstate['DONT_ACCEPT_BLANKLINE']:
-            got = re.sub('(?m)^[ ]*(?=\n)', BLANKLINE_MARKER, got)
+            want = remove_blankline_marker(want)
 
         got = utils.ensure_unicode(got)
 
@@ -415,6 +419,54 @@ class GotWantException(AssertionError):
                 raise AssertionError('impossible state')
                 text = 'Expected nothing\nGot nothing\n'
         return text
+
+    def output_repr_difference(self, runstate=None):
+        """
+        Constructs a repr difference with minimal normalization.
+        """
+        minimal_got = self.got.rstrip()
+        minimal_want = self.want.rstrip()
+
+        if runstate is None:
+            runstate = directive.RuntimeState()
+
+        # Don't normalize because it usually removes the newlines
+        runstate_ = runstate.to_dict()
+
+        if not runstate_['DONT_ACCEPT_BLANKLINE']:
+            minimal_want = remove_blankline_marker(minimal_want)
+
+        lines = [
+            ('Repr Difference:'),
+            # TODO: get a semi-normalized output before showing repr?
+            ('    got  = {!r}'.format(minimal_got)),
+            ('    want = {!r}'.format(minimal_want)),
+        ]
+        return '\n'.join(lines)
+
+
+def remove_blankline_marker(text):
+    r"""
+    Example:
+        >>> text1 = 'foo\n{}\nbar'.format(BLANKLINE_MARKER)
+        >>> text2 = '{}\nbar'.format(BLANKLINE_MARKER)
+        >>> text4 = 'foo\n{}'.format(BLANKLINE_MARKER)
+        >>> text3 = '{}'.format(BLANKLINE_MARKER)
+        >>> text5 = text1 + text1 + text1
+        >>> assert BLANKLINE_MARKER not in remove_blankline_marker(text1)
+        >>> assert BLANKLINE_MARKER not in remove_blankline_marker(text2)
+        >>> assert BLANKLINE_MARKER not in remove_blankline_marker(text3)
+        >>> assert BLANKLINE_MARKER not in remove_blankline_marker(text4)
+        >>> assert BLANKLINE_MARKER not in remove_blankline_marker(text5)
+    """
+    pos_lb = '(?<=\n)'  # positive lookbehind
+    blankline_pattern = '|'.join([
+        '{pos_lb}{marker}\n', '{marker}\n',
+        '\n{marker}', '{marker}']).format(
+            marker=BLANKLINE_MARKER, pos_lb=pos_lb)
+    # blankline_pattern = r'(?<=\n)[ ]*{}\n?'.format(re.escape(BLANKLINE_MARKER))
+    new_text = re.sub(blankline_pattern, '\n', text, re.MULTILINE)
+    return new_text
 
 
 if __name__ == '__main__':

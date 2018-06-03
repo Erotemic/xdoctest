@@ -1,7 +1,7 @@
 Version 0.3.5
 -------------
 * Changed development status to Beta
-
+* Output difference now strips the BLANKLINE marker if enabled
 
 Version 0.3.4
 -------------
