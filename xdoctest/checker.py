@@ -146,6 +146,10 @@ def check_output(got, want, runstate=None):
         # Try default
         if got == want:
             return True
+
+        if runstate is None:
+            runstate = directive.RuntimeState()
+
         got, want = normalize(got, want, runstate)
         return _check_match(got, want, runstate)
     return False
@@ -158,6 +162,7 @@ def _check_match(got, want, runstate):
     if runstate['ELLIPSIS']:
         if _ellipsis_match(got, want):
             return True
+
     return False
 
 
@@ -265,6 +270,10 @@ def normalize(got, want, runstate=None):
         got = remove_prefixes(bytes_literal_re, got)
         want = remove_prefixes(bytes_literal_re, want)
 
+    # Replace <BLANKLINE>s if it is being used.
+    if not runstate['DONT_ACCEPT_BLANKLINE']:
+        want = remove_blankline_marker(want)
+
     # always remove trailing whitepsace
     got = re.sub(TRAILING_WS, '', got)
     want = re.sub(TRAILING_WS, '', want)
@@ -361,10 +370,6 @@ class GotWantException(AssertionError):
         # with <BLANKLINE> in the actual output string.
         # if not runstate['DONT_ACCEPT_BLANKLINE']:
         #     got = re.sub('(?m)^[ ]*(?=\n)', BLANKLINE_MARKER, got)
-
-        # Replace <BLANKLINE>s if it is being used.
-        if not runstate['DONT_ACCEPT_BLANKLINE']:
-            want = remove_blankline_marker(want)
 
         got = utils.ensure_unicode(got)
 
