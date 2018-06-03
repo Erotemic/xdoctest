@@ -728,10 +728,7 @@ class DocTest(object):
         if hasattr(ex_value, 'output_difference'):
             lines += [
                 ex_value.output_difference(self._runstate, colored=colored),
-                ('Repr:'),
-                # TODO: get a semi-normalized output before showing repr?
-                ('    ex_value.got  = {!r}'.format(ex_value.got.rstrip())),
-                ('    ex_value.want = {!r}'.format(ex_value.want.rstrip())),
+                ex_value.output_repr_difference(self._runstate)
             ]
         else:
             if with_tb:
