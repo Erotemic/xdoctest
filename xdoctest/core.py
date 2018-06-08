@@ -20,9 +20,13 @@ from xdoctest import doctest_example
 from xdoctest import utils  # NOQA
 
 
+DEBUG = False
+
+
 DOCTEST_STYLES = [
     'freeform',
     'google',
+    'auto',
     # 'numpy',  # TODO
 ]
 
@@ -77,7 +81,7 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
 
     """
     def doctest_from_parts(parts, num, curr_offset):
-        # FIXME; this will cause line numbers to become misaligned
+        # FIXME: this will cause line numbers to become misaligned
         nested = [
             p.orig_lines
             if p.want is None else
@@ -97,6 +101,10 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         # We've already parsed the parts, so we dont need to do it again
         example._parts = parts
         return example
+
+    if DEBUG:
+        print('Parsing docstring for callname={} in modpath={}'.format(
+            callname, modpath))
 
     respect_google_headers = True
     if respect_google_headers:  # pragma: nobranch
@@ -204,11 +212,45 @@ def parse_google_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
         yield example
 
 
+def parse_auto_docstr_examples(docstr, *args, **kwargs):
+    """
+    First try to parse google style, but if no tests are found use freeform
+    style.
+    """
+    if DEBUG:
+        print('Automatic style is trying google parsing')
+
+    n_found = 0
+    try:
+        for example in parse_google_docstr_examples(docstr, *args, **kwargs):
+            n_found += 1
+            yield example
+    except Exception:
+        if n_found > 0:
+            raise
+
+    # no google style tests were found, parse in freeform
+    if n_found == 0:
+        if DEBUG:
+            print('Automatic style is trying freeform parsing')
+        for example in parse_freeform_docstr_examples(docstr, *args, **kwargs):
+            yield example
+
+
 def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
-                          style='freeform', fpath=None):
+                          style='auto', fpath=None):
     """
     Parses doctests from a docstr and generates example objects.
     The style influences which tests are found.
+
+    Args:
+        docstr (str): a previously extracted docstring
+        callname (str): function or class name or class and method name
+        modpath (str): original module the docstring is from
+        line (int): which line in the module the docstring is from
+        style (str): expected doctest style (e.g. google, freeform, auto)
+        fpath (str): the file that the docstring is from
+            (if the file was not a module, needed for backwards compatibility)
 
     CommandLine:
         python -m xdoctest.core parse_docstr_examples
@@ -228,10 +270,15 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
         1
         >>> examples = list(parse_docstr_examples(docstr, fpath='foo.txt'))
     """
+    if DEBUG:
+        print('Parsing docstring examples for '
+              'callname={} in modpath={}'.format(callname, modpath))
     if style == 'freeform':
         parser = parse_freeform_docstr_examples
     elif style == 'google':
         parser = parse_google_docstr_examples
+    elif style == 'auto':
+        parser = parse_auto_docstr_examples
     # TODO:
     # elif style == 'numpy':
     #     parser = parse_numpy_docstr_examples
@@ -239,11 +286,18 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
         raise KeyError('Unknown style={}. Valid styles are {}'.format(
             style, DOCTEST_STYLES))
 
+    if DEBUG:
+        print('parser = {!r}'.format(parser))
+
+    n_parsed = 0
     try:
         for example in parser(docstr, callname=callname, modpath=modpath,
                               fpath=fpath, lineno=lineno):
+            n_parsed += 1
             yield example
     except Exception as ex:
+        if DEBUG:
+            print('Caught an error when parsing')
         msg = ('Cannot scrape callname={} in modpath={} line={}.\n'
                'Caused by: {}\n')
         msg = msg.format(callname, modpath, lineno, repr(ex))
@@ -268,6 +322,8 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
         if not isinstance(ex, (exceptions.MalformedDocstr,
                                exceptions.DoctestParseError)):
             raise
+    if DEBUG:
+        print('Finished parsing {} examples'.format(n_parsed))
 
 
 def _rectify_to_modpath(modpath_or_name):
@@ -287,6 +343,9 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
 
     Args:
         modpath_or_name (str): path to or name of the module to be tested
+        exclude (list): glob-patterns of file names to exclude
+        ignore_syntax_errors (bool): if False raise an error when syntax errors
+            occur in a doctest (default True)
 
     Example:
         >>> modpath_or_name = 'xdoctest.core'
@@ -353,11 +412,18 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
                 yield calldefs, modpath
 
 
-def parse_doctestables(modpath_or_name, exclude=[], style='google',
+def parse_doctestables(modpath_or_name, exclude=[], style='auto',
                        ignore_syntax_errors=True):
-    r"""
+    """
     Parses all doctests within top-level callables of a module and generates
     example objects.  The style influences which tests are found.
+
+    Args:
+        modpath_or_name (str): path or name of a module
+        exclude (list): glob-patterns of file names to exclude
+        style (str): expected doctest style (e.g. google, freeform, auto)
+        ignore_syntax_errors (bool): if False raise an error when syntax errors
+            occur in a doctest (default True)
 
     Yields:
         xdoctest.doctest_example.DocTest : parsed doctest example objects
@@ -396,6 +462,7 @@ def parse_doctestables(modpath_or_name, exclude=[], style='google',
         raise KeyError('Unknown style={}. Valid styles are {}'.format(
             style, DOCTEST_STYLES))
 
+    # Statically parse modules and their doctestable callables in a package
     for calldefs, modpath in package_calldefs(modpath_or_name, exclude,
                                               ignore_syntax_errors):
         for callname, calldef in calldefs.items():

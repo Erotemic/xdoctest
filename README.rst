@@ -381,18 +381,13 @@ Documentation:
 -  [ ] Auto-generate read-the-docs Documentation
 -  [ ] Getting Started documentation in read-the-docs
 
-Undecided:
-^^^^^^^^^^
-
--  [x] Rename to something better than ``xdoctest``? - No, ``xdoctest``
-   works because its an eXtension of the original doctest module.
 
 Uncategorized:
 ^^^^^^^^^^^^^^
 
--  [ ] Make a new default mode: auto, which first tries google-style,
+-  [x] Make a new default mode: auto, which first tries google-style,
    and then fallback to freeform mode if no doctests are found or if an
-   error occurs.
+   error occurs. (new in 0.3.6)
 
 .. |Travis| image:: https://img.shields.io/travis/Erotemic/xdoctest/master.svg?label=Travis%20CI
    :target: https://travis-ci.org/Erotemic/xdoctest

@@ -274,6 +274,31 @@ def test_no_docstr():
         assert len(doctests) == 0
 
 
+def test_oneliner():
+    """
+    python ~/code/xdoctest/testing/test_core.py test_oneliner
+    """
+    with utils.TempDir() as temp:
+        dpath = temp.dpath
+        modpath = join(dpath, 'test_oneliner.py')
+        source = utils.codeblock(
+            '''
+            def foo():
+                """
+                >>> assert False, 'should fail'
+                """
+            ''')
+        with open(modpath, 'w') as file:
+            file.write(source)
+        from xdoctest import core
+        doctests = list(core.parse_doctestables(modpath))
+        assert len(doctests) == 1
+        print('doctests = {!r}'.format(doctests))
+        import pytest
+        with pytest.raises(AssertionError, message='should fail'):
+            doctests[0].run()
+
+
 if __name__ == '__main__':
     """
     CommandLine:

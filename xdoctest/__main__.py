@@ -24,7 +24,7 @@ def main():
     parser.add_argument('modname', help='what files to run')
     parser.add_argument('command', help='a doctest name or a command (list|all)', default='list')
     parser.add_argument(*('--style',), type=str, help='choose your style',
-                        default='freeform')
+                        choices=['auto', 'google', 'freeform'], default='auto')
     parser.add_argument(*('--options',), type=str,
                         help='specify the default directive state',
                         default=None)

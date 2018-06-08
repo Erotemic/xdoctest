@@ -14,7 +14,7 @@ import sys
 
 
 def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
-                   style='google', verbose=None, config=None):
+                   style='auto', verbose=None, config=None):
     """
     Executes requestsed google-style doctests in a package or module.
     Main entry point into the testing framework.
@@ -130,7 +130,9 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
                         warnings.formatwarning(warn.message, warn.category,
                                                warn.filename, warn.lineno)))
 
-        if failed:
+        if failed and len(enabled_examples) > 1:
+            # If there is more than one test being run, print out all the
+            # errors that occured so they are consolidated in a single place.
             cprint('\n=== Found {} errors ==='.format(len(failed)), 'red')
             for fail_idx, example in enumerate(failed, start=1):
                 cprint('--- Error: {} / {} ---'.format(fail_idx, len(failed)), 'red')
@@ -254,7 +256,7 @@ def _run_examples(enabled_examples, verbose):
     return run_summary
 
 
-def _parse_commandline(command=None, style='google', verbose=None, argv=None):
+def _parse_commandline(command=None, style='auto', verbose=None, argv=None):
     # Determine command via sys.argv if not specified
     if argv is None:
         argv = sys.argv[1:]

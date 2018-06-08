@@ -1,5 +1,9 @@
 Version 0.3.6
 -------------
+* Added auto parsing style. This first tries to use Google, but falls back on
+  freeform if no google-style doctests are found.
+* Errors are no longer printed twice if only a single test is being run.
+* All parsers now default to the new "auto" style.
 
 Version 0.3.5
 -------------
