@@ -37,6 +37,9 @@ def main():
         ___  ____ ____ ___ ____ ____ ___
         |  \ |  | |     |  |___ [__   |
         |__/ |__| |___  |  |___ ___]  |
+
+        Cant do most of this in doctest, although apparently you can
+        use asserts, whereas I previously thought they didnt work
         ''') + '\n\n')
 
     ub.cmd('python _doc_version.py', verbout=1, verbose=2)
@@ -46,6 +49,19 @@ def main():
         _  _ ___  ____ ____ ___ ____ ____ ___
          \/  |  \ |  | |     |  |___ [__   |
         _/\_ |__/ |__| |___  |  |___ ___]  |
+
+        Just run the assert failure to illustrate how failures look
+        ''') + '\n\n')
+    ub.cmd('python _xdoc_version.py do_asserts_work --demo-failure', verbout=1, verbose=2)
+
+    print('\n\n' + ub.codeblock(
+        '''
+        _  _ ___  ____ ____ ___ ____ ____ ___
+         \/  |  \ |  | |     |  |___ [__   |
+        _/\_ |__/ |__| |___  |  |___ ___]  |
+
+        Run all other tests, to show how the ast based xdoctest can deal with
+        syntax that regex based doctest cannot handle.
         ''') + '\n\n')
     ub.cmd('python _xdoc_version.py all', verbout=1, verbose=2)
 

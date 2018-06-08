@@ -1,4 +1,4 @@
-Version 0.3.6
+Version 0.4.0
 -------------
 * Added auto parsing style. This first tries to use Google, but falls back on
   freeform if no google-style doctests are found.

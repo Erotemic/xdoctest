@@ -387,7 +387,7 @@ Uncategorized:
 
 -  [x] Make a new default mode: auto, which first tries google-style,
    and then fallback to freeform mode if no doctests are found or if an
-   error occurs. (new in 0.3.6)
+   error occurs. (new in 0.4.0)
 
 .. |Travis| image:: https://img.shields.io/travis/Erotemic/xdoctest/master.svg?label=Travis%20CI
    :target: https://travis-ci.org/Erotemic/xdoctest
