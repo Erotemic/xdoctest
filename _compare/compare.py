@@ -2,14 +2,15 @@
 Compare xdoctest with doctest
 
 This file autogenreates two files: compare_doctest.py and compare_xdoctset.py
-They will have the same body up until the main block as defined in base.py. One
-will run doctest and the other will run xdoctest. See the difference.
+They will have the same body up until the main block as defined in
+base_diff.py. One will run doctest and the other will run xdoctest. See the
+difference.
 """
 import ubelt as ub
 
 
 def generate():
-    content = ub.readfrom('base.py') + '\n\n'
+    content = ub.readfrom('base_diff.py') + '\n\n'
     xdoc_version = content + ub.codeblock(
         '''
         if __name__ == '__main__':

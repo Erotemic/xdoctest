@@ -290,13 +290,113 @@ def test_oneliner():
             ''')
         with open(modpath, 'w') as file:
             file.write(source)
-        from xdoctest import core
         doctests = list(core.parse_doctestables(modpath))
         assert len(doctests) == 1
         print('doctests = {!r}'.format(doctests))
         import pytest
         with pytest.raises(AssertionError, message='should fail'):
             doctests[0].run()
+
+
+def test_delayed_want_pass_cases():
+    """
+    The delayed want algorithm allows a want statement to match trailing
+    unmatched stdout if it fails to directly match the most recent stdout.
+
+    In more mathy terms let $w$ be the current "want", and let $g[-t:]$ be the
+    trailing $t$ most recent "gots" captured from stdout. We say the "want"
+    matches "got" if $w matches g[-t:] for t in range(1, n)$, where $n$ is the
+    index of the last part with a success match.
+    """
+    def _test_status(docstr):
+        temp = utils.TempDoctest(utils.codeblock(docstr))
+        doctests = list(core.parse_doctestables(temp.modpath))
+        status = doctests[0].run(verbose=0, on_error='return')
+        return status
+
+    # Pass Case1:
+    status = _test_status(
+        """
+        >>> print('some text')
+        >>> print('more text')
+        some text
+        more text
+        """)
+    assert status['passed']
+
+    # Pass Case2:
+    status = _test_status(
+        """
+        >>> print('some text')
+        some text
+        >>> print('more text')
+        more text
+        """)
+    assert status['passed']
+
+    # Pass Case3: "its ok to only match more text and ignore some text"
+    status = _test_status(
+        """
+        >>> print('some text')
+        >>> print('more text')
+        more text
+        """)
+    assert status['passed']
+
+
+def test_delayed_want_fail_cases():
+    def _test_status(docstr):
+        temp = utils.TempDoctest(utils.codeblock(docstr))
+        doctests = list(core.parse_doctestables(temp.modpath))
+        status = doctests[0].run(verbose=0, on_error='return')
+        return status
+
+    # Fail Case4: "more text has not been printed yet"
+    status = _test_status(
+        """
+        >>> print('some text')
+        some text
+        more text
+        >>> print('more text')
+        """)
+    assert not status['passed']
+
+    # Fail Case5: cannot match "some text" more than once
+    status = _test_status(
+        """
+        >>> print('some text')
+        some text
+        >>> print('more text')
+        some text
+        more text
+        """)
+    assert not status['passed']
+
+    # Fail Case6: Because "more text" was matched, "some text" is forever
+    # ignored
+    status = _test_status(
+        """
+        >>> print('some text')
+        >>> print('more text')
+        more text
+        >>> print('even more text')
+        some text
+        even more text
+        """)
+    assert not status['passed']
+
+    # alternate case 6
+    status = _test_status(
+        """
+        >>> print('some text')
+        >>> print('more text')
+        more text
+        >>> print('even more text')
+        some text
+        more text
+        even more text
+        """)
+    assert not status['passed']
 
 
 if __name__ == '__main__':

@@ -108,7 +108,8 @@ class DoctestPart(object):
         devnice = self.__nice__()
         return '<%s(%s)>' % (classname, devnice)
 
-    def check(part, got_stdout, got_eval=constants.NOT_EVALED, runstate=None):
+    def check(part, got_stdout, got_eval=constants.NOT_EVALED, runstate=None,
+              unmatched=None):
         """
         Check if the "got" output obtained by running this test matches the
         "want" target. Note there are two types of "got" output: (1) output
@@ -118,12 +119,54 @@ class DoctestPart(object):
         Args:
             got_stdout (str): output from stdout
             got_eval (str): output from an eval statement
+            runstate (directive.RuntimeState): runner options
+            unmatched (list): if specified, the want statement is allowed
+                to match any trailing sequence of unmatched output and
+                got_stdout from this doctest part.
 
         Raises:
-            GotWantException - If the "got" differs from this parts want.
+            xdoctest.checker.GotWantException - If the "got" differs from this
+                parts want.
+
+        Example:
+            >>> import pytest
+            >>> got_stdout = 'more text\n'
+            >>> unmatched = ['some text\n']
+            >>> self = DoctestPart(None, want_lines=['some text', 'more text'])
+            >>> self.check(got_stdout, unmatched=unmatched)
+            >>> # Leading junk doesnt matter if we match a trailing sequence
+            >>> self.check(got_stdout, unmatched=['junk\n'] + unmatched)
+            >>> # fail when want doesnt match any trailing sequence
+            >>> with pytest.raises(checker.GotWantException):
+            >>>     self.check(got_stdout)
+            >>> with pytest.raises(checker.GotWantException):
+            >>>     self.check(got_stdout, ['some text\n', 'junk\n'])
         """
-        return checker.check_got_vs_want(part.want, got_stdout, got_eval,
-                                         runstate)
+        if unmatched is None:
+            unmatched = []
+        trailing_gots = unmatched + [got_stdout]
+        success = False
+
+        exceptions = []
+        for i in range(1, len(trailing_gots) + 1):
+            # Try the i-th trailing sequence
+            got_ = ''.join(trailing_gots[-i:])
+            try:
+                checker.check_got_vs_want(part.want, got_, got_eval, runstate)
+            except checker.GotWantException as ex:
+                exceptions.append(ex)
+            else:
+                success = True
+                break
+
+        if not success:
+            # for ex in exceptions:
+            #     print(ex.output_difference())
+            #     print(ex.output_repr_difference())
+            # If none of the checks pass, return the error message with the
+            # largets got message. (perhaps the output with the closest edit
+            # distance might be better to report?)
+            raise exceptions[-1]
 
     def format_src(self, linenos=True, want=True, startline=1, n_digits=None,
                    colored=False, partnos=False, prefix=True):

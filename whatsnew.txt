@@ -6,6 +6,9 @@ Version 0.4.0
 * All parsers now default to the new "auto" style.
 * Added command "dump" to native runner that reformats enabled doctests so they
   can be run as unit tests.
+* Implemented delayed want mtaching. This enables doctests to use multiple
+  print statements in a row and use a single want statement to check all of
+  their output.
 
 Version 0.3.5
 -------------

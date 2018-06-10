@@ -6,14 +6,6 @@ TODO:
 """
 
 
-def do_asserts_work():
-    """
-    >>> # xdoctest: +REQUIRES(--demo-failure)
-    >>> assert False, 'this test should fail'
-    """
-    pass
-
-
 def multiline_madness():
     """
     >>> if True:
@@ -40,18 +32,14 @@ def embeded_triple_quotes():
 # TODO: fix the higlighting of the "got" string when dumping test results
 
 
-# def sequential_print_statements():
-#     """
-#     >>> print('In builtin doctest you have to handle stdout on EVERY line')
-#     >>> print('But in xdoctest its no problem')
-#     In builtin doctest you have to handle stdout on EVERY line
-#     But in xdoctest its no problem
-#     """
-#     pass
-# FIXME: Actually it is a problem right now. I forgot that my handling of repl
-# broke this feature. However, I will soon fix it. The fix will involve
-# accumulating stdout and then basically checking that a stdout line is
-# eventually handled, and if its not by the end of the test it fails.
+def sequential_print_statements():
+    """
+    >>> print('In builtin doctest you have to handle stdout on EVERY line')
+    >>> print('But in xdoctest its no problem')
+    In builtin doctest you have to handle stdout on EVERY line
+    But in xdoctest its no problem
+    """
+    pass
 
 
 def repl_print_statements():
@@ -62,3 +50,27 @@ def repl_print_statements():
     thats ok, we support it
     """
     pass
+
+
+def multiple_eval_for_loops_v1():
+    """
+    This is one corner case, where doctest can do something xdoctest cannot.
+
+    >>> for i in range(2):
+    ...     '%s' % i
+    ...
+    '0'
+    '1'
+    """
+
+
+def multiple_eval_for_loops_v2():
+    """
+    However, xdoctest can handle this as long as you print to stdout
+
+    >>> for i in range(2):
+    ...     print('%s' % i)
+    ...
+    0
+    1
+    """

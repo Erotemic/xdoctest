@@ -199,6 +199,16 @@ The main enhancements ``xdoctest`` offers over ``doctest`` are:
    to perform checks in code that might write to stdout.
 5. If your test has a "want" statement and ends with both a value and
    stdout, both are checked, and the test will pass if either matches.
+6. Ouptut from multiple sequential print statements can now be checked by
+   a single "got" statement. (new in 0.4.0).
+
+See code in ``_compare/compare.py`` and ``_compare/base_diff.py`` for a demo
+that illustrates several of these enhancements. This demo mostly shows cases
+where ``xdoctest`` works but ``doctest`` fails, but it does show **the only
+corner case I can find** where ``doctest`` works but ``xdoctest`` does not.
+Feel free to submit more in an issue if you can find any other backwards
+incompatible cases.
+
 
 Examples
 --------
@@ -388,6 +398,8 @@ Uncategorized:
 -  [x] Make a new default mode: auto, which first tries google-style,
    and then fallback to freeform mode if no doctests are found or if an
    error occurs. (new in 0.4.0)
+- [x] multi-part got / want "delayed" matching (new in 0.4.0). 
+- [ ] fix the higlighting of the "got" string when dumping test results
 
 .. |Travis| image:: https://img.shields.io/travis/Erotemic/xdoctest/master.svg?label=Travis%20CI
    :target: https://travis-ci.org/Erotemic/xdoctest

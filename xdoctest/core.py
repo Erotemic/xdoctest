@@ -451,7 +451,7 @@ def parse_doctestables(modpath_or_name, exclude=[], style='auto',
         ...    >>> 2 + 2
         ...    4
         ...    ''')
-        >>> temp = utils.TempDoctest('test_modfile', docstr)
+        >>> temp = utils.TempDoctest(docstr, 'test_modfile')
         >>> modpath = temp.modpath
         >>> examples = list(parse_doctestables(modpath, style='freeform'))
         >>> print(len(examples))

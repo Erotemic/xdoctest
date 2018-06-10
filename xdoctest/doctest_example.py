@@ -100,6 +100,7 @@ class DocTest(object):
 
         self.logged_evals = OrderedDict()
         self.logged_stdout = OrderedDict()
+        self._unmatched_stdout = []
         self.skipped_parts = []
 
         self._runstate = None
@@ -325,7 +326,7 @@ class DocTest(object):
 
     def run(self, verbose=None, on_error=None):
         """
-        Executes the doctest
+        Executes the doctest, checks the results, reports the outcome.
         """
         on_error = self.config.getvalue('on_error', on_error)
         verbose = self.config.getvalue('verbose', verbose)
@@ -341,6 +342,8 @@ class DocTest(object):
 
         self.logged_evals.clear()
         self.logged_stdout.clear()
+        self._unmatched_stdout = []
+
         self.skipped_parts = []
         self.exc_info = None
         self._suppressed_stdout = verbose <= 1
@@ -373,9 +376,7 @@ class DocTest(object):
                 try:
                     # Compile code, handle syntax errors
                     mode = 'eval' if part.use_eval else 'exec'
-
                     self._partfilename = '<doctest:' + self.node + '>'
-
                     code = compile(
                         part.source, mode=mode,
                         filename=self._partfilename,
@@ -392,65 +393,51 @@ class DocTest(object):
                 try:
                     # Execute the doctest code
                     try:
+                        # NOTE: For code passed to eval or exec, there is no
+                        # difference between locals and globals. Only pass in
+                        # one dict, otherwise there is weird behavior
                         with cap:
-                            # NOTE: There is no difference between locals/globals
-                            # in eval/exec context. Only pass in one dict,
-                            # otherwise there is weird behavior
+                            # We can execute each part using exec or eval.  If
+                            # a doctest part is flagged as `use_eval` we
+                            # exepect it to return an object with a repr that
+                            # can compared to a "want" statement.
                             if part.use_eval:
-                                # Only capture the repr to allow for gc tests
                                 got_eval = eval(code, test_globals)
                             else:
                                 exec(code, test_globals)
+
+                        # Record any standard output and "got_eval" produced by
+                        # this doctest_part.
+                        self.logged_evals[partx] = got_eval
+                        self.logged_stdout[partx] = cap.text
                     except Exception as ex:
-                        # Dont fail if the traceback matches a want message
-                        """
-                        TODO:
-                            [ ] - Delay got-want failure until the end of the
-                            doctest. Allow the rest of the code to run.  If
-                            multiple errors occur, show them both.
-
-                            [ ] - Implement a greedy got - want matching
-                            procedure where the user can print to stdout as
-                            much as they want, and no error is thrown unless
-                            there is no match at the end of the doctest.
-
-                            e.g. the following cases should pass
-
-                                Case1:
-                                    >>> print('some text')
-                                    >>> print('more text')
-                                    some text
-                                    more text
-
-                                Case2:
-                                    >>> print('some text')
-                                    some text
-                                    >>> print('more text')
-                                    more text
-
-                                However, this should not pass
-                                    >>> print('some text')
-                                    some text
-                                    more text
-                                    >>> print('more text')
-
-                            In other words, want lines are allows to match any
-                            of the got lines that came before it. UNLESS...
-                            those got lines were already matched by a previous
-                            want. A want should try to match as quickly as it
-                            can, but delay failure if it can't.
-                        """
                         if part.want:
+                            # A failure may be expected if the traceback
+                            # matches the part's want statement.
                             exception = sys.exc_info()
                             exc_got = traceback.format_exception_only(*exception[:2])[-1]
                             checker.check_exception(exc_got, part.want, runstate)
                         else:
                             raise
                     else:
+                        """
+                        TODO:
+                            [ ] - Delay got-want failure until the end of the
+                            doctest. Allow the rest of the code to run.  If
+                            multiple errors occur, show them both.
+                        """
                         if part.want:
                             got_stdout = cap.text
                             if not runstate['IGNORE_WANT']:
-                                part.check(got_stdout, got_eval, runstate)
+                                part.check(got_stdout, got_eval, runstate,
+                                           unmatched=self._unmatched_stdout)
+                            # Clear unmatched output when a check passes
+                            self._unmatched_stdout = []
+                        else:
+                            # If a part doesnt have a want allow its output to
+                            # be matched by the next part.
+                            self._unmatched_stdout.append(cap.text)
+
                 # Handle anything that could go wrong
                 except KeyboardInterrupt:  # nocover
                     raise
@@ -466,7 +453,11 @@ class DocTest(object):
                     break
                 except Exception:
                     ex_type, ex_value, tb = sys.exc_info()
-                    # CLEAN_TRACEBACK = True
+
+                    # The idea of CLEAN_TRACEBACK is to make it so the
+                    # traceback from this function doesn't clutter the error
+                    # message the user sees. However, I haven't been able to
+                    # make it work yet.
                     CLEAN_TRACEBACK = 0
                     if CLEAN_TRACEBACK:
                         # Pop the eval off the stack
@@ -489,6 +480,7 @@ class DocTest(object):
                     break
                 finally:
                     assert cap.text is not None
+                    # Ensure that we logged the output even in failure cases
                     self.logged_evals[partx] = got_eval
                     self.logged_stdout[partx] = cap.text
 
