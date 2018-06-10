@@ -4,6 +4,8 @@ Version 0.4.0
   freeform if no google-style doctests are found.
 * Errors are no longer printed twice if only a single test is being run.
 * All parsers now default to the new "auto" style.
+* Added command "dump" to native runner that reformats enabled doctests so they
+  can be run as unit tests.
 
 Version 0.3.5
 -------------
