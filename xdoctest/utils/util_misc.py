@@ -18,8 +18,8 @@ class TempDoctest(object):
     def __init__(self, docstr, modname=None):
         if modname is None:
             # make a random temporary module name
-            chars = random.choices(list(map(chr, range(97, 97 + 26))), k=8)
-            modname = ''.join(chars)
+            alphabet = list(map(chr, range(97, 97 + 26)))
+            modname = ''.join([random.choice(alphabet) for _ in range(8)])
         self.modname = modname
         self.docstr = docstr
         self.temp = TempDir()
