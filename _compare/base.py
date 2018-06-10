@@ -1,3 +1,11 @@
+"""
+TODO:
+    Anything that works in both should be moved into a different files to show
+    commonalities, and anything that only works in one should be in another
+    file to show differences.
+"""
+
+
 def do_asserts_work():
     """
     >>> # xdoctest: +REQUIRES(--demo-failure)
@@ -9,8 +17,8 @@ def do_asserts_work():
 def multiline_madness():
     """
     >>> if True:
-    >>>     print('I expect this')
-    I expect this
+    >>>     print('doctest requires a special ... prefix')
+    doctest requires a special ... prefix
     """
     pass
 

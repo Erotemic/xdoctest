@@ -126,7 +126,7 @@ class DoctestPart(object):
                                          runstate)
 
     def format_src(self, linenos=True, want=True, startline=1, n_digits=None,
-                   colored=False, partnos=False):
+                   colored=False, partnos=False, prefix=True):
         """
         Customizable formatting of the source and want for this doctest.
 
@@ -140,6 +140,7 @@ class DoctestPart(object):
             n_digits (int): number of digits to use for line numbers
             colored (bool): pygmentize the colde
             partnos (bool): if True, shows the part number in the string
+            prefix (bool): if False, exclude the doctest `>>> ` prefix
 
         Example:
             >>> from xdoctest.parser import *
@@ -148,9 +149,18 @@ class DoctestPart(object):
             >>> print(self.format_src(partnos=True))
             (p1) 1 >>> print(123)
                    123
+
+        Example:
+            >>> from xdoctest.parser import *
+            >>> self = DoctestPart(['print(123)'], ['123'], 0, partno=1)
+            >>> # xdoctest: -NORMALIZE_WHITESPACE
+            >>> print(self.format_src(partnos=False, prefix=False,
+            >>>                       linenos=False, want=False))
+            print(123)
         """
         src_text = self.source
-        src_text = utils.indent(src_text, '>>> ')
+        if prefix:
+            src_text = utils.indent(src_text, '>>> ')
         want_text = self.want if self.want else ''
 
         if n_digits is None:

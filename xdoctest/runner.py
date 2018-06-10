@@ -53,7 +53,10 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
               ' pick from a list of valid choices:')
         command = 'list'
 
-    run_all = (command == 'all')
+    # TODO: command should not be allowed to be the requested doctest name in
+    # case it conflicts with an existing command. This probably requires an API
+    # change to this function.
+    gather_all = (command == 'all' or command == 'dump')
 
     tic = time.time()
 
@@ -61,10 +64,10 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
     with warnings.catch_warnings(record=True) as parse_warnlist:
         examples = list(core.parse_doctestables(modpath, exclude=exclude,
                                                 style=style))
-
-    # Signal that we are not running through pytest
-    for e in examples:
-        e.mode = 'native'
+        # Set each example mode to native to signal that we are using the
+        # native xdoctest runner instead of the pytest runner
+        for example in examples:
+            example.mode = 'native'
 
     if command == 'list':
         if len(examples) == 0:
@@ -77,8 +80,8 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
         print('gathering tests')
         enabled_examples = []
         for example in examples:
-            if run_all or command in example.valid_testnames:
-                if run_all and example.is_disabled():
+            if gather_all or command in example.valid_testnames:
+                if gather_all and example.is_disabled():
                     continue
                 enabled_examples.append(example)
 
@@ -92,78 +95,119 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
             for example in enabled_examples:
                 example.config.update(config)
 
-        run_summary = _run_examples(enabled_examples, verbose)
+        if command == 'dump':
+            # format the doctests as normal unit tests
+            print('dumping tests to stdout')
+            _convert_to_test_module(enabled_examples)
+            run_summary = {'action': 'dump'}
+        else:
+            # Run the gathered doctest examples
+            run_summary = _run_examples(enabled_examples, verbose)
 
-    toc = time.time()
+            toc = time.time()
+            n_seconds = toc - tic
 
-    # Print final summary info in a style similar to pytest
-    if verbose >= 0:
+            # Print final summary info in a style similar to pytest
+            if verbose >= 0 and run_summary:
+                _print_summary_report(run_summary, parse_warnlist, n_seconds,
+                                      enabled_examples)
 
-        def cprint(text, color):
-            print(utils.color_text(text, color))
+    return run_summary
 
-        # report errors
-        failed = run_summary.get('failed', [])
-        warned = run_summary.get('warned', [])
 
-        # report parse-time warnings
-        if parse_warnlist:
-            cprint('\n=== Found {} parse-time warnings ==='.format(
-                len(parse_warnlist)), 'yellow')
+def _convert_to_test_module(enabled_examples):
+    """
+    Converts all doctests to unit tests that can exist in a standalone module
+    """
+    module_lines = []
+    for example in enabled_examples:
+        # Create a unit-testable function for this example
+        func_name = 'test_' + example.callname.replace('.', '_')
+        body_lines = []
+        for part in example._parts:
+            body_part = part.format_src(linenos=False, want=False,
+                                        prefix=False, colored=False,
+                                        partnos=False)
+            if part.want:
+                want_text = '# doctest want:\n'
+                want_text += utils.indent(part.want, '# ')
+                body_part += '\n' + want_text
+            body_lines.append(body_part)
+        body = '\n'.join(body_lines)
+        func_text = 'def {}():\n'.format(func_name) + utils.indent(body)
+        module_lines.append(func_text)
 
-            for warn_idx, warn in enumerate(parse_warnlist, start=1):
-                cprint('--- Parse Warning: {} / {} ---'.format(
-                    warn_idx, len(parse_warnlist)), 'yellow')
+    module_text = '\n\n\n'.join(module_lines)
+    print(module_text)
+
+
+def _print_summary_report(run_summary, parse_warnlist, n_seconds,
+                          enabled_examples):
+    """
+    Summary report formatting and printing
+    """
+    def cprint(text, color):
+        print(utils.color_text(text, color))
+
+    # report errors
+    failed = run_summary.get('failed', [])
+    warned = run_summary.get('warned', [])
+
+    # report parse-time warnings
+    if parse_warnlist:
+        cprint('\n=== Found {} parse-time warnings ==='.format(
+            len(parse_warnlist)), 'yellow')
+
+        for warn_idx, warn in enumerate(parse_warnlist, start=1):
+            cprint('--- Parse Warning: {} / {} ---'.format(
+                warn_idx, len(parse_warnlist)), 'yellow')
+            print(utils.indent(
+                warnings.formatwarning(warn.message, warn.category,
+                                       warn.filename, warn.lineno)))
+
+    # report run-time warnings
+    if warned:
+        cprint('\n=== Found {} run-time warnings ==='.format(len(warned)), 'yellow')
+        for warn_idx, example in enumerate(warned, start=1):
+            cprint('--- Runtime Warning: {} / {} ---'.format(warn_idx, len(warned)),
+                   'yellow')
+            print('example = {!r}'.format(example))
+            for warn in example.warn_list:
                 print(utils.indent(
                     warnings.formatwarning(warn.message, warn.category,
                                            warn.filename, warn.lineno)))
 
-        # report run-time warnings
-        if warned:
-            cprint('\n=== Found {} run-time warnings ==='.format(len(warned)), 'yellow')
-            for warn_idx, example in enumerate(warned, start=1):
-                cprint('--- Runtime Warning: {} / {} ---'.format(warn_idx, len(warned)),
-                       'yellow')
-                print('example = {!r}'.format(example))
-                for warn in example.warn_list:
-                    print(utils.indent(
-                        warnings.formatwarning(warn.message, warn.category,
-                                               warn.filename, warn.lineno)))
+    if failed and len(enabled_examples) > 1:
+        # If there is more than one test being run, print out all the
+        # errors that occured so they are consolidated in a single place.
+        cprint('\n=== Found {} errors ==='.format(len(failed)), 'red')
+        for fail_idx, example in enumerate(failed, start=1):
+            cprint('--- Error: {} / {} ---'.format(fail_idx, len(failed)), 'red')
+            print(utils.indent('\n'.join(example.repr_failure())))
 
-        if failed and len(enabled_examples) > 1:
-            # If there is more than one test being run, print out all the
-            # errors that occured so they are consolidated in a single place.
-            cprint('\n=== Found {} errors ==='.format(len(failed)), 'red')
-            for fail_idx, example in enumerate(failed, start=1):
-                cprint('--- Error: {} / {} ---'.format(fail_idx, len(failed)), 'red')
-                print(utils.indent('\n'.join(example.repr_failure())))
+    # Print command lines to re-run failed tests
+    if failed:
+        cprint('\n=== Failed tests ===', 'red')
+        for example in failed:
+            print(example.cmdline)
 
-        # Print command lines to re-run failed tests
-        if failed:
-            cprint('\n=== Failed tests ===', 'red')
-            for example in failed:
-                print(example.cmdline)
-
-        # final summary
-        n_passed = run_summary.get('n_passed', 0)
-        n_failed = run_summary.get('n_failed', 0)
-        n_warnings = len(warned) + len(parse_warnlist)
-        n_seconds = toc - tic
-        pairs = zip([n_failed, n_passed, n_warnings],
-                    ['failed', 'passed', 'warnings'])
-        parts = ['{} {}'.format(n, t) for n, t in pairs  if n > 0]
-        fmtstr = '=== ' + ' '.join(parts) + ' in {:.2f} seconds ==='
-        summary_line = fmtstr.format(n_failed, n_passed, n_warnings, n_seconds)
-        # color text based on worst type of error
-        if n_failed > 0:
-            summary_line = utils.color_text(summary_line, 'red')
-        elif n_warnings > 0:
-            summary_line = utils.color_text(summary_line, 'yellow')
-        else:
-            summary_line = utils.color_text(summary_line, 'green')
-        print(summary_line)
-
-    return run_summary
+    # final summary
+    n_passed = run_summary.get('n_passed', 0)
+    n_failed = run_summary.get('n_failed', 0)
+    n_warnings = len(warned) + len(parse_warnlist)
+    pairs = zip([n_failed, n_passed, n_warnings],
+                ['failed', 'passed', 'warnings'])
+    parts = ['{} {}'.format(n, t) for n, t in pairs  if n > 0]
+    fmtstr = '=== ' + ' '.join(parts) + ' in {:.2f} seconds ==='
+    summary_line = fmtstr.format(n_failed, n_passed, n_warnings, n_seconds)
+    # color text based on worst type of error
+    if n_failed > 0:
+        summary_line = utils.color_text(summary_line, 'red')
+    elif n_warnings > 0:
+        summary_line = utils.color_text(summary_line, 'yellow')
+    else:
+        summary_line = utils.color_text(summary_line, 'green')
+    print(summary_line)
 
 
 def _gather_zero_arg_examples(modpath):

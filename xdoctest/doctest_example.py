@@ -183,7 +183,8 @@ class DocTest(object):
                 yield part.want
 
     def format_parts(self, linenos=True, colored=None, want=True,
-                     offset_linenos=False):
+                     offset_linenos=False, prefix=True):
+        """ used by format_src """
         self._parse()
         colored = self.config.getvalue('colored', colored)
         partnos = self.config.getvalue('partnos')
@@ -202,17 +203,23 @@ class DocTest(object):
         for part in self._parts:
             part_text = part.format_src(linenos=linenos, want=want,
                                         startline=startline, n_digits=n_digits,
+                                        prefix=prefix,
                                         colored=colored, partnos=partnos)
             yield part_text
 
     def format_src(self, linenos=True, colored=None, want=True,
-                   offset_linenos=False):
+                   offset_linenos=False, prefix=True):
         """
         Adds prefix and line numbers to a doctest
 
         Args:
+            linenos (bool): if True, adds line numbers to output
+            colored (bool): if True highlight text with ansi colors. Default
+                is specified in the config.
+            want (bool): if True includes "want" lines (default False).
             offset_linenos (bool): if True offset line numbers to agree with
                 their position in the source text file (default False).
+            prefix (bool): if False, exclude the doctest `>>> ` prefix
 
         Example:
             >>> from xdoctest.core import *
@@ -226,7 +233,8 @@ class DocTest(object):
         """
         formated_parts = list(self.format_parts(linenos=linenos,
                                                 colored=colored, want=want,
-                                                offset_linenos=offset_linenos))
+                                                offset_linenos=offset_linenos,
+                                                prefix=prefix))
         full_source = '\n'.join(formated_parts)
         return full_source
 
