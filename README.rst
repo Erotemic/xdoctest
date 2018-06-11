@@ -74,9 +74,9 @@ For example with you might test if ``xdoctest`` works on ``networkx`` or
 Using the pytest interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When ``pytest`` is run, ``xdoctest`` is automatically discovered, but it
-disabled by default. This is because ``xdoctest`` needs to replace the
-builtin ``doctest`` plugin.
+When ``pytest`` is run, ``xdoctest`` is automatically discovered, but is
+disabled by default. This is because ``xdoctest`` needs to replace the builtin
+``doctest`` plugin.
 
 To enable this plugin, run ``pytest`` with ``--xdoctest`` or ``--xdoc``.
 This can either be specified on the command line or added to your
@@ -111,6 +111,9 @@ interface. ``python -m <modname> <command>``
 
 -  If ``<command>`` is ``list``, then the names of each enabled doctest
    is listed.
+
+-  If ``<command>`` is ``dump``, then all doctests are converted into a format
+   suitable for unit testing, and dumped to stdout (new in 0.4.0).
 
 -  If ``<command>`` is a ``callname`` (name of a function or a class and
    method), then that specific doctest is executed:
