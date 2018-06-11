@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Simple storage container used to store a single executable part of a doctest example. Multiple parts are kept by a `xdoctest.doctest_example.Doctest`, which manages execution of each part.
+Simple storage container used to store a single executable part of a doctest
+example. Multiple parts are kept by a `xdoctest.doctest_example.Doctest`, which
+manages execution of each part.
 """
 from __future__ import print_function, division, absolute_import, unicode_literals
 import math
@@ -110,7 +112,7 @@ class DoctestPart(object):
 
     def check(part, got_stdout, got_eval=constants.NOT_EVALED, runstate=None,
               unmatched=None):
-        """
+        r"""
         Check if the "got" output obtained by running this test matches the
         "want" target. Note there are two types of "got" output: (1) output
         from stdout and (2) evaled output. If both are specified, then want may
@@ -185,6 +187,9 @@ class DoctestPart(object):
             partnos (bool): if True, shows the part number in the string
             prefix (bool): if False, exclude the doctest `>>> ` prefix
 
+        CommandLine:
+            python -m xdoctest.doctest_part DoctestPart.format_src:0
+
         Example:
             >>> from xdoctest.parser import *
             >>> self = DoctestPart(['print(123)'], ['123'], 0, partno=1)
@@ -231,15 +236,23 @@ class DoctestPart(object):
             ]
             n_spaces += 4 + 1  # could be more robust if more than 9 parts
 
+        want_lines = []
         if want_text:
             want_fmt = ' ' * n_spaces + '{line}'
             for line in want_text.splitlines():
                 if want:
-                    part_lines.append(want_fmt.format(line=line))
+                    want_lines.append(want_fmt.format(line=line))
+
         part_text = '\n'.join(part_lines)
+        want_text = '\n'.join(want_lines)
 
         if colored:
             part_text = utils.highlight_code(part_text, 'python')
+            want_text = utils.color_text(want_text, 'green')
+
+        if want_lines:
+            part_text += '\n' + want_text
+
         return part_text
 
 

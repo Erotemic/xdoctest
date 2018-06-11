@@ -9,6 +9,7 @@ Version 0.4.0
 * Implemented delayed want mtaching. This enables doctests to use multiple
   print statements in a row and use a single want statement to check all of
   their output.
+* Colorized doctest now highlights "want" lines in a distinct (green) color
 
 Version 0.3.5
 -------------

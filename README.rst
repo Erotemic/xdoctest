@@ -399,7 +399,7 @@ Uncategorized:
    and then fallback to freeform mode if no doctests are found or if an
    error occurs. (new in 0.4.0)
 - [x] multi-part got / want "delayed" matching (new in 0.4.0). 
-- [ ] fix the higlighting of the "got" string when dumping test results
+- [x] fix the higlighting of the "got" string when dumping test results (new in 0.4.0)
 
 .. |Travis| image:: https://img.shields.io/travis/Erotemic/xdoctest/master.svg?label=Travis%20CI
    :target: https://travis-ci.org/Erotemic/xdoctest
