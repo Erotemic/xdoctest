@@ -403,6 +403,7 @@ Uncategorized:
    error occurs. (new in 0.4.0)
 - [x] multi-part got / want "delayed" matching (new in 0.4.0). 
 - [x] fix the higlighting of the "got" string when dumping test results (new in 0.4.0)
+- [ ] Write a plugin to sphinx so it uses xdoctest instead of doctest?
 
 .. |Travis| image:: https://img.shields.io/travis/Erotemic/xdoctest/master.svg?label=Travis%20CI
    :target: https://travis-ci.org/Erotemic/xdoctest
