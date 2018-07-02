@@ -1,3 +1,8 @@
+Version 0.4.1
+-------------
+* Fixed bug with reporting ellapsed time in native runner
+
+
 Version 0.4.0
 -------------
 * Added auto parsing style. This first tries to use Google, but falls back on

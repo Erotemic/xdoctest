@@ -197,9 +197,9 @@ def _print_summary_report(run_summary, parse_warnlist, n_seconds,
     n_warnings = len(warned) + len(parse_warnlist)
     pairs = zip([n_failed, n_passed, n_warnings],
                 ['failed', 'passed', 'warnings'])
-    parts = ['{} {}'.format(n, t) for n, t in pairs  if n > 0]
-    fmtstr = '=== ' + ' '.join(parts) + ' in {:.2f} seconds ==='
-    summary_line = fmtstr.format(n_failed, n_passed, n_warnings, n_seconds)
+    parts = ['{n} {t}'.format(n=n, t=t) for n, t in pairs  if n > 0]
+    fmtstr = '=== ' + ' '.join(parts) + ' in {n_seconds:.2f} seconds ==='
+    summary_line = fmtstr.format(n_seconds=n_seconds)
     # color text based on worst type of error
     if n_failed > 0:
         summary_line = utils.color_text(summary_line, 'red')
