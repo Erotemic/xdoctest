@@ -186,6 +186,13 @@ def _ellipsis_match(got, want):
         False
         >>> _ellipsis_match('foo', '... foo')
         True
+        >>> _ellipsis_match('took=3.4s', 'took=...s')
+        True
+        >>> _ellipsis_match('best=3.4s ave=4.5s', 'best=...s ave=...s')
+        True
+        >>> _ellipsis_match('took: 1.16e-05 s\nbest=9.63e-07 s ave=1.002e-06 ± 3e-08 s\n',
+        >>>                 'took: ...s\nbest=...s ave=...s\n')
+        True
     """
     if ELLIPSIS_MARKER not in want:
         return want == got

@@ -105,6 +105,11 @@ DEFAULT_RUNTIME_STATE = {
 
     'IGNORE_WANT': False,
 
+    # 'IGNORE_MEASUREMENTS': False,
+    # TODO: I want this flag to turn on normalization of numbers,
+    # I.E: non-determenistic measurements do not cause doctest failure, but
+    # other formatting errors will.
+
     'NORMALIZE_REPR': True,
 
     'REPORT_CDIFF': False,
