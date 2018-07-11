@@ -57,6 +57,10 @@ class DocTest(object):
     Holds information necessary to execute and verify a doctest
 
     Attributes:
+
+        num (int): the index of the doctest in the docstring. (i.e.
+            this object refers to the num-th doctest within a docstring)
+
         lineno (int): the line (starting from 1) in the file that the doctest
             begins on. (i.e. if you were to go to this line in the file, the
             first line of the doctest should be on this line).
@@ -101,8 +105,6 @@ class DocTest(object):
             self.callname = callname
         self.docsrc = docsrc
         self.lineno = lineno
-        with open('/home/joncrall/code/xdoctest/foo.txt', 'a') as f:
-            f.write('given lineno = {!r}\n'.format(lineno))
 
         self.num = num
 
