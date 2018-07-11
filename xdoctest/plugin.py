@@ -50,6 +50,8 @@ monkey_patch_disable_normal_doctest()
 
 
 def pytest_addoption(parser):
+    # TODO: make this programatically mirror the argparse in __main__
+
     group = parser.getgroup('collect')
     parser.addini('xdoctest_encoding', 'encoding used for xdoctest files', default='utf-8')
     # parser.addini('xdoctest_options', 'default directive flags for doctests',
@@ -88,6 +90,12 @@ def pytest_addoption(parser):
                     action='store_false', default=True,
                     help='Turns off ansii colors in stdout',
                     dest='xdoctest_colored')
+
+    group.addoption('--xdoctest-offset', '--xdoc-offset',
+                    action='store_true', default=False,
+                    help=('Doctest outputs will display line numbers '
+                          'wrt to the source file.'),
+                    dest='xdoctest_offset_linenos')
 
 
 def pytest_collect_file(path, parent):
@@ -177,6 +185,7 @@ class _XDoctestBase(pytest.Module):
             'default_runtime_state': default_runtime_state,
             'colored': self.config.getvalue('xdoctest_colored'),
             'reportchoice': self.config.getoption("xdoctest_report"),
+            'offset_linenos': self.config.getvalue('xdoctest_offset_linenos'),
         }
 
 
