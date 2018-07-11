@@ -94,9 +94,6 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         ]
         docsrc = '\n'.join(list(it.chain.from_iterable(nested)))
         docsrc = textwrap.dedent(docsrc)
-        with open('/home/joncrall/code/xdoctest/foo.txt', 'a') as f:
-            f.write('PARTS given lineno = {!r}\n'.format(lineno))
-            f.write('PARTS given curr_offset = {!r}\n'.format(curr_offset))
 
         example = doctest_example.DocTest(docsrc, modpath=modpath,
                                           callname=callname, num=num,
@@ -218,11 +215,6 @@ def parse_google_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
         # and the body of the block always starts on the next line.
         label_lineno = lineno + offset
         body_lineno = label_lineno + 1
-        with open('/home/joncrall/code/xdoctest/foo.txt', 'a') as f:
-            f.write('GOOGLE given lineno = {!r}\n'.format(lineno))
-            f.write('GOOGLE given offset = {!r}\n'.format(offset))
-            f.write('GOOGLE given label_lineno = {!r}\n'.format(label_lineno))
-            f.write('GOOGLE given body_lineno = {!r}\n'.format(body_lineno))
         example = doctest_example.DocTest(docsrc, modpath, callname, num,
                                           lineno=body_lineno, fpath=fpath,
                                           block_type=type)
