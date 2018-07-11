@@ -285,7 +285,7 @@ class TestXDoctest(object):
         REASON: Static parsing means we do know this line number.
 
         CommandLine:
-            pytest testing/test_plugin.py::TestXDoctest::test_doctest_property_lineno -v
+            pytest testing/test_plugin.py::TestXDoctest::test_doctest_property_lineno -v -s
         """
         testdir.tmpdir.join('hello.py').write(_pytest._code.Source(utils.codeblock(
             """
@@ -308,6 +308,108 @@ class TestXDoctest(object):
             "*ZeroDivision*",
             "*1 failed*",
         ])
+
+    def test_doctest_property_lineno_freeform(self, testdir):
+        """
+        REPLACES: test_doctest_linedata_missing
+        REASON: Static parsing means we do know this line number.
+
+        CommandLine:
+            pytest testing/test_plugin.py::TestXDoctest::test_doctest_property_lineno_freeform -v -s
+        """
+        testdir.tmpdir.join('hello.py').write(_pytest._code.Source(utils.codeblock(
+            """
+            class Fun(object):
+                @property
+                def test(self):
+                    '''
+                    one line docs
+
+                    Example:
+                        >>> a = 1
+                        >>> 1 / 0
+                    '''
+            """)))
+        result = testdir.runpytest("--xdoctest-modules", "--xdoc-style=freeform", *EXTRA_ARGS)
+        print('\n'.join(result.stdout.lines))
+        result.stdout.fnmatch_lines([
+            "*FAILED DOCTEST: ZeroDivisionError*",
+            '*line 9*',
+            '*line 2*',
+            "*1 >>> a = 1*",
+            "*2 >>> 1 / 0*",
+            "*ZeroDivision*",
+            "*1 failed*",
+        ])
+
+    def test_doctest_property_lineno_google(self, testdir):
+        """
+        REPLACES: test_doctest_linedata_missing
+        REASON: Static parsing means we do know this line number.
+
+        CommandLine:
+            pytest testing/test_plugin.py::TestXDoctest::test_doctest_property_lineno_google -v -s
+        """
+        testdir.tmpdir.join('hello.py').write(_pytest._code.Source(utils.codeblock(
+            """
+            class Fun(object):
+                @property
+                def test(self):
+                    '''
+                    one line docs
+
+                    Example:
+                        >>> a = 1
+                        >>> 1 / 0
+                    '''
+            """)))
+        result = testdir.runpytest("--xdoctest-modules", "--xdoc-style=google", *EXTRA_ARGS)
+        print('\n'.join(result.stdout.lines))
+        result.stdout.fnmatch_lines([
+            "*FAILED DOCTEST: ZeroDivisionError*",
+            '*line 9*',
+            '*line 2*',
+            "*1 >>> a = 1*",
+            "*2 >>> 1 / 0*",
+            "*ZeroDivision*",
+            "*1 failed*",
+        ])
+
+    def test_doctest_property_lineno_google_v2(self, testdir):
+        """
+        REPLACES: test_doctest_linedata_missing
+        REASON: Static parsing means we do know this line number.
+
+        At one point in xdoctest history this test failed while the other
+        version passed
+
+        CommandLine:
+            pytest testing/test_plugin.py::TestXDoctest::test_doctest_property_lineno_google_v2 -v -s
+        """
+        testdir.tmpdir.join('hello.py').write(_pytest._code.Source(utils.codeblock(
+            """
+            class Fun(object):
+                @property
+                def test(self):
+                    '''
+                    Example:
+
+                        >>> a = 1
+                        >>> 1 / 0
+                    '''
+            """)))
+        result = testdir.runpytest("--xdoctest-modules", "--xdoc-style=google", *EXTRA_ARGS)
+        print('\n'.join(result.stdout.lines))
+        result.stdout.fnmatch_lines([
+            "*FAILED DOCTEST: ZeroDivisionError*",
+            '*line 8*',
+            '*line 3*',
+            "*2 >>> a = 1*",
+            "*3 >>> 1 / 0*",
+            "*ZeroDivision*",
+            "*1 failed*",
+        ])
+
 
     def test_docstring_show_entire_doctest(self, testdir):
         """Test that we show the entire doctest when there is a failure

@@ -167,7 +167,7 @@ def _check_match(got, want, runstate):
 
 
 def _ellipsis_match(got, want):
-    """
+    r"""
     The ellipsis matching algorithm taken directly from standard doctest.
 
     Worst-case linear-time ellipsis matching.

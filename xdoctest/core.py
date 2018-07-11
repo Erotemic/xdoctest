@@ -44,6 +44,10 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         asone (bool): if False doctests are broken into multiple examples
            based on spacing. (default True)
 
+        lineno (int): the line number (starting from 1) of the docstring.
+            (i.e. if you were to go to this line number in the source file
+             the starting quotes of the docstr would be on this line).
+
     Raises:
         xdoctest.exceptions.DoctestParseError: if an error occurs in parsing
 
@@ -90,6 +94,10 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         ]
         docsrc = '\n'.join(list(it.chain.from_iterable(nested)))
         docsrc = textwrap.dedent(docsrc)
+        with open('/home/joncrall/code/xdoctest/foo.txt', 'a') as f:
+            f.write('PARTS given lineno = {!r}\n'.format(lineno))
+            f.write('PARTS given curr_offset = {!r}\n'.format(curr_offset))
+
         example = doctest_example.DocTest(docsrc, modpath=modpath,
                                           callname=callname, num=num,
                                           lineno=lineno + curr_offset,
@@ -149,10 +157,10 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
                     curr_offset += part.count('\n') + 1
             else:  # nocover
                 if curr_parts:
-                    # Group the current parts into a single DocTest
+                    # Group the current parts into a single doctest
                     example = doctest_from_parts(curr_parts, num, curr_offset)
                     yield example
-                    # Initialize empty parts for a new DocTest
+                    # Initialize empty parts for a new doctest
                     curr_offset += sum(p.n_lines for p in curr_parts)
                     num += 1
                     curr_parts = []
@@ -185,6 +193,11 @@ def parse_google_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
     """
     Parses Google-style doctests from a docstr and generates example objects
 
+    Args:
+        lineno (int): the line number (starting from 1) of the docstring.
+            (i.e. if you were to go to this line number in the source file
+             the starting quotes of the docstr would be on this line).
+
     Raises:
         .exceptions.MalformedDocstr: if an error occurs in finding google blocks
         .exceptions.DoctestParseError: if an error occurs in parsing
@@ -201,10 +214,17 @@ def parse_google_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
         if type.startswith('Benchmark'):
             example_blocks.append((type, block))
     for num, (type, (docsrc, offset)) in enumerate(example_blocks):
-        # Add one because offset applies to the google-type label
-        lineno_ = lineno + offset + 1
+        # Add one because offset indicates the position of the block-label
+        # and the body of the block always starts on the next line.
+        label_lineno = lineno + offset
+        body_lineno = label_lineno + 1
+        with open('/home/joncrall/code/xdoctest/foo.txt', 'a') as f:
+            f.write('GOOGLE given lineno = {!r}\n'.format(lineno))
+            f.write('GOOGLE given offset = {!r}\n'.format(offset))
+            f.write('GOOGLE given label_lineno = {!r}\n'.format(label_lineno))
+            f.write('GOOGLE given body_lineno = {!r}\n'.format(body_lineno))
         example = doctest_example.DocTest(docsrc, modpath, callname, num,
-                                          lineno=lineno_, fpath=fpath,
+                                          lineno=body_lineno, fpath=fpath,
                                           block_type=type)
         if eager_parse:
             # parse on the fly to be consistent with freeform?
@@ -245,10 +265,17 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
 
     Args:
         docstr (str): a previously extracted docstring
+
         callname (str): function or class name or class and method name
+
         modpath (str): original module the docstring is from
-        line (int): which line in the module the docstring is from
+
+        lineno (int): the line number (starting from 1) of the docstring.
+            (i.e. if you were to go to this line number in the source file
+             the starting quotes of the docstr would be on this line).
+
         style (str): expected doctest style (e.g. google, freeform, auto)
+
         fpath (str): the file that the docstring is from
             (if the file was not a module, needed for backwards compatibility)
 
