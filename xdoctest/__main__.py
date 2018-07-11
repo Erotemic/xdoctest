@@ -28,6 +28,9 @@ def main():
     parser.add_argument(*('--options',), type=str,
                         help='specify the default directive state',
                         default=None)
+    parser.add_argument(*('--offset',), dest='offset_linenos', action='store_true',
+                        help=('Doctest outputs will display line numbers '
+                              'wrt to the source file.'))
 
     args, unknown = parser.parse_known_args()
     ns = args.__dict__.copy()
@@ -36,6 +39,7 @@ def main():
     modname = ns['modname']
     command = ns['command']
     style = ns['style']
+    offset_linenos = ns['offset_linenos']
 
     if ns['options'] is None:
         from os.path import exists
@@ -57,12 +61,15 @@ def main():
             if directive is not None:
                 default_runtime_state[directive.name] = directive.positive
 
+    # Specify a default doctest_example.Config state
     config = {
-        'default_runtime_state': default_runtime_state
+        'default_runtime_state': default_runtime_state,
+        'offset_linenos': offset_linenos,
     }
 
     import xdoctest
-    xdoctest.doctest_module(modname, argv=[command], style=style, config=config)
+    xdoctest.doctest_module(modname, argv=[command], style=style,
+                            config=config)
 
 
 if __name__ == '__main__':

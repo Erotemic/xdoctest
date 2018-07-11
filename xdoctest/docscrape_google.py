@@ -240,9 +240,33 @@ def split_google_docblocks(docstr):
         list: list of 2-tuples where the first item is a google style docstring
             tag and the second item is the bock corresponding to that tag.
 
+    CommandLine:
+        xdoctest xdoctest.docscrape_google split_google_docblocks:2
+
     Example:
         >>> from xdoctest.docscrape_google import *  # NOQA
-        >>> docstr = split_google_docblocks.__doc__
+        >>> from xdoctest import utils
+        >>> docstr = utils.codeblock(
+        ...     '''
+        ...     one line description
+        ...
+        ...     multiline
+        ...     description
+        ...
+        ...     Args:
+        ...         foo: bar
+        ...
+        ...     Returns:
+        ...         None
+        ...
+        ...     Example:
+        ...         >>> print('eg1')
+        ...         eg1
+        ...
+        ...     Example:
+        ...         >>> print('eg2')
+        ...         eg2
+        ...     ''')
         >>> groups = split_google_docblocks(docstr)
         >>> assert len(groups) == 5
         >>> [g[0] for g in groups]
@@ -252,6 +276,25 @@ def split_google_docblocks(docstr):
         >>> from xdoctest.docscrape_google import *  # NOQA
         >>> docstr = split_google_docblocks.__doc__
         >>> groups = split_google_docblocks(docstr)
+
+    Example:
+        >>> from xdoctest.docscrape_google import *  # NOQA
+        >>> from xdoctest import utils
+        >>> docstr = utils.codeblock(
+        ...     '''
+        ...     Example:
+        ...         >>> foobar
+        ...     ''')
+        >>> # Check that line offsets are valid if the first line is not blank
+        >>> groups = split_google_docblocks(docstr)
+        >>> offset = groups[0][1][1]
+        >>> print('offset = {!r}'.format(offset))
+        >>> assert offset == 0
+        >>> # Check that line offsets are valid if the first line is blank
+        >>> groups = split_google_docblocks('\n' + docstr)
+        >>> offset = groups[0][1][1]
+        >>> print('offset = {!r}'.format(offset))
+        >>> assert offset == 1
     """
     if not isinstance(docstr, six.string_types):
         raise TypeError('Input docstr must be a string. Got {} instead'.format(
@@ -372,6 +415,7 @@ def split_google_docblocks(docstr):
     line_offset = 0
     for k, lines in groups_.items():
         if len(lines) == 0 or (len(lines) == 1 and len(lines[0]) == 0):
+            line_offset += len(lines)
             continue
         elif len(lines) >= 1 and re.match(tag_pattern, lines[0]):
             # An encoded google sub-block

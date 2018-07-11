@@ -64,7 +64,7 @@ def test_lineno():
         callname = calldef.callname
         # Ensure linenumbers correspond with start of func/class def
         assert callname.split('.')[-1] in line
-        docsrc_lines = sourcelines[calldef.doclineno - 1:calldef.doclineno_end - 1]
+        docsrc_lines = sourcelines[calldef.doclineno - 1:calldef.doclineno_end]
         # Ensure linenumbers correspond with start and end of doctest
         assert docsrc_lines[0].strip().startswith('"""')
         assert docsrc_lines[-1].strip().endswith('"""')
@@ -123,14 +123,14 @@ def test_mod_lineno2():
     assert calldefs['Fun'].lineno == 1
     assert calldefs['Fun.test'].lineno == 3
     assert calldefs['Fun.test'].doclineno == 4
-    assert calldefs['Fun.test'].doclineno_end == 8
+    assert calldefs['Fun.test'].doclineno_end == 7
     assert calldefs['nodec1'].doclineno is None
     assert calldefs['nodec2'].doclineno == 14
-    assert calldefs['nodec2'].doclineno_end == 17
+    assert calldefs['nodec2'].doclineno_end == 16
     assert calldefs['decor3'].doclineno == 30
-    assert calldefs['decor3'].doclineno_end == 33
+    assert calldefs['decor3'].doclineno_end == 32
     assert calldefs['decor4'].doclineno == 38
-    assert calldefs['decor4'].doclineno_end == 39
+    assert calldefs['decor4'].doclineno_end == 38
 
 
 def touch(args):
@@ -518,6 +518,7 @@ if __name__ == '__main__':
     """
     CommandLine:
         python -B %HOME%/code/xdoctest/testing/test_static.py all
+        pytest ~/code/xdoctest/testing/test_static.py
     """
     import xdoctest
     xdoctest.doctest_module(__file__)

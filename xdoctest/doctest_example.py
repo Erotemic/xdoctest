@@ -35,6 +35,11 @@ class Config(dict):
             'partnos': False,
             # 'partnos': True,
 
+            # if True formated source linenumbers will agree with their
+            # location in the source file. Otherwise they will be relative
+            # to the doctest itself.
+            'offset_linenos': False,
+
             'reportchoice': 'udiff',
             'default_runtime_state': {},
             'verbose': 1,
@@ -50,6 +55,11 @@ class Config(dict):
 class DocTest(object):
     """
     Holds information necessary to execute and verify a doctest
+
+    Attributes:
+        lineno (int): the line (starting from 1) in the file that the doctest
+            begins on. (i.e. if you were to go to this line in the file, the
+            first line of the doctest should be on this line).
 
     Example:
         >>> from xdoctest import core
@@ -91,7 +101,11 @@ class DocTest(object):
             self.callname = callname
         self.docsrc = docsrc
         self.lineno = lineno
+        with open('/home/joncrall/code/xdoctest/foo.txt', 'a') as f:
+            f.write('given lineno = {!r}\n'.format(lineno))
+
         self.num = num
+
         self._parts = None
         self.tb_lineno = None
         self.exc_info = None
@@ -184,11 +198,12 @@ class DocTest(object):
                 yield part.want
 
     def format_parts(self, linenos=True, colored=None, want=True,
-                     offset_linenos=False, prefix=True):
+                     offset_linenos=None, prefix=True):
         """ used by format_src """
         self._parse()
         colored = self.config.getvalue('colored', colored)
         partnos = self.config.getvalue('partnos')
+        offset_linenos = self.config.getvalue('offset_linenos', offset_linenos)
 
         n_digits = None
         startline = 1
@@ -202,24 +217,28 @@ class DocTest(object):
             n_digits = int(math.ceil(n_digits))
 
         for part in self._parts:
-            part_text = part.format_src(linenos=linenos, want=want,
-                                        startline=startline, n_digits=n_digits,
-                                        prefix=prefix,
-                                        colored=colored, partnos=partnos)
+            part_text = part.format_part(linenos=linenos, want=want,
+                                         startline=startline,
+                                         n_digits=n_digits, prefix=prefix,
+                                         colored=colored, partnos=partnos)
             yield part_text
 
     def format_src(self, linenos=True, colored=None, want=True,
-                   offset_linenos=False, prefix=True):
+                   offset_linenos=None, prefix=True):
         """
         Adds prefix and line numbers to a doctest
 
         Args:
             linenos (bool): if True, adds line numbers to output
+
             colored (bool): if True highlight text with ansi colors. Default
                 is specified in the config.
+
             want (bool): if True includes "want" lines (default False).
+
             offset_linenos (bool): if True offset line numbers to agree with
                 their position in the source text file (default False).
+
             prefix (bool): if False, exclude the doctest `>>> ` prefix
 
         Example:
@@ -453,7 +472,6 @@ class DocTest(object):
                     break
                 except Exception:
                     ex_type, ex_value, tb = sys.exc_info()
-
                     # The idea of CLEAN_TRACEBACK is to make it so the
                     # traceback from this function doesn't clutter the error
                     # message the user sees. However, I haven't been able to
@@ -467,12 +485,12 @@ class DocTest(object):
                         # tb.tb_lineno = (tb_lineno +
                         #                 self.failed_part.line_offset + self.lineno)
                     else:
-                        if tb.tb_next is None:
-                            # TODO: test and understand this case
-                            self.tb_lineno = tb.tb_lineno
-                        else:
+                        if tb.tb_next is not None:
                             # Use the next to pop the eval of the stack
                             self.tb_lineno = tb.tb_next.tb_lineno
+                        else:
+                            # TODO: test and understand this case
+                            self.tb_lineno = tb.tb_lineno
 
                     self.exc_info = (ex_type, ex_value, tb)
                     if on_error == 'raise':
@@ -650,7 +668,9 @@ class DocTest(object):
         if self.exc_info is None:
             return []
         ex_type, ex_value, tb = self.exc_info
+        # Failure line offset wrt the doctest (starts from 0)
         fail_offset = self.failed_line_offset()
+        # Failure line number wrt the entire file (starts from 1)
         fail_lineno = self.failed_lineno()
 
         lines = [
