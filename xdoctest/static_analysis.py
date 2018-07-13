@@ -400,7 +400,7 @@ def _parse_static_node_value(node):
         values = map(_parse_static_node_value, node.values)
         value = OrderedDict(zip(keys, values))
         # value = dict(zip(keys, values))
-    elif isinstance(node, (ast.NameConstant)):
+    elif six.PY3 and isinstance(node, (ast.NameConstant)):
         value = node.value
     else:
         print(node.__dict__)
