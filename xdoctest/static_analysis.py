@@ -400,7 +400,10 @@ def _parse_static_node_value(node):
         values = map(_parse_static_node_value, node.values)
         value = OrderedDict(zip(keys, values))
         # value = dict(zip(keys, values))
+    elif isinstance(node, (ast.NameConstant)):
+        value = node.value
     else:
+        print(node.__dict__)
         raise TypeError('Cannot parse a static value from non-static node '
                         'of type: {!r}'.format(type(node)))
     return value
@@ -431,6 +434,8 @@ def parse_static_value(key, source=None, fpath=None):
         >>> assert parse_static_value(key, source=source) == (1, 2, "3")
         >>> source = 'foo = {1: 2, 3: 4}'
         >>> assert parse_static_value(key, source=source) == {1: 2, 3: 4}
+        >>> source = 'foo = None'
+        >>> assert parse_static_value(key, source=source) == None
         >>> #parse_static_value('bar', source=source)
         >>> #parse_static_value('bar', source='foo=1; bar = [1, foo]')
     """
@@ -442,7 +447,8 @@ def parse_static_value(key, source=None, fpath=None):
     class AssignentVisitor(ast.NodeVisitor):
         def visit_Assign(self, node):
             for target in node.targets:
-                if getattr(target, 'id', None) == key:
+                target_id = getattr(target, 'id', None)
+                if target_id == key:
                     self.value = _parse_static_node_value(node.value)
 
     sentinal = object()
