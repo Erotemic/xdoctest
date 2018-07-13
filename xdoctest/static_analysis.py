@@ -402,6 +402,15 @@ def _parse_static_node_value(node):
         # value = dict(zip(keys, values))
     elif six.PY3 and isinstance(node, (ast.NameConstant)):
         value = node.value
+    elif six.PY2 and isinstance(node, ast.name) and node.id == 'None':
+        # disregard pathological python2 corner cases
+        value = None
+    elif six.PY2 and isinstance(node, ast.name) and node.id == 'True':
+        # disregard pathological python2 corner cases
+        value = True
+    elif six.PY2 and isinstance(node, ast.name) and node.id == 'False':
+        # disregard pathological python2 corner cases
+        value = False
     else:
         print(node.__dict__)
         raise TypeError('Cannot parse a static value from non-static node '
