@@ -170,13 +170,13 @@ class DoctestPart(object):
             # distance might be better to report?)
             raise exceptions[-1]
 
-    def format_src(self, linenos=True, want=True, startline=1, n_digits=None,
-                   colored=False, partnos=False, prefix=True):
+    def format_part(self, linenos=True, want=True, startline=1, n_digits=None,
+                    colored=False, partnos=False, prefix=True):
         """
         Customizable formatting of the source and want for this doctest.
 
         CommandLine:
-            python -m xdoctest.doctest_part DoctestPart.format_src
+            python -m xdoctest.doctest_part DoctestPart.format_part
 
         Args:
             linenos (bool): show line numbers
@@ -188,21 +188,23 @@ class DoctestPart(object):
             prefix (bool): if False, exclude the doctest `>>> ` prefix
 
         CommandLine:
-            python -m xdoctest.doctest_part DoctestPart.format_src:0
+            python -m xdoctest.doctest_part DoctestPart.format_part:0
 
         Example:
             >>> from xdoctest.parser import *
-            >>> self = DoctestPart(['print(123)'], ['123'], 0, partno=1)
+            >>> self = DoctestPart(exec_lines=['print(123)'],
+            >>>                    want_lines=['123'], line_offset=0, partno=1)
             >>> # xdoctest: -NORMALIZE_WHITESPACE
-            >>> print(self.format_src(partnos=True))
+            >>> print(self.format_part(partnos=True))
             (p1) 1 >>> print(123)
                    123
 
         Example:
             >>> from xdoctest.parser import *
-            >>> self = DoctestPart(['print(123)'], ['123'], 0, partno=1)
+            >>> self = DoctestPart(exec_lines=['print(123)'],
+            >>>                    want_lines=['123'], line_offset=0, partno=1)
             >>> # xdoctest: -NORMALIZE_WHITESPACE
-            >>> print(self.format_src(partnos=False, prefix=False,
+            >>> print(self.format_part(partnos=False, prefix=False,
             >>>                       linenos=False, want=False))
             print(123)
         """
@@ -220,21 +222,17 @@ class DoctestPart(object):
         n_spaces = 0
 
         if linenos:
-            src_fmt = '{count:{n_digits}d} {line}'
             n_spaces += n_digits + 1
-
-            count = startline + self.line_offset
-            part_lines = [
-                src_fmt.format(n_digits=n_digits, count=count, line=line)
-                for count, line in enumerate(part_lines, start=count)
-            ]
+            start = startline + self.line_offset
+            part_lines = utils.add_line_numbers(part_lines, n_digits=n_digits,
+                                                start=start)
 
         if partnos:
             part_lines = [
                 '(p{}) {}'.format(self.partno, line)
                 for line in part_lines
             ]
-            n_spaces += 4 + 1  # could be more robust if more than 9 parts
+            n_spaces += 4 + 1  # FIXME could be more robust if more than 9 parts
 
         want_lines = []
         if want_text:

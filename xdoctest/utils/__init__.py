@@ -20,14 +20,15 @@ from xdoctest.utils.util_import import (PythonPathContext,
 from xdoctest.utils.util_misc import (TempDoctest,)
 from xdoctest.utils.util_mixins import (NiceRepr,)
 from xdoctest.utils.util_path import (TempDir, ensuredir,)
-from xdoctest.utils.util_str import (codeblock, color_text, ensure_unicode,
-                                     highlight_code, indent, strip_ansi,)
+from xdoctest.utils.util_str import (add_line_numbers, codeblock, color_text,
+                                     ensure_unicode, highlight_code, indent,
+                                     strip_ansi,)
 from xdoctest.utils.util_stream import (CaptureStdout, CaptureStream,
                                         TeeStringIO,)
 
 __all__ = ['CaptureStdout', 'CaptureStream', 'NiceRepr', 'PythonPathContext',
-           'TeeStringIO', 'TempDir', 'TempDoctest', 'codeblock', 'color_text',
-           'ensure_unicode', 'ensuredir', 'highlight_code',
-           'import_module_from_name', 'import_module_from_path', 'indent',
-           'strip_ansi', 'util_import', 'util_misc', 'util_mixins',
-           'util_path', 'util_str', 'util_stream']
+           'TeeStringIO', 'TempDir', 'TempDoctest', 'add_line_numbers',
+           'codeblock', 'color_text', 'ensure_unicode', 'ensuredir',
+           'highlight_code', 'import_module_from_name',
+           'import_module_from_path', 'indent', 'strip_ansi', 'util_import',
+           'util_misc', 'util_mixins', 'util_path', 'util_str', 'util_stream']

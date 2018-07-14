@@ -267,7 +267,6 @@ class TestXDoctest(object):
         # print('</stdout>')
 
         result.stdout.fnmatch_lines([
-            "*FAILED DOCTEST*",
             "*>>> i = 0*",
             "*>>> 0 / i*",
         ])
@@ -285,7 +284,7 @@ class TestXDoctest(object):
         REASON: Static parsing means we do know this line number.
 
         CommandLine:
-            pytest testing/test_plugin.py::TestXDoctest::test_doctest_property_lineno -v
+            pytest testing/test_plugin.py::TestXDoctest::test_doctest_property_lineno -v -s
         """
         testdir.tmpdir.join('hello.py').write(_pytest._code.Source(utils.codeblock(
             """
@@ -300,11 +299,112 @@ class TestXDoctest(object):
         result = testdir.runpytest("--xdoctest-modules", *EXTRA_ARGS)
         print('\n'.join(result.stdout.lines))
         result.stdout.fnmatch_lines([
-            "*FAILED DOCTEST: ZeroDivisionError*",
-            '*line 6*',
+            "*REASON: ZeroDivisionError*",
             '*line 2*',
+            '*line 6*',
             "*1 >>> a = 1*",
             "*2 >>> 1 / 0*",
+            "*ZeroDivision*",
+            "*1 failed*",
+        ])
+
+    def test_doctest_property_lineno_freeform(self, testdir):
+        """
+        REPLACES: test_doctest_linedata_missing
+        REASON: Static parsing means we do know this line number.
+
+        CommandLine:
+            pytest testing/test_plugin.py::TestXDoctest::test_doctest_property_lineno_freeform -v -s
+        """
+        testdir.tmpdir.join('hello.py').write(_pytest._code.Source(utils.codeblock(
+            """
+            class Fun(object):
+                @property
+                def test(self):
+                    '''
+                    one line docs
+
+                    Example:
+                        >>> a = 1
+                        >>> 1 / 0
+                    '''
+            """)))
+        result = testdir.runpytest("--xdoctest-modules", "--xdoc-style=freeform", *EXTRA_ARGS)
+        print('\n'.join(result.stdout.lines))
+        result.stdout.fnmatch_lines([
+            "* REASON: ZeroDivisionError",
+            '*line 2*',
+            '*line 9*',
+            "*1 >>> a = 1*",
+            "*2 >>> 1 / 0*",
+            "*ZeroDivision*",
+            "*1 failed*",
+        ])
+
+    def test_doctest_property_lineno_google(self, testdir):
+        """
+        REPLACES: test_doctest_linedata_missing
+        REASON: Static parsing means we do know this line number.
+
+        CommandLine:
+            pytest testing/test_plugin.py::TestXDoctest::test_doctest_property_lineno_google -v -s
+        """
+        testdir.tmpdir.join('hello.py').write(_pytest._code.Source(utils.codeblock(
+            """
+            class Fun(object):
+                @property
+                def test(self):
+                    '''
+                    one line docs
+
+                    Example:
+                        >>> a = 1
+                        >>> 1 / 0
+                    '''
+            """)))
+        result = testdir.runpytest("--xdoctest-modules", "--xdoc-style=google", *EXTRA_ARGS)
+        print('\n'.join(result.stdout.lines))
+        result.stdout.fnmatch_lines([
+            "* REASON: ZeroDivisionError",
+            '*line 2*',
+            '*line 9*',
+            "*1 >>> a = 1*",
+            "*2 >>> 1 / 0*",
+            "*ZeroDivision*",
+            "*1 failed*",
+        ])
+
+    def test_doctest_property_lineno_google_v2(self, testdir):
+        """
+        REPLACES: test_doctest_linedata_missing
+        REASON: Static parsing means we do know this line number.
+
+        At one point in xdoctest history this test failed while the other
+        version passed
+
+        CommandLine:
+            pytest testing/test_plugin.py::TestXDoctest::test_doctest_property_lineno_google_v2 -v -s
+        """
+        testdir.tmpdir.join('hello.py').write(_pytest._code.Source(utils.codeblock(
+            """
+            class Fun(object):
+                @property
+                def test(self):
+                    '''
+                    Example:
+
+                        >>> a = 1
+                        >>> 1 / 0
+                    '''
+            """)))
+        result = testdir.runpytest("--xdoctest-modules", "--xdoc-style=google", *EXTRA_ARGS)
+        print('\n'.join(result.stdout.lines))
+        result.stdout.fnmatch_lines([
+            "* REASON: ZeroDivisionError",
+            '*line 3*',
+            '*line 8*',
+            "*2 >>> a = 1*",
+            "*3 >>> 1 / 0*",
             "*ZeroDivision*",
             "*1 failed*",
         ])
@@ -344,7 +444,6 @@ class TestXDoctest(object):
             '''))
         result = testdir.runpytest('--xdoctest-modules', *EXTRA_ARGS)
         result.stdout.fnmatch_lines([
-            '*FAILED*',
             '* 1 >>> x = 4*',
             '* 2 >>> x = 5 + x*',
             '* 3 >>> x = 6 + x*',
@@ -376,7 +475,6 @@ class TestXDoctest(object):
         result = testdir.runpytest(*EXTRA_ARGS)
         # xdoctest is never executed because of error during hello.py collection
         result.stdout.fnmatch_lines([
-            '*FAILED*',
             "*>>> import asdals*",
             "*{e}: No module named *asdal*".format(e=MODULE_NOT_FOUND_ERROR),
         ])
@@ -404,7 +502,6 @@ class TestXDoctest(object):
         sys.path.append(cwd)
         result = testdir.runpytest("--xdoctest-modules", "-s", *EXTRA_ARGS)
         result.stdout.fnmatch_lines([
-            '*FAILED*',
             '*1 >>> import hello*',
             "*{e}: No module named *asdals*".format(e=MODULE_NOT_FOUND_ERROR),
             # "*Interrupted: 1 errors during collection*",
@@ -1365,7 +1462,7 @@ class Disabled(object):
             "*hello*",
             "*EXAMPLE LOCATION UNKNOWN, not showing all tests of that example*",
             "*1/0*",
-            "*FAILED*ZeroDivision*",
+            "*REASON*ZeroDivision*",
             "*1 failed*",
         ])
 
@@ -1492,7 +1589,7 @@ class Disabled(object):
         """)
         result = testdir.runpytest(p, *EXTRA_ARGS)
         result.stdout.fnmatch_lines([
-            '*FAILED DOCTEST: ZeroDivisionError*',
+            '* REASON: ZeroDivisionError*',
             '*1 failed*',
         ])
 

@@ -101,7 +101,7 @@ class DoctestParser(object):
 
         Example:
             >>> from xdoctest import parser
-            >>> from xdoctest import docscrape_google
+            >>> from xdoctest.docstr import docscrape_google
             >>> from xdoctest import core
             >>> self = parser.DoctestParser()
             >>> docstr = self.parse.__doc__

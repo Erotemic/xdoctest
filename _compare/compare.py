@@ -43,7 +43,7 @@ def main():
         use asserts, whereas I previously thought they didnt work
         ''') + '\n\n')
 
-    ub.cmd('python _doc_version.py', verbout=1, verbose=2)
+    ub.cmd('python _doc_version.py', verbose=2)
 
     print('\n\n' + ub.codeblock(
         '''
@@ -53,7 +53,7 @@ def main():
 
         Just run the assert failure to illustrate how failures look
         ''') + '\n\n')
-    ub.cmd('python _xdoc_version.py do_asserts_work --demo-failure', verbout=1, verbose=2)
+    ub.cmd('python _xdoc_version.py do_asserts_work --demo-failure', verbose=2)
 
     print('\n\n' + ub.codeblock(
         '''
@@ -64,7 +64,7 @@ def main():
         Run all other tests, to show how the ast based xdoctest can deal with
         syntax that regex based doctest cannot handle.
         ''') + '\n\n')
-    ub.cmd('python _xdoc_version.py all', verbout=1, verbose=2)
+    ub.cmd('python _xdoc_version.py all', verbose=2)
 
 
 if __name__ == '__main__':

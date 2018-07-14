@@ -15,6 +15,11 @@ from os.path import (join, exists, expanduser, abspath, split, splitext,
 
 
 class CallDefNode(object):
+    """
+    Attributes:
+        doclineno (int): the line number (1 based) the docstring begins on
+        doclineno_end (int): the line number (1 based) the docstring ends on
+    """
     def __init__(self, callname, lineno, docstr, doclineno, doclineno_end,
                  args=None):
         self.callname = callname
@@ -191,39 +196,137 @@ class TopLevelVisitor(ast.NodeVisitor):
 
     # -- helpers ---
 
-    def _docstr_line_workaround(self, docnode):
+    def _docnode_line_workaround(self, docnode):
         # lineno points to the last line of a string
         endpos = docnode.lineno - 1
         docstr = utils.ensure_unicode(docnode.value.s)
-        # First assume we have a single quoted string
-        startpos = endpos
-        # See if we can check for the tripple quote
-        # This is a hueristic, and is not robust
-        trips = ('"""', "'''")
-        endline = re.escape(self.sourcelines[endpos])
-        for trip in trips:
-            # try to account for comments
-            endline_ = re.sub(endline, trip + '\s*#.*$', trip).strip()
-            if endline_.endswith(trip):
-                # Hack: we can count the number of lines in the str, but we can
-                # be 100% sure that its a multiline string
-                #
-                # there are pathological cases this wont work for
-                # (i.e. think nestings: """ # ''' # """)
-                nlines = docstr.count('\n')
-                startline = self.sourcelines[endpos - nlines]
-                if not startline.strip().startswith(trip):
-                    startpos = endpos - nlines
-
-        doclineno = startpos + 1
-        doclineno_end = endpos + 2
+        sourcelines = self.sourcelines
+        start, stop = self._docstr_line_workaround(docstr, sourcelines, endpos)
+        # Convert 0-based line positions to 1-based line numbers
+        doclineno = start + 1
+        doclineno_end = stop
         return doclineno, doclineno_end
+
+    def _docstr_line_workaround(self, docstr, sourcelines, endpos):
+        r"""
+        Args:
+            docstr (str): the extracted docstring.
+
+            sourcelines (list): a list of all lines in the file. We assume
+                the docstring exists as a pure string literal in the source.
+                In other words, no postprocessing via split, format, or any
+                other dynamic programatic modification should be made to the
+                docstrings. Python's docstring extractor assumes this as well.
+
+            endpos (int): line position (starting at 0) the docstring ends on.
+                Note: positions are 0 based but linenos are 1 based.
+
+        Returns:
+            tuple[Int, Int]: start, stop:
+                start: the line position (0 based) the docstring starts on
+                stop: the line position (0 based) that the docstring stops
+
+                such that sourcelines[start:stop] will contain the docstring
+
+        Example:
+            >>> from xdoctest.static_analysis import *
+            >>> sq = chr(39)  # single quote
+            >>> dq = chr(34)  # double quote
+            >>> source = utils.codeblock(
+                '''
+                def func0():
+                    {ddd} docstr0 {ddd}
+                def func1():
+                    {ddd}
+                    docstr1 {ddd}
+                def func2():
+                    {ddd} docstr2
+                    {ddd}
+                def func3():
+                    {ddd}
+                    docstr3
+                    {ddd}  # foobar
+                def func5():
+                    {ddd}pathological case
+                    {sss} # {ddd} # {sss} # {ddd} # {ddd}
+                def func6():
+                    " single quoted docstr "
+                ''').format(ddd=dq * 3, sss=sq * 3)
+            >>> print(utils.add_line_numbers(utils.highlight_code(source), start=0))
+            >>> targets = [
+            >>>     (1, 2),
+            >>>     (3, 5),
+            >>>     (6, 8),
+            >>>     (9, 12),
+            >>>     (13, 15),
+            >>>     (16, 17),
+            >>> ]
+            >>> self = TopLevelVisitor.parse(source)
+            >>> pt = ast.parse(source.encode('utf8'))
+            >>> print('\n\n====\n\n')
+            >>> for i in range(len(targets)):
+            >>>     print('----------')
+            >>>     sourcelines = source.splitlines()
+            >>>     funcnode = pt.body[i]
+            >>>     docnode = funcnode.body[0]
+            >>>     docstr = ast.get_docstring(funcnode, clean=False)
+            >>>     endpos = docnode.lineno - 1
+            >>>     start, end = self._docstr_line_workaround(docstr, sourcelines, endpos)
+            >>>     print('got  = {}, {}'.format(start, end))
+            >>>     print('want = {}, {}'.format(*targets[i]))
+            >>>     assert targets[i] == (start, end)
+            >>>     print('----------')
+        """
+        # First assume a one-line string that starts and stops on the same line
+        start = endpos
+        stop = endpos + 1
+
+        # Determine if the docstring is a triple quoted string, by trying both
+        # triple quote styles and checking if the string starts and ends with
+        # the same style. If both cases are true we know we are in a triple
+        # quoted string literal and can therefore safely extract the starting
+        # line position.
+        trips = ("'''", '"""')
+        endline = sourcelines[stop - 1]
+        for trip in trips:
+            pattern = re.escape(trip) + r'\s*#.*$'
+            # Assuming the multiline string is using `trip` as the triple quote
+            # format, then the first instance of that pattern must terminate
+            # the string literal. Afterwords the only valid characters are
+            # whitespace and comments. Anything after the comment can be
+            # ignored. The above pattern will match the first triple quote it
+            # sees, and then will remove any trailing comments.
+            endline_ = re.sub(pattern, trip, endline).strip()
+            # After removing commends, if the endline endswith a triple quote,
+            # then we must be in a multiline string IF the startline starts
+            # with that same triple quote. We should be able to determine where
+            # the startline is because we know how many newline characters are
+            # in the extracted docstring. This works because all newline
+            # characters in multiline string literals MUST correspond to actual
+            # newlines in the source code.
+            if endline_.endswith(trip):
+                nlines = docstr.count('\n')
+                # assuming that the docstr is actually terminated with this
+                # kind of triple quote, then the start line is at this position
+                cand_start_ = stop - nlines - 1
+                startline = sourcelines[cand_start_]
+
+                # The startline should also begin with the same triple quote
+                if startline.strip().startswith(trip):
+                    # Both conditions pass.
+                    start = cand_start_
+                    break
+                else:
+                    # Conditions failed, revert to assuming a one-line string.
+                    start = stop - 1
+
+        return start, stop
 
     def _get_docstring(self, node):
         docstr = ast.get_docstring(node, clean=False)
         if docstr is not None:
             docnode = node.body[0]
-            doclineno, doclineno_end = self._docstr_line_workaround(docnode)
+            doclineno, doclineno_end = self._docnode_line_workaround(docnode)
         else:
             doclineno = None
             doclineno_end = None
@@ -297,7 +400,14 @@ def _parse_static_node_value(node):
         values = map(_parse_static_node_value, node.values)
         value = OrderedDict(zip(keys, values))
         # value = dict(zip(keys, values))
+    elif six.PY3 and isinstance(node, (ast.NameConstant)):
+        value = node.value
+    elif (six.PY2 and isinstance(node, ast.Name) and
+          node.id in ['None', 'True', 'False']):
+        # disregard pathological python2 corner cases
+        value = {'None': None, 'True': True, 'False': False}[node.id]
     else:
+        print(node.__dict__)
         raise TypeError('Cannot parse a static value from non-static node '
                         'of type: {!r}'.format(type(node)))
     return value
@@ -328,6 +438,8 @@ def parse_static_value(key, source=None, fpath=None):
         >>> assert parse_static_value(key, source=source) == (1, 2, "3")
         >>> source = 'foo = {1: 2, 3: 4}'
         >>> assert parse_static_value(key, source=source) == {1: 2, 3: 4}
+        >>> source = 'foo = None'
+        >>> assert parse_static_value(key, source=source) == None
         >>> #parse_static_value('bar', source=source)
         >>> #parse_static_value('bar', source='foo=1; bar = [1, foo]')
     """
@@ -339,7 +451,8 @@ def parse_static_value(key, source=None, fpath=None):
     class AssignentVisitor(ast.NodeVisitor):
         def visit_Assign(self, node):
             for target in node.targets:
-                if getattr(target, 'id', None) == key:
+                target_id = getattr(target, 'id', None)
+                if target_id == key:
                     self.value = _parse_static_node_value(node.value)
 
     sentinal = object()
