@@ -300,7 +300,7 @@ Backwards Incompatibility
 
 There are a few cases that are currently backwards incompatible.
 
-Evaluating multiple items in a for loop no longer words
+Evaluating multiple items in a for loop no longer works:
 
 .. code:: python
 
