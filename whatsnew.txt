@@ -1,5 +1,11 @@
 Version 0.5.0
 -------------
+* Generally Improved doctest error reporting 
+    * Includes better coloring for quick visual inspection
+    * Line numbers are now reported in a more intuitive way
+    * We finally removed the exec DoctestExample.run from the traceback!
+    
+* (we report line numbers of errors in a more intuitive way).
 * Fixed GH#20 where doclineno_end was incorrectly parsed
 * Fixed issue where google style block lineno was incorrect
 * Added config option for lineno offsets. (corresponding arguments added to

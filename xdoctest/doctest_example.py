@@ -287,7 +287,7 @@ class DocTest(object):
 
         Example:
             >>> from xdoctest import parser
-            >>> from xdoctest import docscrape_google
+            >>> from xdoctest.docstr import docscrape_google
             >>> from xdoctest import doctest_example
             >>> DocTest = doctest_example.DocTest
             >>> docstr = DocTest._parse.__doc__
@@ -398,7 +398,10 @@ class DocTest(object):
                     # Compile code, handle syntax errors
                     mode = 'eval' if part.use_eval else 'exec'
                     self._partfilename = '<doctest:' + self.node + '>'
+                    # Hack: we will prefix souce with newlines to
+                    # make the exec line number match.
                     code = compile(
+                        # '\n' * part.line_offset +
                         part.source, mode=mode,
                         filename=self._partfilename,
                         flags=compileflags, dont_inherit=True
@@ -533,16 +536,18 @@ class DocTest(object):
     def pre_run(self, verbose):
         if verbose >= 1:
             if verbose >= 2:
-                barrier = self._color('============', 'white')
+                barrier = self._color('====== <exec> ======', 'white')
                 print(barrier)
             if self.block_type == 'zero-arg':
                 # zero-arg funcs arent doctests, but we can still run them
                 print('* ZERO-ARG FUNC : {}'.format(self.node))
             else:
-                print('* BEGIN DOCTEST : {}'.format(self.node))
+                print('* DOCTEST : {}, line {}'.format(self.node, self.lineno) + self._color(' <- wrt source file', 'white'))
             if verbose >= 3:
+                print(self._color('DOCTEST SOURCE', 'white'))
                 print(self.format_src())
-                print(self._color('* ----------', 'white'))
+                # print(self._color('* ----------', 'white'))
+                print(self._color('DOCTEST STDOUT/STDERR', 'white'))
 
     def failed_line_offset(self):
         """
@@ -676,17 +681,21 @@ class DocTest(object):
         fail_lineno = self.failed_lineno()
 
         lines = [
-            'FAILED DOCTEST: {}'.format(ex_type.__name__),
-            '  Node "{}"'.format(self.node),
+            '* REASON: {}'.format(ex_type.__name__),
+            self._color('DOCTEST DEBUG INFO', 'white'),
+            '  XDoc "{}", line {}'.format(self.node, fail_offset + 1) +
+            self._color(' <- wrt doctest', 'red'),
         ]
 
         colored = self.config['colored']
         if fail_lineno is not None:
             fpath = '<file?>' if self.fpath is None else self.fpath
-            lines += ['  File "{}", line {},'.format(fpath, fail_lineno)]
+            lines += ['  File "{}", line {},'.format(fpath, fail_lineno) +
+                      self._color(' <- wrt source file', 'red')]
 
-        lines += ['  in doctest "{}", line {}'.format(self.unique_callname,
-                                                      fail_offset + 1)]
+        # lines += ['  in doctest "{}", line {}'.format(self.unique_callname,
+        #                                               fail_offset + 1) +
+        #           self._color(' <- relative line number in the docstest', 'red')]
 
         # source_text = self.format_src(colored=colored, linenos=True,
         #                               want=False)
@@ -732,6 +741,7 @@ class DocTest(object):
             # if part_eval is not NOT_EVALED:
             #     temp[tindex] += [repr(part_eval)]
 
+        lines += [self._color('DOCTEST PART BREAKDOWN', 'white')]
         if before_part_lines:
             lines += ['Passed Parts:']
             lines += before_part_lines
@@ -744,9 +754,7 @@ class DocTest(object):
             lines += ['Remaining Parts:']
             lines += after_parts_lines
 
-        lines += ['CommandLine:']
-        lines += ['    ' + self.cmdline]
-
+        lines += [self._color('DOCTEST TRACEBACK', 'white')]
         if hasattr(ex_value, 'output_difference'):
             lines += [
                 ex_value.output_difference(self._runstate, colored=colored),
@@ -757,9 +765,35 @@ class DocTest(object):
                 # TODO: enhance formatting to show an IPython-like output of
                 # where the error occurred in the doctest
                 tblines = traceback.format_exception(*self.exc_info)
-                if True:
+
+                def _alter_traceback_linenos(self, tblines):
+
+                    def overwrite_lineno(linepart):
+                        # Replace the trailing part which is the lineno
+                        old_linestr = linepart[-1]  # noqa
+
+                        # This is the lineno we will insert
+                        rel_lineno = self.failed_part.line_offset + tb_lineno
+                        abs_lineno = self.lineno + rel_lineno - 1
+
+                        new_linestr = 'rel: {rel}, abs: {abs}'.format(
+                            rel=rel_lineno,
+                            abs=abs_lineno,
+                        )
+
+                        linepart = linepart[:-1] + [new_linestr]
+                        return linepart
+
                     new_tblines = []
-                    for line in tblines:
+                    for i, line in enumerate(tblines):
+
+                        if 'xdoctest/xdoctest/doctest_example' in line:
+                            # hack, remove ourselves from the tracback
+                            continue
+                            # new_tblines.append('!!!!!')
+                            # raise Exception('foo')
+                            # continue
+
                         if self._partfilename in line:
                             # Intercept the line corresponding to the doctest
                             tbparts = line.split(',')
@@ -767,30 +801,34 @@ class DocTest(object):
                             # modify the line number to match the doctest
                             linepart = tbparts[-2].split(' ')
 
-                            new_lineno = self.failed_part.line_offset + tb_lineno
-                            linepart = linepart[:-1] + [str(new_lineno)]
+                            linepart = overwrite_lineno(linepart)
+
                             tbparts[-2] = ' '.join(linepart)
                             new_line = ','.join(tbparts)
 
-                            # Add in failed doctest context
-                            # TODO: add more context to the traceback
-                            failed_ctx = self.failed_part.exec_lines[tb_lineno - 1]
-                            extra = '    ---> ' + failed_ctx
-                            new_tblines.append(new_line + extra + '\n')
+                            # failed_ctx = '>>> ' + self.failed_part.exec_lines[tb_lineno - 1]
+                            failed_ctx = self.failed_part.orig_lines[tb_lineno - 1]
+                            extra = '    ' + failed_ctx
+                            line = (new_line + extra + '\n')
 
-                            # import utool
-                            # utool.embed()
-                        else:
-                            new_tblines.append(line)
+                        # m = '(t{})'.format(i)
+                        # line = m + line.replace('\n', '\n' + m)
+                        new_tblines.append(line)
 
-                    tblines = new_tblines
+                    return new_tblines
+
+                new_tblines = _alter_traceback_linenos(self, tblines)
 
                 if colored:
-                    tbtext = '\n'.join(tblines)
+                    tbtext = '\n'.join(new_tblines)
                     tbtext = utils.highlight_code(tbtext, lexer_name='pytb',
                                                   stripall=True)
-                    tblines = tbtext.splitlines()
-                lines += tblines
+                    new_tblines = tbtext.splitlines()
+                lines += new_tblines
+
+        lines += [self._color('DOCTEST REPRODUCTION', 'white')]
+        lines += ['CommandLine:']
+        lines += ['    ' + self.cmdline]
         return lines
 
     def _print_captured(self):
@@ -816,6 +854,8 @@ class DocTest(object):
         summary = {
             'passed': self.exc_info is None
         }
+        if verbose >= 1:
+            print(self._color('DOCTEST RESULT', 'white'))
         if self.exc_info is None:
             if verbose >= 1:
                 if self._suppressed_stdout:
@@ -835,6 +875,9 @@ class DocTest(object):
                     text = '\n'.join(lines)
                     print(text)
             summary['exc_info'] = self.exc_info
+        if verbose >= 2:
+            barrier = self._color('====== </exec> ======', 'white')
+            print(barrier)
         return summary
 
 

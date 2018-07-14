@@ -267,7 +267,6 @@ class TestXDoctest(object):
         # print('</stdout>')
 
         result.stdout.fnmatch_lines([
-            "*FAILED DOCTEST*",
             "*>>> i = 0*",
             "*>>> 0 / i*",
         ])
@@ -300,9 +299,9 @@ class TestXDoctest(object):
         result = testdir.runpytest("--xdoctest-modules", *EXTRA_ARGS)
         print('\n'.join(result.stdout.lines))
         result.stdout.fnmatch_lines([
-            "*FAILED DOCTEST: ZeroDivisionError*",
-            '*line 6*',
+            "*REASON: ZeroDivisionError*",
             '*line 2*',
+            '*line 6*',
             "*1 >>> a = 1*",
             "*2 >>> 1 / 0*",
             "*ZeroDivision*",
@@ -333,9 +332,9 @@ class TestXDoctest(object):
         result = testdir.runpytest("--xdoctest-modules", "--xdoc-style=freeform", *EXTRA_ARGS)
         print('\n'.join(result.stdout.lines))
         result.stdout.fnmatch_lines([
-            "*FAILED DOCTEST: ZeroDivisionError*",
-            '*line 9*',
+            "* REASON: ZeroDivisionError",
             '*line 2*',
+            '*line 9*',
             "*1 >>> a = 1*",
             "*2 >>> 1 / 0*",
             "*ZeroDivision*",
@@ -366,9 +365,9 @@ class TestXDoctest(object):
         result = testdir.runpytest("--xdoctest-modules", "--xdoc-style=google", *EXTRA_ARGS)
         print('\n'.join(result.stdout.lines))
         result.stdout.fnmatch_lines([
-            "*FAILED DOCTEST: ZeroDivisionError*",
-            '*line 9*',
+            "* REASON: ZeroDivisionError",
             '*line 2*',
+            '*line 9*',
             "*1 >>> a = 1*",
             "*2 >>> 1 / 0*",
             "*ZeroDivision*",
@@ -401,15 +400,14 @@ class TestXDoctest(object):
         result = testdir.runpytest("--xdoctest-modules", "--xdoc-style=google", *EXTRA_ARGS)
         print('\n'.join(result.stdout.lines))
         result.stdout.fnmatch_lines([
-            "*FAILED DOCTEST: ZeroDivisionError*",
-            '*line 8*',
+            "* REASON: ZeroDivisionError",
             '*line 3*',
+            '*line 8*',
             "*2 >>> a = 1*",
             "*3 >>> 1 / 0*",
             "*ZeroDivision*",
             "*1 failed*",
         ])
-
 
     def test_docstring_show_entire_doctest(self, testdir):
         """Test that we show the entire doctest when there is a failure
@@ -446,7 +444,6 @@ class TestXDoctest(object):
             '''))
         result = testdir.runpytest('--xdoctest-modules', *EXTRA_ARGS)
         result.stdout.fnmatch_lines([
-            '*FAILED*',
             '* 1 >>> x = 4*',
             '* 2 >>> x = 5 + x*',
             '* 3 >>> x = 6 + x*',
@@ -478,7 +475,6 @@ class TestXDoctest(object):
         result = testdir.runpytest(*EXTRA_ARGS)
         # xdoctest is never executed because of error during hello.py collection
         result.stdout.fnmatch_lines([
-            '*FAILED*',
             "*>>> import asdals*",
             "*{e}: No module named *asdal*".format(e=MODULE_NOT_FOUND_ERROR),
         ])
@@ -506,7 +502,6 @@ class TestXDoctest(object):
         sys.path.append(cwd)
         result = testdir.runpytest("--xdoctest-modules", "-s", *EXTRA_ARGS)
         result.stdout.fnmatch_lines([
-            '*FAILED*',
             '*1 >>> import hello*',
             "*{e}: No module named *asdals*".format(e=MODULE_NOT_FOUND_ERROR),
             # "*Interrupted: 1 errors during collection*",
@@ -1467,7 +1462,7 @@ class Disabled(object):
             "*hello*",
             "*EXAMPLE LOCATION UNKNOWN, not showing all tests of that example*",
             "*1/0*",
-            "*FAILED*ZeroDivision*",
+            "*REASON*ZeroDivision*",
             "*1 failed*",
         ])
 
@@ -1594,7 +1589,7 @@ class Disabled(object):
         """)
         result = testdir.runpytest(p, *EXTRA_ARGS)
         result.stdout.fnmatch_lines([
-            '*FAILED DOCTEST: ZeroDivisionError*',
+            '* REASON: ZeroDivisionError*',
             '*1 failed*',
         ])
 

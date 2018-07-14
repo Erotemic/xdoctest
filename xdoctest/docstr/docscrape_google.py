@@ -231,7 +231,7 @@ def parse_google_argblock(lines):
 
 
 def split_google_docblocks(docstr):
-    r""" Breaks a docstring into parts defined by google style
+    """ Breaks a docstring into parts defined by google style
 
     Args:
         docstr (str): a docstring
@@ -241,10 +241,10 @@ def split_google_docblocks(docstr):
             tag and the second item is the bock corresponding to that tag.
 
     CommandLine:
-        xdoctest xdoctest.docscrape_google split_google_docblocks:2
+        xdoctest xdoctest.docstr.docscrape_google split_google_docblocks:2
 
     Example:
-        >>> from xdoctest.docscrape_google import *  # NOQA
+        >>> from xdoctest.docstr.docscrape_google import *  # NOQA
         >>> from xdoctest import utils
         >>> docstr = utils.codeblock(
         ...     '''
@@ -273,12 +273,12 @@ def split_google_docblocks(docstr):
         ['__DOC__', 'Args', 'Returns', 'Example', 'Example']
 
     Example:
-        >>> from xdoctest.docscrape_google import *  # NOQA
+        >>> from xdoctest.docstr.docscrape_google import *  # NOQA
         >>> docstr = split_google_docblocks.__doc__
         >>> groups = split_google_docblocks(docstr)
 
     Example:
-        >>> from xdoctest.docscrape_google import *  # NOQA
+        >>> from xdoctest.docstr.docscrape_google import *  # NOQA
         >>> from xdoctest import utils
         >>> docstr = utils.codeblock(
         ...     '''
@@ -291,7 +291,7 @@ def split_google_docblocks(docstr):
         >>> print('offset = {!r}'.format(offset))
         >>> assert offset == 0
         >>> # Check that line offsets are valid if the first line is blank
-        >>> groups = split_google_docblocks('\n' + docstr)
+        >>> groups = split_google_docblocks(chr(10) + docstr)
         >>> offset = groups[0][1][1]
         >>> print('offset = {!r}'.format(offset))
         >>> assert offset == 1

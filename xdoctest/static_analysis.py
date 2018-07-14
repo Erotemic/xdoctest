@@ -208,7 +208,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         return doclineno, doclineno_end
 
     def _docstr_line_workaround(self, docstr, sourcelines, endpos):
-        """
+        r"""
         Args:
             docstr (str): the extracted docstring.
 
