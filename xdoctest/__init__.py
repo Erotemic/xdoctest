@@ -2,7 +2,7 @@
 """
 mkinit xdoctest --nomods
 """
-__version__ = '0.5.5'  # nocover
+__version__ = '0.5.6'  # nocover
 
 # Expose only select submodules
 __submodules__ = [
