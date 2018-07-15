@@ -48,7 +48,7 @@ setupkw = dict(
     author_email='erotemic@gmail.com',
     url='https://github.com/Erotemic/xdoctest',
     license='Apache 2',
-    packages=['xdoctest'],
+    packages=['xdoctest', 'xdoctest/utils', 'xdoctest/docstr'],
 )
 
 
