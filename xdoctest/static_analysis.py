@@ -117,6 +117,7 @@ class TopLevelVisitor(ast.NodeVisitor):
             callname = node.name
         else:
             callname = self._current_classname + '.' + node.name
+        print('callname = {!r}'.format(callname))
 
         lineno = self._workaround_func_lineno(node)
         docstr, doclineno, doclineno_end = self._get_docstring(node)
@@ -205,6 +206,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         # Convert 0-based line positions to 1-based line numbers
         doclineno = start + 1
         doclineno_end = stop
+        # print('docnode = {!r}'.format(docnode))
         return doclineno, doclineno_end
 
     def _docstr_line_workaround(self, docstr, sourcelines, endpos):
@@ -312,7 +314,8 @@ class TopLevelVisitor(ast.NodeVisitor):
                 startline = sourcelines[cand_start_]
 
                 # The startline should also begin with the same triple quote
-                if startline.strip().startswith(trip):
+                # Account for raw strings
+                if startline.strip().startswith((trip, 'r' + trip)):
                     # Both conditions pass.
                     start = cand_start_
                     break

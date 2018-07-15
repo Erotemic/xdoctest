@@ -599,7 +599,7 @@ class DocTest(object):
             >>> parsekw = dict(fpath='foo.txt', callname='bar', lineno=42)
             >>> self = list(parse_docstr_examples(docstr, **parsekw))[0]
             >>> summary = self.run(on_error='return', verbose=0)
-            >>> print('\n'.join(self.repr_failure()))
+            >>> print('[res]' + '\n[res]'.join(self.repr_failure()))
 
         Example:
             >>> from xdoctest.core import *
@@ -614,7 +614,8 @@ class DocTest(object):
             >>> parsekw = dict(fpath='foo.txt', callname='bar', lineno=42)
             >>> self = list(parse_docstr_examples(docstr, **parsekw))[0]
             >>> summary = self.run(on_error='return', verbose=1)
-            >>> print('\n'.join(self.repr_failure()))
+            >>> print('[res]' + '\n[res]'.join(self.repr_failure()))
+
 
         Example:
             >>> from xdoctest.core import *
@@ -626,7 +627,7 @@ class DocTest(object):
                 ''')
             >>> self = list(parse_docstr_examples(docstr))[0]
             >>> summary = self.run(on_error='return', verbose=0)
-            >>> print('\n'.join(self.repr_failure()))
+            >>> print('[res]' + '\n[res]'.join(self.repr_failure()))
         """
         #     '=== LINES ===',
         # ]
