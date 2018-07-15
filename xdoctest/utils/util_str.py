@@ -166,6 +166,7 @@ def add_line_numbers(source, start=1, n_digits=None):
     Prefixes code with line numbers
 
     Example:
+        >>> from xdoctest.utils.util_str import *
         >>> print(chr(10).join(add_line_numbers(['a', 'b', 'c'])))
         1 a
         2 b
@@ -231,3 +232,10 @@ def codeblock(block_str):
     return textwrap.dedent(block_str).strip('\n')
 
 
+if __name__ == '__main__':
+    """
+    CommandLine:
+        python -m xdoctest.utils.util_str all
+    """
+    import xdoctest
+    xdoctest.doctest_module(__file__)
