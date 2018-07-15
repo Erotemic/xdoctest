@@ -13,11 +13,11 @@ from os.path import exists
 from fnmatch import fnmatch
 from xdoctest import dynamic_analysis as dynamic
 from xdoctest import static_analysis as static
-from xdoctest.docstr import docscrape_google
 from xdoctest import parser
 from xdoctest import exceptions
 from xdoctest import doctest_example
 from xdoctest import utils  # NOQA
+from xdoctest.docstr import docscrape_google
 
 
 DEBUG = False
