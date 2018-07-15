@@ -17,7 +17,6 @@ def strip_ansi(text):
         https://stackoverflow.com/questions/13506033/filtering-out-ansi-escape-sequences
 
     Examples:
-        >>> from xdoctest.utils import *
         >>> line = '\t\u001b[0;35mBlabla\u001b[0m     \u001b[0;36m172.18.0.2\u001b[0m'
         >>> escaped_line = strip_ansi(line)
         >>> assert escaped_line == '\tBlabla     172.18.0.2'
@@ -166,7 +165,6 @@ def add_line_numbers(source, start=1, n_digits=None):
     Prefixes code with line numbers
 
     Example:
-        >>> from xdoctest.utils.util_str import *
         >>> print(chr(10).join(add_line_numbers(['a', 'b', 'c'])))
         1 a
         2 b

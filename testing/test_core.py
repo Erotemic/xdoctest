@@ -307,9 +307,17 @@ def test_delayed_want_pass_cases():
     trailing $t$ most recent "gots" captured from stdout. We say the "want"
     matches "got" if $w matches g[-t:] for t in range(1, n)$, where $n$ is the
     index of the last part with a success match.
+
+    CommandLine:
+        python ~/code/xdoctest/testing/test_core.py test_delayed_want_pass_cases
     """
     def _test_status(docstr):
-        temp = utils.TempDoctest(utils.codeblock(docstr))
+        docstr = utils.codeblock(docstr)
+        # import inspect
+        # print('utils = {!r}'.format(utils))
+        # print('utils.TempDoctest = {!r}'.format(utils.TempDoctest))
+        # print(inspect.getargspec(utils.TempDoctest))
+        temp = utils.TempDoctest(docstr)
         doctests = list(core.parse_doctestables(temp.modpath))
         status = doctests[0].run(verbose=0, on_error='return')
         return status
