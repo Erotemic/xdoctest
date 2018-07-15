@@ -2,7 +2,7 @@
 """
 mkinit xdoctest --nomods
 """
-__version__ = '0.5.4'  # nocover
+__version__ = '0.5.5'  # nocover
 
 # Expose only select submodules
 __submodules__ = [
@@ -11,10 +11,11 @@ __submodules__ = [
 ]
 
 
+from xdoctest import utils
 from xdoctest import docstr
 from xdoctest.runner import (doctest_module,)
 from xdoctest.exceptions import (DoctestParseError, ExitTestException,
                                  MalformedDocstr,)
 
 __all__ = ['DoctestParseError', 'ExitTestException', 'MalformedDocstr',
-           'doctest_module']
+           'doctest_module', 'utils', 'docstr']
