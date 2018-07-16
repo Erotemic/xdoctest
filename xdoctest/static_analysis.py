@@ -229,6 +229,8 @@ class TopLevelVisitor(ast.NodeVisitor):
                 stop: the line position (0 based) that the docstring stops
 
                 such that sourcelines[start:stop] will contain the docstring
+        CommandLine:
+            python -m xdoctest.static_analysis TopLevelVisitor._docstr_line_workaround
 
         Example:
             >>> from xdoctest.static_analysis import *
@@ -253,6 +255,10 @@ class TopLevelVisitor(ast.NodeVisitor):
                     {sss} # {ddd} # {sss} # {ddd} # {ddd}
                 def func6():
                     " single quoted docstr "
+                def func7():
+                    r{ddd}
+                    raw line
+                    {ddd}
                 ''').format(ddd=dq * 3, sss=sq * 3)
             >>> print(utils.add_line_numbers(utils.highlight_code(source), start=0))
             >>> targets = [
@@ -262,6 +268,7 @@ class TopLevelVisitor(ast.NodeVisitor):
             >>>     (9, 12),
             >>>     (13, 15),
             >>>     (16, 17),
+            >>>     (18, 21),
             >>> ]
             >>> self = TopLevelVisitor.parse(source)
             >>> pt = ast.parse(source.encode('utf8'))
