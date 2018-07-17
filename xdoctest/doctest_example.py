@@ -540,14 +540,16 @@ class DocTest(object):
                 print(barrier)
             if self.block_type == 'zero-arg':
                 # zero-arg funcs arent doctests, but we can still run them
+                self.block_prefix = 'ZERO-ARG'
                 print('* ZERO-ARG FUNC : {}'.format(self.node))
             else:
+                self.block_prefix = 'DOCTEST'
                 print('* DOCTEST : {}, line {}'.format(self.node, self.lineno) + self._color(' <- wrt source file', 'white'))
             if verbose >= 3:
-                print(self._color('DOCTEST SOURCE', 'white'))
+                print(self._color(self.block_prefix + ' SOURCE', 'white'))
                 print(self.format_src())
                 # print(self._color('* ----------', 'white'))
-                print(self._color('DOCTEST STDOUT/STDERR', 'white'))
+                print(self._color(self.block_prefix + ' STDOUT/STDERR', 'white'))
 
     def failed_line_offset(self):
         """
@@ -682,7 +684,7 @@ class DocTest(object):
 
         lines = [
             '* REASON: {}'.format(ex_type.__name__),
-            self._color('DOCTEST DEBUG INFO', 'white'),
+            self._color(self.block_prefix + ' DEBUG INFO', 'white'),
             '  XDoc "{}", line {}'.format(self.node, fail_offset + 1) +
             self._color(' <- wrt doctest', 'red'),
         ]
@@ -741,7 +743,7 @@ class DocTest(object):
             # if part_eval is not NOT_EVALED:
             #     temp[tindex] += [repr(part_eval)]
 
-        lines += [self._color('DOCTEST PART BREAKDOWN', 'white')]
+        lines += [self._color(self.block_prefix + ' PART BREAKDOWN', 'white')]
         if before_part_lines:
             lines += ['Passed Parts:']
             lines += before_part_lines
@@ -754,7 +756,7 @@ class DocTest(object):
             lines += ['Remaining Parts:']
             lines += after_parts_lines
 
-        lines += [self._color('DOCTEST TRACEBACK', 'white')]
+        lines += [self._color(self.block_prefix + ' TRACEBACK', 'white')]
         if hasattr(ex_value, 'output_difference'):
             lines += [
                 ex_value.output_difference(self._runstate, colored=colored),
@@ -826,7 +828,7 @@ class DocTest(object):
                     new_tblines = tbtext.splitlines()
                 lines += new_tblines
 
-        lines += [self._color('DOCTEST REPRODUCTION', 'white')]
+        lines += [self._color(self.block_prefix + ' REPRODUCTION', 'white')]
         lines += ['CommandLine:']
         lines += ['    ' + self.cmdline]
         return lines
@@ -855,7 +857,7 @@ class DocTest(object):
             'passed': self.exc_info is None
         }
         if verbose >= 1:
-            print(self._color('DOCTEST RESULT', 'white'))
+            print(self._color(self.block_prefix + ' RESULT', 'white'))
         if self.exc_info is None:
             if verbose >= 1:
                 if self._suppressed_stdout:
