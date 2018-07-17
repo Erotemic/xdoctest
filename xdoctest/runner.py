@@ -73,7 +73,7 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
         if len(examples) == 0:
             print('... no docstrings with examples found')
         else:
-            print('    ' + '\n    '.join([example.cmdline + ' @ ' + str(example.lineno)
+            print('    ' + '\n    '.join([example.cmdline  # + ' @ ' + str(example.lineno)
                                           for example in examples]))
         run_summary = {'action': 'list'}
     else:
