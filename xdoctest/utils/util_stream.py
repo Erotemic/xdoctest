@@ -3,7 +3,6 @@ from __future__ import print_function, division, absolute_import, unicode_litera
 import sys
 import six
 import io
-from .util_str import ensure_unicode
 
 
 class TeeStringIO(io.StringIO):
@@ -34,6 +33,7 @@ class TeeStringIO(io.StringIO):
         if self.redirect is not None:
             self.redirect.write(msg)
         if six.PY2:
+            from xdoctest.utils.util_str import ensure_unicode
             msg = ensure_unicode(msg)
         super(TeeStringIO, self).write(msg)
 

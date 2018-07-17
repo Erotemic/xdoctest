@@ -12,7 +12,6 @@ from __future__ import print_function, division, absolute_import
 import pytest
 from _pytest._code import code
 from _pytest import fixtures
-from xdoctest import core
 # import traceback
 
 
@@ -51,6 +50,7 @@ monkey_patch_disable_normal_doctest()
 
 def pytest_addoption(parser):
     # TODO: make this programatically mirror the argparse in __main__
+    from xdoctest import core
 
     group = parser.getgroup('collect')
     parser.addini('xdoctest_encoding', 'encoding used for xdoctest files', default='utf-8')
@@ -212,6 +212,7 @@ class XDoctestTextfile(_XDoctestBase):
 
 class XDoctestModule(_XDoctestBase):
     def collect(self):
+        from xdoctest import core
         modpath = str(self.fspath)
 
         style = self.config.getvalue('xdoctest_style')

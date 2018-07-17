@@ -9,9 +9,9 @@ import tokenize
 import sysconfig
 from six.moves import cStringIO as StringIO
 from collections import deque, OrderedDict
-from xdoctest import utils
 from os.path import (join, exists, expanduser, abspath, split, splitext,
                      isfile, dirname, basename, isdir, realpath, relpath)
+from xdoctest import utils
 
 
 class CallDefNode(object):
@@ -71,9 +71,26 @@ class TopLevelVisitor(ast.NodeVisitor):
         >>> assert self.calldefs['foo'].docstr.strip() == 'my docstring'
         >>> assert 'subfunc' not in self.calldefs
     """
-    def __init__(self):
+    @classmethod
+    def parse(cls, source):
+        """
+        main entry point
+
+        executes parsing algorithm and populates self.calldefs
+        """
+        self = cls(source)
+        pt = self.syntax_tree()
+
+        self.visit(pt)
+
+        lineno_end = source.count('\n') + 2  # one indexing
+        self.process_finished(lineno_end)
+        return self
+
+    def __init__(self, source=None):
         super(TopLevelVisitor, self).__init__()
         self.calldefs = OrderedDict()
+        self.source = source
         self.sourcelines = None
 
         self._current_classname = None
@@ -82,6 +99,13 @@ class TopLevelVisitor(ast.NodeVisitor):
 
         # new
         self.assignments = []
+
+    def syntax_tree(self):
+        """ creates the abstract syntax tree """
+        self.sourcelines = self.source.splitlines()
+        source_utf8  = self.source.encode('utf8')
+        pt = ast.parse(source_utf8)
+        return pt
 
     def process_finished(self, node):
         """ process (get ending lineno) for everything marked as finished """
@@ -94,20 +118,6 @@ class TopLevelVisitor(ast.NodeVisitor):
                 calldef = self._finish_queue.pop()
                 calldef.lineno_end = lineno_end
 
-    @classmethod
-    def parse(TopLevelVisitor, source):
-        self = TopLevelVisitor()
-        self.sourcelines = source.splitlines()
-
-        source_utf8 = source.encode('utf8')
-        pt = ast.parse(source_utf8)
-
-        self.visit(pt)
-
-        lineno_end = source.count('\n') + 2  # one indexing
-        self.process_finished(lineno_end)
-        return self
-
     def visit(self, node):
         self.process_finished(node)
         super(TopLevelVisitor, self).visit(node)
@@ -117,7 +127,6 @@ class TopLevelVisitor(ast.NodeVisitor):
             callname = node.name
         else:
             callname = self._current_classname + '.' + node.name
-        print('callname = {!r}'.format(callname))
 
         lineno = self._workaround_func_lineno(node)
         docstr, doclineno, doclineno_end = self._get_docstring(node)
@@ -321,7 +330,7 @@ class TopLevelVisitor(ast.NodeVisitor):
                 startline = sourcelines[cand_start_]
 
                 # The startline should also begin with the same triple quote
-                # Account for raw strings
+                # Account for raw strings. Note f-strings cannot be docstrings
                 if startline.strip().startswith((trip, 'r' + trip)):
                     # Both conditions pass.
                     start = cand_start_
@@ -333,6 +342,18 @@ class TopLevelVisitor(ast.NodeVisitor):
         return start, stop
 
     def _get_docstring(self, node):
+        """
+        Example:
+            >>> source = utils.codeblock(
+                '''
+                def foo():
+                    'docstr'
+                ''')
+            >>> self = TopLevelVisitor(source)
+            >>> node = self.syntax_tree().body[0]
+            >>> self._get_docstring(node)
+            ('docstr', 2, 2)
+        """
         docstr = ast.get_docstring(node, clean=False)
         if docstr is not None:
             docnode = node.body[0]
@@ -343,16 +364,30 @@ class TopLevelVisitor(ast.NodeVisitor):
         return (docstr, doclineno, doclineno_end)
 
     def _workaround_func_lineno(self, node):
+        """
+        Example:
+            >>> source = utils.codeblock(
+                '''
+                @bar
+                @baz
+                def foo():
+                    'docstr'
+                ''')
+            >>> self = TopLevelVisitor(source)
+            >>> node = self.syntax_tree().body[0]
+            >>> self._workaround_func_lineno(node)
+            3
+        """
         # Try and find the lineno of the function definition
         # (maybe the fact that its on a decorator is actually right...)
         if node.decorator_list:
             # Decorators can throw off the line the function is declared on
-            lineno = node.lineno - 1
-            pattern = '\s*def\s*' + node.name
+            linex = node.lineno - 1
+            pattern = r'\s*def\s*' + node.name
             # I think this is actually robust
-            while not re.match(pattern, self.sourcelines[lineno]):
-                lineno += 1
-            lineno += 1
+            while not re.match(pattern, self.sourcelines[linex]):
+                linex += 1
+            lineno = linex + 1
         else:
             lineno = node.lineno
         return lineno

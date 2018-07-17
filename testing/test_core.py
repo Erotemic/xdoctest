@@ -1,8 +1,28 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import, unicode_literals
 from os.path import join
+import xdoctest
 from xdoctest import core
 from xdoctest import utils
+
+
+def _test_status(docstr):
+    docstr = utils.codeblock(docstr)
+    try:
+        temp = utils.util_misc.TempDoctest(docstr=docstr)
+    except Exception:
+        # pytest seems to load an older version of xdoctest for some reason
+        import xdoctest
+        import inspect
+        print('xdoctest.__version__ = {!r}'.format(xdoctest.__version__))
+        print('utils = {!r}'.format(utils))
+        print('utils.util_misc = {!r}'.format(utils.util_misc))
+        print('utils.TempDoctest = {!r}'.format(utils.TempDoctest))
+        print(inspect.getargspec(utils.TempDoctest))
+        raise
+    doctests = list(core.parse_doctestables(temp.modpath))
+    status = doctests[0].run(verbose=0, on_error='return')
+    return status
 
 
 def test_mod_lineno():
@@ -311,16 +331,6 @@ def test_delayed_want_pass_cases():
     CommandLine:
         python ~/code/xdoctest/testing/test_core.py test_delayed_want_pass_cases
     """
-    def _test_status(docstr):
-        docstr = utils.codeblock(docstr)
-        # import inspect
-        # print('utils = {!r}'.format(utils))
-        # print('utils.TempDoctest = {!r}'.format(utils.TempDoctest))
-        # print(inspect.getargspec(utils.TempDoctest))
-        temp = utils.TempDoctest(docstr)
-        doctests = list(core.parse_doctestables(temp.modpath))
-        status = doctests[0].run(verbose=0, on_error='return')
-        return status
 
     # Pass Case1:
     status = _test_status(
@@ -353,11 +363,6 @@ def test_delayed_want_pass_cases():
 
 
 def test_delayed_want_fail_cases():
-    def _test_status(docstr):
-        temp = utils.TempDoctest(utils.codeblock(docstr))
-        doctests = list(core.parse_doctestables(temp.modpath))
-        status = doctests[0].run(verbose=0, on_error='return')
-        return status
 
     # Fail Case4: "more text has not been printed yet"
     status = _test_status(

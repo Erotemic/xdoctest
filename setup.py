@@ -41,14 +41,15 @@ Notes:
     git tag --delete tagname
 """
 from setuptools import setup
+# from setuptools import find_packages
 
 setupkw = dict(
-    author='Jon Crall',
     name='xdoctest',
+    packages=['xdoctest', 'xdoctest.utils', 'xdoctest.docstr'],
+    author='Jon Crall',
     author_email='erotemic@gmail.com',
     url='https://github.com/Erotemic/xdoctest',
     license='Apache 2',
-    packages=['xdoctest', 'xdoctest/utils', 'xdoctest/docstr'],
 )
 
 

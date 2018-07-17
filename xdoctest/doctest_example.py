@@ -533,6 +533,10 @@ class DocTest(object):
         else:
             raise KeyError(self.mode)
 
+    @property
+    def block_prefix(self):
+        return 'ZERO-ARG' if self.block_type == 'zero-arg' else 'DOCTEST'
+
     def pre_run(self, verbose):
         if verbose >= 1:
             if verbose >= 2:
@@ -540,10 +544,8 @@ class DocTest(object):
                 print(barrier)
             if self.block_type == 'zero-arg':
                 # zero-arg funcs arent doctests, but we can still run them
-                self.block_prefix = 'ZERO-ARG'
                 print('* ZERO-ARG FUNC : {}'.format(self.node))
             else:
-                self.block_prefix = 'DOCTEST'
                 print('* DOCTEST : {}, line {}'.format(self.node, self.lineno) + self._color(' <- wrt source file', 'white'))
             if verbose >= 3:
                 print(self._color(self.block_prefix + ' SOURCE', 'white'))
