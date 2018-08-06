@@ -43,7 +43,7 @@ INDENT_RE = re.compile('^([ ]*)(?=\S)', re.MULTILINE)
 
 class DoctestParser(object):
     r"""
-    Breaks docstrings into parts useing the `parse` method.
+    Breaks docstrings into parts using the `parse` method.
 
     Example:
         >>> parser = DoctestParser()
@@ -65,7 +65,7 @@ class DoctestParser(object):
 
     def parse(self, string, info=None):
         """
-        Divide the given string into examples and intervening text.
+        Divide the given string into examples and interleaving text.
 
         Args:
             string (str): string representing the doctest
@@ -154,7 +154,7 @@ class DoctestParser(object):
 
     def _package_chunk(self, raw_source_lines, raw_want_lines, lineno=0):
         """
-        if `self.simulate_repl` is True, then each statment is broken into its
+        if `self.simulate_repl` is True, then each statement is broken into its
         own part.  Otherwise, statements are grouped by the closest `want`
         statement.
 
@@ -246,7 +246,7 @@ class DoctestParser(object):
 
     def _group_labeled_lines(self, labeled_lines):
         # Now that lines have types, group them. This could have done this
-        # above, but functinoality is split for readability.
+        # above, but functionality is split for readability.
         prev_source = None
         grouped_lines = []
         for state, group in it.groupby(labeled_lines, lambda t: t[0]):
@@ -374,7 +374,7 @@ class DoctestParser(object):
             when this bug is fixed.
 
             Starting from the end look at consecutive pairs of indices to
-            inspect the statment it corresponds to.  (the first statment goes
+            inspect the statement it corresponds to.  (the first statement goes
             from ps1_linenos[-1] to the end of the line list.
 
         Example:
