@@ -331,7 +331,7 @@ class DoctestParser(object):
         ps2_linenos = {
             x for x, p in enumerate(source_lines) if p[:4] != '>>> '
         }
-        ps1_linenos = sorted(ps1_linenos.difference(ps2_linenos))
+        ps1_linenos = sorted(set(ps1_linenos).difference(ps2_linenos))
 
         if len(statement_nodes) == 0:
             eval_final = False
@@ -347,18 +347,41 @@ class DoctestParser(object):
 
         return ps1_linenos, eval_final
 
-    def _workaround_16806(self, ps1_linenos, exec_source_lines):
+    @staticmethod
+    def _workaround_16806(ps1_linenos, exec_source_lines):
         """
         workaround for python issue 16806 (https://bugs.python.org/issue16806)
 
-        Issue causes lineno for multiline strings to give the line they end on,
-        not the line they start on.  A patch for this issue exists
-        `https://github.com/python/cpython/pull/1800`
+        This issue causes the AST to report line numbers for multiline strings
+        as the line they end on. The correct behavior is to report the line
+        they start on. Given a list of line numbers and the original source
+        code, this workaround fixes any line number that points from the end of
+        a multiline string to point to the start of it instead.
+
+        Args:
+            ps1_linenos (List[int]): AST provided line numbers that begin
+                statements and may be Python Issue #16806.
+            exec_source_lines (List[str]): code referenced by ps1_linenos
+
+        Returns:
+            List[int]: new_ps1_lines: Fixed `ps1_linenos` where multiline
+                strings now point to the line where they begin.
 
         Notes:
+            A patch for this issue exists
+            `https://github.com/python/cpython/pull/1800`. This workaround is a
+            no-op when the line numbers are correct, so nothing should break
+            when this bug is fixed.
+
             Starting from the end look at consecutive pairs of indices to
             inspect the statment it corresponds to.  (the first statment goes
             from ps1_linenos[-1] to the end of the line list.
+
+        Example:
+            >>> ps1_linenos = [0, 2, 3]
+            >>> exec_source_lines = ["x = 1", "y = '''foo", " bar'''", "pass"]
+            >>> DoctestParser._workaround_16806(ps1_linenos, exec_source_lines)
+            [0, 1, 3]
         """
         new_ps1_lines = []
         b = len(exec_source_lines)
@@ -370,12 +393,10 @@ class DoctestParser(object):
                 a -= 1
             # push the new correct value back into the list
             new_ps1_lines.append(a)
-            # set the end position of the next string to be `a` ,
-            # note, because this `a` is correct, the next `b` is
-            # must also be correct.
+            # set the end position of the next string to be `a` , note, because
+            # this `a` is correct, the next `b` is must also be correct.
             b = a
-        ps1_linenos = set(new_ps1_lines)
-        return ps1_linenos
+        return new_ps1_lines[::-1]
 
     def _label_docsrc_lines(self, string):
         """
