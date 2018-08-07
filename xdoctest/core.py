@@ -261,7 +261,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
 
         callname (str): function or class name or class and method name
 
-        modpath (str): original module the docstring is from
+        modpath (PathLike): original module the docstring is from
 
         lineno (int): the line number (starting from 1) of the docstring.
             (i.e. if you were to go to this line number in the source file
@@ -269,7 +269,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
 
         style (str): expected doctest style (e.g. google, freeform, auto)
 
-        fpath (str): the file that the docstring is from
+        fpath (PathLike): the file that the docstring is from
             (if the file was not a module, needed for backwards compatibility)
 
     CommandLine:
@@ -366,7 +366,7 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
 
     Args:
         modpath_or_name (str): path to or name of the module to be tested
-        exclude (list): glob-patterns of file names to exclude
+        exclude (List[str]): glob-patterns of file names to exclude
         ignore_syntax_errors (bool): if False raise an error when syntax errors
             occur in a doctest (default True)
 
@@ -442,8 +442,8 @@ def parse_doctestables(modpath_or_name, exclude=[], style='auto',
     example objects.  The style influences which tests are found.
 
     Args:
-        modpath_or_name (str): path or name of a module
-        exclude (list): glob-patterns of file names to exclude
+        modpath_or_name (str|PathLike): path or name of a module
+        exclude (List[str]): glob-patterns of file names to exclude
         style (str): expected doctest style (e.g. google, freeform, auto)
         ignore_syntax_errors (bool): if False raise an error when syntax errors
             occur in a doctest (default True)
