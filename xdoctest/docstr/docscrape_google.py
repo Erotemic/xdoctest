@@ -336,8 +336,9 @@ def split_google_docblocks(docstr):
     if len(indents) >= 1:
         if indents[0] != 0:
             # debug info
-            print('ERROR IN PARSING DOCSTRING')
-            print('adjusted = %r' % (adjusted,))
+            print('INDENTATION ERROR IN PARSING DOCSTRING')
+            print('CHECK TO MAKE SURE YOU USED A RAW STRING IF YOU USE "\\n"')
+            # TODO: Report this error with line number and file information
             print('Docstring:')
             print('----------')
             print(docstr)
