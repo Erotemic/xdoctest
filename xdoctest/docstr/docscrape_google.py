@@ -49,13 +49,13 @@ def parse_google_returns(docstr, return_annot=None):
         >>> docstr = parse_google_returns.__doc__
         >>> retdict_list = list(parse_google_returns(docstr))
         >>> print([sorted(d.items()) for d in retdict_list])
-        [[('desc', 'dictionaries of return value hints'), ('type', 'dict')]]
+        [[('desc', 'dictionaries of return value hints'), ('type', 'Dict[str, str]')]]
 
     Example:
         >>> docstr = split_google_docblocks.__doc__
         >>> retdict_list = list(parse_google_returns(docstr))
         >>> print([sorted(d.items())[1] for d in retdict_list])
-        [('type', 'list')]
+        [('type', 'List[Tuple]')]
     """
     blocks = split_google_docblocks(docstr)
     for key, block in blocks:
