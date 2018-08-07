@@ -18,7 +18,7 @@ def parse_google_args(docstr):
         docstr (str): a google-style docstring
 
     Yields:
-        dict: dictionaries of parameter hints
+        Dict[str, str]: dictionaries of parameter hints
 
     Example:
         >>> docstr = parse_google_args.__doc__
@@ -43,7 +43,7 @@ def parse_google_returns(docstr, return_annot=None):
         return_annot (str): the return type annotation (if one exists)
 
     Yields:
-        dict: dictionaries of return value hints
+        Dict[str, str]: dictionaries of return value hints
 
     Example:
         >>> docstr = parse_google_returns.__doc__
@@ -75,7 +75,7 @@ def parse_google_retblock(lines, return_annot=None):
         return_annot (str): the return type annotation (if one exists)
 
     Yeilds:
-        dict: each dict specifies the return type and its description
+        Dict[str, str]: each dict specifies the return type and its description
 
     Example:
         >>> # Test various ways that retlines can be written
@@ -237,8 +237,9 @@ def split_google_docblocks(docstr):
         docstr (str): a docstring
 
     Returns:
-        list: list of 2-tuples where the first item is a google style docstring
-            tag and the second item is the bock corresponding to that tag.
+        List[Tuple]: list of 2-tuples where the first item is a google style
+            docstring tag and the second item is the bock corresponding to that
+            tag.
 
     CommandLine:
         xdoctest xdoctest.docstr.docscrape_google split_google_docblocks:2
