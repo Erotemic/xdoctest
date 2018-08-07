@@ -199,16 +199,17 @@ def parse_google_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
         .exceptions.MalformedDocstr: if an error occurs in finding google blocks
         .exceptions.DoctestParseError: if an error occurs in parsing
     """
-    blocks = docscrape_google.split_google_docblocks(docstr)
+    try:
+        blocks = docscrape_google.split_google_docblocks(docstr)
+    except exceptions.MalformedDocstr:
+        print('ERROR PARSING {} GOOGLE BLOCKS IN {} ON line {}'.format(
+            callname, modpath, lineno))
+        print('Did you forget to make a docstr with newlines raw?')
+        raise
     example_blocks = []
+    example_tags = ('Example', 'Doctest', 'Script', 'Benchmark')
     for type, block in blocks:
-        if type.startswith('Example'):
-            example_blocks.append((type, block))
-        if type.startswith('Doctest'):
-            example_blocks.append((type, block))
-        if type.startswith('Script'):
-            example_blocks.append((type, block))
-        if type.startswith('Benchmark'):
+        if type.startswith(example_tags):
             example_blocks.append((type, block))
     for num, (type, (docsrc, offset)) in enumerate(example_blocks):
         # Add one because offset indicates the position of the block-label
@@ -338,8 +339,11 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
         # Always warn when something bad is happening.
         # However, dont error if the docstr simply has bad syntax
         warnings.warn(msg)
-        if not isinstance(ex, (exceptions.MalformedDocstr,
-                               exceptions.DoctestParseError)):
+        if isinstance(ex, exceptions.MalformedDocstr):
+            pass
+        elif isinstance(ex, exceptions.DoctestParseError):
+            pass
+        else:
             raise
     if DEBUG:
         print('Finished parsing {} examples'.format(n_parsed))
@@ -423,7 +427,7 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
                 msg = 'Cannot parse module={} at path={}.\nCaused by: {}'
                 msg = msg.format(modname, modpath, ex)
                 if ignore_syntax_errors:
-                    warnings.warn(msg)  # real code contained errors
+                    warnings.warn(msg)  # real code or docstr contained errors
                     continue
                 else:
                     raise SyntaxError(msg)

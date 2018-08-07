@@ -27,3 +27,43 @@ class TempDoctest(object):
         self.modpath = join(self.dpath, self.modname + '.py')
         with open(self.modpath, 'w') as file:
             file.write("'''\n%s'''" % self.docstr)
+
+
+def _run_case(source, style='auto'):
+    """
+    TODO: run case is over-duplicated and should be separated into a test utils directory
+    """
+    from xdoctest import utils
+    from xdoctest import runner
+    COLOR = 'yellow'
+    def cprint(msg, color=COLOR):
+        print(utils.color_text(str(msg), COLOR))
+    cprint('\n\n'
+           '\n <RUN CASE> '
+           '\n  ========  '
+           '\n', COLOR)
+
+    cprint('CASE SOURCE:')
+    cprint('------------')
+    print(utils.indent(
+        utils.add_line_numbers(utils.highlight_code(source, 'python'))))
+
+    print('')
+
+    import hashlib
+    hasher = hashlib.sha1()
+    hasher.update(source.encode('utf8'))
+    hashid = hasher.hexdigest()[0:8]
+
+    with utils.TempDir() as temp:
+        dpath = temp.dpath
+        modpath = join(dpath, 'test_linenos_' + hashid + '.py')
+
+        with open(modpath, 'w') as file:
+            file.write(source)
+
+        with utils.CaptureStdout(supress=False) as cap:
+            runner.doctest_module(modpath, 'all', argv=[''], style=style)
+
+    cprint('\n\n --- </END RUN CASE> --- \n\n', COLOR)
+    return cap.text
