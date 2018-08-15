@@ -251,7 +251,7 @@ def parse_auto_docstr_examples(docstr, *args, **kwargs):
 
 
 def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
-                          style='auto', fpath=None):
+                          style='auto', fpath=None, parser_kw={}):
     """
     Parses doctests from a docstr and generates example objects.
     The style influences which tests are found.
@@ -271,6 +271,8 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
 
         fpath (PathLike): the file that the docstring is from
             (if the file was not a module, needed for backwards compatibility)
+
+        parser_kw (dict): passed to the parser
 
     CommandLine:
         python -m xdoctest.core parse_docstr_examples
@@ -312,7 +314,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
     n_parsed = 0
     try:
         for example in parser(docstr, callname=callname, modpath=modpath,
-                              fpath=fpath, lineno=lineno):
+                              fpath=fpath, lineno=lineno, **parser_kw):
             n_parsed += 1
             yield example
     except Exception as ex:
@@ -436,7 +438,7 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
 
 
 def parse_doctestables(modpath_or_name, exclude=[], style='auto',
-                       ignore_syntax_errors=True):
+                       ignore_syntax_errors=True, parser_kw={}):
     """
     Parses all doctests within top-level callables of a module and generates
     example objects.  The style influences which tests are found.
@@ -447,6 +449,7 @@ def parse_doctestables(modpath_or_name, exclude=[], style='auto',
         style (str): expected doctest style (e.g. google, freeform, auto)
         ignore_syntax_errors (bool): if False raise an error when syntax errors
             occur in a doctest (default True)
+        parser_kw: extra args passed to the parser
 
     Yields:
         xdoctest.doctest_example.DocTest : parsed doctest example objects
@@ -495,7 +498,8 @@ def parse_doctestables(modpath_or_name, exclude=[], style='auto',
                 for example in parse_docstr_examples(docstr, callname=callname,
                                                      modpath=modpath,
                                                      lineno=lineno,
-                                                     style=style):
+                                                     style=style,
+                                                     parser_kw=parser_kw):
                     yield example
 
 

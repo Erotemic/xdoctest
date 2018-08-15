@@ -56,6 +56,9 @@ def main():
                         help=('Doctest outputs will display line numbers '
                               'wrt to the source file.'))
 
+    parser.add_argument(*('--nocolor',), dest='nocolor', action='store_true',
+                        help=('Disable ANSI coloration.'))
+
     args, unknown = parser.parse_known_args()
     ns = args.__dict__.copy()
 
@@ -65,6 +68,7 @@ def main():
     arg = ns['arg']
     style = ns['style']
     offset_linenos = ns['offset_linenos']
+    nocolor = ns['nocolor']
     options = ns['options']
 
     # ---
@@ -118,6 +122,7 @@ def main():
     config = {
         'default_runtime_state': default_runtime_state,
         'offset_linenos': offset_linenos,
+        'colored': not nocolor,
     }
 
     xdoctest.doctest_module(modname, argv=[command], style=style,

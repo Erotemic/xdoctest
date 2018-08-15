@@ -3,6 +3,8 @@ Version 0.6.0
 * Better error messages when you forget a raw string on a google block with
   newlines in the docstr.
 * Tests for malformed google docstr case.
+* Added --nocolor command line arg
+* Added parserkw arg
 
 
 Version 0.5.8

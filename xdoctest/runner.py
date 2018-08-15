@@ -102,7 +102,7 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
             run_summary = {'action': 'dump'}
         else:
             # Run the gathered doctest examples
-            run_summary = _run_examples(enabled_examples, verbose)
+            run_summary = _run_examples(enabled_examples, verbose, config)
 
             toc = time.time()
             n_seconds = toc - tic
@@ -110,7 +110,7 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
             # Print final summary info in a style similar to pytest
             if verbose >= 0 and run_summary:
                 _print_summary_report(run_summary, parse_warnlist, n_seconds,
-                                      enabled_examples)
+                                      enabled_examples, config=config)
 
     return run_summary
 
@@ -142,12 +142,15 @@ def _convert_to_test_module(enabled_examples):
 
 
 def _print_summary_report(run_summary, parse_warnlist, n_seconds,
-                          enabled_examples):
+                          enabled_examples, config=None):
     """
     Summary report formatting and printing
     """
     def cprint(text, color):
-        print(utils.color_text(text, color))
+        if config is not None and config.get('colored', True):
+            print(utils.color_text(text, color))
+        else:
+            print(text)
 
     # report errors
     failed = run_summary.get('failed', [])
@@ -202,12 +205,11 @@ def _print_summary_report(run_summary, parse_warnlist, n_seconds,
     summary_line = fmtstr.format(n_seconds=n_seconds)
     # color text based on worst type of error
     if n_failed > 0:
-        summary_line = utils.color_text(summary_line, 'red')
+        cprint(summary_line, 'red')
     elif n_warnings > 0:
-        summary_line = utils.color_text(summary_line, 'yellow')
+        cprint(summary_line, 'yellow')
     else:
-        summary_line = utils.color_text(summary_line, 'green')
-    print(summary_line)
+        cprint(summary_line, 'green')
 
 
 def _gather_zero_arg_examples(modpath):
@@ -231,7 +233,7 @@ def _gather_zero_arg_examples(modpath):
                     yield example
 
 
-def _run_examples(enabled_examples, verbose):
+def _run_examples(enabled_examples, verbose, config=None):
     """
     Internal helper, loops over each example, runs it, returns a summary
     """
@@ -281,7 +283,10 @@ def _run_examples(enabled_examples, verbose):
         print('')
     n_passed = sum(s['passed'] for s in summaries)
 
-    print(utils.color_text('============', 'white'))
+    if config is not None and config.get('colored', True):
+        print(utils.color_text('============', 'white'))
+    else:
+        print('============')
 
     if n_total > 1:
         # and verbose > 0:

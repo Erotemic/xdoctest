@@ -242,6 +242,7 @@ class DoctestParser(object):
 
         example = slice_example(s1, s2, want_lines)
         example.use_eval = bool(want_lines) and eval_final
+        # example.use_eval = eval_final
         yield example
 
     def _group_labeled_lines(self, labeled_lines):
