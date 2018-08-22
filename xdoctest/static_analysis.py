@@ -957,7 +957,7 @@ def is_modname_importable(modname, sys_path=None, exclude=None):
     return flag
 
 
-def is_balanced_statement(lines):
+def is_balanced_statement(lines, flag=0):
     """
     Checks if the lines have balanced parens, brakets, curlies and strings
 
@@ -976,22 +976,21 @@ def is_balanced_statement(lines):
         ...     ['foo = (', "'''", ")]'''", ')']) is True
         >>> #assert is_balanced_statement(['foo = ']) is False
         >>> #assert is_balanced_statement(['== ']) is False
-
     """
-    if 0:
-        block = '\n'.join(lines)
-        if six.PY2:
-            block = block.encode('utf8')
-        stream = StringIO()
-        stream.write(block)
-        stream.seek(0)
-        readline = stream.readline
-    else:
-        iterable = iter(lines)
-        def readline():
-            return next(iterable)
+    # if flag:
+    #     block = '\n'.join(lines)
+    #     if six.PY2:
+    #         block = block.encode('utf8')
+    #     stream = StringIO()
+    #     stream.write(block)
+    #     stream.seek(0)
+    #     readline = stream.readline
+    # else:
+    iterable = iter(lines)
+    def _readline():
+        return next(iterable)
     try:
-        for t in tokenize.generate_tokens(readline):
+        for t in tokenize.generate_tokens(_readline):
             pass
     except tokenize.TokenError as ex:
         message = ex.args[0]
@@ -1030,18 +1029,26 @@ def extract_comments(source):
         >>> comments = list(extract_comments(source.splitlines()))
         >>> assert comments == ['# comment 1', '# comment 2']
     """
-    if not isinstance(source, six.string_types):
-        source = '\n'.join(source)
-    if six.PY2:
-        try:
-            source = source.encode('utf8')
-        except Exception:
-            pass
-    stream = StringIO()
-    stream.write(source)
-    stream.seek(0)
+    if isinstance(source, six.string_types):
+        lines = source.splitlines()
+    else:
+        lines = source
+        # source = '\n'.join(source)
+
+    # if six.PY2:
+    #     try:
+    #         source = source.encode('utf8')
+    #     except Exception:
+    #         pass
+    # stream = StringIO()
+    # stream.write(source)
+    # stream.seek(0)
+    # _readline = stream.readline
+    iterable = iter(lines)
+    def _readline():
+        return next(iterable)
     try:
-        for t in tokenize.generate_tokens(stream.readline):
+        for t in tokenize.generate_tokens(_readline):
             if t[0] == tokenize.COMMENT:
                 yield t[1]
     except tokenize.TokenError as ex:
