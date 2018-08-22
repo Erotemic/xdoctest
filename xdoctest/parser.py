@@ -302,11 +302,42 @@ class DoctestParser(object):
         # Strip indentation (and PS1 / PS2 from source)
         exec_source_lines = [p[4:] for p in source_lines]
 
-        # Hack to make comments appear like executable statements
-        # note, this hack never leaves this function because we only are
-        # returning line numbers.
-        exec_source_lines = ['_._  = None' if p.startswith('#') else p
-                             for p in exec_source_lines]
+        def _hack_comment_statements(lines):
+            # Hack to make comments appear like executable statements
+            # note, this hack never leaves this function because we only are
+            # returning line numbers.
+            # FIXME: there is probably a better way to do this.
+            def balanced_intervals(lines):
+                """
+                Finds intervals of balanced nesting syntax
+
+                Args:
+                    lines (List[str]): lines of source code
+                """
+                intervals = []
+                a = len(lines) - 1
+                b = len(lines)
+                while b > 0:
+                    # move the head pointer up until we become balanced
+                    while not static.is_balanced_statement(lines[a:b]):
+                        a -= 1
+                    # we found a balanced interval
+                    intervals.append((a, b))
+                    b = a
+                    a = a - 1
+                intervals = intervals[::-1]
+                return intervals
+            intervals = balanced_intervals(lines)
+            interval_starts = {t[0] for t in intervals}
+            for i, line in enumerate(lines):
+                if i in interval_starts and line.startswith('#'):
+                    # Replace any comment that is not within an interval with a
+                    # statement, so ast.parse will record its line number
+                    yield '_._ = None'
+                else:
+                    yield line
+
+        exec_source_lines = list(_hack_comment_statements(exec_source_lines))
 
         source_block = '\n'.join(exec_source_lines)
         try:
@@ -328,6 +359,7 @@ class DoctestParser(object):
         if NEED_16806_WORKAROUND:  # pragma: nobranch
             ps1_linenos = self._workaround_16806(
                 ps1_linenos, exec_source_lines)
+
         # Respect any line explicitly defined as PS2 (via its prefix)
         ps2_linenos = {
             x for x, p in enumerate(source_lines) if p[:4] != '>>> '

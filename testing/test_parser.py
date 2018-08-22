@@ -658,6 +658,31 @@ def test_block_directive_want2_eval2():
     assert len(parts) == 4
 
 
+def test_gh_issue_25_parsing_failure():
+    string = utils.codeblock(
+        '''
+        >>> _, o = 0, 1
+        >>> A = B = C = D = 1
+        >>> cc_mask = [        # Y
+        >>>     [ _, _, _, o, _, _, ],  # 0
+        >>>     [ _, _, o, o, o, _, ],  # 1
+        >>>     [ _, o, o, o, o, o, ],  # 2
+        >>>     [ o, o, o, o, o, _, ],  # 3
+        >>>     [ _, o, o, o, _, _, ],  # 4
+        >>>     [ _, _, o, o, _, _, ],  # 5
+        >>> # X:  0  1  2  3  4  5  6
+        >>> ]
+        >>> # a regular comment
+        >>> print(cc_mask)
+        ''')
+    source_lines = string.splitlines()
+    self = parser.DoctestParser()
+    ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
+    assert ps1_linenos ==  [0, 1, 2, 11, 12]
+    parts = self.parse(string)
+    assert len(parts) == 1
+
+
 if __name__ == '__main__':
     """
     CommandLine:

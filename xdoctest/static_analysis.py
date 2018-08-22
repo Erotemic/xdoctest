@@ -978,18 +978,29 @@ def is_balanced_statement(lines):
         >>> #assert is_balanced_statement(['== ']) is False
 
     """
-    block = '\n'.join(lines)
-    if six.PY2:
-        block = block.encode('utf8')
-    stream = StringIO()
-    stream.write(block)
-    stream.seek(0)
+    if 0:
+        block = '\n'.join(lines)
+        if six.PY2:
+            block = block.encode('utf8')
+        stream = StringIO()
+        stream.write(block)
+        stream.seek(0)
+        readline = stream.readline
+    else:
+        iterable = iter(lines)
+        def readline():
+            return next(iterable)
     try:
-        for t in tokenize.generate_tokens(stream.readline):
+        for t in tokenize.generate_tokens(readline):
             pass
     except tokenize.TokenError as ex:
         message = ex.args[0]
         if message.startswith('EOF in multi-line'):
+            return False
+        raise
+    except IndentationError as ex:
+        message = ex.args[0]
+        if message.startswith('unindent does not match any outer indentation'):
             return False
         raise
     else:
