@@ -8,6 +8,7 @@ import textwrap
 import collections
 import six
 from xdoctest import exceptions
+from xdoctest.utils.util_str import ensure_unicode
 
 
 def parse_google_args(docstr):
@@ -307,6 +308,8 @@ def split_google_docblocks(docstr):
 
     # Parse out initial documentation lines
     # Then parse out the blocked lines.
+    docstr = ensure_unicode(docstr)
+
     docstr = textwrap.dedent(docstr)
     docstr_lines = docstr.split('\n')
     line_indent = [get_indentation(line) for line in docstr_lines]
