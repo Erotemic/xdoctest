@@ -201,7 +201,7 @@ def _ellipsis_match(got, want):
     # ws = want.split(ELLIPSIS_MARKER)
     # MODIFICATION: the ellipsis consumes all whitespace around it
     # for compatibility with whitespace normalization.
-    ws = re.split('\s*{}\s*'.format(re.escape(ELLIPSIS_MARKER)), want,
+    ws = re.split(r'\s*{}\s*'.format(re.escape(ELLIPSIS_MARKER)), want,
                   flags=re.MULTILINE)
     assert len(ws) >= 2
 
@@ -305,8 +305,8 @@ def normalize(got, want, runstate=None):
 
     if runstate['IGNORE_WHITESPACE']:
         # Completely remove whitespace
-        got = re.sub('\s', '', got, flags=re.MULTILINE)
-        want = re.sub('\s', '', want, flags=re.MULTILINE)
+        got = re.sub(r'\s', '', got, flags=re.MULTILINE)
+        want = re.sub(r'\s', '', want, flags=re.MULTILINE)
 
     if runstate['NORMALIZE_REPR']:
         def norm_repr(a, b):

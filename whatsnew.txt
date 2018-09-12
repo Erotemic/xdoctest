@@ -5,6 +5,7 @@ Version 0.6.0
 * Tests for malformed google docstr case.
 * Added --nocolor command line arg
 * Added parserkw arg
+* Python 3.7 support
 
 
 Version 0.5.8

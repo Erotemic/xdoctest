@@ -38,7 +38,7 @@ from xdoctest import static_analysis as static
 GotWantException = checker.GotWantException
 
 
-INDENT_RE = re.compile('^([ ]*)(?=\S)', re.MULTILINE)
+INDENT_RE = re.compile(r'^([ ]*)(?=\S)', re.MULTILINE)
 
 
 class DoctestParser(object):
