@@ -249,31 +249,34 @@ def _run_examples(enabled_examples, verbose, config=None):
     on_error = 'return'
     for example in enabled_examples:
         try:
-            summary = example.run(verbose=verbose, on_error=on_error)
-        except Exception:
-            print('\n'.join(example.repr_failure(with_tb=False)))
-            raise
+            try:
+                summary = example.run(verbose=verbose, on_error=on_error)
+            except Exception:
+                print('\n'.join(example.repr_failure(with_tb=False)))
+                raise
 
-        summaries.append(summary)
-        if example.warn_list:
-            warned.append(example)
-        if summary['passed']:
-            if verbose == 0:
-                # TODO: should we write anything when verbose=0?
-                sys.stdout.write('.')
-                sys.stdout.flush()
-        else:
-            failed.append(example)
-            if verbose == 0:
-                sys.stdout.write('F')
-                sys.stdout.flush()
-            if on_error == 'raise':
-                # What happens if we don't re-raise here?
-                # If it is necessary, write a message explaining why
-                print('\n'.join(example.repr_failure()))
-                ex_value = example.exc_info[1]
-                raise ex_value
-
+            summaries.append(summary)
+            if example.warn_list:
+                warned.append(example)
+            if summary['passed']:
+                if verbose == 0:
+                    # TODO: should we write anything when verbose=0?
+                    sys.stdout.write('.')
+                    sys.stdout.flush()
+            else:
+                failed.append(example)
+                if verbose == 0:
+                    sys.stdout.write('F')
+                    sys.stdout.flush()
+                if on_error == 'raise':
+                    # What happens if we don't re-raise here?
+                    # If it is necessary, write a message explaining why
+                    print('\n'.join(example.repr_failure()))
+                    ex_value = example.exc_info[1]
+                    raise ex_value
+        except KeyboardInterrupt:
+            print('Caught CTRL+c: Stopping tests')
+            break
         # except Exception:
         #     summary = {'passed': False}
         #     if verbose == 0:
