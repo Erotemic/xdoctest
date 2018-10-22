@@ -145,11 +145,12 @@ code:
         import xdoctest as xdoc
         xdoc.doctest_module(__file__)
 
-You could \* Use the command ``python -m mymod list`` to list the names
-of all functions with doctests \* Use the command
-``python -m mymod all`` to run all functions with doctests \* Use the
-command ``python -m mymod func1`` to run only func1's doctest \* Use the
-command ``python -m mymod func2`` to run only func2's doctest
+You could 
+
+* Use the command ``python -m mymod list`` to list the names of all functions with doctests
+* Use the command ``python -m mymod all`` to run all functions with doctests
+* Use the command ``python -m mymod func1`` to run only func1's doctest
+* Use the command ``python -m mymod func2`` to run only func2's doctest
 
 Lastly, by running the command ``xdoc.doctest_module(<pkgname>)``,
 ``xdoctest`` will recursively find and execute all doctests within the
