@@ -13,7 +13,6 @@ import pytest
 
 EXTRA_ARGS = ['-p', 'pytester', '-p', 'no:doctest', '--xdoctest-nocolor']
 
-
 # def print(text):
 #     """ Hack so we can get stdout when debugging the plugin file """
 #     import os
@@ -42,6 +41,10 @@ def explicit_testdir():
         s2 = set(sys.modules)
         print('\n'.join(sorted(s2 - s1)))
         "
+    Ignore:
+        >>> import sys
+        >>> sys.path.append('/home/joncrall/code/xdoctest/testing')
+        >>> from test_plugin import *
     """
     # modpath = _modname_to_modpath_backup('pytest')
     # import pytest  # NOQA
@@ -71,11 +74,35 @@ def explicit_testdir():
     def func(testdir):
         pass
 
-    parent = _pytest.python.Module('parent', config=config, session=session)
+    parent = _pytest.python.Module('parent', config=config, session=session,
+                                   nodeid='myparent')
     function = _pytest.python.Function(
-        'func', parent, callobj=func, config=config, session=session)
-    _pytest.fixtures.fillfixtures(function)
-    testdir = function.funcargs['testdir']
+        'func', parent, callobj=func, config=config, session=session,
+        originalname='func')
+
+    # Under the hood this does:
+    # > function._request._fillfixtures()
+    # > which does
+    # > self = function._request
+    # > argname = 'tmpdir_factory'
+    # > self.getfixturevalue(argname)
+    # > self._get_active_fixturedef(argname)
+    # > self._getnextfixturedef(argname)
+    # > fixturedefs = self._arg2fixturedefs.get(argname, None)
+    # > self._compute_fixture_value(fixturedefs[0])
+    if False:
+        # This used to work, but now it doesn't
+        _pytest.fixtures.fillfixtures(function)
+        testdir = function.funcargs['testdir']
+    else:
+        # Now this is the hack
+        self = request = function._request
+        # argname = 'tmpdir_factory'
+        argname = 'testdir'
+        fixturedef = self._arg2fixturedefs.get(argname, None)[0]
+        fixturedef.scope = 'function'
+        self._compute_fixture_value(fixturedef)
+        testdir = fixturedef.cached_result[0]
 
     # from _pytest.compat import _setup_collect_fakemodule
     # _setup_collect_fakemodule()
@@ -508,12 +535,37 @@ class TestXDoctest(object):
         ])
         sys.path.pop()
 
+    @pytest.mark.skip('pytest 3.7.0 broke this. Not sure why')
     def test_doctestmodule_external_and_issue116(self, testdir):
         """
         CommandLine:
             pytest testing/test_plugin.py::TestXDoctest::test_doctestmodule_external_and_issue116
+
+        Ignore:
+            cd ~/code/xdoctest/testing/data
+            pytest --xdoctest-modules -p pytester -p no:doctest --xdoctest-nocolor
+
+            pip install pytest==3.6.3
+            pytest testing/test_plugin.py::TestXDoctest::test_doctestmodule_external_and_issue116
+
+            pip install pytest==3.6.4
+            pytest testing/test_plugin.py::TestXDoctest::test_doctestmodule_external_and_issue116
+
+            pip install pytest==3.7.0
+            pytest testing/test_plugin.py::TestXDoctest::test_doctestmodule_external_and_issue116
+
+            This was working on pytest-3.6.4
+            It now fails on on pytest-3.7.0
+
+        Ignore:
+            >>> import sys
+            >>> sys.path.append('/home/joncrall/code/xdoctest/testing')
+            >>> from test_plugin import *
+            >>> testdir = explicit_testdir()
+            >>> self = TestXDoctest()
+            >>> self.test_doctestmodule_external_and_issue116(testdir)
         """
-        p = testdir.mkpydir("hello")
+        p = testdir.mkpydir("hello_2")
         p.join("__init__.py").write(_pytest._code.Source("""
             def somefunc():
                 '''
@@ -522,6 +574,7 @@ class TestXDoctest(object):
                     2
                 '''
         """))
+
         result = testdir.runpytest(p, "--xdoctest-modules", *EXTRA_ARGS)
         result.stdout.fnmatch_lines([
             '*1 *>>> i = 0',

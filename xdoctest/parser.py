@@ -38,12 +38,12 @@ from xdoctest import static_analysis as static
 GotWantException = checker.GotWantException
 
 
-INDENT_RE = re.compile('^([ ]*)(?=\S)', re.MULTILINE)
+INDENT_RE = re.compile(r'^([ ]*)(?=\S)', re.MULTILINE)
 
 
 class DoctestParser(object):
     r"""
-    Breaks docstrings into parts useing the `parse` method.
+    Breaks docstrings into parts using the `parse` method.
 
     Example:
         >>> parser = DoctestParser()
@@ -65,7 +65,7 @@ class DoctestParser(object):
 
     def parse(self, string, info=None):
         """
-        Divide the given string into examples and intervening text.
+        Divide the given string into examples and interleaving text.
 
         Args:
             string (str): string representing the doctest
@@ -154,7 +154,7 @@ class DoctestParser(object):
 
     def _package_chunk(self, raw_source_lines, raw_want_lines, lineno=0):
         """
-        if `self.simulate_repl` is True, then each statment is broken into its
+        if `self.simulate_repl` is True, then each statement is broken into its
         own part.  Otherwise, statements are grouped by the closest `want`
         statement.
 
@@ -242,11 +242,12 @@ class DoctestParser(object):
 
         example = slice_example(s1, s2, want_lines)
         example.use_eval = bool(want_lines) and eval_final
+        # example.use_eval = eval_final
         yield example
 
     def _group_labeled_lines(self, labeled_lines):
         # Now that lines have types, group them. This could have done this
-        # above, but functinoality is split for readability.
+        # above, but functionality is split for readability.
         prev_source = None
         grouped_lines = []
         for state, group in it.groupby(labeled_lines, lambda t: t[0]):
@@ -301,11 +302,42 @@ class DoctestParser(object):
         # Strip indentation (and PS1 / PS2 from source)
         exec_source_lines = [p[4:] for p in source_lines]
 
-        # Hack to make comments appear like executable statements
-        # note, this hack never leaves this function because we only are
-        # returning line numbers.
-        exec_source_lines = ['_._  = None' if p.startswith('#') else p
-                             for p in exec_source_lines]
+        def _hack_comment_statements(lines):
+            # Hack to make comments appear like executable statements
+            # note, this hack never leaves this function because we only are
+            # returning line numbers.
+            # FIXME: there is probably a better way to do this.
+            def balanced_intervals(lines):
+                """
+                Finds intervals of balanced nesting syntax
+
+                Args:
+                    lines (List[str]): lines of source code
+                """
+                intervals = []
+                a = len(lines) - 1
+                b = len(lines)
+                while b > 0:
+                    # move the head pointer up until we become balanced
+                    while not static.is_balanced_statement(lines[a:b]):
+                        a -= 1
+                    # we found a balanced interval
+                    intervals.append((a, b))
+                    b = a
+                    a = a - 1
+                intervals = intervals[::-1]
+                return intervals
+            intervals = balanced_intervals(lines)
+            interval_starts = {t[0] for t in intervals}
+            for i, line in enumerate(lines):
+                if i in interval_starts and line.startswith('#'):
+                    # Replace any comment that is not within an interval with a
+                    # statement, so ast.parse will record its line number
+                    yield '_._ = None'
+                else:
+                    yield line
+
+        exec_source_lines = list(_hack_comment_statements(exec_source_lines))
 
         source_block = '\n'.join(exec_source_lines)
         try:
@@ -327,11 +359,12 @@ class DoctestParser(object):
         if NEED_16806_WORKAROUND:  # pragma: nobranch
             ps1_linenos = self._workaround_16806(
                 ps1_linenos, exec_source_lines)
+
         # Respect any line explicitly defined as PS2 (via its prefix)
         ps2_linenos = {
             x for x, p in enumerate(source_lines) if p[:4] != '>>> '
         }
-        ps1_linenos = sorted(ps1_linenos.difference(ps2_linenos))
+        ps1_linenos = sorted(set(ps1_linenos).difference(ps2_linenos))
 
         if len(statement_nodes) == 0:
             eval_final = False
@@ -347,18 +380,41 @@ class DoctestParser(object):
 
         return ps1_linenos, eval_final
 
-    def _workaround_16806(self, ps1_linenos, exec_source_lines):
+    @staticmethod
+    def _workaround_16806(ps1_linenos, exec_source_lines):
         """
         workaround for python issue 16806 (https://bugs.python.org/issue16806)
 
-        Issue causes lineno for multiline strings to give the line they end on,
-        not the line they start on.  A patch for this issue exists
-        `https://github.com/python/cpython/pull/1800`
+        This issue causes the AST to report line numbers for multiline strings
+        as the line they end on. The correct behavior is to report the line
+        they start on. Given a list of line numbers and the original source
+        code, this workaround fixes any line number that points from the end of
+        a multiline string to point to the start of it instead.
+
+        Args:
+            ps1_linenos (List[int]): AST provided line numbers that begin
+                statements and may be Python Issue #16806.
+            exec_source_lines (List[str]): code referenced by ps1_linenos
+
+        Returns:
+            List[int]: new_ps1_lines: Fixed `ps1_linenos` where multiline
+                strings now point to the line where they begin.
 
         Notes:
+            A patch for this issue exists
+            `https://github.com/python/cpython/pull/1800`. This workaround is a
+            no-op when the line numbers are correct, so nothing should break
+            when this bug is fixed.
+
             Starting from the end look at consecutive pairs of indices to
-            inspect the statment it corresponds to.  (the first statment goes
+            inspect the statement it corresponds to.  (the first statement goes
             from ps1_linenos[-1] to the end of the line list.
+
+        Example:
+            >>> ps1_linenos = [0, 2, 3]
+            >>> exec_source_lines = ["x = 1", "y = '''foo", " bar'''", "pass"]
+            >>> DoctestParser._workaround_16806(ps1_linenos, exec_source_lines)
+            [0, 1, 3]
         """
         new_ps1_lines = []
         b = len(exec_source_lines)
@@ -370,12 +426,10 @@ class DoctestParser(object):
                 a -= 1
             # push the new correct value back into the list
             new_ps1_lines.append(a)
-            # set the end position of the next string to be `a` ,
-            # note, because this `a` is correct, the next `b` is
-            # must also be correct.
+            # set the end position of the next string to be `a` , note, because
+            # this `a` is correct, the next `b` is must also be correct.
             b = a
-        ps1_linenos = set(new_ps1_lines)
-        return ps1_linenos
+        return new_ps1_lines[::-1]
 
     def _label_docsrc_lines(self, string):
         """

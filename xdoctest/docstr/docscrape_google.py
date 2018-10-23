@@ -8,6 +8,7 @@ import textwrap
 import collections
 import six
 from xdoctest import exceptions
+from xdoctest.utils.util_str import ensure_unicode
 
 
 def parse_google_args(docstr):
@@ -18,7 +19,7 @@ def parse_google_args(docstr):
         docstr (str): a google-style docstring
 
     Yields:
-        dict: dictionaries of parameter hints
+        Dict[str, str]: dictionaries of parameter hints
 
     Example:
         >>> docstr = parse_google_args.__doc__
@@ -43,19 +44,19 @@ def parse_google_returns(docstr, return_annot=None):
         return_annot (str): the return type annotation (if one exists)
 
     Yields:
-        dict: dictionaries of return value hints
+        Dict[str, str]: dictionaries of return value hints
 
     Example:
         >>> docstr = parse_google_returns.__doc__
         >>> retdict_list = list(parse_google_returns(docstr))
         >>> print([sorted(d.items()) for d in retdict_list])
-        [[('desc', 'dictionaries of return value hints'), ('type', 'dict')]]
+        [[('desc', 'dictionaries of return value hints'), ('type', 'Dict[str, str]')]]
 
     Example:
         >>> docstr = split_google_docblocks.__doc__
         >>> retdict_list = list(parse_google_returns(docstr))
         >>> print([sorted(d.items())[1] for d in retdict_list])
-        [('type', 'list')]
+        [('type', 'List[Tuple]')]
     """
     blocks = split_google_docblocks(docstr)
     for key, block in blocks:
@@ -75,7 +76,7 @@ def parse_google_retblock(lines, return_annot=None):
         return_annot (str): the return type annotation (if one exists)
 
     Yeilds:
-        dict: each dict specifies the return type and its description
+        Dict[str, str]: each dict specifies the return type and its description
 
     Example:
         >>> # Test various ways that retlines can be written
@@ -138,7 +139,7 @@ def parse_google_retblock(lines, return_annot=None):
             retdict['desc'] = final_desc
             return retdict
         retdict = None
-        noindent_pat = re.compile('^[^\s]')
+        noindent_pat = re.compile(r'^[^\s]')
         for line in lines.split('\n'):
             # Lines without indentation should declare new type hints
             if noindent_pat.match(line):
@@ -212,12 +213,12 @@ def parse_google_argblock(lines):
     typename = named('type', '[^)]*?')
     argdesc = named('desc', '.*?')
     # Types are optional, and must be enclosed in parens
-    optional_type = optional(whitespace.join(['\(', typename, '\)']))
+    optional_type = optional(whitespace.join([r'\(', typename, r'\)']))
     # Each arg hint must defined a on newline without any indentation
     argdef = whitespace.join([varname, optional_type, ':'])
     # the description is everything after the colon until either the next line
     # without any indentation or the end of the string
-    end_desc = regex_or(['^' + positive_lookahead('[^\s]'), endofstr])
+    end_desc = regex_or(['^' + positive_lookahead(r'[^\s]'), endofstr])
 
     flags = re.MULTILINE | re.DOTALL
     argline_pat = re.compile('^' + argdef + argdesc + end_desc, flags=flags)
@@ -237,8 +238,9 @@ def split_google_docblocks(docstr):
         docstr (str): a docstring
 
     Returns:
-        list: list of 2-tuples where the first item is a google style docstring
-            tag and the second item is the bock corresponding to that tag.
+        List[Tuple]: list of 2-tuples where the first item is a google style
+            docstring tag and the second item is the bock corresponding to that
+            tag.
 
     CommandLine:
         xdoctest xdoctest.docstr.docscrape_google split_google_docblocks:2
@@ -306,6 +308,8 @@ def split_google_docblocks(docstr):
 
     # Parse out initial documentation lines
     # Then parse out the blocked lines.
+    docstr = ensure_unicode(docstr)
+
     docstr = textwrap.dedent(docstr)
     docstr_lines = docstr.split('\n')
     line_indent = [get_indentation(line) for line in docstr_lines]
@@ -336,8 +340,9 @@ def split_google_docblocks(docstr):
     if len(indents) >= 1:
         if indents[0] != 0:
             # debug info
-            print('ERROR IN PARSING DOCSTRING')
-            print('adjusted = %r' % (adjusted,))
+            print('INDENTATION ERROR IN PARSING DOCSTRING')
+            print('CHECK TO MAKE SURE YOU USED A RAW STRING IF YOU USE "\\n"')
+            # TODO: Report this error with line number and file information
             print('Docstring:')
             print('----------')
             print(docstr)

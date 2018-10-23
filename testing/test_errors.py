@@ -7,6 +7,7 @@ from xdoctest import runner
 from xdoctest import core
 from xdoctest import exceptions
 from xdoctest import utils
+from xdoctest.utils.util_misc import _run_case
 
 
 # def _check_syntaxerror_behavior():
@@ -158,6 +159,27 @@ def test_runner_syntax_error():
     assert '3 warnings' in cap.text
     assert '2 failed' in cap.text
     assert '1 passed' in cap.text
+
+
+def test_parse_doctset_error():
+    source = utils.codeblock(
+        '''
+        def func_with_an_unparsable_google_docstr(a):
+            """
+            This function will have an unparsable google docstr
+
+            Args:
+                a (int): a number
+
+            Example:
+                >>> a = "\\''' + '''n"
+                >>> func(a)
+            """
+            pass
+
+          ''')
+    text = _run_case(source, style='google')
+    text = _run_case(source, style='freeform')
 
 
 if __name__ == '__main__':

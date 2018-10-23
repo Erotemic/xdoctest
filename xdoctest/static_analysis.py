@@ -7,7 +7,6 @@ import re
 import six
 import tokenize
 import sysconfig
-from six.moves import cStringIO as StringIO
 from collections import deque, OrderedDict
 from os.path import (join, exists, expanduser, abspath, split, splitext,
                      isfile, dirname, basename, isdir, realpath, relpath)
@@ -976,20 +975,21 @@ def is_balanced_statement(lines):
         ...     ['foo = (', "'''", ")]'''", ')']) is True
         >>> #assert is_balanced_statement(['foo = ']) is False
         >>> #assert is_balanced_statement(['== ']) is False
-
     """
-    block = '\n'.join(lines)
-    if six.PY2:
-        block = block.encode('utf8')
-    stream = StringIO()
-    stream.write(block)
-    stream.seek(0)
+    iterable = iter(lines)
+    def _readline():
+        return next(iterable)
     try:
-        for t in tokenize.generate_tokens(stream.readline):
+        for t in tokenize.generate_tokens(_readline):
             pass
     except tokenize.TokenError as ex:
         message = ex.args[0]
         if message.startswith('EOF in multi-line'):
+            return False
+        raise
+    except IndentationError as ex:
+        message = ex.args[0]
+        if message.startswith('unindent does not match any outer indentation'):
             return False
         raise
     else:
@@ -1019,18 +1019,16 @@ def extract_comments(source):
         >>> comments = list(extract_comments(source.splitlines()))
         >>> assert comments == ['# comment 1', '# comment 2']
     """
-    if not isinstance(source, six.string_types):
-        source = '\n'.join(source)
-    if six.PY2:
-        try:
-            source = source.encode('utf8')
-        except Exception:
-            pass
-    stream = StringIO()
-    stream.write(source)
-    stream.seek(0)
+    if isinstance(source, six.string_types):
+        lines = source.splitlines()
+    else:
+        lines = source
+
+    iterable = iter(lines)
+    def _readline():
+        return next(iterable)
     try:
-        for t in tokenize.generate_tokens(stream.readline):
+        for t in tokenize.generate_tokens(_readline):
             if t[0] == tokenize.COMMENT:
                 yield t[1]
     except tokenize.TokenError as ex:

@@ -28,7 +28,7 @@ class Config(dict):
     def __init__(self, *args, **kwargs):
         super(Config, self).__init__(*args, **kwargs)
         self.update({
-            'colored': True,
+            'colored': hasattr(sys.stdout, 'isatty') and sys.stdout.isatty(),
             # 'colored': False,
             'on_error': 'raise',
 
@@ -409,6 +409,7 @@ class DocTest(object):
                 except KeyboardInterrupt:  # nocover
                     raise
                 except Exception:
+                    raise
                     self.exc_info = sys.exc_info()
                     ex_type, ex_value, tb = self.exc_info
                     self.tb_lineno = tb.tb_lineno

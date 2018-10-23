@@ -199,16 +199,17 @@ def parse_google_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
         .exceptions.MalformedDocstr: if an error occurs in finding google blocks
         .exceptions.DoctestParseError: if an error occurs in parsing
     """
-    blocks = docscrape_google.split_google_docblocks(docstr)
+    try:
+        blocks = docscrape_google.split_google_docblocks(docstr)
+    except exceptions.MalformedDocstr:
+        print('ERROR PARSING {} GOOGLE BLOCKS IN {} ON line {}'.format(
+            callname, modpath, lineno))
+        print('Did you forget to make a docstr with newlines raw?')
+        raise
     example_blocks = []
+    example_tags = ('Example', 'Doctest', 'Script', 'Benchmark')
     for type, block in blocks:
-        if type.startswith('Example'):
-            example_blocks.append((type, block))
-        if type.startswith('Doctest'):
-            example_blocks.append((type, block))
-        if type.startswith('Script'):
-            example_blocks.append((type, block))
-        if type.startswith('Benchmark'):
+        if type.startswith(example_tags):
             example_blocks.append((type, block))
     for num, (type, (docsrc, offset)) in enumerate(example_blocks):
         # Add one because offset indicates the position of the block-label
@@ -250,7 +251,7 @@ def parse_auto_docstr_examples(docstr, *args, **kwargs):
 
 
 def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
-                          style='auto', fpath=None):
+                          style='auto', fpath=None, parser_kw={}):
     """
     Parses doctests from a docstr and generates example objects.
     The style influences which tests are found.
@@ -260,7 +261,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
 
         callname (str): function or class name or class and method name
 
-        modpath (str): original module the docstring is from
+        modpath (PathLike): original module the docstring is from
 
         lineno (int): the line number (starting from 1) of the docstring.
             (i.e. if you were to go to this line number in the source file
@@ -268,8 +269,10 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
 
         style (str): expected doctest style (e.g. google, freeform, auto)
 
-        fpath (str): the file that the docstring is from
+        fpath (PathLike): the file that the docstring is from
             (if the file was not a module, needed for backwards compatibility)
+
+        parser_kw (dict): passed to the parser
 
     CommandLine:
         python -m xdoctest.core parse_docstr_examples
@@ -311,7 +314,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
     n_parsed = 0
     try:
         for example in parser(docstr, callname=callname, modpath=modpath,
-                              fpath=fpath, lineno=lineno):
+                              fpath=fpath, lineno=lineno, **parser_kw):
             n_parsed += 1
             yield example
     except Exception as ex:
@@ -338,8 +341,11 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
         # Always warn when something bad is happening.
         # However, dont error if the docstr simply has bad syntax
         warnings.warn(msg)
-        if not isinstance(ex, (exceptions.MalformedDocstr,
-                               exceptions.DoctestParseError)):
+        if isinstance(ex, exceptions.MalformedDocstr):
+            pass
+        elif isinstance(ex, exceptions.DoctestParseError):
+            pass
+        else:
             raise
     if DEBUG:
         print('Finished parsing {} examples'.format(n_parsed))
@@ -362,7 +368,7 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
 
     Args:
         modpath_or_name (str): path to or name of the module to be tested
-        exclude (list): glob-patterns of file names to exclude
+        exclude (List[str]): glob-patterns of file names to exclude
         ignore_syntax_errors (bool): if False raise an error when syntax errors
             occur in a doctest (default True)
 
@@ -390,7 +396,10 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
 
         FORCE_DYNAMIC = '--xdoc-force-dynamic' in sys.argv
         # if false just skip extension modules
-        ALLOW_DYNAMIC = '--no-xdoc-dynamic' not in sys.argv
+        # ALLOW_DYNAMIC = '--no-xdoc-dynamic' not in sys.argv
+        ALLOW_DYNAMIC = '--allow-xdoc-dynamic' in sys.argv
+
+        needs_dynamic = False
 
         if FORCE_DYNAMIC:
             # Force dynamic parsing for everything
@@ -405,17 +414,20 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
                 calldefs = dynamic.parse_dynamic_calldefs(modpath)
             except ImportError as ex:
                 # Some modules are just c modules
-                msg = 'Cannot dynamically parse module={} at path={}.\nCaused by: {}'
-                msg = msg.format(modname, modpath, ex)
-                warnings.warn(msg)  # real code contained errors
+                msg = 'Cannot dynamically parse module={} at path={}.\nCaused by: {!r} {}'
+                msg = msg.format(modname, modpath, type(ex), ex)
+                warnings.warn(msg)
             except Exception as ex:
-                msg = 'Cannot dynamically parse module={} at path={}.\nCaused by: {}'
-                msg = msg.format(modname, modpath, ex)
-                warnings.warn(msg)  # real code contained errors
+                msg = 'Cannot dynamically parse module={} at path={}.\nCaused by: {!r} {}'
+                msg = msg.format(modname, modpath, type(ex), ex)
+                warnings.warn(msg)
                 raise
             else:
                 yield calldefs, modpath
         else:
+            if needs_dynamic:
+                continue
+
             try:
                 calldefs = static.parse_calldefs(fpath=modpath)
             except SyntaxError as ex:
@@ -423,7 +435,7 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
                 msg = 'Cannot parse module={} at path={}.\nCaused by: {}'
                 msg = msg.format(modname, modpath, ex)
                 if ignore_syntax_errors:
-                    warnings.warn(msg)  # real code contained errors
+                    warnings.warn(msg)  # real code or docstr contained errors
                     continue
                 else:
                     raise SyntaxError(msg)
@@ -432,17 +444,18 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
 
 
 def parse_doctestables(modpath_or_name, exclude=[], style='auto',
-                       ignore_syntax_errors=True):
+                       ignore_syntax_errors=True, parser_kw={}):
     """
     Parses all doctests within top-level callables of a module and generates
     example objects.  The style influences which tests are found.
 
     Args:
-        modpath_or_name (str): path or name of a module
-        exclude (list): glob-patterns of file names to exclude
+        modpath_or_name (str|PathLike): path or name of a module
+        exclude (List[str]): glob-patterns of file names to exclude
         style (str): expected doctest style (e.g. google, freeform, auto)
         ignore_syntax_errors (bool): if False raise an error when syntax errors
             occur in a doctest (default True)
+        parser_kw: extra args passed to the parser
 
     Yields:
         xdoctest.doctest_example.DocTest : parsed doctest example objects
@@ -491,7 +504,8 @@ def parse_doctestables(modpath_or_name, exclude=[], style='auto',
                 for example in parse_docstr_examples(docstr, callname=callname,
                                                      modpath=modpath,
                                                      lineno=lineno,
-                                                     style=style):
+                                                     style=style,
+                                                     parser_kw=parser_kw):
                     yield example
 
 

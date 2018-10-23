@@ -52,6 +52,10 @@ def pytest_addoption(parser):
     # TODO: make this programatically mirror the argparse in __main__
     from xdoctest import core
 
+    def str_lower(x):
+        # python2 fix
+        return str.lower(str(x))
+
     group = parser.getgroup('collect')
     parser.addini('xdoctest_encoding', 'encoding used for xdoctest files', default='utf-8')
     # parser.addini('xdoctest_options', 'default directive flags for doctests',
@@ -70,18 +74,18 @@ def pytest_addoption(parser):
                     dest='xdoctest_ignore_syntax_errors')
 
     group.addoption('--xdoctest-style', '--xdoc-style',
-                    type=str.lower, default='freeform',
+                    type=str_lower, default='freeform',
                     help='basic style used to write doctests',
                     choices=core.DOCTEST_STYLES,
                     dest='xdoctest_style')
 
     group.addoption('--xdoctest-options', '--xdoc-options',
-                    type=str.lower, default=None,
+                    type=str_lower, default=None,
                     help='default directive flags for doctests',
                     dest='xdoctest_options')
 
     group.addoption('--xdoctest-report', '--xdoc-report',
-                    type=str.lower, default='udiff',
+                    type=str_lower, default='udiff',
                     help='choose another output format for diffs on xdoctest failure',
                     choices=DOCTEST_REPORT_CHOICES,
                     dest='xdoctest_report')

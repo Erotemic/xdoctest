@@ -55,13 +55,13 @@ def import_module_from_path(modpath):
     import xdoctest.static_analysis as static
     dpath, rel_modpath = static.split_modpath(modpath)
     modname = static.modpath_to_modname(modpath)
-    with PythonPathContext(dpath):
-        try:
+    try:
+        with PythonPathContext(dpath):
             module = import_module_from_name(modname)
-        except Exception:
-            print('Failed to import modname={} with modpath={}'.format(
-                modname, modpath))
-            raise
+    except Exception:
+        print('Failed to import modname={} with modpath={}'.format(
+            modname, modpath))
+        raise
     # TODO: use this implementation once pytest fixes importlib
     # if six.PY2:  # nocover
     #     import imp
@@ -104,7 +104,25 @@ class PythonPathContext(object):
         sys.path.insert(self.index, self.dpath)
 
     def __exit__(self, type, value, trace):
-        if len(sys.path) <= self.index or sys.path[self.index] != self.dpath:
-            raise AssertionError(
-                'sys.path significantly changed while in PythonPathContext')
+        msg_parts = [
+            'sys.path significantly changed while in PythonPathContext.'
+        ]
+        if len(sys.path) <= self.index:
+            msg_parts.append(
+                'len(sys.path) = {!r} but index is {!r}'.format(
+                    len(sys.path), self.index))
+            raise AssertionError('\n'.join(msg_parts))
+
+        if sys.path[self.index] != self.dpath:
+            msg_parts.append(
+                'Expected {!r} at index {!r} but got {!r}'.format(
+                    self.dpath, self.index, sys.path[self.index]
+                ))
+            try:
+                real_index = sys.path.index(self.dpath)
+                msg_parts.append('Expected dpath was at index {}'.format(real_index))
+                msg_parts.append('This could indicate conflicting module namespaces')
+            except IndexError:
+                msg_parts.append('Expected dpath was not in sys.path')
+            raise AssertionError('\n'.join(msg_parts))
         sys.path.pop(self.index)
