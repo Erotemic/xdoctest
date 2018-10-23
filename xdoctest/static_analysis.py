@@ -7,7 +7,6 @@ import re
 import six
 import tokenize
 import sysconfig
-from six.moves import cStringIO as StringIO
 from collections import deque, OrderedDict
 from os.path import (join, exists, expanduser, abspath, split, splitext,
                      isfile, dirname, basename, isdir, realpath, relpath)
@@ -957,7 +956,7 @@ def is_modname_importable(modname, sys_path=None, exclude=None):
     return flag
 
 
-def is_balanced_statement(lines, flag=0):
+def is_balanced_statement(lines):
     """
     Checks if the lines have balanced parens, brakets, curlies and strings
 
@@ -977,15 +976,6 @@ def is_balanced_statement(lines, flag=0):
         >>> #assert is_balanced_statement(['foo = ']) is False
         >>> #assert is_balanced_statement(['== ']) is False
     """
-    # if flag:
-    #     block = '\n'.join(lines)
-    #     if six.PY2:
-    #         block = block.encode('utf8')
-    #     stream = StringIO()
-    #     stream.write(block)
-    #     stream.seek(0)
-    #     readline = stream.readline
-    # else:
     iterable = iter(lines)
     def _readline():
         return next(iterable)
@@ -1033,17 +1023,7 @@ def extract_comments(source):
         lines = source.splitlines()
     else:
         lines = source
-        # source = '\n'.join(source)
 
-    # if six.PY2:
-    #     try:
-    #         source = source.encode('utf8')
-    #     except Exception:
-    #         pass
-    # stream = StringIO()
-    # stream.write(source)
-    # stream.seek(0)
-    # _readline = stream.readline
     iterable = iter(lines)
     def _readline():
         return next(iterable)
