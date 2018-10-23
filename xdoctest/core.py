@@ -396,7 +396,10 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
 
         FORCE_DYNAMIC = '--xdoc-force-dynamic' in sys.argv
         # if false just skip extension modules
-        ALLOW_DYNAMIC = '--no-xdoc-dynamic' not in sys.argv
+        # ALLOW_DYNAMIC = '--no-xdoc-dynamic' not in sys.argv
+        ALLOW_DYNAMIC = '--allow-xdoc-dynamic' in sys.argv
+
+        needs_dynamic = False
 
         if FORCE_DYNAMIC:
             # Force dynamic parsing for everything
@@ -411,17 +414,20 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
                 calldefs = dynamic.parse_dynamic_calldefs(modpath)
             except ImportError as ex:
                 # Some modules are just c modules
-                msg = 'Cannot dynamically parse module={} at path={}.\nCaused by: {}'
-                msg = msg.format(modname, modpath, ex)
-                warnings.warn(msg)  # real code contained errors
+                msg = 'Cannot dynamically parse module={} at path={}.\nCaused by: {!r} {}'
+                msg = msg.format(modname, modpath, type(ex), ex)
+                warnings.warn(msg)
             except Exception as ex:
-                msg = 'Cannot dynamically parse module={} at path={}.\nCaused by: {}'
-                msg = msg.format(modname, modpath, ex)
-                warnings.warn(msg)  # real code contained errors
+                msg = 'Cannot dynamically parse module={} at path={}.\nCaused by: {!r} {}'
+                msg = msg.format(modname, modpath, type(ex), ex)
+                warnings.warn(msg)
                 raise
             else:
                 yield calldefs, modpath
         else:
+            if needs_dynamic:
+                continue
+
             try:
                 calldefs = static.parse_calldefs(fpath=modpath)
             except SyntaxError as ex:
