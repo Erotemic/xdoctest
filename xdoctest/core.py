@@ -332,7 +332,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
             if isinstance(ex.orig_ex, SyntaxError):
                 extra_help = ''
                 if ex.orig_ex.text:
-                    extra_help += ex.orig_ex.text
+                    extra_help += utils.ensure_unicode(ex.orig_ex.text)
                 if ex.orig_ex.offset is not None:
                     extra_help += ' ' * (ex.orig_ex.offset - 1) + '^'
                 if extra_help:
