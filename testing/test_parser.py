@@ -384,7 +384,7 @@ def test_nonbalanced_statement():
     self = parser.DoctestParser()
     with pytest.raises(exceptions.DoctestParseError) as exc_info:
         self.parse(string)
-    assert exc_info.value.orig_ex.msg == 'ill-formed doctest'
+    assert exc_info.value.orig_ex.msg.startswith('ill-formed doctest')
 
 
 def test_bad_indent():

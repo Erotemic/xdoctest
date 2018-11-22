@@ -68,7 +68,7 @@ class DocTest(object):
     Example:
         >>> from xdoctest import core
         >>> from xdoctest import doctest_example
-        >>> modpath = doctest_example.__file__
+        >>> modpath = doctest_example.__file__.replace('.pyc', '.py')
         >>> testables = core.parse_doctestables(modpath)
         >>> for test in testables:
         >>>     if test.callname == 'DocTest':

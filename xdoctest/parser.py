@@ -6,14 +6,14 @@ Terms and definitions:
         the correct global / local variable context.
 
     PS1 : The original meaning is "Prompt String 1". In the context of
-        xdoctest, instead of refering to the prompt prefix, we use PS1 to refer
+        xdoctest, instead of referring to the prompt prefix, we use PS1 to refer
         to a line that starts a "logical block" of code. In the original
         doctest module these all had to be prefixed with ">>>". In xdoctest the
         prefix is used to simply denote the code is part of a doctest. It does
         not necessarilly mean a new "logical block" is starting.
 
     PS2 : The original meaning is "Prompt String 2". In the context of
-        xdoctest, instead of refering to the prompt prefix, we use PS2 to refer
+        xdoctest, instead of referring to the prompt prefix, we use PS2 to refer
         to a line that continues a "logical block" of code. In the original
         doctest module these all had to be prefixed with "...". However,
         xdoctest uses parsing to automatically determine this.
@@ -33,6 +33,9 @@ from xdoctest import directive
 from xdoctest import exceptions
 from xdoctest import doctest_part
 from xdoctest import static_analysis as static
+
+
+DEBUG = False
 
 
 GotWantException = checker.GotWantException
@@ -125,18 +128,33 @@ class DoctestParser(object):
         if min_indent > 0:
             string = '\n'.join([l[min_indent:] for l in string.splitlines()])
 
+        labeled_lines = None
+        grouped_lines = None
+        all_parts = None
         try:
             labeled_lines = self._label_docsrc_lines(string)
             grouped_lines = self._group_labeled_lines(labeled_lines)
-
             all_parts = list(self._package_groups(grouped_lines))
         except Exception as orig_ex:
-            # print('Failed to parse string=...')
-            # print(string)
-            # print(info)
-            raise exceptions.DoctestParseError('Failed to parse doctest',
-                                               string=string, info=info,
-                                               orig_ex=orig_ex)
+
+            if labeled_lines is None:
+                failpoint = '_label_docsrc_lines'
+            elif grouped_lines is None:
+                failpoint = '_group_labeled_lines'
+            elif all_parts is None:
+                failpoint = '_package_groups'
+            if DEBUG:
+                print('Failed to parse string = <<<<<<<<<<<')
+                print(string)
+                print('>>>>>>>>>>>  # end string')
+                print('info = {!r}'.format(info))
+                print('-----')
+                print('labeled_lines = {!r}'.format(labeled_lines))
+                print('grouped_lines = {!r}'.format(grouped_lines))
+                print('all_parts = {!r}'.format(all_parts))
+            raise exceptions.DoctestParseError(
+                'Failed to parse doctest in {}'.format(failpoint),
+                string=string, info=info, orig_ex=orig_ex)
         return all_parts
 
     def _package_groups(self, grouped_lines):
@@ -178,11 +196,11 @@ class DoctestParser(object):
 
         exec_source_lines = [p[4:] for p in source_lines]
 
-        # Find the line number of each standalone statment
+        # Find the line number of each standalone statement
         ps1_linenos, eval_final = self._locate_ps1_linenos(source_lines)
 
         # Find all directives here:
-        # A directive necessarilly will split a doctest into multiple parts
+        # A directive necessarily will split a doctest into multiple parts
         # There are two types: block directives and inline-directives
         # * Block directives must exist on their own PS1 line
         # * Block directives insert a breakpoint before
@@ -369,7 +387,7 @@ class DoctestParser(object):
         if len(statement_nodes) == 0:
             eval_final = False
         else:
-            # Is the last statement evaluatable?
+            # Is the last statement evaluate-able?
             if sys.version_info.major == 2:  # nocover
                 eval_final = isinstance(statement_nodes[-1], (
                     ast.Expr, ast.Print))
@@ -477,7 +495,15 @@ class DoctestParser(object):
                 try:
                     line_idx, next_line = next(line_iter)
                 except StopIteration:
-                    raise SyntaxError('ill-formed doctest')
+                    if DEBUG:
+                        print('source_parts = {!r}'.format(source_parts))
+                        print('SOURCE PARTS <<<<<<<<<<<')
+                        for part in source_parts:
+                            print(part)
+                        print('>>>>>>>>>>>')
+                    raise SyntaxError(
+                        'ill-formed doctest: all parts have been processed '
+                        'but the doctest source is not balanced')
                 norm_line = next_line[state_indent:]
                 prefix = norm_line[:4]
                 suffix = norm_line[4:]
@@ -488,7 +514,7 @@ class DoctestParser(object):
                 source_parts.append(suffix)
                 yield next_line
 
-        # parse and differenatiate between doctest source and want statements.
+        # parse and differentiate between doctest source and want statements.
         labeled_lines = []
         state_indent = 0
 
@@ -569,16 +595,13 @@ class DoctestParser(object):
                     for part in _complete_source(line, state_indent, line_iter):
                         labeled_lines.append((DSRC, part))
                 except SyntaxError as orig_ex:
+                    if DEBUG:
+                        print('Failed to label source lines')
+                        print('Labeled lines so far: <<<<<<<<<<<')
+                        for line in labeled_lines:
+                            print(line)
+                        print('>>>>>>>>>>>')
                     raise
-                    # msg = ('SYNTAX ERROR WHEN PARSING DOCSTRING: \n')
-                    # msg += string
-                    # print(msg)
-                    # ex = exceptions.DoctestParseError('Syntax Error',
-                    #                                   string=string,
-                    #                                   orig_ex=orig_ex)
-                    # raise ex
-                    # warnings.warn(msg)
-
             elif curr_state == WANT:
                 labeled_lines.append((WANT, line))
             elif curr_state == TEXT:

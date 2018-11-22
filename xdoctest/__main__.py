@@ -59,6 +59,14 @@ def main():
     parser.add_argument(*('--nocolor',), dest='nocolor', action='store_true',
                         help=('Disable ANSI coloration.'))
 
+    parser.add_argument(*('--durations',), type=int,
+                        help=('specify execution times for slowest N tests.'
+                              'N=0 will show times for all tests'),
+                        default=None)
+
+    parser.add_argument(*('--time',), dest='time', action='store_true',
+                        help=('Same as if durrations=0'))
+
     args, unknown = parser.parse_known_args()
     ns = args.__dict__.copy()
 
@@ -70,7 +78,9 @@ def main():
     offset_linenos = ns['offset_linenos']
     nocolor = ns['nocolor']
     options = ns['options']
-
+    durations = ns['durations']
+    if ns['time']:
+        durations = 0
     # ---
     # Allow for positional args to specify defaults for unspecified optionals
     errors = []
@@ -126,7 +136,7 @@ def main():
     }
 
     xdoctest.doctest_module(modname, argv=[command], style=style,
-                            config=config)
+                            config=config, durations=durations)
 
 
 if __name__ == '__main__':

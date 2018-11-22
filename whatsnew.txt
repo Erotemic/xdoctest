@@ -1,3 +1,9 @@
+Version 0.6.2
+-------------
+* Fixed bug in `static_analysis.is_balanced_statement` and
+  `static_analysis.extract_comments` having to do with empty lines
+
+
 Version 0.6.1
 -------------
 * Fixed python2 unicode error in collection phase

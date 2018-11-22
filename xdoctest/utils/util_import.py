@@ -47,7 +47,7 @@ def import_module_from_path(modpath):
 
     Example:
         >>> from xdoctest import utils
-        >>> modpath = utils.__file__
+        >>> modpath = utils.__file__.replace('.pyc', '.py')
         >>> module = import_module_from_path(modpath)
         >>> assert module is utils
     """
