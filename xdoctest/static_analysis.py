@@ -409,13 +409,20 @@ def parse_calldefs(source=None, fpath=None):
         >>> calldefs = parse_calldefs(fpath=fpath)
         >>> assert 'parse_calldefs' in calldefs
     """
+    if six.PY2:
+        fpath = fpath.replace('.pyc', '.py')
+
     if source is None:  # pragma: no branch
         try:
             with open(fpath, 'rb') as file_:
                 source = file_.read().decode('utf-8')
         except Exception as ex:
-            print('Unable to read fpath = {!r}'.format(fpath))
-            raise
+            try:
+                with open(fpath, 'rb') as file_:
+                    source = file_.read()
+            except Exception:
+                print('Unable to read fpath = {!r}'.format(fpath))
+                raise
     try:
         self = TopLevelVisitor.parse(source)
         return self.calldefs
@@ -488,8 +495,12 @@ def parse_static_value(key, source=None, fpath=None):
         >>> #parse_static_value('bar', source='foo=1; bar = [1, foo]')
     """
     if source is None:  # pragma: no branch
-        with open(fpath, 'rb') as file_:
-            source = file_.read().decode('utf-8')
+        try:
+            with open(fpath, 'rb') as file_:
+                source = file_.read().decode('utf-8')
+        except Exception as ex:
+            with open(fpath, 'rb') as file_:
+                source = file_.read()
     pt = ast.parse(source)
 
     class AssignentVisitor(ast.NodeVisitor):
@@ -563,7 +574,7 @@ def normalize_modpath(modpath, hide_init=True, hide_main=False):
 
     Example:
         >>> import xdoctest.static_analysis as static
-        >>> modpath = static.__file__
+        >>> modpath = static.__file__.replace('.pyc', '.py')
         >>> assert static.normalize_modpath(modpath) == modpath
         >>> dpath = dirname(modpath)
         >>> res0 = static.normalize_modpath(dpath, hide_init=0, hide_main=0)
@@ -681,7 +692,7 @@ def split_modpath(modpath, check=True):
 
     Example:
         >>> from xdoctest import static_analysis
-        >>> modpath = static_analysis.__file__
+        >>> modpath = static_analysis.__file__.replace('.pyc', '.py')
         >>> modpath = modpath.replace('.pyc', '.py')
         >>> dpath, rel_modpath = split_modpath(modpath)
         >>> assert join(dpath, rel_modpath) == modpath
@@ -737,15 +748,15 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False, check=True,
 
     Example:
         >>> from xdoctest import static_analysis
-        >>> modpath = static_analysis.__file__
+        >>> modpath = static_analysis.__file__.replace('.pyc', '.py')
         >>> modpath = modpath.replace('.pyc', '.py')
         >>> modname = modpath_to_modname(modpath)
         >>> assert modname == 'xdoctest.static_analysis'
 
     Example:
         >>> import xdoctest
-        >>> assert modpath_to_modname(xdoctest.__file__) == 'xdoctest'
-        >>> assert modpath_to_modname(dirname(xdoctest.__file__)) == 'xdoctest'
+        >>> assert modpath_to_modname(xdoctest.__file__.replace('.pyc', '.py')) == 'xdoctest'
+        >>> assert modpath_to_modname(dirname(xdoctest.__file__.replace('.pyc', '.py'))) == 'xdoctest'
 
     Example:
         >>> modpath = modname_to_modpath('_ctypes')
@@ -973,10 +984,16 @@ def is_balanced_statement(lines):
         >>> assert is_balanced_statement(['foo = (', "')(')"]) is True
         >>> assert is_balanced_statement(
         ...     ['foo = (', "'''", ")]'''", ')']) is True
+        >>> assert is_balanced_statement(
+        ...     ['foo = ', "'''", ")]'''", ')']) is False
         >>> #assert is_balanced_statement(['foo = ']) is False
         >>> #assert is_balanced_statement(['== ']) is False
+        >>> lines = ['def foo():', '', '    x = 1', 'assert True', '']
+        >>> assert is_balanced_statement(lines)
+
     """
-    iterable = iter(lines)
+    # Only iterate through non-empty lines otherwise tokenize will stop short
+    iterable = (line for line in lines if line)
     def _readline():
         return next(iterable)
     try:
@@ -1024,7 +1041,8 @@ def extract_comments(source):
     else:
         lines = source
 
-    iterable = iter(lines)
+    # Only iterate through non-empty lines otherwise tokenize will stop short
+    iterable = (line for line in lines if line)
     def _readline():
         return next(iterable)
     try:

@@ -322,6 +322,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
             print('Caught an error when parsing')
         msg = ('Cannot scrape callname={} in modpath={} line={}.\n'
                'Caused by: {}\n')
+        # raise
         msg = msg.format(callname, modpath, lineno, repr(ex))
         if isinstance(ex, exceptions.DoctestParseError):
             # TODO: Can we print a nicer syntax error here?

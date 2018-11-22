@@ -14,7 +14,7 @@ import sys
 
 
 def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
-                   style='auto', verbose=None, config=None):
+                   style='auto', verbose=None, config=None, durations=None):
     """
     Executes requestsed google-style doctests in a package or module.
     Main entry point into the testing framework.
@@ -102,6 +102,13 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
             run_summary = {'action': 'dump'}
         else:
             # Run the gathered doctest examples
+
+            RANDOMIZE_ORDER = True
+            if RANDOMIZE_ORDER:
+                # randomize the order in which tests are run
+                import random
+                random.shuffle(enabled_examples)
+
             run_summary = _run_examples(enabled_examples, verbose, config)
 
             toc = time.time()
@@ -110,7 +117,8 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
             # Print final summary info in a style similar to pytest
             if verbose >= 0 and run_summary:
                 _print_summary_report(run_summary, parse_warnlist, n_seconds,
-                                      enabled_examples, config=config)
+                                      enabled_examples, durations,
+                                      config=config)
 
     return run_summary
 
@@ -142,7 +150,7 @@ def _convert_to_test_module(enabled_examples):
 
 
 def _print_summary_report(run_summary, parse_warnlist, n_seconds,
-                          enabled_examples, config=None):
+                          enabled_examples, durations, config=None):
     """
     Summary report formatting and printing
     """
@@ -201,8 +209,8 @@ def _print_summary_report(run_summary, parse_warnlist, n_seconds,
     pairs = zip([n_failed, n_passed, n_warnings],
                 ['failed', 'passed', 'warnings'])
     parts = ['{n} {t}'.format(n=n, t=t) for n, t in pairs  if n > 0]
-    fmtstr = '=== ' + ' '.join(parts) + ' in {n_seconds:.2f} seconds ==='
-    summary_line = fmtstr.format(n_seconds=n_seconds)
+    _fmtstr = '=== ' + ' '.join(parts) + ' in {n_seconds:.2f} seconds ==='
+    summary_line = _fmtstr.format(n_seconds=n_seconds)
     # color text based on worst type of error
     if n_failed > 0:
         cprint(summary_line, 'red')
@@ -210,6 +218,14 @@ def _print_summary_report(run_summary, parse_warnlist, n_seconds,
         cprint(summary_line, 'yellow')
     else:
         cprint(summary_line, 'green')
+
+    if durations is not None:
+        times = run_summary.get('times', {})
+        test_time_tups = sorted(times.items(), key=lambda x: x[1])
+        if durations > 0:
+            test_time_tups = test_time_tups[-durations:]
+        for example, n_secs in test_time_tups:
+            print('time: {:0.8f}, test: {}'.format(n_secs, example.cmdline))
 
 
 def _gather_zero_arg_examples(modpath):
@@ -242,15 +258,28 @@ def _run_examples(enabled_examples, verbose, config=None):
     summaries = []
     failed = []
     warned = []
+    times = {}
     # It is important to raise immediatly within the test to display errors
     # returned from multiprocessing. Especially in zero-arg mode
+
+    FIRST_TEST_HACK = True
 
     on_error = 'return' if n_total > 1 else 'raise'
     on_error = 'return'
     for example in enabled_examples:
         try:
             try:
+                tic = time.time()
                 summary = example.run(verbose=verbose, on_error=on_error)
+                toc = time.time()
+                if FIRST_TEST_HACK:
+                    # Run the first test again to get a better time estimate
+                    tic = time.time()
+                    summary = example.run(verbose=verbose, on_error=on_error)
+                    toc = time.time()
+                    FIRST_TEST_HACK = False
+                n_seconds = toc - tic
+                times[example] = n_seconds
             except Exception:
                 print('\n'.join(example.repr_failure(with_tb=False)))
                 raise
@@ -304,6 +333,7 @@ def _run_examples(enabled_examples, verbose, config=None):
         'n_passed': n_passed,
         'n_failed': n_total - n_passed,
         'n_total': n_total,
+        'times': times,
     }
     return run_summary
 

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import, unicode_literals
 from os.path import join
+import six
 import warnings
 import pytest
 from xdoctest import runner
@@ -150,15 +151,23 @@ def test_runner_syntax_error():
         runner.doctest_module(modpath, 'all', argv=[''], style='freeform',
                               verbose=0)
 
+    print('CAPTURED <<<<<<<<<<<')
     print(utils.indent(cap.text))
+    print('>>>>>>>>>>> # CAPTURED')
 
-    assert '1 run-time warnings' in cap.text
-    assert '2 parse-time warnings' in cap.text
+    if six.PY2:
+        captext = utils.ensure_unicode(cap.text)
+    else:
+        captext = cap.text
 
-    # Assert summary line
-    assert '3 warnings' in cap.text
-    assert '2 failed' in cap.text
-    assert '1 passed' in cap.text
+    if True or not six.PY2:  # Why does this have issues on the dashboards?
+        assert '1 run-time warnings' in captext
+        assert '2 parse-time warnings' in captext
+
+        # Assert summary line
+        assert '3 warnings' in captext
+        assert '2 failed' in captext
+        assert '1 passed' in captext
 
 
 def test_parse_doctset_error():
@@ -187,6 +196,7 @@ if __name__ == '__main__':
     CommandLine:
         export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/testing
         python ~/code/xdoctest/testing/test_errors.py
+        pytest ~/code/xdoctest/testing/test_errors.py -s --verbose
     """
     import xdoctest
     xdoctest.doctest_module(__file__)
