@@ -359,6 +359,8 @@ class DoctestParser(object):
 
         source_block = '\n'.join(exec_source_lines)
         try:
+            # Note Python2.7 does not accept unicode variable names so this
+            # will fail (in 2.7) if source contains a unicode varname.
             pt = ast.parse(source_block, filename='<source_block>')
         except SyntaxError as syn_ex:
             # Assign missing information to the syntax error.
@@ -501,6 +503,9 @@ class DoctestParser(object):
                         for part in source_parts:
                             print(part)
                         print('>>>>>>>>>>>')
+                    # TODO: use AST to reparse all doctest parts to discover
+                    # where the syntax error in the doctest is and then raise
+                    # it.
                     raise SyntaxError(
                         'ill-formed doctest: all parts have been processed '
                         'but the doctest source is not balanced')
