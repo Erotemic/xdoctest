@@ -361,7 +361,17 @@ class DoctestParser(object):
         try:
             # Note Python2.7 does not accept unicode variable names so this
             # will fail (in 2.7) if source contains a unicode varname.
-            pt = ast.parse(source_block, filename='<source_block>')
+
+            if six.PY2:
+                # In Python2.7 fix __future__ issues
+                import __future__
+                flags = ast.PyCF_ONLY_AST
+                flags |= __future__.print_function.compiler_flag
+                # flags |= __future__.print_function.unicode_literals
+                pt = compile(source_block, filename='<source_block>',
+                             mode='exec', flags=flags)
+            else:
+                pt = ast.parse(source_block, filename='<source_block>')
         except SyntaxError as syn_ex:
             # Assign missing information to the syntax error.
             if syn_ex.text is None:
