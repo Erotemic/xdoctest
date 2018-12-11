@@ -2,6 +2,9 @@ Version 0.6.2
 -------------
 * Fixed bug in `static_analysis.is_balanced_statement` and
   `static_analysis.extract_comments` having to do with empty lines
+* Fixed odd corner case where import_module_from_path seemed to modify `sys.path` in a specific environment
+* Fixed python2 future issues using the print name in doctests.
+* Added option to print test times in the runner.
 
 
 Version 0.6.1

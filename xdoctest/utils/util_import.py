@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import, unicode_literals
 import sys
+import importlib
 
 
 def import_module_from_name(modname):
@@ -26,14 +27,20 @@ def import_module_from_name(modname):
         >>> assert [m.__name__ for m in modules] == modname_list
         >>> assert all(m in sys.modules for m in modname_list)
     """
-
-    # The __import__ statment is weird
-    if '.' in modname:
-        fromlist = modname.split('.')[-1]
-        fromlist_ = list(map(str, fromlist))  # needs to be ascii for python2.7
-        module = __import__(modname, {}, {}, fromlist_, 0)
+    if True:
+        # See if this fixes the Docker issue we saw but were unable to
+        # reproduce on another environment. Either way its better to use the
+        # standard importlib implementation than the one I wrote a long time
+        # ago.
+        module = importlib.import_module(modname)
     else:
-        module = __import__(modname, {}, {}, [], 0)
+        # The __import__ statment is weird
+        if '.' in modname:
+            fromlist = modname.split('.')[-1]
+            fromlist_ = list(map(str, fromlist))  # needs to be ascii for python2.7
+            module = __import__(modname, {}, {}, fromlist_, 0)
+        else:
+            module = __import__(modname, {}, {}, [], 0)
     return module
 
 
