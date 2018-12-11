@@ -357,6 +357,9 @@ def _rectify_to_modpath(modpath_or_name):
     """ if modpath_or_name is a name, statically converts it to a path """
     modpath = static.modname_to_modpath(modpath_or_name)
     if modpath is None:
+        if six.PY2:
+            if modpath_or_name.endswith('.pyc'):
+                modpath_or_name = modpath_or_name[:-1]
         if exists(modpath_or_name):
             modpath = modpath_or_name
         else:
