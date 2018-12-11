@@ -65,10 +65,15 @@ class DocTest(object):
             begins on. (i.e. if you were to go to this line in the file, the
             first line of the doctest should be on this line).
 
+    CommandLine:
+        xdoctest -m xdoctest.doctest_example DocTest
+
     Example:
         >>> from xdoctest import core
         >>> from xdoctest import doctest_example
+        >>> import os
         >>> modpath = doctest_example.__file__.replace('.pyc', '.py')
+        >>> modpath = os.path.realpath(modpath)
         >>> testables = core.parse_doctestables(modpath)
         >>> for test in testables:
         >>>     if test.callname == 'DocTest':

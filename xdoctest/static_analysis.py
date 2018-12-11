@@ -572,10 +572,13 @@ def normalize_modpath(modpath, hide_init=True, hide_main=False):
         hide_init (bool): if True, always strip away main files otherwise
            ignore __main__.py.
 
+    CommandLine:
+        xdoctest -m xdoctest.static_analysis normalize_modpath
+
     Example:
         >>> import xdoctest.static_analysis as static
-        >>> modpath = static.__file__.replace('.pyc', '.py')
-        >>> assert static.normalize_modpath(modpath) == modpath
+        >>> modpath = static.__file__
+        >>> assert static.normalize_modpath(modpath) == modpath.replace('.pyc', '.py')
         >>> dpath = dirname(modpath)
         >>> res0 = static.normalize_modpath(dpath, hide_init=0, hide_main=0)
         >>> res1 = static.normalize_modpath(dpath, hide_init=0, hide_main=1)
@@ -586,6 +589,9 @@ def normalize_modpath(modpath, hide_init=True, hide_main=False):
         >>> assert not res2.endswith('.py')
         >>> assert not res3.endswith('.py')
     """
+    if six.PY2:
+        if modpath.endswith('.pyc'):
+            modpath = modpath[:-1]
     if hide_init:
         if basename(modpath) == '__init__.py':
             modpath = dirname(modpath)
@@ -692,12 +698,24 @@ def split_modpath(modpath, check=True):
 
     Example:
         >>> from xdoctest import static_analysis
+<<<<<<< HEAD
         >>> modpath = static_analysis.__file__.replace('.pyc', '.py')
         >>> modpath = modpath.replace('.pyc', '.py')
+||||||| parent of f4f33c9... Fixed issues with pyc files in 2.7
+        >>> modpath = static_analysis.__file__
+        >>> modpath = modpath.replace('.pyc', '.py')
+=======
+        >>> modpath = static_analysis.__file__.replace('.pyc', '.py')
+        >>> modpath = abspath(modpath)
+>>>>>>> f4f33c9... Fixed issues with pyc files in 2.7
         >>> dpath, rel_modpath = split_modpath(modpath)
-        >>> assert join(dpath, rel_modpath) == modpath
+        >>> recon = join(dpath, rel_modpath)
+        >>> assert recon == modpath
         >>> assert rel_modpath == join('xdoctest', 'static_analysis.py')
     """
+    if six.PY2:
+        if modpath.endswith('.pyc'):
+            modpath = modpath[:-1]
     modpath_ = abspath(expanduser(modpath))
     if check:
         if not exists(modpath_):
@@ -745,6 +763,9 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False, check=True,
 
     Raises:
         ValueError: if check is True and the path does not exist
+
+    CommandLine:
+        xdoctest -m xdoctest.static_analysis modpath_to_modname
 
     Example:
         >>> from xdoctest import static_analysis
