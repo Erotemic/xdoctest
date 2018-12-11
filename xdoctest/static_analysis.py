@@ -698,16 +698,8 @@ def split_modpath(modpath, check=True):
 
     Example:
         >>> from xdoctest import static_analysis
-<<<<<<< HEAD
-        >>> modpath = static_analysis.__file__.replace('.pyc', '.py')
-        >>> modpath = modpath.replace('.pyc', '.py')
-||||||| parent of f4f33c9... Fixed issues with pyc files in 2.7
-        >>> modpath = static_analysis.__file__
-        >>> modpath = modpath.replace('.pyc', '.py')
-=======
         >>> modpath = static_analysis.__file__.replace('.pyc', '.py')
         >>> modpath = abspath(modpath)
->>>>>>> f4f33c9... Fixed issues with pyc files in 2.7
         >>> dpath, rel_modpath = split_modpath(modpath)
         >>> recon = join(dpath, rel_modpath)
         >>> assert recon == modpath
