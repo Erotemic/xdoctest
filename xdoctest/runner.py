@@ -103,7 +103,7 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
         else:
             # Run the gathered doctest examples
 
-            RANDOMIZE_ORDER = True
+            RANDOMIZE_ORDER = False
             if RANDOMIZE_ORDER:
                 # randomize the order in which tests are run
                 import random
@@ -262,7 +262,7 @@ def _run_examples(enabled_examples, verbose, config=None):
     # It is important to raise immediatly within the test to display errors
     # returned from multiprocessing. Especially in zero-arg mode
 
-    FIRST_TEST_HACK = True
+    FIRST_TEST_HACK = False  # TODO: remove this code
 
     on_error = 'return' if n_total > 1 else 'raise'
     on_error = 'return'

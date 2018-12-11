@@ -341,6 +341,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
 
         # Always warn when something bad is happening.
         # However, dont error if the docstr simply has bad syntax
+        print('msg = {}'.format(msg))
         warnings.warn(msg)
         if isinstance(ex, exceptions.MalformedDocstr):
             pass
