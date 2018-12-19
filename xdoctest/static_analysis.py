@@ -870,9 +870,11 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
 
     Args:
         modname (str): name of module to find
-        sys_path (list): if specified overrides `sys.path` (default None)
-        exclude (list): list of directory paths. if specified prevents these
-            directories from being searched.
+        sys_path (List[PathLike], default=None):
+            if specified overrides `sys.path`
+        exclude (List[PathLike], default=None):
+            list of directory paths. if specified prevents these directories
+            from being searched.
 
     Notes:
         This is much slower than the pkgutil mechanisms.
