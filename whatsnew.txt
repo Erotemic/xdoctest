@@ -1,3 +1,7 @@
+Version 0.7.0
+-------------
+* Renamed `DocTest.globs` to `DocTest.global_namespace`
+
 Version 0.6.2
 -------------
 * Fixed bug in `static_analysis.is_balanced_statement` and

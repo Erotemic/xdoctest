@@ -127,7 +127,8 @@ class DocTest(object):
         self._runstate = None
 
         self.module = None
-        self.globs = {}
+        # Maintain global variables that this test will have access to
+        self.global_namespace = {}
         # Hint at what is running this doctest
         self.mode = mode
 
@@ -322,20 +323,21 @@ class DocTest(object):
             if not self.modname.startswith('<'):
                 self.module = utils.import_module_from_path(self.modpath)
 
-    def _extract_future_flags(self, globs):
+    @staticmethod
+    def _extract_future_flags(namespace):
         """
         Return the compiler-flags associated with the future features that
-        have been imported into the given namespace (globs).
+        have been imported into the given namespace (i.e. globals).
         """
         compileflags = 0
         for key in __future__.all_feature_names:
-            feature = globs.get(key, None)
+            feature = namespace.get(key, None)
             if feature is getattr(__future__, key):
                 compileflags |= feature.compiler_flag
         return compileflags
 
     def _test_globals(self):
-        test_globals = self.globs
+        test_globals = self.global_namespace
         if self.module is None:
             compileflags = 0
         else:
@@ -679,7 +681,7 @@ class DocTest(object):
         #         # 'self.module = {}'.format(self.module),
         #         # 'self.modpath = {}'.format(self.modpath),
         #         # 'self.modpath = {}'.format(self.modname),
-        #         # 'self.globs = {}'.format(self.globs.keys()),
+        #         # 'self.global_namespace = {}'.format(self.global_namespace.keys()),
         #     ]
         # lines += ['Failed doctest in ' + self.callname]
 
