@@ -143,10 +143,10 @@ class XDoctestItem(pytest.Item):
     def setup(self):
         if self.example is not None:
             self.fixture_request = _setup_fixtures(self)
-            globs = dict(getfixture=self.fixture_request.getfixturevalue)
+            global_namespace = dict(getfixture=self.fixture_request.getfixturevalue)
             for name, value in self.fixture_request.getfixturevalue('xdoctest_namespace').items():
-                globs[name] = value
-            self.example.globs.update(globs)
+                global_namespace[name] = value
+            self.example.global_namespace.update(global_namespace)
 
     def runtest(self):
         if self.example.is_disabled(pytest=True):
@@ -202,14 +202,14 @@ class XDoctestTextfile(_XDoctestBase):
         text = self.fspath.read_text(encoding)
         filename = str(self.fspath)
         name = self.fspath.basename
-        globs = {'__name__': '__main__'}
+        global_namespace = {'__name__': '__main__'}
 
         self._prepare_internal_config()
 
         style = self.config.getvalue('xdoctest_style')
 
         for example in core.parse_docstr_examples(text, name, fpath=filename, style=style):
-            example.globs.update(globs)
+            example.global_namespace.update(global_namespace)
             example.config.update(self._examp_conf)
             yield XDoctestItem(name, self, example)
 
