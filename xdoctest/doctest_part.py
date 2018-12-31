@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 """
+TODO:
+    perhaps rename doctest part to DoctestCell, because there is a striking
+    similarity between Jupyter notebook cells and doctests.
+
 Simple storage container used to store a single executable part of a doctest
 example. Multiple parts are kept by a `xdoctest.doctest_example.Doctest`, which
 manages execution of each part.
