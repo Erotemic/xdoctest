@@ -404,7 +404,6 @@ class DoctestParser(object):
 
         source_block = '\n'.join(exec_source_lines)
         try:
-            print('source_block = {!r}'.format(source_block))
             pt = static.six_axt_parse(source_block)
         except SyntaxError as syn_ex:
             # Assign missing information to the syntax error.
