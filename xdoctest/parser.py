@@ -553,7 +553,7 @@ class DoctestParser(object):
                         error = True
                         if HACK_TRIPLE_QUOTE_FIX:
                             # TODO: make a more robust patch
-                            if any("'''" or '"""' in s for s in source_parts):
+                            if any("'''" in s or '"""' in s for s in source_parts):
                                 # print('HACK FIXING TRIPLE QUOTE')
                                 next_line = next_line[:state_indent] + '... ' + norm_line
                                 norm_line = '... ' + norm_line
