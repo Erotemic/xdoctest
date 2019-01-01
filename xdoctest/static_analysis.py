@@ -982,7 +982,7 @@ def is_modname_importable(modname, sys_path=None, exclude=None):
     return flag
 
 
-def is_balanced_statement(lines):
+def is_balanced_statement(lines, only_tokens=False):
     r"""
     Checks if the lines have balanced parens, brakets, curlies and strings
 
@@ -991,6 +991,9 @@ def is_balanced_statement(lines):
 
     Returns:
         bool: False if the statement is not balanced
+
+    CommandLine:
+        xdoctest -m xdoctest.static_analysis is_balanced_statement
 
     Doctest:
         >>> assert is_balanced_statement(['print(foobar)'])
@@ -1006,7 +1009,7 @@ def is_balanced_statement(lines):
         >>> lines = ['def foo():', '', '    x = 1', 'assert True', '']
         >>> assert is_balanced_statement(lines)
 
-    Ignore:
+    Doctest:
         >>> from xdoctest.static_analysis import *
         >>> source_parts = [
         >>>     'setup(',
@@ -1057,13 +1060,15 @@ def is_balanced_statement(lines):
     else:
         # Note: trying to use ast.parse(block) will not work
         # here because it breaks in try, except, else
-
-        try:
-            # The above test wont trigger in all cases.
-            # Hopefully, following up with an ast.parse catches them
-            ast.parse('\n'.join(lines))
-        except SyntaxError:
-            return False
+        if not only_tokens:
+            try:
+                # The above test wont trigger in all cases.
+                # Hopefully, following up with an six-complient six_axt_parse catches them
+                from textwrap import dedent
+                text = dedent('\n'.join(lines))
+                six_axt_parse(text)
+            except SyntaxError:
+                return False
 
         return True
 
@@ -1104,6 +1109,24 @@ def extract_comments(source):
                 yield t[1]
     except tokenize.TokenError as ex:
         pass
+
+
+def six_axt_parse(source_block, filename='<source_block>', compatible=True):
+    """
+    Python 2/3 compatible replacement for ast.parse(source_block, filename='<source_block>')
+    """
+    # Note Python2.7 does not accept unicode variable names so this
+    # will fail (in 2.7) if source contains a unicode varname.
+    if compatible and six.PY2:
+        # In Python2.7 fix __future__ issues
+        import __future__
+        flags = ast.PyCF_ONLY_AST
+        flags |= __future__.print_function.compiler_flag
+        # flags |= __future__.print_function.unicode_literals
+        pt = compile(source_block, filename=filename, mode='exec', flags=flags)
+    else:
+        pt = ast.parse(source_block, filename=filename)
+    return pt
 
 
 if __name__ == '__main__':
