@@ -172,8 +172,7 @@ class DoctestParser(object):
                 print('grouped_lines = {}'.format(ub.repr2(grouped_lines, nl=3)))
                 print('all_parts = {}'.format(ub.repr2(all_parts)))
                 print('</FAILPOINT>')
-
-                sys.exit(1)
+                # sys.exit(1)
             raise exceptions.DoctestParseError(
                 'Failed to parse doctest in {}'.format(failpoint),
                 string=string, info=info, orig_ex=orig_ex)
@@ -599,7 +598,7 @@ class DoctestParser(object):
                         static.six_axt_parse(text)
                         '''))
                     print('</FAIL DID NOT COMPLETE SOURCE>')
-                    sys.exit(1)
+                    # sys.exit(1)
                 # TODO: use AST to reparse all doctest parts to discover
                 # where the syntax error in the doctest is and then raise
                 # it.
