@@ -983,7 +983,7 @@ def is_modname_importable(modname, sys_path=None, exclude=None):
 
 
 def is_balanced_statement(lines):
-    """
+    r"""
     Checks if the lines have balanced parens, brakets, curlies and strings
 
     Args:
@@ -1006,8 +1006,38 @@ def is_balanced_statement(lines):
         >>> lines = ['def foo():', '', '    x = 1', 'assert True', '']
         >>> assert is_balanced_statement(lines)
 
+    Ignore:
+        >>> from xdoctest.static_analysis import *
+        >>> source_parts = [
+        >>>     'setup(',
+        >>>     "    name='extension',",
+        >>>     '    ext_modules=[',
+        >>>     '        CppExtension(',
+        >>>     "            name='extension',",
+        >>>     "            sources=['extension.cpp'],",
+        >>>     "            extra_compile_args=['-g'])),",
+        >>>     '    ],',
+        >>> ]
+        >>> print('\n'.join(source_parts))
+        >>> assert not is_balanced_statement(source_parts)
+        >>> source_parts = [
+        >>>     'setup(',
+        >>>     "    name='extension',",
+        >>>     '    ext_modules=[',
+        >>>     '        CppExtension(',
+        >>>     "            name='extension',",
+        >>>     "            sources=['extension.cpp'],",
+        >>>     "            extra_compile_args=['-g']),",
+        >>>     '    ],',
+        >>>     '        cmdclass={',
+        >>>     "            'build_ext': BuildExtension",
+        >>>     '        })',
+        >>> ]
+        >>> print('\n'.join(source_parts))
+        >>> assert is_balanced_statement(source_parts)
     """
     # Only iterate through non-empty lines otherwise tokenize will stop short
+    lines = list(lines)
     iterable = (line for line in lines if line)
     def _readline():
         return next(iterable)
@@ -1027,6 +1057,14 @@ def is_balanced_statement(lines):
     else:
         # Note: trying to use ast.parse(block) will not work
         # here because it breaks in try, except, else
+
+        try:
+            # The above test wont trigger in all cases.
+            # Hopefully, following up with an ast.parse catches them
+            ast.parse('\n'.join(lines))
+        except SyntaxError:
+            return False
+
         return True
 
 
