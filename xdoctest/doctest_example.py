@@ -822,9 +822,7 @@ class DocTest(object):
                             new_line = ','.join(tbparts)
 
                             # failed_ctx = '>>> ' + self.failed_part.exec_lines[tb_lineno - 1]
-                            import xdev
-                            with xdev.embed_on_exception_context:
-                                failed_ctx = self.failed_part.orig_lines[tb_lineno - 1]
+                            failed_ctx = self.failed_part.orig_lines[tb_lineno - 1]
                             extra = '    ' + failed_ctx
                             line = (new_line + extra + '\n')
 
