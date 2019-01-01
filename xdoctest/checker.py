@@ -105,6 +105,13 @@ def _strip_exception_details(msg):
     return msg[start: end]
 
 
+def extract_exc_want(want):
+    want_ = utils.codeblock(want)
+    m = _EXCEPTION_RE.search(want_)
+    exc_want = m.group('msg') if m else None
+    return exc_want
+
+
 def check_exception(exc_got, want, runstate=None):
     """
     Checks want against an exception
@@ -112,9 +119,9 @@ def check_exception(exc_got, want, runstate=None):
     Raises:
         GotWantException - If the "got" differs from this parts want.
     """
-    m = _EXCEPTION_RE.match(want)
-    exc_want = m.group('msg') if m else None
+    exc_want = extract_exc_want(want)
     if exc_want is None:
+        # Reraise the error if the want message is formatted like an exception
         raise
     flag = check_output(exc_got, exc_want, runstate)
     # print('exc_want = {!r}'.format(exc_want))
