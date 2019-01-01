@@ -447,8 +447,10 @@ class DocTest(object):
                             # A failure may be expected if the traceback
                             # matches the part's want statement.
                             exception = sys.exc_info()
+                            traceback.format_exception_only(*exception[:2])
                             exc_got = traceback.format_exception_only(*exception[:2])[-1]
-                            checker.check_exception(exc_got, part.want, runstate)
+                            want = part.want
+                            checker.check_exception(exc_got, want, runstate)
                         else:
                             raise
                     else:
@@ -820,7 +822,9 @@ class DocTest(object):
                             new_line = ','.join(tbparts)
 
                             # failed_ctx = '>>> ' + self.failed_part.exec_lines[tb_lineno - 1]
-                            failed_ctx = self.failed_part.orig_lines[tb_lineno - 1]
+                            import xdev
+                            with xdev.embed_on_exception_context:
+                                failed_ctx = self.failed_part.orig_lines[tb_lineno - 1]
                             extra = '    ' + failed_ctx
                             line = (new_line + extra + '\n')
 

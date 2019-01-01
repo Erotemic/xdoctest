@@ -35,7 +35,7 @@ from xdoctest import doctest_part
 from xdoctest import static_analysis as static
 
 
-DEBUG = False
+DEBUG = 0
 
 
 GotWantException = checker.GotWantException
@@ -144,14 +144,25 @@ class DoctestParser(object):
             elif all_parts is None:
                 failpoint = '_package_groups'
             if DEBUG:
+                import traceback
+                import ubelt as ub
+                tb_text = traceback.format_exc()
+                tb_text = ub.highlight_code(tb_text)
+                tb_text = ub.indent(tb_text)
+                print('!!! FAILED !!!')
+                print('failpoint = {!r}'.format(failpoint))
+                print(tb_text)
                 print('Failed to parse string = <<<<<<<<<<<')
                 print(string)
                 print('>>>>>>>>>>>  # end string')
-                print('info = {!r}'.format(info))
+
+                print('info = {}'.format(ub.repr2(info)))
                 print('-----')
-                print('labeled_lines = {!r}'.format(labeled_lines))
-                print('grouped_lines = {!r}'.format(grouped_lines))
-                print('all_parts = {!r}'.format(all_parts))
+                print('orig_ex = {}'.format(orig_ex))
+                print('labeled_lines = {}'.format(ub.repr2(labeled_lines)))
+                print('grouped_lines = {}'.format(ub.repr2(grouped_lines, nl=3)))
+                print('all_parts = {}'.format(ub.repr2(all_parts)))
+                sys.exit(1)
             raise exceptions.DoctestParseError(
                 'Failed to parse doctest in {}'.format(failpoint),
                 string=string, info=info, orig_ex=orig_ex)
@@ -193,6 +204,11 @@ class DoctestParser(object):
 
         source_lines = [p[line_indent:] for p in raw_source_lines]
         want_lines = [p[line_indent:] for p in raw_want_lines]
+
+        # TODO:
+        # - [ ] Fix pytorch indentation issue here
+        if DEBUG:
+            pass
 
         exec_source_lines = [p[4:] for p in source_lines]
 
@@ -508,6 +524,7 @@ class DoctestParser(object):
                     line_idx, next_line = next(line_iter)
                 except StopIteration:
                     if DEBUG:
+                        print('ERROR')
                         print('source_parts = {!r}'.format(source_parts))
                         print('SOURCE PARTS <<<<<<<<<<<')
                         for part in source_parts:
@@ -522,12 +539,39 @@ class DoctestParser(object):
                 norm_line = next_line[state_indent:]
                 prefix = norm_line[:4]
                 suffix = norm_line[4:]
+
                 if prefix.strip() not in {'>>>', '...', ''}:  # nocover
-                    raise SyntaxError(
-                        'Bad indentation in doctest on line {}: {!r}'.format(
-                            line_idx, next_line))
+                    error = True
+                    HACK_TRIPLE_QUOTE_FIX = True
+                    if HACK_TRIPLE_QUOTE_FIX:
+                        # TODO: make a more robust patch
+                        if any("'''" or '"""' in s for s in source_parts):
+                            # print('HACK FIXING TRIPLE QUOTE')
+                            next_line = next_line[:state_indent] + '... ' + norm_line
+                            norm_line = '... ' + norm_line
+                            prefix = ''
+                            suffix = norm_line
+                            error = False
+
+                    if error:
+                        if DEBUG:
+                            print(' * !!!ERROR!!!')
+                            print(' * source_parts = {!r}'.format(source_parts))
+                            print(' * prefix = {!r}'.format(prefix))
+                            print(' * norm_line = {!r}'.format(norm_line))
+                            print(' * !!!!!!!!!!!!!')
+
+                        raise SyntaxError(
+                            'Bad indentation in doctest on line {}: {!r}'.format(
+                                line_idx, next_line))
                 source_parts.append(suffix)
                 yield next_line
+
+            if DEBUG:
+                print('<COMPLETED SOURCE>')
+                import ubelt as ub
+                print('source_parts = {}'.format(ub.repr2(source_parts, nl=2)))
+                print('</COMPLETED SOURCE>')
 
         # parse and differentiate between doctest source and want statements.
         labeled_lines = []
@@ -611,6 +655,10 @@ class DoctestParser(object):
                         labeled_lines.append((DSRC, part))
                 except SyntaxError as orig_ex:
                     if DEBUG:
+                        print('line_iter = {!r}'.format(line_iter))
+                        # print('next(line_iter) = {!r}'.format(line_iter))
+                        print('state_indent = {!r}'.format(state_indent))
+                        print('line = {!r}'.format(line))
                         print('Failed to label source lines')
                         print('Labeled lines so far: <<<<<<<<<<<')
                         for line in labeled_lines:
@@ -622,6 +670,12 @@ class DoctestParser(object):
             elif curr_state == TEXT:
                 labeled_lines.append((TEXT, line))
             prev_state = curr_state
+
+        if DEBUG:
+            print('<FINISH LABELD LINES')
+            import ubelt as ub
+            print('labeled_lines = {}'.format(ub.repr2(labeled_lines, nl=1)))
+            print('</FINISH LABELD LINES>')
 
         return labeled_lines
 
