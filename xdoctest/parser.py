@@ -35,7 +35,11 @@ from xdoctest import doctest_part
 from xdoctest import static_analysis as static
 
 
-DEBUG = 0
+class IncompleteParseError(SyntaxError):
+    pass
+
+
+DEBUG = 2
 
 
 GotWantException = checker.GotWantException
@@ -116,6 +120,8 @@ class DoctestParser(object):
             >>> # each part with a want-string needs to be broken in two
             >>> assert len(doctest_parts) == 6
         """
+        if DEBUG > 1:
+            print('\n===== PARSE ====')
         if sys.version_info.major == 2:  # nocover
             string = utils.ensure_unicode(string)
 
@@ -144,14 +150,17 @@ class DoctestParser(object):
             elif all_parts is None:
                 failpoint = '_package_groups'
             if DEBUG:
-                import traceback
+                print('<FAILPOINT>')
+                print('!!! FAILED !!!')
+                print('failpoint = {!r}'.format(failpoint))
+
                 import ubelt as ub
+                import traceback
                 tb_text = traceback.format_exc()
                 tb_text = ub.highlight_code(tb_text)
                 tb_text = ub.indent(tb_text)
-                print('!!! FAILED !!!')
-                print('failpoint = {!r}'.format(failpoint))
                 print(tb_text)
+
                 print('Failed to parse string = <<<<<<<<<<<')
                 print(string)
                 print('>>>>>>>>>>>  # end string')
@@ -162,6 +171,8 @@ class DoctestParser(object):
                 print('labeled_lines = {}'.format(ub.repr2(labeled_lines)))
                 print('grouped_lines = {}'.format(ub.repr2(grouped_lines, nl=3)))
                 print('all_parts = {}'.format(ub.repr2(all_parts)))
+                print('</FAILPOINT>')
+
                 sys.exit(1)
             raise exceptions.DoctestParseError(
                 'Failed to parse doctest in {}'.format(failpoint),
@@ -375,19 +386,7 @@ class DoctestParser(object):
 
         source_block = '\n'.join(exec_source_lines)
         try:
-            # Note Python2.7 does not accept unicode variable names so this
-            # will fail (in 2.7) if source contains a unicode varname.
-
-            if six.PY2:
-                # In Python2.7 fix __future__ issues
-                import __future__
-                flags = ast.PyCF_ONLY_AST
-                flags |= __future__.print_function.compiler_flag
-                # flags |= __future__.print_function.unicode_literals
-                pt = compile(source_block, filename='<source_block>',
-                             mode='exec', flags=flags)
-            else:
-                pt = ast.parse(source_block, filename='<source_block>')
+            pt = static.six_axt_parse(source_block)
         except SyntaxError as syn_ex:
             # Assign missing information to the syntax error.
             if syn_ex.text is None:
@@ -519,59 +518,80 @@ class DoctestParser(object):
             yield line
 
             source_parts = [suffix]
-            while not static.is_balanced_statement(source_parts):
-                try:
+
+            # These hacks actually modify the input doctest slighly
+            HACK_TRIPLE_QUOTE_FIX = True
+
+            try:
+                while not static.is_balanced_statement(source_parts, only_tokens=True):
                     line_idx, next_line = next(line_iter)
-                except StopIteration:
-                    if DEBUG:
-                        print('ERROR')
-                        print('source_parts = {!r}'.format(source_parts))
-                        print('SOURCE PARTS <<<<<<<<<<<')
-                        for part in source_parts:
-                            print(part)
-                        print('>>>>>>>>>>>')
-                    # TODO: use AST to reparse all doctest parts to discover
-                    # where the syntax error in the doctest is and then raise
-                    # it.
-                    raise SyntaxError(
-                        'ill-formed doctest: all parts have been processed '
-                        'but the doctest source is not balanced')
-                norm_line = next_line[state_indent:]
-                prefix = norm_line[:4]
-                suffix = norm_line[4:]
+                    norm_line = next_line[state_indent:]
+                    prefix = norm_line[:4]
+                    suffix = norm_line[4:]
 
-                if prefix.strip() not in {'>>>', '...', ''}:  # nocover
-                    error = True
-                    HACK_TRIPLE_QUOTE_FIX = True
-                    if HACK_TRIPLE_QUOTE_FIX:
-                        # TODO: make a more robust patch
-                        if any("'''" or '"""' in s for s in source_parts):
-                            # print('HACK FIXING TRIPLE QUOTE')
-                            next_line = next_line[:state_indent] + '... ' + norm_line
-                            norm_line = '... ' + norm_line
-                            prefix = ''
-                            suffix = norm_line
-                            error = False
+                    if prefix.strip() not in {'>>>', '...', ''}:  # nocover
+                        error = True
+                        if HACK_TRIPLE_QUOTE_FIX:
+                            # TODO: make a more robust patch
+                            if any("'''" or '"""' in s for s in source_parts):
+                                # print('HACK FIXING TRIPLE QUOTE')
+                                next_line = next_line[:state_indent] + '... ' + norm_line
+                                norm_line = '... ' + norm_line
+                                prefix = ''
+                                suffix = norm_line
+                                error = False
 
-                    if error:
-                        if DEBUG:
-                            print(' * !!!ERROR!!!')
-                            print(' * source_parts = {!r}'.format(source_parts))
-                            print(' * prefix = {!r}'.format(prefix))
-                            print(' * norm_line = {!r}'.format(norm_line))
-                            print(' * !!!!!!!!!!!!!')
+                        if error:
+                            if DEBUG:
+                                print(' * !!!ERROR!!!')
+                                print(' * source_parts = {!r}'.format(source_parts))
+                                print(' * prefix = {!r}'.format(prefix))
+                                print(' * norm_line = {!r}'.format(norm_line))
+                                print(' * !!!!!!!!!!!!!')
 
-                        raise SyntaxError(
-                            'Bad indentation in doctest on line {}: {!r}'.format(
-                                line_idx, next_line))
-                source_parts.append(suffix)
-                yield next_line
-
-            if DEBUG:
-                print('<COMPLETED SOURCE>')
-                import ubelt as ub
-                print('source_parts = {}'.format(ub.repr2(source_parts, nl=2)))
-                print('</COMPLETED SOURCE>')
+                            raise SyntaxError(
+                                'Bad indentation in doctest on line {}: {!r}'.format(
+                                    line_idx, next_line))
+                    source_parts.append(suffix)
+                    yield next_line
+            except StopIteration:
+                if DEBUG:
+                    import ubelt as ub
+                    print('<FAIL DID NOT COMPLETE SOURCE>')
+                    import traceback
+                    tb_text = traceback.format_exc()
+                    tb_text = ub.highlight_code(tb_text)
+                    tb_text = ub.indent(tb_text)
+                    print(tb_text)
+                    print(' * line_iter = {!r}'.format(line_iter))
+                    print(' * state_indent = {!r}'.format(state_indent))
+                    print(' * line = {!r}'.format(line))
+                    # print('source =\n{}'.format('\n'.join(source_parts)))
+                    print('# Ensure that the following line should actually fail')
+                    print('source_parts = {}'.format(ub.repr2(source_parts, nl=2)))
+                    print(ub.codeblock(
+                        r'''
+                        from xdoctest import static_analysis as static
+                        static.is_balanced_statement(source_parts)
+                        text = '\n'.join(source_parts)
+                        print(text)
+                        static.six_axt_parse(text)
+                        '''))
+                    print('</FAIL DID NOT COMPLETE SOURCE>')
+                    sys.exit(1)
+                # TODO: use AST to reparse all doctest parts to discover
+                # where the syntax error in the doctest is and then raise
+                # it.
+                raise IncompleteParseError(
+                    'ill-formed doctest: all parts have been processed '
+                    'but the doctest source is not balanced')
+            else:
+                if DEBUG > 1:
+                    import ubelt as ub
+                    print('<SUCCESS COMPLETED SOURCE>')
+                    print(' * line_iter = {!r}'.format(line_iter))
+                    print('source_parts = {}'.format(ub.repr2(source_parts, nl=2)))
+                    print('</SUCCESS COMPLETED SOURCE>')
 
         # parse and differentiate between doctest source and want statements.
         labeled_lines = []
@@ -653,8 +673,11 @@ class DoctestParser(object):
                 try:
                     for part in _complete_source(line, state_indent, line_iter):
                         labeled_lines.append((DSRC, part))
+                except IncompleteParseError as orig_ex:
+                    raise
                 except SyntaxError as orig_ex:
                     if DEBUG:
+                        print('<LABEL FAIL>')
                         print('line_iter = {!r}'.format(line_iter))
                         # print('next(line_iter) = {!r}'.format(line_iter))
                         print('state_indent = {!r}'.format(state_indent))
@@ -664,6 +687,7 @@ class DoctestParser(object):
                         for line in labeled_lines:
                             print(line)
                         print('>>>>>>>>>>>')
+                        print('</LABEL FAIL>')
                     raise
             elif curr_state == WANT:
                 labeled_lines.append((WANT, line))
@@ -671,11 +695,11 @@ class DoctestParser(object):
                 labeled_lines.append((TEXT, line))
             prev_state = curr_state
 
-        if DEBUG:
-            print('<FINISH LABELD LINES')
+        if DEBUG > 1:
             import ubelt as ub
+            print('<FINISH LABELED LINES')
             print('labeled_lines = {}'.format(ub.repr2(labeled_lines, nl=1)))
-            print('</FINISH LABELD LINES>')
+            print('</FINISH LABELED LINES>')
 
         return labeled_lines
 
