@@ -1061,11 +1061,13 @@ def is_balanced_statement(lines, only_tokens=False):
         # Note: trying to use ast.parse(block) will not work
         # here because it breaks in try, except, else
         if not only_tokens:
+            # The above test wont trigger for cases involving higher level
+            # python grammar. If we wish to test for these we will have to use
+            # an AST.
             try:
-                # The above test wont trigger in all cases.
-                # Hopefully, following up with an six-complient six_axt_parse catches them
-                from textwrap import dedent
-                text = dedent('\n'.join(lines))
+                text = '\n'.join(lines)
+                # from textwrap import dedent
+                # text = dedent(text)
                 six_axt_parse(text)
             except SyntaxError:
                 return False
