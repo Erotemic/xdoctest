@@ -39,7 +39,7 @@ class IncompleteParseError(SyntaxError):
     pass
 
 
-DEBUG = 2
+DEBUG = 0
 
 
 GotWantException = checker.GotWantException
@@ -177,9 +177,15 @@ class DoctestParser(object):
             raise exceptions.DoctestParseError(
                 'Failed to parse doctest in {}'.format(failpoint),
                 string=string, info=info, orig_ex=orig_ex)
+        if DEBUG > 1:
+            print('\n===== FINISHED PARSE ====')
         return all_parts
 
     def _package_groups(self, grouped_lines):
+        if DEBUG > 1:
+            import ubelt as ub
+            print('<PACKAGE LABEL GROUPS>')
+            print('grouped_lines = {}'.format(ub.repr2(grouped_lines, nl=2)))
         lineno = 0
         for chunk in grouped_lines:
             if isinstance(chunk, tuple):
@@ -191,6 +197,8 @@ class DoctestParser(object):
                 text_part = '\n'.join(chunk)
                 yield text_part
                 lineno += len(chunk)
+        if DEBUG > 1:
+            print('</PACKAGE LABEL GROUPS>')
 
     def _package_chunk(self, raw_source_lines, raw_want_lines, lineno=0):
         """
@@ -210,6 +218,8 @@ class DoctestParser(object):
             'string'
 
         """
+        if DEBUG > 1:
+            print('<PACKAGE CHUNK>')
         match = INDENT_RE.search(raw_source_lines[0])
         line_indent = 0 if match is None else (match.end() - match.start())
 
@@ -218,13 +228,15 @@ class DoctestParser(object):
 
         # TODO:
         # - [ ] Fix pytorch indentation issue here
-        if DEBUG:
-            pass
 
         exec_source_lines = [p[4:] for p in source_lines]
 
+        if DEBUG > 1:
+            print(' * locate ps1 lines')
         # Find the line number of each standalone statement
         ps1_linenos, eval_final = self._locate_ps1_linenos(source_lines)
+        if DEBUG > 1:
+            print(' * located ps1 lines')
 
         # Find all directives here:
         # A directive necessarily will split a doctest into multiple parts
@@ -288,9 +300,13 @@ class DoctestParser(object):
         example = slice_example(s1, s2, want_lines)
         example.use_eval = bool(want_lines) and eval_final
         # example.use_eval = eval_final
+        if DEBUG > 1:
+            print('<YIELD CHUNK>')
         yield example
 
     def _group_labeled_lines(self, labeled_lines):
+        if DEBUG > 1:
+            print('<GROUP LABEL LINES>')
         # Now that lines have types, group them. This could have done this
         # above, but functionality is split for readability.
         prev_source = None
@@ -314,6 +330,8 @@ class DoctestParser(object):
         # Case where last block is source
         if prev_source:
             grouped_lines.append((prev_source, ''))
+        if DEBUG > 1:
+            print('</GROUP LABEL LINES>')
         return grouped_lines
 
     def _locate_ps1_linenos(self, source_lines):
@@ -346,6 +364,7 @@ class DoctestParser(object):
         # print('source_lines = {!r}'.format(source_lines))
         # Strip indentation (and PS1 / PS2 from source)
         exec_source_lines = [p[4:] for p in source_lines]
+        # print('\n'.join(exec_source_lines))
 
         def _hack_comment_statements(lines):
             # Hack to make comments appear like executable statements
@@ -364,7 +383,7 @@ class DoctestParser(object):
                 b = len(lines)
                 while b > 0:
                     # move the head pointer up until we become balanced
-                    while not static.is_balanced_statement(lines[a:b]):
+                    while not static.is_balanced_statement(lines[a:b], only_tokens=True):
                         a -= 1
                     # we found a balanced interval
                     intervals.append((a, b))
@@ -386,6 +405,7 @@ class DoctestParser(object):
 
         source_block = '\n'.join(exec_source_lines)
         try:
+            print('source_block = {!r}'.format(source_block))
             pt = static.six_axt_parse(source_block)
         except SyntaxError as syn_ex:
             # Assign missing information to the syntax error.
@@ -466,7 +486,7 @@ class DoctestParser(object):
         for a in ps1_linenos[::-1]:
             # the position of `b` is correct, but `a` may be wrong
             # is_balanced_statement will be False iff `a` is wrong.
-            while not static.is_balanced_statement(exec_source_lines[a:b]):
+            while not static.is_balanced_statement(exec_source_lines[a:b], only_tokens=True):
                 # shift `a` down until it becomes correct
                 a -= 1
             # push the new correct value back into the list
@@ -572,7 +592,8 @@ class DoctestParser(object):
                     print(ub.codeblock(
                         r'''
                         from xdoctest import static_analysis as static
-                        static.is_balanced_statement(source_parts)
+                        static.is_balanced_statement(source_parts, only_tokens=False)
+                        static.is_balanced_statement(source_parts, only_tokens=True)
                         text = '\n'.join(source_parts)
                         print(text)
                         static.six_axt_parse(text)
