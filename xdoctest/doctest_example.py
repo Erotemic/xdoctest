@@ -321,7 +321,8 @@ class DocTest(object):
     def _import_module(self):
         if self.module is None:
             if not self.modname.startswith('<'):
-                self.module = utils.import_module_from_path(self.modpath)
+                # self.module = utils.import_module_from_path(self.modpath, index=0)
+                self.module = utils.import_module_from_path(self.modpath, index=-1)
 
     @staticmethod
     def _extract_future_flags(namespace):
