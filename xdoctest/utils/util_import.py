@@ -44,7 +44,7 @@ def import_module_from_name(modname):
     return module
 
 
-def import_module_from_path(modpath):
+def import_module_from_path(modpath, index=-1):
     """
     Args:
         modpath (str): path to the module
@@ -63,7 +63,7 @@ def import_module_from_path(modpath):
     dpath, rel_modpath = static.split_modpath(modpath)
     modname = static.modpath_to_modname(modpath)
     try:
-        with PythonPathContext(dpath):
+        with PythonPathContext(dpath, index=index):
             module = import_module_from_name(modname)
     except Exception:
         print('Failed to import modname={} with modpath={}'.format(
