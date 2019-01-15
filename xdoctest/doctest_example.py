@@ -114,7 +114,7 @@ class DocTest(object):
         self.num = num
 
         self._parts = None
-        self.tb_lineno = None
+        self.failed_tb_lineno = None
         self.exc_info = None
         self.failed_part = None
         self.warn_list = None
@@ -418,11 +418,11 @@ class DocTest(object):
                     raise
                 except Exception:
                     raise
-                    self.exc_info = sys.exc_info()
-                    ex_type, ex_value, tb = self.exc_info
-                    self.tb_lineno = tb.tb_lineno
-                    if on_error == 'raise':
-                        raise
+                    # self.exc_info = sys.exc_info()
+                    # ex_type, ex_value, tb = self.exc_info
+                    # self.failed_tb_lineno = tb.tb_lineno
+                    # if on_error == 'raise':
+                    #     raise
                 try:
                     # Execute the doctest code
                     try:
@@ -488,27 +488,63 @@ class DocTest(object):
                     break
                 except Exception:
                     ex_type, ex_value, tb = sys.exc_info()
+
+                    DEBUG = 0
+                    if DEBUG:
+                        print('<DEBUG: doctest encountered exception>', file=sys.stderr)
+                        print(''.join(traceback.format_tb(tb)), file=sys.stderr)
+                        print('</DEBUG>', file=sys.stderr)
+
+                    CLEAN_TRACEBACK = True
+                    if CLEAN_TRACEBACK:
+                        # Search for the traceback that corresponds with the
+                        # doctest, and remove the parts that point to
+                        # boilerplate lines in this file.
+
+                        def traverse_traceback(tb):
+                            sub_tb = tb
+                            yield sub_tb
+                            while sub_tb.tb_next is not None:
+                                sub_tb = sub_tb.tb_next
+                                yield sub_tb
+
+                        found_lineno = None
+                        for sub_tb in traverse_traceback(tb):
+                            tb_filename = sub_tb.tb_frame.f_code.co_filename
+                            if tb_filename == self._partfilename:
+                                # Walk up the traceback until we find the one that has
+                                # the doctest as the base filename
+                                found_lineno = sub_tb.tb_lineno
+                                break
+                        if DEBUG:
+                            # The only traceback remaining should be
+                            # the part that is relevant to the user
+                            print('<DEBUG: best sub_tb>', file=sys.stderr)
+                            print('found_lineno = {!r}'.format(found_lineno), file=sys.stderr)
+                            print(''.join(traceback.format_tb(sub_tb)), file=sys.stderr)
+                            print('</DEBUG>', file=sys.stderr)
+
+                        if found_lineno is None:
+                            if DEBUG:
+                                print('UNABLE TO CLEAN TRACEBACK. EXIT DUE TO DEBUG')
+                                sys.exit(1)
+                            raise ValueError('Could not clean traceback')
+                        else:
+                            self.failed_tb_lineno = found_lineno
+                    else:
+                        if tb.tb_next is not None:
+                            # Use the next to pop the eval of the stack
+                            self.failed_tb_lineno = tb.tb_next.tb_lineno
+                        else:
+                            # TODO: test and understand this case
+                            self.failed_tb_lineno = tb.tb_lineno
+
+                    self.exc_info = (ex_type, ex_value, tb)
+
                     # The idea of CLEAN_TRACEBACK is to make it so the
                     # traceback from this function doesn't clutter the error
                     # message the user sees. However, I haven't been able to
                     # make it work yet.
-                    CLEAN_TRACEBACK = 0
-                    if CLEAN_TRACEBACK:
-                        # Pop the eval off the stack
-                        if tb.tb_next is not None:
-                            tb = tb.tb_next
-                        self.tb_lineno = tb.tb_lineno
-                        # tb.tb_lineno = (tb_lineno +
-                        #                 self.failed_part.line_offset + self.lineno)
-                    else:
-                        if tb.tb_next is not None:
-                            # Use the next to pop the eval of the stack
-                            self.tb_lineno = tb.tb_next.tb_lineno
-                        else:
-                            # TODO: test and understand this case
-                            self.tb_lineno = tb.tb_lineno
-
-                    self.exc_info = (ex_type, ex_value, tb)
                     if on_error == 'raise':
                         raise
                     break
@@ -577,7 +613,7 @@ class DocTest(object):
                 # Return the line of the want line
                 offset += self.failed_part.n_exec_lines + 1
             else:
-                offset += self.tb_lineno
+                offset += self.failed_tb_lineno
             offset -= 1
             return offset
 
