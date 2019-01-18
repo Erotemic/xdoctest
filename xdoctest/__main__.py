@@ -48,16 +48,19 @@ def main():
     parser.add_argument(*('--style',), type=str, help='choose your style',
                         choices=['auto', 'google', 'freeform'], default='auto')
 
-    parser.add_argument(*('--options',), type=str,
-                        help='specify the default directive state',
-                        default=None)
+    from xdoctest import doctest_example
+    doctest_example.Config()._update_argparse_cli(parser.add_argument)
 
-    parser.add_argument(*('--offset',), dest='offset_linenos', action='store_true',
-                        help=('Doctest outputs will display line numbers '
-                              'wrt to the source file.'))
+    # parser.add_argument(*('--options',), type=str,
+    #                     help='specify the default directive state',
+    #                     default=None)
 
-    parser.add_argument(*('--nocolor',), dest='nocolor', action='store_true',
-                        help=('Disable ANSI coloration.'))
+    # parser.add_argument(*('--offset',), dest='offset_linenos', action='store_true',
+    #                     help=('Doctest outputs will display line numbers '
+    #                           'wrt to the source file.'))
+
+    # parser.add_argument(*('--nocolor',), dest='colored', action='store_true',
+    #                     help=('Disable ANSI coloration.'))
 
     parser.add_argument(*('--durations',), type=int,
                         help=('specify execution times for slowest N tests.'
@@ -75,9 +78,6 @@ def main():
     command = ns['command']
     arg = ns['arg']
     style = ns['style']
-    offset_linenos = ns['offset_linenos']
-    nocolor = ns['nocolor']
-    options = ns['options']
     durations = ns['durations']
     if ns['time']:
         durations = 0
@@ -107,9 +107,9 @@ def main():
         parser.error(errmsg)
     # ---
 
-    from xdoctest.directive import parse_directive_optstr
     import xdoctest
 
+    options = ns['options']
     if options is None:
         options = ''
         if exists('pytest.ini'):
@@ -120,20 +120,26 @@ def main():
                 options = parser.get('pytest', 'xdoctest_options')
             except configparser.NoOptionError:
                 pass
+        ns['options'] = options
+    from xdoctest import doctest_example
+    config = doctest_example.Config()._populate_from_cli(ns)
 
-    default_runtime_state = {}
-    for optpart in options.split(','):
-        if optpart:
-            directive = parse_directive_optstr(optpart)
-            if directive is not None:
-                default_runtime_state[directive.name] = directive.positive
+    # from xdoctest.directive import parse_directive_optstr
+    # default_runtime_state = {}
+    # for optpart in options.split(','):
+    #     if optpart:
+    #         directive = parse_directive_optstr(optpart)
+    #         if directive is not None:
+    #             default_runtime_state[directive.name] = directive.positive
 
-    # Specify a default doctest_example.Config state
-    config = {
-        'default_runtime_state': default_runtime_state,
-        'offset_linenos': offset_linenos,
-        'colored': not nocolor,
-    }
+    # # Specify a default doctest_example.Config state
+    # config = {
+    #     'default_runtime_state': default_runtime_state,
+    # offset_linenos = ns['offset_linenos']
+    #     'offset_linenos': offset_linenos,
+    # colored = ns['colored']
+    #     'colored': colored,
+    # }
 
     xdoctest.doctest_module(modname, argv=[command], style=style,
                             config=config, durations=durations)

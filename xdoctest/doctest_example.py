@@ -28,22 +28,79 @@ class Config(dict):
     def __init__(self, *args, **kwargs):
         super(Config, self).__init__(*args, **kwargs)
         self.update({
+
+            # main options exposed by command line runner/plugin
+
             'colored': hasattr(sys.stdout, 'isatty') and sys.stdout.isatty(),
-            # 'colored': False,
-            'on_error': 'raise',
-
-            'partnos': False,
-            # 'partnos': True,
-
-            # if True formated source linenumbers will agree with their
-            # location in the source file. Otherwise they will be relative
-            # to the doctest itself.
-            'offset_linenos': False,
-
             'reportchoice': 'udiff',
             'default_runtime_state': {},
+            'offset_linenos': False,
+            'global_exec': None,
+
+            # 'colored': False,
+            'on_error': 'raise',
+            'partnos': False,
+            # 'partnos': True,
             'verbose': 1,
         })
+
+    def _populate_from_cli(self, ns):
+        from xdoctest.directive import parse_directive_optstr
+        directive_optstr = ns['options']
+        default_runtime_state = {}
+        if directive_optstr:
+            for optpart in directive_optstr.split(','):
+                directive = parse_directive_optstr(optpart)
+                default_runtime_state[directive.name] = directive.positive
+        _examp_conf = {
+            'default_runtime_state': default_runtime_state,
+            'offset_linenos': ns['offset_linenos'],
+            'colored': ns['colored'],
+            'reportchoice': ns['reportchoice'],
+            'global_exec': ns['global_exec'],
+        }
+        return _examp_conf
+
+    def _update_argparse_cli(self, add_argument, prefix=None):
+        """
+        Updates a pytest or argparse CLI
+        """
+        def str_lower(x):
+            # python2 fix
+            return str.lower(str(x))
+
+        add_argument_kws = [
+            (['--nocolor'], dict(dest='colored', action='store_false',
+                                 default=self['colored'],
+                                 help=('Disable ANSI coloration in stdout'))),
+            (['--offset'], dict(dest='offset_linenos', action='store_true',
+                                default=self['offset_linenos'],
+                                help=('if True formated source linenumbers will agree with '
+                                      'their location in the source file. Otherwise they '
+                                      'will be relative to the doctest itself.'))),
+            (['--report'], dict(dest='reportchoice',
+                                type=str_lower,
+                                choices=('none', 'cdiff', 'ndiff', 'udiff', 'only_first_failure',),
+                                default=self['reportchoice'],
+                                help=('choose another output format for diffs on xdoctest failure'))),
+            # used to build default_runtime_state
+            (['--options'], dict(type=str_lower, default=None, dest='options',
+                                 help='default directive flags for doctests')),
+            (['--global-exec'], dict(type=str, default=None, dest='global_exec',
+                                     help='exec these lines before every test')),
+        ]
+
+        if prefix is None:
+            prefix = ['']
+
+        for alias, kw in add_argument_kws:
+            alias = [
+                a.replace('--', '--' + p + '-') if p else a
+                for a in alias for p in prefix
+            ]
+            if prefix[0]:
+                kw['dest'] = prefix[0] + '_' + kw['dest']
+            add_argument(*alias, **kw)
 
     def getvalue(self, key, given=None):
         if given is None:
@@ -381,7 +438,21 @@ class DocTest(object):
         default_state = self.config['default_runtime_state']
         runstate = self._runstate = directive.RuntimeState(default_state)
         # setup reporting choice
-        runstate.set_report_style(self.config['reportchoice'])
+        runstate.set_report_style(self.config['reportchoice'].lower())
+
+        global_exec = self.config.getvalue('global_exec')
+        if global_exec:
+            # Hack to make it easier to specify multi-line input on the CLI
+            global_source = utils.codeblock(global_exec.replace('\\n', '\n'))
+            # print('global_source = {!r}'.format(global_source))
+            # print(global_source)
+            # print('global_source = {!r}'.format(global_source))
+            global_code = compile(
+                global_source, mode='exec',
+                filename='<doctest:' + self.node + ':' + 'global_exec>',
+                flags=compileflags, dont_inherit=True
+            )
+            exec(global_code, test_globals)
 
         # Can't do this because we can't force execution of SCRIPTS
         # if self.is_disabled():
@@ -495,56 +566,45 @@ class DocTest(object):
                         print(''.join(traceback.format_tb(tb)), file=sys.stderr)
                         print('</DEBUG>', file=sys.stderr)
 
-                    CLEAN_TRACEBACK = True
-                    if CLEAN_TRACEBACK:
-                        # Search for the traceback that corresponds with the
-                        # doctest, and remove the parts that point to
-                        # boilerplate lines in this file.
-
-                        def traverse_traceback(tb):
-                            sub_tb = tb
+                    # Search for the traceback that corresponds with the
+                    # doctest, and remove the parts that point to
+                    # boilerplate lines in this file.
+                    def traverse_traceback(tb):
+                        sub_tb = tb
+                        yield sub_tb
+                        while sub_tb.tb_next is not None:
+                            sub_tb = sub_tb.tb_next
                             yield sub_tb
-                            while sub_tb.tb_next is not None:
-                                sub_tb = sub_tb.tb_next
-                                yield sub_tb
 
-                        found_lineno = None
-                        for sub_tb in traverse_traceback(tb):
-                            tb_filename = sub_tb.tb_frame.f_code.co_filename
-                            if tb_filename == self._partfilename:
-                                # Walk up the traceback until we find the one that has
-                                # the doctest as the base filename
-                                found_lineno = sub_tb.tb_lineno
-                                break
+                    found_lineno = None
+                    for sub_tb in traverse_traceback(tb):
+                        tb_filename = sub_tb.tb_frame.f_code.co_filename
+                        if tb_filename == self._partfilename:
+                            # Walk up the traceback until we find the one that has
+                            # the doctest as the base filename
+                            found_lineno = sub_tb.tb_lineno
+                            break
+                    if DEBUG:
+                        # The only traceback remaining should be
+                        # the part that is relevant to the user
+                        print('<DEBUG: best sub_tb>', file=sys.stderr)
+                        print('found_lineno = {!r}'.format(found_lineno), file=sys.stderr)
+                        print(''.join(traceback.format_tb(sub_tb)), file=sys.stderr)
+                        print('</DEBUG>', file=sys.stderr)
+
+                    if found_lineno is None:
                         if DEBUG:
-                            # The only traceback remaining should be
-                            # the part that is relevant to the user
-                            print('<DEBUG: best sub_tb>', file=sys.stderr)
-                            print('found_lineno = {!r}'.format(found_lineno), file=sys.stderr)
-                            print(''.join(traceback.format_tb(sub_tb)), file=sys.stderr)
-                            print('</DEBUG>', file=sys.stderr)
-
-                        if found_lineno is None:
-                            if DEBUG:
-                                print('UNABLE TO CLEAN TRACEBACK. EXIT DUE TO DEBUG')
-                                sys.exit(1)
-                            raise ValueError('Could not clean traceback')
-                        else:
-                            self.failed_tb_lineno = found_lineno
+                            print('UNABLE TO CLEAN TRACEBACK. EXIT DUE TO DEBUG')
+                            sys.exit(1)
+                        raise ValueError('Could not clean traceback')
                     else:
-                        if tb.tb_next is not None:
-                            # Use the next to pop the eval of the stack
-                            self.failed_tb_lineno = tb.tb_next.tb_lineno
-                        else:
-                            # TODO: test and understand this case
-                            self.failed_tb_lineno = tb.tb_lineno
+                        self.failed_tb_lineno = found_lineno
 
                     self.exc_info = (ex_type, ex_value, tb)
 
                     # The idea of CLEAN_TRACEBACK is to make it so the
                     # traceback from this function doesn't clutter the error
-                    # message the user sees. However, I haven't been able to
-                    # make it work yet.
+                    # message the user sees.
                     if on_error == 'raise':
                         raise
                     break
