@@ -1,6 +1,10 @@
 Version 0.7.0
 -------------
 * Renamed `DocTest.globs` to `DocTest.global_namespace`
+* Added `--global-exec' to native xdoctest CLI and `--xdoctest-global-exec` to the pytest plugin CLI
+* Fixed issue in traceback parsing that sometimes caused incorrectly offset line numbers.
+* Internal test changes
+
 
 Version 0.6.2
 -------------
