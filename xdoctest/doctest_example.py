@@ -58,6 +58,7 @@ class Config(dict):
             'colored': ns['colored'],
             'reportchoice': ns['reportchoice'],
             'global_exec': ns['global_exec'],
+            'verbose': ns['verbose'],
         }
         return _examp_conf
 
@@ -88,6 +89,8 @@ class Config(dict):
                                  help='default directive flags for doctests')),
             (['--global-exec'], dict(type=str, default=None, dest='global_exec',
                                      help='exec these lines before every test')),
+            (['--verbose'], dict(type=int, default=0, dest='verbose',
+                                     help='verbosity level')),
         ]
 
         if prefix is None:

@@ -142,7 +142,8 @@ def main():
     # }
 
     xdoctest.doctest_module(modname, argv=[command], style=style,
-                            config=config, durations=durations)
+                            verbose=config['verbose'], config=config,
+                            durations=durations)
 
 
 if __name__ == '__main__':
