@@ -42,6 +42,9 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
     else:
         modpath = core._rectify_to_modpath(modpath_or_name)
 
+    if config is None:
+        config = doctest_example.Config()
+
     command, style, verbose = _parse_commandline(command, style, verbose, argv)
 
     if command == 'list':
@@ -340,6 +343,8 @@ def _run_examples(enabled_examples, verbose, config=None):
 
 def _parse_commandline(command=None, style='auto', verbose=None, argv=None):
     # Determine command via sys.argv if not specified
+    doctest_example.Config()
+
     if argv is None:
         argv = sys.argv[1:]
     else:
@@ -367,6 +372,52 @@ def _parse_commandline(command=None, style='auto', verbose=None, argv=None):
         else:
             verbose = 3
     return command, style, verbose
+
+
+def _update_argparse_cli(add_argument, prefix=None):
+    def str_lower(x):
+        # python2 fix
+        return str.lower(str(x))
+
+    add_argument(*('-m', '--modname'), type=str,
+                 help='module name or path. If specified positional modules are ignored',
+                 default=None)
+
+    add_argument(*('-c', '--command'), type=str,
+                 help='a doctest name or a command (list|all|<callname>). '
+                 'Defaults to all',
+                 default=None)
+
+    add_argument(*('--style',), type=str, help='choose your style',
+                 choices=['auto', 'google', 'freeform'], default='auto')
+
+    add_argument(*('--durations',), type=int,
+                 help=('specify execution times for slowest N tests.'
+                       'N=0 will show times for all tests'),
+                 default=None)
+
+    add_argument(*('--time',), dest='time', action='store_true',
+                 help=('Same as if durrations=0'))
+
+    add_argument_kws = [
+        # (['--style'], dict(dest='style',
+        #                    type=str, help='choose your style',
+        #                    choices=['auto', 'google', 'freeform'], default='auto')),
+        # (['--quiet'], dict(type=int, action='store_false', dest='verbose',
+        #                          help='sets verbosity=0')),
+    ]
+
+    if prefix is None:
+        prefix = ['']
+
+    for alias, kw in add_argument_kws:
+        alias = [
+            a.replace('--', '--' + p + '-') if p else a
+            for a in alias for p in prefix
+        ]
+        if prefix[0]:
+            kw['dest'] = prefix[0] + '_' + kw['dest']
+        add_argument(*alias, **kw)
 
 
 if __name__ == '__main__':

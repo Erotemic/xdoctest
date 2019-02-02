@@ -861,7 +861,7 @@ class TestXDoctest(object):
                 """
                 print('in-func-print')
         ''')
-        result = testdir.runpytest(p, '-s', '--xdoctest-modules', *EXTRA_ARGS)
+        result = testdir.runpytest(p, '-s', '--xdoctest-modules', '--xdoctest-verbose=3', *EXTRA_ARGS)
         result.stdout.fnmatch_lines(['in-doctest-print'])
         result.stdout.fnmatch_lines(['in-func-print'])
 

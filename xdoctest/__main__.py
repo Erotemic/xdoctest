@@ -36,19 +36,21 @@ def main():
 
     # modname_or_path_group = parser.add_mutually_exclusive_group()
     # modname_or_path_group.add_argument('modpath', help='module name or path')
-    parser.add_argument(*('-m', '--modname'), type=str,
-                        help='module name or path. If specified positional modules are ignored',
-                        default=None)
+    # parser.add_argument(*('-m', '--modname'), type=str,
+    #                     help='module name or path. If specified positional modules are ignored',
+    #                     default=None)
 
-    parser.add_argument(*('-c', '--command'), type=str,
-                        help='a doctest name or a command (list|all|<callname>). '
-                        'Defaults to all',
-                        default=None)
+    # parser.add_argument(*('-c', '--command'), type=str,
+    #                     help='a doctest name or a command (list|all|<callname>). '
+    #                     'Defaults to all',
+    #                     default=None)
 
-    parser.add_argument(*('--style',), type=str, help='choose your style',
-                        choices=['auto', 'google', 'freeform'], default='auto')
+    # parser.add_argument(*('--style',), type=str, help='choose your style',
+    #                     choices=['auto', 'google', 'freeform'], default='auto')
 
     from xdoctest import doctest_example
+    from xdoctest import runner
+    runner._update_argparse_cli(parser.add_argument)
     doctest_example.Config()._update_argparse_cli(parser.add_argument)
 
     # parser.add_argument(*('--options',), type=str,
@@ -62,13 +64,13 @@ def main():
     # parser.add_argument(*('--nocolor',), dest='colored', action='store_true',
     #                     help=('Disable ANSI coloration.'))
 
-    parser.add_argument(*('--durations',), type=int,
-                        help=('specify execution times for slowest N tests.'
-                              'N=0 will show times for all tests'),
-                        default=None)
+    # parser.add_argument(*('--durations',), type=int,
+    #                     help=('specify execution times for slowest N tests.'
+    #                           'N=0 will show times for all tests'),
+    #                     default=None)
 
-    parser.add_argument(*('--time',), dest='time', action='store_true',
-                        help=('Same as if durrations=0'))
+    # parser.add_argument(*('--time',), dest='time', action='store_true',
+    #                     help=('Same as if durrations=0'))
 
     args, unknown = parser.parse_known_args()
     ns = args.__dict__.copy()

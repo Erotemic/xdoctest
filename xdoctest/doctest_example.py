@@ -62,7 +62,7 @@ class Config(dict):
         }
         return _examp_conf
 
-    def _update_argparse_cli(self, add_argument, prefix=None):
+    def _update_argparse_cli(self, add_argument, prefix=None, defaults={}):
         """
         Updates a pytest or argparse CLI
         """
@@ -89,7 +89,7 @@ class Config(dict):
                                  help='default directive flags for doctests')),
             (['--global-exec'], dict(type=str, default=None, dest='global_exec',
                                      help='exec these lines before every test')),
-            (['--verbose'], dict(type=int, default=0, dest='verbose',
+            (['--verbose'], dict(type=int, default=defaults.get('verbose', 3), dest='verbose',
                                      help='verbosity level')),
         ]
 
@@ -104,6 +104,17 @@ class Config(dict):
             if prefix[0]:
                 kw['dest'] = prefix[0] + '_' + kw['dest']
             add_argument(*alias, **kw)
+
+    # def simple_argparse(self):
+    #     parser = argparse.ArgumentParser(
+    #         prog='xdoctest',
+    #         description=utils.codeblock(
+    #             '''
+    #             discover and run doctests within a python package
+    #             ''')
+    #     )
+    #     # parser.add_argument('modname', help='what files to run')
+    #     # parser.add_argument('command', help='a doctest name or a command (list|all)', default='list')
 
     def getvalue(self, key, given=None):
         if given is None:
@@ -969,12 +980,13 @@ class DocTest(object):
         summary = {
             'passed': self.exc_info is None
         }
-        if verbose >= 1:
+        if verbose >= 2:
             print(self._color(self.block_prefix + ' RESULT', 'white'))
         if self.exc_info is None:
             if verbose >= 1:
-                if self._suppressed_stdout:
-                    self._print_captured()
+                if verbose >= 2:
+                    if self._suppressed_stdout:
+                        self._print_captured()
                 if len(self.skipped_parts) == len(self._parts):
                     success = self._color('SKIPPED', 'yellow')
                 else:
