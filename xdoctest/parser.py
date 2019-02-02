@@ -39,7 +39,7 @@ class IncompleteParseError(SyntaxError):
     pass
 
 
-DEBUG = 1
+DEBUG = 0
 
 
 GotWantException = checker.GotWantException
