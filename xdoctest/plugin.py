@@ -81,7 +81,9 @@ def pytest_addoption(parser):
 
     from xdoctest import doctest_example
     doctest_example.Config()._update_argparse_cli(
-        group.addoption, prefix=['xdoctest', 'xdoc'])
+        group.addoption, prefix=['xdoctest', 'xdoc'],
+        defaults=dict(verbose=0)
+    )
 
     # group.addoption('--xdoctest-options', '--xdoc-options',
     #                 type=str_lower, default=None,
@@ -155,8 +157,8 @@ class XDoctestItem(pytest.Item):
     def runtest(self):
         if self.example.is_disabled(pytest=True):
             pytest.skip('doctest encountered global skip directive')
-        # run with verbose=1, because pytest will capture if necessary
-        self.example.run(verbose=1, on_error='raise')
+        # verbose = self.example.config['verbose']
+        self.example.run(on_error='raise')
         if not self.example.anything_ran():
             pytest.skip('doctest is empty or all parts were skipped')
 
