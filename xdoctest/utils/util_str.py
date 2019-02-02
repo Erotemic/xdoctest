@@ -3,7 +3,7 @@ from __future__ import print_function, division, absolute_import, unicode_litera
 import six
 import math
 import textwrap
-import warnings
+# import warnings
 import re
 import sys
 
@@ -63,7 +63,7 @@ def color_text(text, color):
         ansi_text = pygments.console.colorize(color, text)
         return ansi_text
     except ImportError:  # nocover
-        warnings.warn('pygments is not installed')
+        # warnings.warn('pygments is not installed')
         return text
 
 
@@ -154,8 +154,7 @@ def highlight_code(text, lexer_name='python', **kwargs):
         lexer = pygments.lexers.get_lexer_by_name(lexer_name, ensurenl=False, **kwargs)
         new_text = pygments.highlight(text, lexer, formater)
     except ImportError:  # nocover
-        import warnings
-        warnings.warn('pygments is not installed')
+        # warnings.warn('pygments is not installed')
         new_text = text
     return new_text
 
