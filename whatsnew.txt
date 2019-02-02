@@ -1,3 +1,8 @@
+Version 0.7.2
+-------------
+* Removed warning if pygments is not installed
+
+
 Version 0.7.1
 -------------
 * Changed verbosity defaults
