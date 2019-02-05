@@ -380,7 +380,8 @@ def split_google_docblocks(docstr):
     ]
     # Map aliased tags to a cannonical name (the first item in the group).
     tag_aliases = dict([(item, group[0]) for group in tag_groups for item in group])
-    tag_pattern = '^' + '(' + '|'.join(tag_aliases.keys()) + '): *$'
+    # Allow for single or double colon (support for pytorch)
+    tag_pattern = '^' + '(' + '|'.join(tag_aliases.keys()) + ') *::? *$'
 
     # Label lines by their group-id
     group_id = 0
