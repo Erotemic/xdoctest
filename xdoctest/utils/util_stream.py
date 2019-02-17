@@ -54,8 +54,10 @@ class CaptureStdout(CaptureStream):
     Context manager that captures stdout and stores it in an internal stream
 
     Args:
-        supress (bool): if True, stdout is not printed while captured
-            (default = True)
+        supress (bool, default=True):
+            if True, stdout is not printed while captured
+        enabled (bool, default=True):
+            does nothing if this is False
 
     Example:
         >>> self = CaptureStdout(supress=True)
