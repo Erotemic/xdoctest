@@ -6,7 +6,6 @@ import ast
 import re
 import six
 import tokenize
-import sysconfig
 from collections import deque, OrderedDict
 from os.path import (join, exists, expanduser, abspath, split, splitext,
                      isfile, dirname, basename, isdir, realpath, relpath)
@@ -523,6 +522,7 @@ def _extension_module_tags():
     """
     Returns valid tags an extension module might have
     """
+    import sysconfig
     tags = []
     if six.PY2:
         # see also 'SHLIB_EXT'
@@ -545,6 +545,7 @@ def _platform_pylib_exts():  # nocover
     .cpython-35m-x86_64-linux-gnu) flags. On python2 returns with
     and without multiarch.
     """
+    import sysconfig
     valid_exts = []
     if six.PY2:
         # see also 'SHLIB_EXT'
