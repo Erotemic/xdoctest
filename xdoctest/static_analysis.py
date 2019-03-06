@@ -777,7 +777,7 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False, check=True,
         >>> modname = modpath_to_modname(modpath)
         >>> assert modname == '_ctypes'
     """
-    if check:
+    if check and relativeto is None:
         if not exists(modpath):
             raise ValueError('modpath={} does not exist'.format(modpath))
     modpath_ = abspath(expanduser(modpath))
@@ -931,7 +931,7 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
 
     if exclude:
         def normalize(p):
-            if sys.platform.startswith('win32'):
+            if sys.platform.startswith('win32'):  # nocover
                 return realpath(p).lower()
             else:
                 return realpath(p)
