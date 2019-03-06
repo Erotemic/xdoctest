@@ -98,6 +98,7 @@ def import_module_from_path(modpath, index=-1):
         >>> import zipfile
         >>> from xdoctest import utils
         >>> from os.path import join, expanduser
+        >>> import os
         >>> dpath = expanduser('~/.cache/xdoctest')
         >>> dpath = utils.ensuredir(dpath)
         >>> #dpath = utils.TempDir().ensure()
@@ -158,7 +159,7 @@ def _custom_import_modpath(modpath, index=-1):
     try:
         with PythonPathContext(dpath, index=index):
             module = import_module_from_name(modname)
-    except Exception:
+    except Exception:  # nocover
         print('Failed to import modname={} with modpath={}'.format(
             modname, modpath))
         raise
@@ -214,13 +215,13 @@ class PythonPathContext(object):
         msg_parts = [
             'sys.path significantly changed while in PythonPathContext.'
         ]
-        if len(sys.path) <= self.index:
+        if len(sys.path) <= self.index:  # nocover
             msg_parts.append(
                 'len(sys.path) = {!r} but index is {!r}'.format(
                     len(sys.path), self.index))
             raise AssertionError('\n'.join(msg_parts))
 
-        if sys.path[self.index] != self.dpath:
+        if sys.path[self.index] != self.dpath:  # nocover
             msg_parts.append(
                 'Expected {!r} at index {!r} but got {!r}'.format(
                     self.dpath, self.index, sys.path[self.index]
