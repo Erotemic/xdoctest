@@ -78,6 +78,10 @@ Example:
     >>> assert count == 1, 'Exactly one of the above parts should have run'
     >>> # xdoctest: +REQUIRES(--verbose)
     >>> print('This is only printed if you run with --verbose')
+
+Example:
+    >>> # New in 0.7.3: the requires directive can accept module names
+    >>> # xdoctest: +REQUIRES(module:foobar)
 """
 import sys
 import os
@@ -136,7 +140,7 @@ class RuntimeState(utils.NiceRepr):
         >>> runstate = RuntimeState()
         >>> assert not runstate['IGNORE_WHITESPACE']
         >>> # Directives modify the runtime state
-        >>> directives = list(extract('# xdoc: -ELLIPSIS, +IGNORE_WHITESPACE'))
+        >>> directives = list(Directive.extract('# xdoc: -ELLIPSIS, +IGNORE_WHITESPACE'))
         >>> runstate.update(directives)
         >>> assert not runstate['ELLIPSIS']
         >>> assert runstate['IGNORE_WHITESPACE']
@@ -239,6 +243,50 @@ class Directive(utils.NiceRepr):
         self.inline = inline
         self.positive = positive
 
+    @classmethod
+    def extract(cls, text):
+        """
+        Parses directives from a line or repl line
+
+        Args:
+            text (str): should correspond to exactly one PS1 line and its PS2
+            followups.
+
+        Yeilds:
+            Directive: directive: the parsed directives
+
+        Notes:
+            The original `doctest` module sometimes yeilded false positives for a
+            directive pattern. Because `xdoctest` is parsing the text, this issue
+            does not occur.
+
+        Example:
+            >>> from xdoctest.directive import Directive
+            >>> text = '# xdoc: + SKIP'
+            >>> print(', '.join(list(map(str, Directive.extract(text)))))
+            <Directive(+SKIP)>
+
+            >>> # Directive with args
+            >>> text = '# xdoctest: requires(--show)'
+            >>> print(', '.join(list(map(str, Directive.extract(text)))))
+            <Directive(+REQUIRES(--show))>
+
+            >>> # Malformatted directives are ignored
+            >>> text = '# xdoctest: does_not_exist, skip'
+            >>> import pytest
+            >>> with pytest.warns(None) as record:
+            >>>     print(', '.join(list(map(str, Directive.extract(text)))))
+            <Directive(+SKIP)>
+
+            >>> # Two directives in one line
+            >>> text = '# xdoctest: +ELLIPSIS, -NORMALIZE_WHITESPACE'
+            >>> print(', '.join(list(map(str, Directive.extract(text)))))
+            <Directive(+ELLIPSIS)>, <Directive(-NORMALIZE_WHITESPACE)>
+
+        Directive.extract('# xdoctest: requires(--show)')
+        """
+        return _extract(text)
+
     def __nice__(self):
         prefix = ['-', '+'][int(self.positive)]
         if self.args:
@@ -268,6 +316,20 @@ class Directive(utils.NiceRepr):
             ('SKIP', True)
             >>> Directive('ELLIPSIS', args=['-s']).state_item(argv=[])
             ('ELLIPSIS', True)
+
+        Doctest:
+            >>> # requirement directive with module
+            >>> directive = list(Directive.extract('# xdoctest: requires(module:xdoctest)'))[0]
+            >>> print('directive = {}'.format(directive))
+            >>> print('directive.state_item() = {}'.format(directive.state_item()))
+            directive = <Directive(+REQUIRES(module:xdoctest))>
+            directive.state_item() = ('SKIP', False)
+
+            >>> directive = list(Directive.extract('# xdoctest: requires(module:motamodule)'))[0]
+            >>> print('directive = {}'.format(directive))
+            >>> print('directive.state_item() = {}'.format(directive.state_item()))
+            directive = <Directive(+REQUIRES(module:motamodule))>
+            directive.state_item() = ('SKIP', True)
         """
         if self.name == 'REQUIRES':
             # TODO: We should probably change requires so it keeps track
@@ -290,9 +352,25 @@ class Directive(utils.NiceRepr):
             OS_NAME_TAGS = ['posix', 'nt', 'java']
 
             if self.positive:
+
+                # Note: a value of true means we will skip, this is kind of
+                # confusing, the termonology here needs to be refactored, but I
+                # think the API is mostly ok.
                 key = 'SKIP'
                 if arg.startswith('-'):
                     value = arg not in argv
+                elif arg.startswith('module:'):
+                    from xdoctest import static_analysis as static
+                    parts = arg.split(':')
+                    if len(parts) != 2:
+                        raise ValueError('xdoctest REQUIRES directive has too many parts')
+                    # set value to True if the module exists
+                    modname = parts[1]
+                    if modname not in _MODNAME_EXISTS_CACHE:
+                        modpath = static.modname_to_modpath(modname)
+                        value = modpath is None
+                        _MODNAME_EXISTS_CACHE[modname] = value
+                    value = _MODNAME_EXISTS_CACHE[modname]
                 elif arg.lower() in SYS_PLATFORM_TAGS:
                     value = not sys.platform.startswith(arg.lower())
                 elif arg.lower() in OS_NAME_TAGS:
@@ -309,6 +387,8 @@ class Directive(utils.NiceRepr):
             value = self.positive
         return key, value
 
+_MODNAME_EXISTS_CACHE = {}
+
 
 COMMANDS = list(DEFAULT_RUNTIME_STATE.keys()) + [
     # Define extra commands that can resolve to a runtime state modification
@@ -322,7 +402,7 @@ DIRECTIVE_PATTERNS = [
 DIRECTIVE_RE = re.compile('|'.join(DIRECTIVE_PATTERNS), flags=re.IGNORECASE)
 
 
-def extract(text):
+def _extract(text):
     """
     Parses directives from a line or repl line
 
@@ -330,44 +410,47 @@ def extract(text):
         text (str): should correspond to exactly one PS1 line and its PS2
         followups.
 
+    Yeilds:
+        Directive: directive: the parsed directives
+
     Notes:
         The original `doctest` module sometimes yeilded false positives for a
         directive pattern. Because `xdoctest` is parsing the text, this issue
         does not occur.
 
     CommandLine:
-        python -m xdoctest.directive extract
+        python -m xdoctest.directive _extract
 
     Example:
         >>> text = '# xdoc: + SKIP'
-        >>> print(', '.join(list(map(str, extract(text)))))
+        >>> print(', '.join(list(map(str, _extract(text)))))
         <Directive(+SKIP)>
 
         >>> # Directive with args
         >>> text = '# xdoctest: requires(--show)'
-        >>> print(', '.join(list(map(str, extract(text)))))
+        >>> print(', '.join(list(map(str, _extract(text)))))
         <Directive(+REQUIRES(--show))>
 
         >>> # Malformatted directives are ignored
         >>> text = '# xdoctest: does_not_exist, skip'
         >>> import pytest
         >>> with pytest.warns(None) as record:
-        >>>     print(', '.join(list(map(str, extract(text)))))
+        >>>     print(', '.join(list(map(str, _extract(text)))))
         <Directive(+SKIP)>
 
         >>> # Two directives in one line
         >>> text = '# xdoctest: +ELLIPSIS, -NORMALIZE_WHITESPACE'
-        >>> print(', '.join(list(map(str, extract(text)))))
+        >>> print(', '.join(list(map(str, _extract(text)))))
         <Directive(+ELLIPSIS)>, <Directive(-NORMALIZE_WHITESPACE)>
 
     Example:
-        >>> any(extract(' # xdoctest: skip'))
+        >>> any(_extract(' # xdoctest: skip'))
         True
-        >>> any(extract(' # badprefix: not-a-directive'))
+        >>> any(_extract(' # badprefix: not-a-directive'))
         False
-        >>> any(extract(' # xdoctest: skip'))
+        >>> any(_extract(' # xdoctest: skip'))
         True
-        >>> any(extract(' # badprefix: not-a-directive'))
+        >>> any(_extract(' # badprefix: not-a-directive'))
         False
     """
     # The extracted directives are inline if the text only contains comments
