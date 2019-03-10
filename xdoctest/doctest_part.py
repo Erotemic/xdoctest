@@ -110,7 +110,7 @@ class DoctestPart(object):
             <Directive(+SKIP)>
         """
         if self._directives is None:
-            self._directives = list(directive.extract(self.source))
+            self._directives = list(directive.Directive.extract(self.source))
         return self._directives
 
     @property

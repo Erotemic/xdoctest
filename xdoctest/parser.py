@@ -249,7 +249,7 @@ class DoctestParser(object):
         ps1_to_directive = {}
         for s1, s2 in zip(ps1_linenos, ps1_linenos[1:] + [None]):
             lines = exec_source_lines[s1:s2]
-            directives = list(directive.extract('\n'.join(lines)))
+            directives = list(directive.Directive.extract('\n'.join(lines)))
             if directives:
                 ps1_to_directive[s1] = directives
                 break_linenos.append(s1)
