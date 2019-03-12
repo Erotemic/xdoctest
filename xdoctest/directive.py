@@ -181,8 +181,8 @@ class RuntimeState(utils.NiceRepr):
         return state
 
     def __nice__(self):
-        return '{' + ', '.join(['{}: {}'.format(*item)
-                               for item in self.to_dict().items()]) + '}'
+        parts = ['{}: {}'.format(*item) for item in self.to_dict().items()]
+        return ('{' + ', '.join(parts) + '}')
 
     def __getitem__(self, key):
         if key not in self._global_state:
@@ -249,8 +249,8 @@ class Directive(utils.NiceRepr):
         Parses directives from a line or repl line
 
         Args:
-            text (str): should correspond to exactly one PS1 line and its PS2
-            followups.
+            text (str): must correspond to exactly one PS1 line and its PS2
+                followups.
 
         Yeilds:
             Directive: directive: the parsed directives
@@ -283,9 +283,31 @@ class Directive(utils.NiceRepr):
             >>> print(', '.join(list(map(str, Directive.extract(text)))))
             <Directive(+ELLIPSIS)>, <Directive(-NORMALIZE_WHITESPACE)>
 
-        Directive.extract('# xdoctest: requires(--show)')
+        Example:
+            >>> any(Directive.extract(' # xdoctest: skip'))
+            True
+            >>> any(Directive.extract(' # badprefix: not-a-directive'))
+            False
+            >>> any(Directive.extract(' # xdoctest: skip'))
+            True
+            >>> any(Directive.extract(' # badprefix: not-a-directive'))
+            False
         """
-        return _extract(text)
+        # Flag extracted directives as inline iff the text is only comments
+        inline = not all(line.strip().startswith('#')
+                         for line in text.splitlines())
+        #
+        for comment in static.extract_comments(text):
+            # remove the first comment character and see if the comment matches
+            # the directive pattern
+            m = DIRECTIVE_RE.match(comment[1:].strip())
+            if m:
+                for key, optstr in m.groupdict().items():
+                    if optstr:
+                        for optpart in optstr.split(','):
+                            directive = parse_directive_optstr(optpart, inline)
+                            if directive:
+                                yield directive
 
     def __nice__(self):
         prefix = ['-', '+'][int(self.positive)]
@@ -402,83 +424,18 @@ DIRECTIVE_PATTERNS = [
 DIRECTIVE_RE = re.compile('|'.join(DIRECTIVE_PATTERNS), flags=re.IGNORECASE)
 
 
-def _extract(text):
-    """
-    Parses directives from a line or repl line
-
-    Args:
-        text (str): should correspond to exactly one PS1 line and its PS2
-        followups.
-
-    Yeilds:
-        Directive: directive: the parsed directives
-
-    Notes:
-        The original `doctest` module sometimes yeilded false positives for a
-        directive pattern. Because `xdoctest` is parsing the text, this issue
-        does not occur.
-
-    CommandLine:
-        python -m xdoctest.directive _extract
-
-    Example:
-        >>> text = '# xdoc: + SKIP'
-        >>> print(', '.join(list(map(str, _extract(text)))))
-        <Directive(+SKIP)>
-
-        >>> # Directive with args
-        >>> text = '# xdoctest: requires(--show)'
-        >>> print(', '.join(list(map(str, _extract(text)))))
-        <Directive(+REQUIRES(--show))>
-
-        >>> # Malformatted directives are ignored
-        >>> text = '# xdoctest: does_not_exist, skip'
-        >>> import pytest
-        >>> with pytest.warns(None) as record:
-        >>>     print(', '.join(list(map(str, _extract(text)))))
-        <Directive(+SKIP)>
-
-        >>> # Two directives in one line
-        >>> text = '# xdoctest: +ELLIPSIS, -NORMALIZE_WHITESPACE'
-        >>> print(', '.join(list(map(str, _extract(text)))))
-        <Directive(+ELLIPSIS)>, <Directive(-NORMALIZE_WHITESPACE)>
-
-    Example:
-        >>> any(_extract(' # xdoctest: skip'))
-        True
-        >>> any(_extract(' # badprefix: not-a-directive'))
-        False
-        >>> any(_extract(' # xdoctest: skip'))
-        True
-        >>> any(_extract(' # badprefix: not-a-directive'))
-        False
-    """
-    # The extracted directives are inline if the text only contains comments
-    inline = not all(line.strip().startswith('#')
-                     for line in text.splitlines())
-    #
-    for comment in static.extract_comments(text):
-        # remove the first comment character and see if the comment matches the
-        # directive pattern
-        m = DIRECTIVE_RE.match(comment[1:].strip())
-        if m:
-            for key, optstr in m.groupdict().items():
-                if optstr:
-                    for optpart in optstr.split(','):
-                        directive = parse_directive_optstr(optpart, inline)
-                        if directive:
-                            yield directive
-
-
 def parse_directive_optstr(optpart, inline=None):
     """
-    Parses the information in the directive
+    Parses the information in the directive from the "optpart"
 
     optstrs are:
         optionally prefixed with `+` (default) or `-`
         comma separated
         may contain one paren enclosed argument (experimental)
         all spaces are ignored
+
+    Returns:
+        Directive: the parsed directive
 
     Example:
         >>> print(str(parse_directive_optstr('+IGNORE_WHITESPACE')))
