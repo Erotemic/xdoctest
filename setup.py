@@ -119,9 +119,12 @@ def parse_description():
     return ''
 
 
+version = parse_version()
+
+
 if __name__ == '__main__':
     setup(
-        version=parse_version(),
+        version=version,
         description='A rewrite of the builtin doctest module',
         install_requires=parse_requirements('requirements.txt'),
         extras_require={
