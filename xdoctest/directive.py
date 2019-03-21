@@ -382,25 +382,26 @@ class Directive(utils.NiceRepr):
                 if arg.startswith('-'):
                     value = arg not in argv
                 elif arg.startswith('module:'):
-                    from xdoctest import static_analysis as static
                     parts = arg.split(':')
                     if len(parts) != 2:
                         raise ValueError('xdoctest REQUIRES directive has too many parts')
-                    # set value to True if the module exists
+                    # set value to True (aka SKIP) if the module does not exist
                     modname = parts[1]
-                    if modname not in _MODNAME_EXISTS_CACHE:
-                        modpath = static.modname_to_modpath(modname)
-                        value = modpath is None
-                        _MODNAME_EXISTS_CACHE[modname] = value
-                    value = _MODNAME_EXISTS_CACHE[modname]
+                    value = not _module_exists(modname)
                 elif arg.lower() in SYS_PLATFORM_TAGS:
                     value = not sys.platform.startswith(arg.lower())
                 elif arg.lower() in OS_NAME_TAGS:
                     value = not os.name.startswith(arg.lower())
                 else:
-                    ValueError(
-                        'Argument to REQUIRES must be an PLATFORM tag or a '
-                        'command line flag')
+                    msg = utils.codeblock(
+                        '''
+                        Argument to REQUIRES directive must be either
+                        (1) a PLATFORM or OS tag (e.g. win32, darwin, linux),
+                        (2) a command line flag prefixed with '--', or
+                        (3) a module prefixed with 'module:'.
+                        Got arg={!r}
+                        ''').replace('\n', ' ').strip().format(arg)
+                    raise ValueError(msg)
             else:
                 key = 'NOOP'
                 value = True
@@ -410,6 +411,16 @@ class Directive(utils.NiceRepr):
         return key, value
 
 _MODNAME_EXISTS_CACHE = {}
+
+
+def _module_exists(modname):
+    if modname not in _MODNAME_EXISTS_CACHE:
+        from xdoctest import static_analysis as static
+        modpath = static.modname_to_modpath(modname)
+        exists_flag = modpath is not None
+        _MODNAME_EXISTS_CACHE[modname] = exists_flag
+    exists_flag = _MODNAME_EXISTS_CACHE[modname]
+    return exists_flag
 
 
 COMMANDS = list(DEFAULT_RUNTIME_STATE.keys()) + [
