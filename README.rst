@@ -1,7 +1,7 @@
 XDoctest - Extended Doctest
 ===========================
 
-|Travis| |Appveyor| |Codecov| |Pypi|
+|CircleCI| |Travis| |Appveyor| |Codecov| |Pypi| |Downloads|
 
 Purpose
 -------
@@ -406,6 +406,8 @@ Uncategorized:
 - [x] fix the higlighting of the "got" string when dumping test results (new in 0.4.0)
 - [ ] Write a plugin to sphinx so it uses xdoctest instead of doctest?
 
+.. |CircleCI| image:: https://circleci.com/gh/Erotemic/xdoctest.svg?style=svg
+    :target: https://circleci.com/gh/Erotemic/xdoctest
 .. |Travis| image:: https://img.shields.io/travis/Erotemic/xdoctest/master.svg?label=Travis%20CI
    :target: https://travis-ci.org/Erotemic/xdoctest
 .. |Appveyor| image:: https://ci.appveyor.com/api/projects/status/github/Erotemic/xdoctest?branch=master&svg=True
@@ -414,3 +416,5 @@ Uncategorized:
    :target: https://codecov.io/github/Erotemic/xdoctest?branch=master
 .. |Pypi| image:: https://img.shields.io/pypi/v/xdoctest.svg
    :target: https://pypi.python.org/pypi/xdoctest
+.. |Downloads| image:: https://img.shields.io/pypi/dm/xdoctest.svg
+   :target: https://pypistats.org/packages/xdoctest
