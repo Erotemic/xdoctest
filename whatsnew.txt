@@ -1,3 +1,10 @@
+Version 0.7.3
+-------------
+* The REQUIRES directive can now accept python modules in the form: `# xdoctest: +REQUIRES(module:<my_modname>)`
+* Demo folder illustrating how xdoctest formats error messages
+* Reduced import overhead time from 20ms to 1ms.
+* Support for double-colon example syntax in google style parsing. e.g. `Example::`.
+
 Version 0.7.2
 -------------
 * Removed warning if pygments is not installed
