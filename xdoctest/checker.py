@@ -60,7 +60,7 @@ def check_got_vs_want(want, got_stdout, got_eval=constants.NOT_EVALED,
             try:
                 got = repr(got_eval)
             except Exception as ex:
-                raise ExtractGotReprException(ex)
+                raise ExtractGotReprException('Error calling repr for {}. Caused by: {!r}'.format(type(got_eval), ex), ex)
             flag = check_output(got, want, runstate)
         else:
             # If there was eval and stdout, defer to stdout
@@ -337,7 +337,8 @@ class ExtractGotReprException(AssertionError):
     """
     Exception used when we are unable to extract a string "got"
     """
-    def __init__(self, orig_ex):
+    def __init__(self, msg, orig_ex):
+        super(ExtractGotReprException, self).__init__(msg)
         self.orig_ex = orig_ex
 
 
