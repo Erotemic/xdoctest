@@ -57,7 +57,10 @@ def check_got_vs_want(want, got_stdout, got_eval=constants.NOT_EVALED,
     else:
         if not got_stdout:
             # If there was no stdout then use eval value.
-            got = repr(got_eval)
+            try:
+                got = repr(got_eval)
+            except Exception as ex:
+                raise ExtractGotReprException(ex)
             flag = check_output(got, want, runstate)
         else:
             # If there was eval and stdout, defer to stdout
@@ -330,7 +333,20 @@ def normalize(got, want, runstate=None):
     return got, want
 
 
+class ExtractGotReprException(AssertionError):
+    """
+    Exception used when we are unable to extract a string "got"
+    """
+    def __init__(self, orig_ex):
+        self.orig_ex = orig_ex
+
+
 class GotWantException(AssertionError):
+    """
+    Exception used when the "got" output of a doctest differs from the expected
+    "want" output.
+
+    """
     def __init__(self, msg, got, want):
         super(GotWantException, self).__init__(msg)
         self.got = got

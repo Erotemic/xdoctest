@@ -419,5 +419,5 @@ if __name__ == '__main__':
         python ~/code/xdoctest/testing/test_core.py
         pytest testing/test_core.py -vv
     """
-    import xdoctest
+    import xdoctest  # NOQA
     xdoctest.doctest_module(__file__)
