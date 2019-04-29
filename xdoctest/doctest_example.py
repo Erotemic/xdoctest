@@ -566,16 +566,24 @@ class DocTest(object):
                     if verbose > 0:
                         print('Test gracefully exists')
                     break
-                except parser.GotWantException:
+                except checker.GotWantException:
+                    # When the "got", does't match the "want"
                     self.exc_info = sys.exc_info()
                     if on_error == 'raise':
                         raise
                     break
-                except Exception:
+                except checker.ExtractGotReprException as ex:
+                    # When we fail to extract the "got"
+                    self.exc_info = sys.exc_info()
+                    if on_error == 'raise':
+                        raise ex.orig_ex
+                    break
+                except Exception as _ex_dbg:
                     ex_type, ex_value, tb = sys.exc_info()
 
-                    DEBUG = 0
+                    DEBUG = 1
                     if DEBUG:
+                        print('_ex_dbg = {!r}'.format(_ex_dbg))
                         print('<DEBUG: doctest encountered exception>', file=sys.stderr)
                         print(''.join(traceback.format_tb(tb)), file=sys.stderr)
                         print('</DEBUG>', file=sys.stderr)
@@ -610,7 +618,7 @@ class DocTest(object):
                         if DEBUG:
                             print('UNABLE TO CLEAN TRACEBACK. EXIT DUE TO DEBUG')
                             sys.exit(1)
-                        raise ValueError('Could not clean traceback')
+                        raise ValueError('Could not clean traceback: ex = {!r}'.format(_ex_dbg))
                     else:
                         self.failed_tb_lineno = found_lineno
 
@@ -683,7 +691,10 @@ class DocTest(object):
         else:
             ex_type, ex_value, tb = self.exc_info
             offset = self.failed_part.line_offset
-            if isinstance(ex_value, parser.GotWantException):
+            if isinstance(ex_value, checker.ExtractGotReprException):
+                # Return the line of the "got" expression
+                offset += self.failed_part.n_exec_lines
+            elif isinstance(ex_value, checker.GotWantException):
                 # Return the line of the want line
                 offset += self.failed_part.n_exec_lines + 1
             else:

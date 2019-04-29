@@ -1,144 +1,165 @@
-Version 0.7.3
--------------
+## Unreleased (0.8.0)
+
+### Fixed
+* Got-want exceptions now return a special error if it fails to create a string-representation of the object instead of crashing.
+
+
+## Version 0.7.3
+
+
+### Added
 * The REQUIRES directive can now accept python modules in the form: `# xdoctest: +REQUIRES(module:<my_modname>)`
+* Support for double-colon example syntax in google style parsing: e.g. `Example::`.
+
+### Changed
 * Demo folder illustrating how xdoctest formats error messages
 * Reduced import overhead time from 20ms to 1ms.
-* Support for double-colon example syntax in google style parsing. e.g. `Example::`.
 
-Version 0.7.2
--------------
-* Removed warning if pygments is not installed
+## Version 0.7.2
+
+### Changed
+
+* Removed warning if `pygments` is not installed
 
 
-Version 0.7.1
--------------
+## Version 0.7.1
+
+### Changed
+
 * Changed verbosity defaults
 
 
-Version 0.7.0
--------------
+## Version 0.7.0
+
+### Added
+* Added `global-exec` to native xdoctest CLI and `xdoctest-global-exec` to the pytest plugin CLI
+
+### Changed
+
 * Renamed `DocTest.globs` to `DocTest.global_namespace`
-* Added `--global-exec' to native xdoctest CLI and `--xdoctest-global-exec` to the pytest plugin CLI
-* Fixed issue in traceback parsing that sometimes caused incorrectly offset line numbers.
 * Internal test changes
 
+### Fixed
+* Fixed issue in traceback parsing that sometimes caused incorrectly offset line numbers.
 
-Version 0.6.2
--------------
+
+## Version 0.6.2
+
 * Fixed bug in `static_analysis.is_balanced_statement` and
   `static_analysis.extract_comments` having to do with empty lines
 * Fixed odd corner case where import_module_from_path seemed to modify `sys.path` in a specific environment
-* Fixed python2 future issues using the print name in doctests.
+* Fixed Python2 future issues using the print name in doctests.
 * Added option to print test times in the runner.
 
 
-Version 0.6.1
--------------
+## Version 0.6.1
+
+### Fixed
+
 * Fixed python2 unicode error in collection phase
 
 
-Version 0.6.0
--------------
-* Better error messages when you forget a raw string on a google block with
-  newlines in the docstr.
+## Version 0.6.0
+
+* Better error messages when you forget a raw string on a google block with newlines in the docstr.
 * Tests for malformed google docstr case.
-* Added --nocolor command line arg
+* Added nocolor command line arg
 * Added parserkw arg
 * Python 3.7 support
 
 
-Version 0.5.8
--------------
+## Version 0.5.8
+
 * Fixed install issues (/introduced hack FIXME later)
 * Fixed issue with raw string lineno parsing
 
-Version 0.5.0
--------------
+## Version 0.5.0
+
 * Generally Improved doctest error reporting 
     * Includes better coloring for quick visual inspection
     * Line numbers are now reported in a more intuitive way
-    * We finally removed the exec DoctestExample.run from the traceback!
+    * We finally removed the exec `DoctestExample.run` from the traceback!
     
 * (we report line numbers of errors in a more intuitive way).
-* Fixed GH#20 where doclineno_end was incorrectly parsed
+* Fixed GH#20 where `doclineno_end` was incorrectly parsed
 * Fixed issue where google style block lineno was incorrect
 * Added config option for lineno offsets. (corresponding arguments added to
   native and pytest runners)
 * Add support for Python 3.7
 
 
-Version 0.4.1
--------------
-* Fixed bug with reporting ellapsed time in native runner
+## Version 0.4.1
+
+* Fixed bug with reporting elapsed time in native runner
 
 
-Version 0.4.0
--------------
+## Version 0.4.0
+
 * Added auto parsing style. This first tries to use Google, but falls back on
   freeform if no google-style doctests are found.
 * Errors are no longer printed twice if only a single test is being run.
 * All parsers now default to the new "auto" style.
 * Added command "dump" to native runner that reformats enabled doctests so they
   can be run as unit tests.
-* Implemented delayed want mtaching. This enables doctests to use multiple
+* Implemented delayed want matching. This enables doctests to use multiple
   print statements in a row and use a single want statement to check all of
   their output.
 * Colorized doctest now highlights "want" lines in a distinct (green) color
 
-Version 0.3.5
--------------
+## Version 0.3.5
+
 * Changed development status to Beta
 * Output difference now strips the BLANKLINE marker if enabled
 
-Version 0.3.4
--------------
+## Version 0.3.4
+
 * The reported difference between got and want now preserves newlines for
   better visibility.
 
-Version 0.3.3
--------------
-* Fixed bug where pytest would collect all tests twice 
-  (because the __init__.py file was normalized to a directory in package_modpaths)
+## Version 0.3.3
 
-Version 0.3.2
--------------
+* Fixed bug where pytest would collect all tests twice 
+  (because the __init__.py file was normalized to a directory in `package_modpaths`)
+
+## Version 0.3.2
+
 * API update to facilitate mkinit
 
-Version 0.3.1
--------------
+## Version 0.3.1
+
 * Improved doctest syntax error message
-* PythonPathContext no longer breaks if small changes to the path occur in its context.
-* PythonPathContext can now insert into front or back of sys.path
+* `PythonPathContext` no longer breaks if small changes to the path occur in its context.
+* `PythonPathContext` can now insert into front or back of sys.path
 * Flags can now be specified before or after positional arguments when using the __main__ script
 
-Version 0.3.0
--------------
-* Can now override sys.path when calling modname_to_modpath and is_modname_importable (api change)
-* Added entry point script
-* example command lines now use the full path if the module is not in the PYTHONPATH
+## Version 0.3.0
 
-Version 0.2.4
--------------
+* Can now override `sys.path` when calling `modname_to_modpath` and `is_modname_importable` (API change)
+* Added entry point script
+* example command lines now use the full path if the module is not in the `PYTHONPATH`
+
+## Version 0.2.4
+
 * added IGNORE_WANT directive
 * added separator between printout of docsrc and its stdout
 
-Version 0.2.3
--------------
+## Version 0.2.3
+
 * Print correct doctest line number in the traceback
 * Runner on_error will now default to return instead of raise
 
-Version 0.2.2
--------------
+## Version 0.2.2
+
 * Fixed option parsing bug in __main__ script
 
 
-Version 0.2.1
--------------
-* The default runtime state can be customized with the `--xdoc-options` command line argument.
+## Version 0.2.1
+
+* The default runtime state can be customized with the `xdoc-options` command line argument.
 * Fix crash when trying to read binary files
-* Fix issue in _docstr_line_workaround
+* Fix issue in `_docstr_line_workaround`
 
 
-Version 0.2.0
--------------
-* Starting a whats new changelog
+## Version 0.2.0
+
+* Starting keeping a changelog

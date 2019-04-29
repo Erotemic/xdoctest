@@ -189,6 +189,31 @@ def test_parse_doctset_error():
           ''')
     text = _run_case(source, style='google')
     text = _run_case(source, style='freeform')
+    del text
+
+
+def test_extract_got_exception():
+    """
+    Make a repr that fails
+
+    CommandLine:
+        xdoctest -m ~/code/xdoctest/testing/test_errors.py test_extract_got_exception
+    """
+
+    source = utils.codeblock(
+        '''
+        class MyObj(object):
+            """
+            Example:
+                >>> a = MyObj()
+                >>> a
+                you cant always get what you want
+            """
+            def __repr__(self):
+                raise Exception('this repr fails')
+          ''')
+    text = _run_case(source, style='google')
+    assert 'ExtractGotReprException' in text
 
 
 if __name__ == '__main__':
