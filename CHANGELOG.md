@@ -1,7 +1,15 @@
+# Changelog
+
+We are currently working on porting this changelog to the specifications in
+[Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+
 ## Unreleased (0.8.0)
 
 ### Fixed
 * Got-want exceptions now return a special error if it fails to create a string-representation of the object instead of crashing.
+* The `index` argument in `import_module_from_path` is now correctly used.
 
 
 ## Version 0.7.3
