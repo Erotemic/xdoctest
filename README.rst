@@ -393,9 +393,9 @@ Documentation:
 -  [x] Basic docstring docs
 -  [x] Basic readme
 -  [x] Improve readme
--  [ ] Further improve readme
--  [ ] Auto-generate read-the-docs Documentation
--  [ ] Getting Started documentation in read-the-docs
+-  [X] Further improve readme
+-  [X] Auto-generate read-the-docs Documentation
+-  [X] Getting Started documentation in read-the-docs
 
 
 Uncategorized:
@@ -407,6 +407,7 @@ Uncategorized:
 - [x] multi-part got / want "delayed" matching (new in 0.4.0). 
 - [x] fix the higlighting of the "got" string when dumping test results (new in 0.4.0)
 - [ ] Write a plugin to sphinx so it uses xdoctest instead of doctest?
+- [ ] Attempt to get pytorch branch merged: https://github.com/pytorch/pytorch/pull/15648
 
 .. |CircleCI| image:: https://circleci.com/gh/Erotemic/xdoctest.svg?style=svg
     :target: https://circleci.com/gh/Erotemic/xdoctest

@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+The core logic that allows for xdoctest to parse source statically
+"""
 from __future__ import absolute_import, division, print_function, unicode_literals
 import os
 import sys

@@ -16,9 +16,9 @@ from xdoctest import directive
 from xdoctest import constants
 
 
+# HACKED IN, IDK WHY I NEEDED TO DO THIS HERE
 def add_line_numbers(source, start=1, n_digits=None):
     """
-    HACKED IN, IDK WHY I NEEDED TO DO THIS HERE
     Prefixes code with line numbers
 
     Example:
