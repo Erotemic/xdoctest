@@ -33,20 +33,20 @@ DOCTEST_STYLES = [
 
 def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
                                    lineno=1, fpath=None, asone=True):
-    """
+    r"""
     Finds free-form doctests in a docstring. This is similar to the original
     doctests because these tests do not requires a google/numpy style header.
 
     Some care is taken to avoid enabling tests that look like disabled google
-    doctests / scripts.
+    doctests or scripts.
 
     Args:
         asone (bool): if False doctests are broken into multiple examples
            based on spacing. (default True)
 
         lineno (int): the line number (starting from 1) of the docstring.
-            (i.e. if you were to go to this line number in the source file
-             the starting quotes of the docstr would be on this line).
+            i.e. if you were to go to this line number in the source file
+            the starting quotes of the docstr would be on this line.
 
     Raises:
         xdoctest.exceptions.DoctestParseError: if an error occurs in parsing
@@ -58,32 +58,32 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         >>> from xdoctest import core
         >>> from xdoctest import utils
         >>> docstr = utils.codeblock(
-            '''
-            freeform
-            >>> doctest
-            >>> hasmultilines
-            whoppie
-            >>> 'butthis is the same doctest'
-
-            >>> secondone
-
-            Script:
-                >>> 'special case, dont parse me'
-
-            DisableDoctest:
-                >>> 'special case, dont parse me'
-                want
-
-            AnythingElse:
-                >>> 'general case, parse me'
-                want
-            ''')
+        >>>     '''
+        >>>     freeform
+        >>>     >>> doctest
+        >>>     >>> hasmultilines
+        >>>     whoppie
+        >>>     >>> 'butthis is the same doctest'
+        >>>
+        >>>     >>> secondone
+        >>>
+        >>>     Script:
+        >>>         >>> 'special case, dont parse me'
+        >>>
+        >>>     DisableDoctest:
+        >>>         >>> 'special case, dont parse me'
+        >>>         want
+        >>>
+        >>>     AnythingElse:
+        >>>         >>> 'general case, parse me'
+        >>>        want
+        >>>     ''')
         >>> examples = list(parse_freeform_docstr_examples(docstr, asone=True))
         >>> assert len(examples) == 1
         >>> examples = list(parse_freeform_docstr_examples(docstr, asone=False))
         >>> assert len(examples) == 3
-
     """
+
     def doctest_from_parts(parts, num, curr_offset):
         # FIXME: this will cause line numbers to become misaligned
         nested = [
@@ -113,6 +113,7 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
 
     respect_google_headers = True
     if respect_google_headers:  # pragma: nobranch
+        # TODO: make configurable
         # When in freeform mode we still try to respect google doctest patterns
         # that prevent a test from being run.
         special_skip_patterns = [
@@ -192,12 +193,12 @@ def parse_google_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
 
     Args:
         lineno (int): the line number (starting from 1) of the docstring.
-            (i.e. if you were to go to this line number in the source file
-             the starting quotes of the docstr would be on this line).
+            i.e. if you were to go to this line number in the source file
+            the starting quotes of the docstr would be on this line.
 
     Raises:
-        .exceptions.MalformedDocstr: if an error occurs in finding google blocks
-        .exceptions.DoctestParseError: if an error occurs in parsing
+        xdoctest.exceptions.MalformedDocstr: if an error occurs in finding google blocks
+        xdoctest.exceptions.DoctestParseError: if an error occurs in parsing
     """
     try:
         blocks = docscrape_google.split_google_docblocks(docstr)
@@ -264,8 +265,8 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
         modpath (PathLike): original module the docstring is from
 
         lineno (int): the line number (starting from 1) of the docstring.
-            (i.e. if you were to go to this line number in the source file
-             the starting quotes of the docstr would be on this line).
+            i.e. if you were to go to this line number in the source file
+            the starting quotes of the docstr would be on this line.
 
         style (str): expected doctest style (e.g. google, freeform, auto)
 

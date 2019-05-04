@@ -1,7 +1,50 @@
 # -*- coding: utf-8 -*-
 """
-Native xdoctest interface to the collecting, executing, and summarizing the
-results of running doctests. This is an alternative to running through pytest.
+The Native XDoctest Runner
+--------------------------
+
+This file defines the native xdoctest interface to the collecting, executing,
+and summarizing the results of running doctests. This is an alternative to
+running through pytest.
+
+###  Using the XDoctest Runner via the Terminal.
+
+This interface is exposed via the ``xdoctest.__main__`` script and can be
+invoked on any module via: ``python -m xdoctest <modname>``, where
+``<modname>`` is the path to. For example to run the tests in this module you
+could execute:
+
+.. code:: bash
+
+    python -m xdoctest xdoctest.runner all
+
+For more details see:
+
+.. code:: bash
+
+    python -m xdoctest --help
+
+###  Using the XDoctest Runner Programatically
+
+This interface may also be run programmatically using
+``xdoctest.doctest_module(path)``, which can be placed in the
+``__main__`` section of any module as such:
+
+.. code:: python
+
+    if __name__ == '__main__':
+        import xdoctest as xdoc
+        xdoc.doctest_module(__file__)
+
+This allows you to invoke the runner on a specific module by simply running
+that module as the main module. Via: ``python -m <modname> <command>``. For
+example, the this module ends with the previous code, which means you can
+run the doctests as such:
+
+.. code:: bash
+
+    python -m xdoctest.runner list
+
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
 from xdoctest import dynamic_analysis as dynamic
