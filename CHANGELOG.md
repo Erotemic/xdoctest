@@ -5,7 +5,7 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Unreleased (0.8.0)
+## Version 0.8.0
 
 ### Added
 * Added docs! Finally!
@@ -13,7 +13,6 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Fixed
 * Got-want exceptions now return a special error if it fails to create a string-representation of the object instead of crashing.
 * The `index` argument in `import_module_from_path` is now correctly used.
-
 
 ## Version 0.7.3
 
