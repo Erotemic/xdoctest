@@ -1,11 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-plugin file for registration with pytest.
+The Pytest XDoctest Plugin
+--------------------------
 
-discover and run doctests in modules and test files.
+This file is registered as a pytest plugin when you install xdoctest. By
+executing pytest with ``--xdoctest-modules`` (or simply ``--xdoctest``), this
+plugin will be enabled. This also disables the original builtin doctest plugin.
 
-Adapted from the original `pytest/_pytest/doctest.py` module at:
+When xdoctest is enabled, pytest will discover and run doctests in modules and
+test files using xdoctest's improved parser and runtime environment.
+
+To ensure maximum backwards compatibility with the original doctest module,
+this code is heavilly based on `pytest/_pytest/doctest.py` plugin file:
     https://github.com/pytest-dev/pytest
+
+-----------
 """
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
