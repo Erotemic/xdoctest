@@ -17,12 +17,17 @@ Read the docs here: http://xdoctest.readthedocs.io/en/latest/
 Quick Start
 -----------
 
-Installation From pypi
-^^^^^^^^^^^^^^^^^^^^^^
+Installation: from pypi
+^^^^^^^^^^^^^^^^^^^^^^^
+
+XDoctest can be installed via the normal pip mechanisms:
 
 ::
 
     pip install xdoctest
+
+Usage: Run your Doctests
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 After installing, the fastest way to run all doctests in your project
