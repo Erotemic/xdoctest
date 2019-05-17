@@ -14,25 +14,16 @@ encourage the pattern of test driven development.
 
 Read the docs here: http://xdoctest.readthedocs.io/en/latest/
 
-Installation
-------------
+Quick Start
+-----------
 
-From pypi
-^^^^^^^^^
+Installation From pypi
+^^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
     pip install xdoctest
 
-From github (bleeding edge)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-::
-
-    pip install git+git://github.com/Erotemic/xdoctest.git@master
-
-Quick Start
------------
 
 After installing, the fastest way to run all doctests in your project
 is:
