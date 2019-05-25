@@ -44,6 +44,9 @@ def color_text(text, color):
         str: text : colorized text.
             If pygments is not installed plain text is returned.
 
+    SeeAlso:
+        ubelt.color_text
+
     Example:
         >>> text = 'raw text'
         >>> assert color_text(text, 'red') == '\x1b[31;01mraw text\x1b[39;49;00m'
