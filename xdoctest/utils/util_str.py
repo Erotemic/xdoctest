@@ -48,12 +48,13 @@ def color_text(text, color):
         ubelt.color_text
 
     Example:
-        >>> import pytest
+        >>> text = 'raw text'
         >>> import ubelt as ub
-        >>> if ub.modname_to_modpath('pygments'):
+        >>> from xdoctest import utils
+        >>> if utils.modname_to_modpath('pygments'):
         >>>     # Colors text only if pygments is installed
-        >>>     ansi_text = ub.ensure_unicode(color_text(text, 'red'))
-        >>>     prefix = ub.ensure_unicode('\x1b[31')
+        >>>     ansi_text = utils.ensure_unicode(color_text(text, 'red'))
+        >>>     prefix = utils.ensure_unicode('\x1b[31')
         >>>     print('prefix = {!r}'.format(prefix))
         >>>     print('ansi_text = {!r}'.format(ansi_text))
         >>>     assert ansi_text.startswith(prefix)
