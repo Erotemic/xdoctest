@@ -48,6 +48,21 @@ def color_text(text, color):
         >>> text = 'raw text'
         >>> assert color_text(text, 'red') == '\x1b[31;01mraw text\x1b[39;49;00m'
         >>> assert color_text(text, None) == 'raw text'
+        >>> # xdoctest: +SKIP
+        >>> import pytest
+        >>> import ubelt as ub
+        >>> if ub.modname_to_modpath('pygments'):
+        >>>     # Colors text only if pygments is installed
+        >>>     ansi_text = ub.ensure_unicode(color_text(text, 'red'))
+        >>>     prefix = ub.ensure_unicode('\x1b[31')
+        >>>     print('prefix = {!r}'.format(prefix))
+        >>>     print('ansi_text = {!r}'.format(ansi_text))
+        >>>     assert ansi_text.startswith(prefix)
+        >>>     assert color_text(text, None) == 'raw text'
+        >>> else:
+        >>>     # Otherwise text passes through unchanged
+        >>>     assert color_text(text, 'red') == 'raw text'
+        >>>     assert color_text(text, None) == 'raw text'
     """
     if color is None:
         return text
