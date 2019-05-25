@@ -314,7 +314,7 @@ def test_oneliner():
         assert len(doctests) == 1
         print('doctests = {!r}'.format(doctests))
         import pytest
-        with pytest.raises(AssertionError, message='should fail'):
+        with pytest.raises(AssertionError, match='should fail'):
             doctests[0].run()
 
 
