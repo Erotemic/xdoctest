@@ -60,10 +60,20 @@ def color_text(text, color):
             import colorama
             colorama.init()
 
-        ansi_text = pygments.console.colorize(color, text)
+        try:
+            ansi_text = pygments.console.colorize(color, text)
+        except KeyError as ex:
+            import warnings
+            warnings.warn('unable to fine color: {!r}'.format(color))
+            return text
+        except Exception as ex:
+            import warnings
+            warnings.warn('some other issue with text color: {!r}'.format(ex))
+            return text
         return ansi_text
     except ImportError:  # nocover
-        # warnings.warn('pygments is not installed')
+        import warnings
+        warnings.warn('pygments is not installed, text will not be colored')
         return text
 
 
