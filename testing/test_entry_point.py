@@ -2,7 +2,7 @@ import sys
 import os
 import subprocess
 import pytest
-from xdoctest import static_analysis as static
+from xdoctest import utils
 
 
 def cmd(command):
@@ -25,7 +25,7 @@ def cmd(command):
 def skip_if_not_installed():
     # If xdoctest is not installed via `pip install -e`
     # then skip these tests because the entry point wont exist
-    if not static.is_modname_importable('xdoctest'):
+    if not utils.is_modname_importable('xdoctest'):
         pytest.skip('Can only test entry points if xdoctest is installed.')
 
 
