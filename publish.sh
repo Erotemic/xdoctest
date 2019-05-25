@@ -25,6 +25,9 @@ Usage:
 
     git checkout -b dev/<next>
 """
+if [[ "$USER" == "joncrall" ]]; then
+    GITHUB_USERNAME=erotemic
+fi
 
 # First tag the source-code
 VERSION=$(python -c "import setup; print(setup.parse_version())")
@@ -33,6 +36,7 @@ BRANCH=$(git branch | grep \* | cut -d ' ' -f2)
 echo "=== PYPI PUBLISHING SCRIPT =="
 echo "BRANCH = $BRANCH"
 echo "VERSION = '$VERSION'"
+echo "GITHUB_USERNAME = $GITHUB_USERNAME"
 
 if [[ "$BRANCH" != "master" ]]; then
     echo "WARNING: you are running publish on a non-master branch"
@@ -50,6 +54,10 @@ if [[ "$ANS" == "yes" ]]; then
 
     # Build wheel or source distribution
     python setup.py bdist_wheel --universal
+    WHEEL_PATH=*-$VERSION-*.whl
+    echo "WHEEL_PATH = $WHEEL_PATH"
+
+    twine check $WHEEL_PATH $WHEEL_PATH.asc
 
     # Use twine to upload. This will prompt for username and password
     # If you get an error:
@@ -57,11 +65,8 @@ if [[ "$ANS" == "yes" ]]; then
     # simply try typing your password slower.
     pip install twine
 
-    if [[ "$USER" == "joncrall" ]]; then
-        GITHUB_USERNAME=erotemic
-        echo "GITHUB_USERNAME = $GITHUB_USERNAME"
-    fi
-    twine upload --username $GITHUB_USERNAME --skip-existing dist/*
+    echo "TWINE_PASSWORD = $TWINE_PASSWORD"
+    twine upload --username $GITHUB_USERNAME --password=$TWINE_PASSWORD $WHEEL_PATH $WHEEL_PATH.asc
 else  
     echo "Dry run"
 fi
