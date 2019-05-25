@@ -44,12 +44,8 @@ def color_text(text, color):
         str: text : colorized text.
             If pygments is not installed plain text is returned.
 
-    SeeAlso:
-        ubelt.color_text
-
     Example:
         >>> text = 'raw text'
-        >>> import ubelt as ub
         >>> from xdoctest import utils
         >>> if utils.modname_to_modpath('pygments'):
         >>>     # Colors text only if pygments is installed
