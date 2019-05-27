@@ -1,10 +1,10 @@
-XDoctest - Extended Doctest
-===========================
-
 |CircleCI| |Travis| |Appveyor| |Codecov| |Pypi| |Downloads|
 
-Purpose
--------
+
+.. The large version wont work because github strips rst image rescaling. 
+.. image:: https://i.imgur.com/f3edcRy.png
+   :height: 100px
+   :align: left
 
 The ``xdoctest`` package is a re-write of Python's builtin ``doctest``
 module. It replaces the old regex-based parser with a new

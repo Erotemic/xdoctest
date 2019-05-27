@@ -52,21 +52,23 @@ if [[ "$ANS" == "yes" ]]; then
     git tag $VERSION -m "tarball tag $VERSION"
     git push --tags origin master
 
+    pip install twine -U
+
     # Build wheel or source distribution
     python setup.py bdist_wheel --universal
-    WHEEL_PATH=*-$VERSION-*.whl
+    WHEEL_PATH=$(ls dist/*-$VERSION-*.whl)
     echo "WHEEL_PATH = $WHEEL_PATH"
 
-    twine check $WHEEL_PATH $WHEEL_PATH.asc
+    gpg --detach-sign -a $WHEEL_PATH
+    gpg --verify $WHEEL_PATH.asc $WHEEL_PATH 
+    twine check $WHEEL_PATH.asc $WHEEL_PATH
 
-    # Use twine to upload. This will prompt for username and password
-    # If you get an error:
-    #   403 Client Error: Invalid or non-existent authentication information.
-    # simply try typing your password slower.
-    pip install twine
-
-    echo "TWINE_PASSWORD = $TWINE_PASSWORD"
-    twine upload --username $GITHUB_USERNAME --password=$TWINE_PASSWORD $WHEEL_PATH $WHEEL_PATH.asc
+    #echo "GITHUB_USERNAME = $GITHUB_USERNAME"
+    #echo "TWINE_PASSWORD = $TWINE_PASSWORD"
+    gpg --verify $WHEEL_PATH.asc $WHEEL_PATH 
+    CMD="twine upload --username $GITHUB_USERNAME --password=$TWINE_PASSWORD --sign $WHEEL_PATH.asc $WHEEL_PATH"
+    #echo "CMD = $CMD"
+    $CMD
 else  
     echo "Dry run"
 fi
