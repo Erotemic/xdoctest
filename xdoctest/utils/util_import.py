@@ -365,7 +365,7 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False, check=True,
 
     modname = splitext(rel_modpath)[0]
     if '.' in modname:
-        modname, abi_tag = modname.split('.')
+        modname, abi_tag = modname.split('.', 1)
     modname = modname.replace('/', '.')
     modname = modname.replace('\\', '.')
     return modname

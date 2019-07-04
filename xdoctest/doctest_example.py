@@ -591,15 +591,8 @@ class DocTest(object):
                     # Search for the traceback that corresponds with the
                     # doctest, and remove the parts that point to
                     # boilerplate lines in this file.
-                    def traverse_traceback(tb):
-                        sub_tb = tb
-                        yield sub_tb
-                        while sub_tb.tb_next is not None:
-                            sub_tb = sub_tb.tb_next
-                            yield sub_tb
-
                     found_lineno = None
-                    for sub_tb in traverse_traceback(tb):
+                    for sub_tb in _traverse_traceback(tb):
                         tb_filename = sub_tb.tb_frame.f_code.co_filename
                         if tb_filename == self._partfilename:
                             # Walk up the traceback until we find the one that has
@@ -1017,6 +1010,17 @@ class DocTest(object):
             barrier = self._color('====== </exec> ======', 'white')
             print(barrier)
         return summary
+
+
+def _traverse_traceback(tb):
+    # Lives down here to avoid issue calling exec in a function that contains a
+    # nested function with free variable.  Not sure how necesary this is
+    # because this doesn't have free variables.
+    sub_tb = tb
+    yield sub_tb
+    while sub_tb.tb_next is not None:
+        sub_tb = sub_tb.tb_next
+        yield sub_tb
 
 
 if __name__ == '__main__':
