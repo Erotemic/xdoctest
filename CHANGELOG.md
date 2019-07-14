@@ -4,12 +4,21 @@ We are currently working on porting this changelog to the specifications in
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Version 0.8.1 [Unreleased]
- 
+## Version 0.8.2 [Released 2019-07-14]
+
+### Changed
+* Slight modifications to file structure
+* Inherit `util_import` from `ubelt`
+
 ### Fixed
 * Fixed issue with nested functions and exec in older python versions
 * Fixed issue in modsplit with multidot suffixes.
 
+## Version 0.8.1 [Released 2019-05-24]
+
+### Fixed
+
+* Minor fixes to readme and docs
 
 ## Version 0.8.0
 
