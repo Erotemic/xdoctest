@@ -26,6 +26,21 @@ correspond to a `+SKIP` directive if the condition (a command line argument or
 platform name) represented by `flag` is satisfied.
 
 
+TODO
+----
+
+* Directives are currently subject to change. The current documented behavior
+is broken see GH #18. The fixing change will likely be backwards incompatible.
+
+* Do we:
+    (a) Maintain a directive stack to allow push and pop of SKIP directives
+    (b) Only allow the positive form of +SKIP? And disallow negative -SKIP?
+    (b.1) is the negative version of the directive every really that useful?
+    (c) perhaps a +SKIP can only update the runtime state to be positive
+        and -SKIP can only change to be negative (ie a failed +SKIP will not
+        sudently set SKIP to False)
+
+
 CommandLine:
     python -m xdoctest.directive __doc__
 
