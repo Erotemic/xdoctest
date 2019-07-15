@@ -147,7 +147,7 @@ def main():
     run_summary = xdoctest.doctest_module(modname, argv=[command], style=style,
                                           verbose=config['verbose'],
                                           config=config, durations=durations)
-    n_failed = run_summary['n_failed']
+    n_failed = run_summary.get('n_failed', 0)
     if n_failed > 0:
         sys.exit(1)
     else:
