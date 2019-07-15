@@ -72,6 +72,9 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
             glob-like patterns
         config (dict): modifies each examples configuration
 
+    Returns:
+        Dict: run_summary
+
     Example:
         >>> modname = 'xdoctest.dynamic_analysis'
         >>> result = doctest_module(modname, 'list', argv=[''])

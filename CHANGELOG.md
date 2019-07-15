@@ -4,6 +4,11 @@ We are currently working on porting this changelog to the specifications in
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 0.8.3 [Unreleased]
+
+### Fixed
+* The native runner now exits with a non-zero error code on failure
+
 ## Version 0.8.2 [Released 2019-07-14]
 
 ### Changed

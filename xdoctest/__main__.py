@@ -13,6 +13,7 @@ def main():
     python -m xdoctest xdoctest all
     python -m xdoctest networkx all --options=+IGNORE_WHITESPACE
     """
+    import sys
     import argparse
     from os.path import exists
     from xdoctest import utils
@@ -143,9 +144,14 @@ def main():
     #     'colored': colored,
     # }
 
-    xdoctest.doctest_module(modname, argv=[command], style=style,
-                            verbose=config['verbose'], config=config,
-                            durations=durations)
+    run_summary = xdoctest.doctest_module(modname, argv=[command], style=style,
+                                          verbose=config['verbose'],
+                                          config=config, durations=durations)
+    n_failed = run_summary['n_failed']
+    if n_failed > 0:
+        sys.exit(1)
+    else:
+        sys.exit(0)
 
 
 if __name__ == '__main__':

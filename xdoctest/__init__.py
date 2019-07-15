@@ -25,7 +25,7 @@ scripts), but for debugging it may be easier to use the native interface.
 
 """
 # mkinit xdoctest --nomods
-__version__ = '0.8.2'
+__version__ = '0.8.3'
 
 # Expose only select submodules
 __submodules__ = [
