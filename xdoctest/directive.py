@@ -82,12 +82,15 @@ Example:
     >>> # xdoctest: +REQUIRES(WIN32)
     >>> assert sys.platform.startswith('win32')
     >>> count += 1
+    >>> # xdoctest: -REQUIRES(WIN32)
     >>> # xdoctest: +REQUIRES(LINUX)
     >>> assert sys.platform.startswith('linux')
     >>> count += 1
+    >>> # xdoctest: -REQUIRES(LINUX)
     >>> # xdoctest: +REQUIRES(DARWIN)
     >>> assert sys.platform.startswith('darwin')
     >>> count += 1
+    >>> # xdoctest: -REQUIRES(DARWIN)
     >>> # xdoctest: -SKIP
     >>> print(count)
     >>> assert count == 1, 'Exactly one of the above parts should have run'
@@ -135,7 +138,9 @@ DEFAULT_RUNTIME_STATE = {
     'REPORT_NDIFF': False,
     'REPORT_UDIFF': True,
 
-    'SKIP': False,
+    # Skip will maintain a set of the reasons we are skipping
+    'SKIP': {},
+    # 'SKIP': False,
 
     # Original directives we are currently not supporting:
     # DONT_ACCEPT_TRUE_FOR_1
@@ -231,6 +236,14 @@ class RuntimeState(utils.NiceRepr):
         state['REPORT_' + reportchoice.upper()] = True
 
     def update(self, directives):
+        """
+        Update the runtime state given a set of directives
+
+        Args:
+            directives (List[Directive]): list of directives. The `state_item`
+                method is used to update this object.
+        """
+        # Clear the previous inline state
         self._inline_state.clear()
         for directive in directives:
             key, value = directive.state_item()
@@ -238,14 +251,23 @@ class RuntimeState(utils.NiceRepr):
                 continue
             if key not in self._global_state:
                 warnings.warn('Unknown state: {}'.format(key))
+
+            # Is this directive updating the local (inline) or global state?
             if directive.inline:
                 state = self._inline_state
             else:
                 state = self._global_state
 
+            # Special handling of report style
             if key.startswith('REPORT_') and value:
                 self.set_report_style(key.replace('REPORT_', ''))
-            state[key] = value
+
+            if key == 'REQUIRES':
+                # special handling for the REQUIRES directive
+                state['SKIP'] = value
+            else:
+                # Generic directive
+                state[key] = value
 
 
 class Directive(utils.NiceRepr):
@@ -342,6 +364,14 @@ class Directive(utils.NiceRepr):
 
     def state_item(self, argv=None):
         """
+        Used by a RuntimeState object to update itself
+
+        Returns:
+            Tuple[str, object]: (key, value):
+                key: which runtime state to update
+                    (note, certain keys may have special handling)
+                value: how to update the value
+
         Example:
             >>> Directive('SKIP').state_item()
             ('SKIP', True)
