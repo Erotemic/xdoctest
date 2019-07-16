@@ -434,7 +434,7 @@ class DocTest(object):
             raise KeyError(on_error)
 
         self._parse()  # parse out parts if we have not already done so
-        self.pre_run(verbose)
+        self._pre_run(verbose)
         self._import_module()
 
         # Prepare for actual test run
@@ -479,8 +479,9 @@ class DocTest(object):
                 # Extract directives and and update runtime state
                 runstate.update(part.directives)
 
+                print('runstate = {!r}'.format(runstate))
                 # Handle runtime actions
-                if runstate['SKIP']:
+                if runstate['SKIP'] or len(runstate['REQUIRES']) > 0:
                     self.skipped_parts.append(part)
                     continue
 
@@ -638,7 +639,7 @@ class DocTest(object):
                 import pytest
                 pytest.skip()
 
-        return self.post_run(verbose)
+        return self._post_run(verbose)
 
     @property
     def cmdline(self):
@@ -659,7 +660,7 @@ class DocTest(object):
     def block_prefix(self):
         return 'ZERO-ARG' if self.block_type == 'zero-arg' else 'DOCTEST'
 
-    def pre_run(self, verbose):
+    def _pre_run(self, verbose):
         if verbose >= 1:
             if verbose >= 2:
                 barrier = self._color('====== <exec> ======', 'white')
@@ -979,11 +980,20 @@ class DocTest(object):
             text = utils.color_text(text, color)
         return text
 
-    def post_run(self, verbose):
+    def _post_run(self, verbose):
         # print('POST RUN verbose = {!r}'.format(verbose))
+
+        skipped = len(self.skipped_parts) == len(self._parts)
+        failed = self.exc_info is not None
+        passed = not failed and not skipped
+
         summary = {
-            'passed': self.exc_info is None
+            'exc_info': self.exc_info,
+            'passed': passed,
+            'skipped': skipped,
+            'failed': failed,
         }
+
         if verbose >= 2:
             print(self._color(self.block_prefix + ' RESULT', 'white'))
         if self.exc_info is None:
@@ -991,7 +1001,7 @@ class DocTest(object):
                 if verbose >= 2:
                     if self._suppressed_stdout:
                         self._print_captured()
-                if len(self.skipped_parts) == len(self._parts):
+                if skipped:
                     success = self._color('SKIPPED', 'yellow')
                 else:
                     success = self._color('SUCCESS', 'green')
@@ -1005,7 +1015,6 @@ class DocTest(object):
                     lines = self.repr_failure()
                     text = '\n'.join(lines)
                     print(text)
-            summary['exc_info'] = self.exc_info
         if verbose >= 2:
             barrier = self._color('====== </exec> ======', 'white')
             print(barrier)
