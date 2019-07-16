@@ -41,6 +41,11 @@ echo "GITHUB_USERNAME = $GITHUB_USERNAME"
 
 if [[ "$BRANCH" != "$DEPLOY_BRANCH" ]]; then
     echo "WARNING: you are running publish on a non-deploy branch '${DEPLOY_BRANCH}'"
+    echo "
+
+    --- !!! STOP YOU ARE ON THE WRONG BRANCH !!! ---
+    
+    "
 fi
 
 # Verify that we want to publish
@@ -61,13 +66,14 @@ if [[ "$ANS" == "yes" ]]; then
     echo "WHEEL_PATH = $WHEEL_PATH"
 
     if [ "$USE_GPG" == "True" ]; then
+        # https://stackoverflow.com/questions/45188811/how-to-gpg-sign-a-file-that-is-built-by-travis-ci
         gpg --detach-sign -a $WHEEL_PATH
         gpg --verify $WHEEL_PATH.asc $WHEEL_PATH 
         twine check $WHEEL_PATH.asc $WHEEL_PATH
         gpg --verify $WHEEL_PATH.asc $WHEEL_PATH 
         twine upload --username $GITHUB_USERNAME --password=$TWINE_PASSWORD --sign $WHEEL_PATH.asc $WHEEL_PATH
     else
-        twine upload --username $GITHUB_USERNAME --password=$TWINE_PASSWORD --sign $WHEEL_PATH
+        twine upload --username $GITHUB_USERNAME --password=$TWINE_PASSWORD $WHEEL_PATH
     fi
 
     __notes__="""
