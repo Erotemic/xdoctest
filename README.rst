@@ -319,11 +319,11 @@ Instead do:
         0
         1
 
-Current Limitations and TODO:
------------------------------
+Unfinished Tasks: 
+-----------------
 
-This module is in a working state and can be used, but it is still under
-development.
+This module is in a working state. It is nearly complete, but there are a few
+todo items: 
 
 Parsing:
 ^^^^^^^^

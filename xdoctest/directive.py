@@ -198,7 +198,7 @@ class RuntimeState(utils.NiceRepr):
             REPORT_CDIFF: False,
             REPORT_NDIFF: False,
             REPORT_UDIFF: True,
-            REQUIRES: set(),
+            REQUIRES: set(...),
             SKIP: False
         })>
     """
