@@ -254,11 +254,13 @@ def _print_summary_report(run_summary, parse_warnlist, n_seconds,
     # final summary
     n_passed = run_summary.get('n_passed', 0)
     n_failed = run_summary.get('n_failed', 0)
+    n_skipped = run_summary.get('n_skipped', 0)
     n_warnings = len(warned) + len(parse_warnlist)
-    pairs = zip([n_failed, n_passed, n_warnings],
-                ['failed', 'passed', 'warnings'])
+    pairs = zip([n_failed, n_passed, n_skipped, n_warnings],
+                ['failed', 'passed', 'skipped', 'warnings'])
     parts = ['{n} {t}'.format(n=n, t=t) for n, t in pairs  if n > 0]
-    _fmtstr = '=== ' + ' '.join(parts) + ' in {n_seconds:.2f} seconds ==='
+    _fmtstr = '=== ' + ', '.join(parts) + ' in {n_seconds:.2f} seconds ==='
+    # _fmtstr = '=== ' + ' '.join(parts) + ' in {n_seconds:.2f} seconds ==='
     summary_line = _fmtstr.format(n_seconds=n_seconds)
     # color text based on worst type of error
     if n_failed > 0:
@@ -336,7 +338,12 @@ def _run_examples(enabled_examples, verbose, config=None):
             summaries.append(summary)
             if example.warn_list:
                 warned.append(example)
-            if summary['passed']:
+            if summary['skipped']:
+                if verbose == 0:
+                    # TODO: should we write anything when verbose=0?
+                    sys.stdout.write('S')
+                    sys.stdout.flush()
+            elif summary['passed']:
                 if verbose == 0:
                     # TODO: should we write anything when verbose=0?
                     sys.stdout.write('.')
@@ -363,6 +370,8 @@ def _run_examples(enabled_examples, verbose, config=None):
     if verbose == 0:
         print('')
     n_passed = sum(s['passed'] for s in summaries)
+    n_failed = sum(s['failed'] for s in summaries)
+    n_skipped = sum(s['skipped'] for s in summaries)
 
     if config is not None and config.get('colored', True):
         print(utils.color_text('============', 'white'))
@@ -379,8 +388,9 @@ def _run_examples(enabled_examples, verbose, config=None):
         'warned': warned,
         'action': 'run_examples',
         'n_warned': len(warned),
+        'n_skipped': n_skipped,
         'n_passed': n_passed,
-        'n_failed': n_total - n_passed,
+        'n_failed': n_failed,
         'n_total': n_total,
         'times': times,
     }

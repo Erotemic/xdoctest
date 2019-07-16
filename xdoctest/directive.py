@@ -104,10 +104,13 @@ Example:
 import sys
 import os
 import re
+import copy
 import warnings
+import operator as op
 from xdoctest import static_analysis as static
 from xdoctest import utils
 from collections import OrderedDict
+from collections import namedtuple
 # from xdoctest import exceptions
 
 
@@ -116,7 +119,7 @@ def named(key, pattern):
     return '(?P<{}>{})'.format(key, pattern)
 
 
-# TODO: modify global directive defaults
+# TODO: modify global directive defaults via a config file
 
 DEFAULT_RUNTIME_STATE = {
     'DONT_ACCEPT_BLANKLINE': False,
@@ -138,14 +141,21 @@ DEFAULT_RUNTIME_STATE = {
     'REPORT_NDIFF': False,
     'REPORT_UDIFF': True,
 
-    # Skip will maintain a set of the reasons we are skipping
-    'SKIP': {},
-    # 'SKIP': False,
+    # Doctests will be skipped while this is True, note that test only run
+    # if this is False and REQUIRES is empty.
+    'SKIP': False,
+
+    # Maintains a set unmet dependencies, ie the reasons we are skipping.
+    # Doctests will be skipped while REQUIRES is non-empty and SKIP is False.
+    'REQUIRES': set(),
 
     # Original directives we are currently not supporting:
     # DONT_ACCEPT_TRUE_FOR_1
     # REPORT_ONLY_FIRST_FAILURE
 }
+
+
+Effect = namedtuple('Effect', ('action', 'key', 'value'))
 
 
 class RuntimeState(utils.NiceRepr):
@@ -154,6 +164,9 @@ class RuntimeState(utils.NiceRepr):
 
     Inline directives are pushed and popped after the line is run.
     Otherwise directives persist until another directive disables it.
+
+    CommandLine:
+        xdoctest -m xdoctest.directive RuntimeState
 
     Example:
         >>> from xdoctest.directive import *
@@ -185,11 +198,12 @@ class RuntimeState(utils.NiceRepr):
             REPORT_CDIFF: False,
             REPORT_NDIFF: False,
             REPORT_UDIFF: True,
+            REQUIRES: set(),
             SKIP: False
         })>
     """
     def __init__(self, default_state=None):
-        self._global_state = DEFAULT_RUNTIME_STATE.copy()
+        self._global_state = copy.deepcopy(DEFAULT_RUNTIME_STATE)
         if default_state:
             self._global_state.update(default_state)
         self._inline_state = {}
@@ -240,34 +254,38 @@ class RuntimeState(utils.NiceRepr):
         Update the runtime state given a set of directives
 
         Args:
-            directives (List[Directive]): list of directives. The `state_item`
+            directives (List[Directive]): list of directives. The `effect`
                 method is used to update this object.
         """
         # Clear the previous inline state
         self._inline_state.clear()
         for directive in directives:
-            key, value = directive.state_item()
-            if key == 'NOOP':
+
+            action, key, value = directive.effect()
+
+            if action == 'noop':
                 continue
+
             if key not in self._global_state:
                 warnings.warn('Unknown state: {}'.format(key))
 
-            # Is this directive updating the local (inline) or global state?
+            # Determine if this impacts the local (inline) or global state.
             if directive.inline:
                 state = self._inline_state
             else:
                 state = self._global_state
 
-            # Special handling of report style
-            if key.startswith('REPORT_') and value:
+            if action == 'set_report_style':
+                # Special handling of report style
                 self.set_report_style(key.replace('REPORT_', ''))
-
-            if key == 'REQUIRES':
-                # special handling for the REQUIRES directive
-                state['SKIP'] = value
-            else:
-                # Generic directive
+            elif action == 'assign':
                 state[key] = value
+            elif action == 'set.add':
+                state[key].add(value)
+            elif action == 'set.remove':
+                state[key].remove(value)
+            else:
+                raise KeyError('unknown action {}'.format(action))
 
 
 class Directive(utils.NiceRepr):
@@ -354,7 +372,7 @@ class Directive(utils.NiceRepr):
         else:
             return '{}{}'.format(prefix, self.name)
 
-    def unpack_args(self, num):
+    def _unpack_args(self, num):
         nargs = self.args
         if len(nargs) != 1:
             raise TypeError(
@@ -362,98 +380,117 @@ class Directive(utils.NiceRepr):
                 'got {}'.format(self.name, num, nargs))
         return self.args
 
-    def state_item(self, argv=None):
+    def effect(self, argv=None):
         """
-        Used by a RuntimeState object to update itself
+        Returns how this directive modifies a RuntimeState object
+
+        This is used by a RuntimeState object to update itself
 
         Returns:
-            Tuple[str, object]: (key, value):
-                key: which runtime state to update
-                    (note, certain keys may have special handling)
-                value: how to update the value
+            Effect: named tuple containing:
+                action (str): code indicating how to update
+                key (str): name of runtime state item to modify
+                value (object): value to modify with
+
+        CommandLine:
+            xdoctest -m xdoctest.directive Directive.effect
 
         Example:
-            >>> Directive('SKIP').state_item()
-            ('SKIP', True)
-            >>> Directive('SKIP', inline=True).state_item()
-            ('SKIP', True)
-            >>> Directive('REQUIRES', args=['-s']).state_item(argv=['-s'])
-            ('SKIP', False)
-            >>> Directive('REQUIRES', args=['-s']).state_item(argv=[])
-            ('SKIP', True)
-            >>> Directive('ELLIPSIS', args=['-s']).state_item(argv=[])
-            ('ELLIPSIS', True)
+            >>> Directive('SKIP').effect()
+            Effect(action='assign', key='SKIP', value=True)
+            >>> Directive('SKIP', inline=True).effect()
+            Effect(action='assign', key='SKIP', value=True)
+            >>> Directive('REQUIRES', args=['-s']).effect(argv=['-s'])
+            Effect(action='noop', key='REQUIRES', value=None)
+            >>> Directive('REQUIRES', args=['-s']).effect(argv=[])
+            Effect(action='set.add', key='REQUIRES', value='-s')
+            >>> Directive('ELLIPSIS', args=['-s']).effect(argv=[])
+            Effect(action='assign', key='ELLIPSIS', value=True)
 
         Doctest:
             >>> # requirement directive with module
             >>> directive = list(Directive.extract('# xdoctest: requires(module:xdoctest)'))[0]
             >>> print('directive = {}'.format(directive))
-            >>> print('directive.state_item() = {}'.format(directive.state_item()))
+            >>> print('directive.effect() = {}'.format(directive.effect()))
             directive = <Directive(+REQUIRES(module:xdoctest))>
-            directive.state_item() = ('SKIP', False)
+            directive.effect() = Effect(action='noop', key='REQUIRES', value=None)
 
-            >>> directive = list(Directive.extract('# xdoctest: requires(module:motamodule)'))[0]
+            >>> directive = list(Directive.extract('# xdoctest: requires(module:notamodule)'))[0]
             >>> print('directive = {}'.format(directive))
-            >>> print('directive.state_item() = {}'.format(directive.state_item()))
-            directive = <Directive(+REQUIRES(module:motamodule))>
-            directive.state_item() = ('SKIP', True)
+            >>> print('directive.effect() = {}'.format(directive.effect()))
+            directive = <Directive(+REQUIRES(module:notamodule))>
+            directive.effect() = Effect(action='set.add', key='REQUIRES', value='module:notamodule')
         """
-        if self.name == 'REQUIRES':
-            # TODO: We should probably change requires so it keeps track
-            # of what you require, so we could add and remove requirements e.g.
-            # +REQUIRES(WIN32)
-            # we now require windows
-            # +REQUIRES(--flag)
-            # we now require windows AND a flag
-            # -REQUIRES(WIN32)
-            # we no longer require windows, but we still require the argflag
+        key = self.name
+        value = None
 
-            # TODO: register these advanced directives dynamically
-            # requires conditionally behaves like skip
+        if self.name == 'REQUIRES':
+            # Special handling of REQUIRES
             if argv is None:
                 argv = sys.argv
-
-            arg, = self.unpack_args(1)
-
-            SYS_PLATFORM_TAGS = ['win32', 'linux', 'darwin', 'cywgin']
-            OS_NAME_TAGS = ['posix', 'nt', 'java']
-
-            if self.positive:
-
-                # Note: a value of true means we will skip, this is kind of
-                # confusing, the termonology here needs to be refactored, but I
-                # think the API is mostly ok.
-                key = 'SKIP'
-                if arg.startswith('-'):
-                    value = arg not in argv
-                elif arg.startswith('module:'):
-                    parts = arg.split(':')
-                    if len(parts) != 2:
-                        raise ValueError('xdoctest REQUIRES directive has too many parts')
-                    # set value to True (aka SKIP) if the module does not exist
-                    modname = parts[1]
-                    value = not _module_exists(modname)
-                elif arg.lower() in SYS_PLATFORM_TAGS:
-                    value = not sys.platform.startswith(arg.lower())
-                elif arg.lower() in OS_NAME_TAGS:
-                    value = not os.name.startswith(arg.lower())
-                else:
-                    msg = utils.codeblock(
-                        '''
-                        Argument to REQUIRES directive must be either
-                        (1) a PLATFORM or OS tag (e.g. win32, darwin, linux),
-                        (2) a command line flag prefixed with '--', or
-                        (3) a module prefixed with 'module:'.
-                        Got arg={!r}
-                        ''').replace('\n', ' ').strip().format(arg)
-                    raise ValueError(msg)
+            arg, = self._unpack_args(1)
+            if _is_requires_satisfied(arg, argv):
+                # If the requirement is met, then do nothing,
+                action = 'noop'
             else:
-                key = 'NOOP'
-                value = True
+                # otherwise, add or remove the condtion from REQUIREMENTS,
+                # depending on if the directive is positive or negative.
+                value = arg
+                if self.positive:
+                    action = 'set.add'
+                else:
+                    action = 'set.remove'
+        elif key.startswith('REPORT_'):
+            # Special handling of report style
+            if self.positive:
+                action = 'noop'
+            else:
+                action = 'set_report_style'
         else:
-            key = self.name
+            # The action overwrites state[key] using value
+            action = 'assign'
             value = self.positive
-        return key, value
+        return Effect(action, key, value)
+
+
+def _is_requires_satisfied(arg, argv):
+    """
+    Determines if the argument to a REQUIRES directive is satisfied
+
+    Args:
+        arg (str): condition code
+        argv (List[str]): cmdline if arg is cmd code
+
+    Returns:
+        bool: flag - True if the requirement is met
+    """
+    SYS_PLATFORM_TAGS = ['win32', 'linux', 'darwin', 'cywgin']
+    OS_NAME_TAGS = ['posix', 'nt', 'java']
+    if arg.startswith('-'):
+        flag = arg in argv
+    elif arg.startswith('module:'):
+        parts = arg.split(':')
+        if len(parts) != 2:
+            raise ValueError('xdoctest REQUIRES directive has too many parts')
+        # set flag to False (aka SKIP) if the module does not exist
+        modname = parts[1]
+        flag = _module_exists(modname)
+    elif arg.lower() in SYS_PLATFORM_TAGS:
+        flag = sys.platform.startswith(arg.lower())
+    elif arg.lower() in OS_NAME_TAGS:
+        flag = os.name.startswith(arg.lower())
+    else:
+        msg = utils.codeblock(
+            '''
+            Argument to REQUIRES directive must be either
+            (1) a PLATFORM or OS tag (e.g. win32, darwin, linux),
+            (2) a command line flag prefixed with '--', or
+            (3) a module prefixed with 'module:'.
+            Got arg={!r}
+            ''').replace('\n', ' ').strip().format(arg)
+        raise ValueError(msg)
+    return flag
+
 
 _MODNAME_EXISTS_CACHE = {}
 

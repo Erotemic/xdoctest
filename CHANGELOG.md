@@ -4,6 +4,28 @@ We are currently working on porting this changelog to the specifications in
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 0.9.0 [Unreleased]
+
+### Added
+* Add skip count to the native runner
+
+### Changed
+* Renamed several functions in various classes to be private. Its unlikely anyone was externally using them. The change functions include:
+
+    * `DoctestExample`: `pre_run` -> `_pre_run` 
+    * `DoctestExample`: `post_run` -> `_post_run` 
+    * `Directive`: `unpack_args` -> `_unpack_args` 
+    * `Directive`: `state_item` -> `effect` 
+
+* Modified behavior of `RuntimeState.update` to use the directive effect.
+
+* Added explicit REQUIRES runtime-state, which maintains a set of unmet
+  conditions. When non-empty it behaves like SKIP.
+
+### Fixed
+* The REQUIRES directive no longer clobbers the previous SKIP state.
+
+
 ## Version 0.8.3 [Released 2019-07-15]
 
 ### Fixed

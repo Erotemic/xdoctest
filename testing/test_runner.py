@@ -247,7 +247,8 @@ def test_runner_failures():
 
     # assert '.FFF' in cap.text
     assert '3 / 6 passed' in cap.text
-    assert '3 failed 3 passed' in cap.text
+    assert '3 failed' in cap.text
+    assert '3 passed' in cap.text
 
 
 def test_run_zero_arg():
