@@ -38,20 +38,15 @@ after_success:
     # Upload wheels to pypi if requested
     if [ -n "$TRAVIS_TAG" ]; then
         set -x
-        # References:
-        # Not sure how good of an idea this is
-        # https://stackoverflow.com/questions/45188811/how-to-gpg-sign-a-file-that-is-built-by-travis-ci
         if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
           pip install --user twine
           pip install --user --upgrade six
         fi
-
         if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
           pip install twine
           pip install --upgrade pyOpenSSL
         fi
-
-        # TODO:
+        # Relies on a specific environmenmt being available 
         ./publish.sh yes
         set +x
     else
