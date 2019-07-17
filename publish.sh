@@ -16,7 +16,7 @@ Usage:
     cd <YOUR REPO>
 
     git fetch --all
-    git checkout master
+    git checkout release
     git pull 
 
     gitk --all
