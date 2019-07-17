@@ -479,7 +479,6 @@ class DocTest(object):
                 # Extract directives and and update runtime state
                 runstate.update(part.directives)
 
-                print('runstate = {!r}'.format(runstate))
                 # Handle runtime actions
                 if runstate['SKIP'] or len(runstate['REQUIRES']) > 0:
                     self.skipped_parts.append(part)

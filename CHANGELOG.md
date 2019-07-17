@@ -4,6 +4,12 @@ We are currently working on porting this changelog to the specifications in
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 0.9.1 [Released 2019-07-16]
+
+### Fixed
+* Removed debug print
+
+
 ## Version 0.9.0 [Released 2019-07-16]
 
 ### Added
