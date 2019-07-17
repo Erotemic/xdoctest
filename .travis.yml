@@ -46,33 +46,3 @@ after_success: |
     # Relies on a specific environmenmt being available 
     ./publish.sh yes
     set +x
-
-#deploy:
-#    ## References: https://docs.travis-ci.com/user/deployment/pypi/
-#    provider: pypi
-#    distributions: sdist bdist_wheel
-#    user:
-#        # travis encrypt GITHUB_USERNAME=$GITHUB_USERNAME
-#        secure: "W86iwY9rCzhQuaxk6ZaX7q/5xefs6Z3EXED1tlNLNcjBiW7Ya8wMsbuk4QiHQ5idqk95cbeNr6jP20bnKE+J2mxn61oFCSdZruJV5UVF1BVqRQlEGj9qmddh51QbXRxY1MWA2dT+fB8aME4AjZH6sn4Gs7Cph3Y/lHZImj7ZzlNhH8Erz3DWyO+9CWJVowxHJL8ydyZ2jYx3BeNscahvWTOtiixCeJwz/7T80slyVGB/Bh/y18ZmJ+c4biBPQKqv6iIv0akFKQy5sfBl0WEEWaodb1vI9clu0WS6ucPI/TJoUOqOcVKe/LwFxFlFk44GimzwszEBnBkcqyjMKWaPQYh+IE5x5JVoIwZJb0TfAb10cL6+WRVWDVxiP5Vx4taD4vAafYLI3S+WPT+Vu2NF2tEGPxVdpXguz+N3cR290Y7knFle/H8pxCJ/sit2uAz/14F6QAJr1bd26yQApW8kipyZty2jrhduZrkGhaRRqIn7r4RFKPzkOCILsX8RDyxXBwBJVuXbLJDBPStVdDyVQlqkpXTPEZV2Pz8sC/uQavQLsOLaZys1rheddZyDXfRPfVQqSQrrnYQZKcIMuNaUBVlF5ebdeGP0NEnye2XOhOPPrkrPB/5UO582qiOCJnXGW/IxCmPmP1TAU19xPK1t8L70wYndkz3OofJeuH4/Ieo="
-#    password:
-#        # travis encrypt TWINE_PASSWORD=$TWINE_PASSWORD
-#        secure: "QPxLV4kUPRXRWRRy18HW4kaDaz1Aq5q6Z8j+R7j7yRKCnCV99luDuG+am2p0UkBjUDr5toMxYO7JP9rVpJsw33IarNP+INUowr1cMTU8ExkTgGRVkD8Q9m31UMmdMsViXnKdptpVG8Y8AssxkoZlxGVUzmfO6zu8icmsjwS5FZbJJt1wmPocAUuG6lSb52p/SlxxTkaSZdfsp1kWiuXALPF8ivuS71a/S10YRb1iUVIrsf6W0WWwmwUloEij90lpG1lrH8yD5fcZ8KpQWYvZUOPQCaDUgWmP6MN1pYWpQGo+JMV7HteSMpYhPgubLiPEmEiNRAxbn8Hen8W2a5yjxtDVs1nZzuVaHuSYnzedyiI3cC/OplEJglA/94mBgpeUdAGYVNXWecAkrHPq8dG06ypo/Dw1DF8YIpqtpthP1stH32JFFz2lutm+EtbcZxIXratz8AnKYdsba11i2OgtTgLpvJ0yJBCZTp2VsYbyp4dgy2fqzbrOEPI8D7tyBQajlYIgkLrQWElnlPZYxiaY/glkVVyGJjPmkp5iYUza8hxXr5v62k3mwNJfq8McJn5JRLsr1Y7XxGTGNnGE5O5TnyqlxMYIliGeT7ltx7HagA5gsRx15Rw8uGWzxkdtVIkOu/wLLJ5Oq01u/MQsqm+fguU06lZymh7ZyJSNK3LQBxM="
-#    on:
-#        branch: release
-#        #tags: true
-#    #echo "TRAVIS_BRANCH = ${TRAVIS_BRANCH}"
-#    #if [ -n "$TRAVIS_BRANCH" ]; then
-#    #    set -x
-
-#    #    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-#    #      pip install --user twine
-#    #      pip install --user --upgrade six
-#    #    elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-#    #      pip install twine
-#    #      pip install --upgrade pyOpenSSL
-#    #    fi
-#    #    ./publish.sh yes
-#    #    set +x
-#    #else
-#    #    echo "Tag not set, deployment skipped."
-#    #fi
