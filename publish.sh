@@ -78,6 +78,7 @@ if [[ "$ANS" == "yes" ]]; then
         git push --tags origin $DEPLOY_BRANCH
         if [ "$USE_GPG" == "True" ]; then
             # https://stackoverflow.com/questions/45188811/how-to-gpg-sign-a-file-that-is-built-by-travis-ci
+            # secure gpg --export-secret-keys > all.gpg
             gpg --detach-sign -a $BDIST_WHEEL_PATH
             gpg --verify $BDIST_WHEEL_PATH.asc $BDIST_WHEEL_PATH 
             twine check $BDIST_WHEEL_PATH.asc $BDIST_WHEEL_PATH
