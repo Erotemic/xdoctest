@@ -31,9 +31,10 @@ fi
 
 # First tag the source-code
 VERSION=$(python -c "import setup; print(setup.parse_version())")
-BRANCH=$(git branch | grep \* | cut -d ' ' -f2)
+BRANCH=${TRAVIS_BRANCH:=$(git branch | grep \* | cut -d ' ' -f2)}
 DEPLOY_BRANCH=release
 ANS=$1
+
 
 echo "
 === PYPI PUBLISHING SCRIPT ==
