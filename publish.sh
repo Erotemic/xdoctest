@@ -32,14 +32,15 @@ fi
 # First tag the source-code
 VERSION=$(python -c "import setup; print(setup.parse_version())")
 BRANCH=$(git branch | grep \* | cut -d ' ' -f2)
+DEPLOY_BRANCH=release
 
 echo "=== PYPI PUBLISHING SCRIPT =="
 echo "BRANCH = $BRANCH"
 echo "VERSION = '$VERSION'"
 echo "GITHUB_USERNAME = $GITHUB_USERNAME"
 
-if [[ "$BRANCH" != "master" ]]; then
-    echo "WARNING: you are running publish on a non-master branch"
+if [[ "$BRANCH" != "$DEPLOY_BRANCH" ]]; then
+    echo "WARNING: you are running publish on a non-deploy branch '${DEPLOY_BRANCH}'"
 fi
 
 # Verify that we want to publish
@@ -50,7 +51,7 @@ if [[ "$ANS" == "yes" ]]; then
     echo "Live run"
 
     git tag $VERSION -m "tarball tag $VERSION"
-    git push --tags origin master
+    git push --tags origin $DEPLOY_BRANCH
 
     pip install twine -U
 
@@ -59,16 +60,22 @@ if [[ "$ANS" == "yes" ]]; then
     WHEEL_PATH=$(ls dist/*-$VERSION-*.whl)
     echo "WHEEL_PATH = $WHEEL_PATH"
 
-    gpg --detach-sign -a $WHEEL_PATH
-    gpg --verify $WHEEL_PATH.asc $WHEEL_PATH 
-    twine check $WHEEL_PATH.asc $WHEEL_PATH
+    if [ "$USE_GPG" == "True" ]; then
+        gpg --detach-sign -a $WHEEL_PATH
+        gpg --verify $WHEEL_PATH.asc $WHEEL_PATH 
+        twine check $WHEEL_PATH.asc $WHEEL_PATH
+        gpg --verify $WHEEL_PATH.asc $WHEEL_PATH 
+        twine upload --username $GITHUB_USERNAME --password=$TWINE_PASSWORD --sign $WHEEL_PATH.asc $WHEEL_PATH
+    else
+        twine upload --username $GITHUB_USERNAME --password=$TWINE_PASSWORD --sign $WHEEL_PATH
+    fi
 
-    #echo "GITHUB_USERNAME = $GITHUB_USERNAME"
-    #echo "TWINE_PASSWORD = $TWINE_PASSWORD"
-    gpg --verify $WHEEL_PATH.asc $WHEEL_PATH 
-    CMD="twine upload --username $GITHUB_USERNAME --password=$TWINE_PASSWORD --sign $WHEEL_PATH.asc $WHEEL_PATH"
-    #echo "CMD = $CMD"
-    $CMD
+    __notes__="""
+    Notes:
+        # References: https://docs.travis-ci.com/user/deployment/pypi/
+        travis encrypt TWINE_PASSWORD=$TWINE_PASSWORD  
+        travis encrypt GITHUB_USERNAME=$GITHUB_USERNAME 
+    """
 else  
     echo "Dry run"
 fi
