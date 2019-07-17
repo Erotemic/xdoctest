@@ -35,7 +35,7 @@ script:
 #    - coveralls || echo "Coveralls upload failed"
 after_success: |
     codecov 
-    coveralls || echo "Coveralls upload failed"
+    #coveralls || echo "Coveralls upload failed"
     echo "TRAVIS_BRANCH = $TRAVIS_BRANCH"
     # Package and publish to pypi (if on release)
     set -x
