@@ -39,12 +39,8 @@ after_success: |
     echo "TRAVIS_BRANCH = $TRAVIS_BRANCH"
     # Package and publish to pypi (if on release)
     set -x
-    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-      pip install --user twine
-      pip install --user --upgrade six
-    fi
+    pip install twine
     if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      pip install twine
       pip install --upgrade pyOpenSSL
     fi
     # Relies on a specific environmenmt being available 
