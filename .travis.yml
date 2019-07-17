@@ -31,10 +31,13 @@ script:
   - travis_wait pytest --cov=xdoctest
 #after_failure: 
 #  - cat failed_doctests.txt
-after_success: 
-  #- coveralls || echo "Coveralls upload failed"
-  - codecov 
-  - echo "TRAVIS_TAG = $TRAVIS_TAG"
+#after_success:
+#    - codecov 
+#    - coveralls || echo "Coveralls upload failed"
+after_success: |
+    codecov 
+    coveralls || echo "Coveralls upload failed"
+    echo "TRAVIS_TAG = $TRAVIS_TAG"
     # Upload wheels to pypi if requested
     if [ -n "$TRAVIS_TAG" ]; then
         set -x
