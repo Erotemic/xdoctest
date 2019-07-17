@@ -55,8 +55,7 @@ deploy:
     #      pip install twine
     #      pip install --upgrade pyOpenSSL
     #    fi
-    #    twine upload -u ${GITHUB_USERNAME} -p ${TWINE_PASSWORD} --skip-existing ${TRAVIS_BUILD_DIR}/wheelhouse/pyhesaff*
-    #    twine upload --username=${GITHUB_USERNAME} --password=${TWINE_PASSWORD} --sign $WHEEL_PATH
+    #    ./publish.sh yes
     #    set +x
     #else
     #    echo "Tag not set, deployment skipped."

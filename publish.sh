@@ -76,7 +76,6 @@ if [[ "$ANS" == "yes" ]]; then
         echo "BRANCH = $BRANCH"
         git tag $VERSION -m "tarball tag $VERSION"
         git push --tags origin $DEPLOY_BRANCH
-        pip install twine -U
         if [ "$USE_GPG" == "True" ]; then
             # https://stackoverflow.com/questions/45188811/how-to-gpg-sign-a-file-that-is-built-by-travis-ci
             gpg --detach-sign -a $BDIST_WHEEL_PATH
