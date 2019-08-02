@@ -39,13 +39,16 @@ class IncompleteParseError(SyntaxError):
     pass
 
 
-DEBUG = 0
+DEBUG = 10
 
 
 GotWantException = checker.GotWantException
 
 
 INDENT_RE = re.compile(r'^([ ]*)(?=\S)', re.MULTILINE)
+
+
+WORKON_BACKWARDS_COMPAT_CONTINUE_EVAL = 1
 
 
 class DoctestParser(object):
@@ -205,6 +208,8 @@ class DoctestParser(object):
         own part.  Otherwise, statements are grouped by the closest `want`
         statement.
 
+        TODO: EXCEPT IN CASES OF EXPLICIT CONTINUATION
+
         Example:
             >>> from xdoctest.parser import *
             >>> raw_source_lines = ['>>> "string"']
@@ -300,35 +305,97 @@ class DoctestParser(object):
         example.use_eval = bool(want_lines) and eval_final
         # example.use_eval = eval_final
         if DEBUG > 1:
+            print('example.use_eval = {!r}'.format(example.use_eval))
             print('<YIELD CHUNK>')
         yield example
 
     def _group_labeled_lines(self, labeled_lines):
+        """
+        Group labeled lines into logical parts to be executed together
+        """
         if DEBUG > 1:
             print('<GROUP LABEL LINES>')
         # Now that lines have types, group them. This could have done this
         # above, but functionality is split for readability.
         prev_source = None
         grouped_lines = []
-        for state, group in it.groupby(labeled_lines, lambda t: t[0]):
-            block = [t[1] for t in group]
-            if state == 'text':
-                if prev_source is not None:
-                    # accept a source block without a want block
-                    grouped_lines.append((prev_source, ''))
+
+        if WORKON_BACKWARDS_COMPAT_CONTINUE_EVAL:
+            def iter_window3(labeled_lines):
+                for i in range(len(labeled_lines)):
+                    left_x = i - 1
+                    right_x = i + 1
+                    if left_x < 0:
+                        left = None, None
+                    else:
+                        left = labeled_lines[left_x]
+                    if right_x >= len(labeled_lines):
+                        right = None, None
+                    else:
+                        right = labeled_lines[right_x]
+                    yield left, labeled_lines[i], right
+
+            groups = []
+            current = []
+            state = None
+            # Break up explicit continuations into new groups for backwards
+            # compat
+            for left, mid, right in iter_window3(labeled_lines):
+                if left[0] != mid[0] or mid[0] == 'dsrc' and right[0] == 'dcnt':
+                    if not (left[0] == 'dsrc' and mid[0] == 'dcnt'):
+                        if state is not None:
+                            groups.append((state, current))
+                        state = mid[0]
+                        current = []
+                current.append(mid)
+
+            prev_source = None
+            grouped_lines = []
+            for state, group in groups:
+                block = [t[1] for t in group]
+                if state == 'text':
+                    if prev_source is not None:
+                        # accept a source block without a want block
+                        grouped_lines.append((prev_source, ''))
+                        prev_source = None
+                    # accept the text
+                    grouped_lines.append(block)
+                elif state == 'want':
+                    assert prev_source is not None, 'impossible'
+                    grouped_lines.append((prev_source, block))
                     prev_source = None
-                # accept the text
-                grouped_lines.append(block)
-            elif state == 'want':
-                assert prev_source is not None, 'impossible'
-                grouped_lines.append((prev_source, block))
-                prev_source = None
-            elif state == 'dsrc':
-                # need to check if there is a want after us
-                prev_source = block
-        # Case where last block is source
-        if prev_source:
-            grouped_lines.append((prev_source, ''))
+                elif state in {'dsrc', 'dcnt'}:
+                    if prev_source is not None:
+                        # accept a source block without a want block
+                        grouped_lines.append((prev_source, ''))
+                        prev_source = None
+                    # need to check if there is a want after us
+                    prev_source = block
+            # Case where last block is source
+            if prev_source:
+                grouped_lines.append((prev_source, ''))
+
+        else:
+
+            for state, group in it.groupby(labeled_lines, lambda t: t[0]):
+                block = [t[1] for t in group]
+                if state == 'text':
+                    if prev_source is not None:
+                        # accept a source block without a want block
+                        grouped_lines.append((prev_source, ''))
+                        prev_source = None
+                    # accept the text
+                    grouped_lines.append(block)
+                elif state == 'want':
+                    assert prev_source is not None, 'impossible'
+                    grouped_lines.append((prev_source, block))
+                    prev_source = None
+                elif state in {'dsrc', 'dcnt'}:
+                    # need to check if there is a want after us
+                    prev_source = block
+            # Case where last block is source
+            if prev_source:
+                grouped_lines.append((prev_source, ''))
         if DEBUG > 1:
             print('</GROUP LABEL LINES>')
         return grouped_lines
@@ -441,6 +508,12 @@ class DoctestParser(object):
                 # (todo: ensure this is true)
                 eval_final = isinstance(statement_nodes[-1], ast.Expr)
 
+        if WORKON_BACKWARDS_COMPAT_CONTINUE_EVAL:
+            if len(source_lines):
+                if source_lines[0].startswith('>>> '):
+                    if all(s.startswith('... ') for s in source_lines[1:]):
+                        eval_final = 'single'
+
         return ps1_linenos, eval_final
 
     @staticmethod
@@ -496,6 +569,10 @@ class DoctestParser(object):
 
     def _label_docsrc_lines(self, string):
         """
+        Give each line in the docstring a label so we can distinguish
+        what parts are text, what parts are code, and what parts are "want"
+        string.
+
         Example:
             >>> from xdoctest.parser import *
             >>> # Having multiline strings in doctests can be nice
@@ -619,6 +696,7 @@ class DoctestParser(object):
         # line states
         TEXT = 'text'
         DSRC = 'dsrc'
+        DCNT = 'dcnt'  # explicit continuation
         WANT = 'want'
 
         # Move through states, keeping track of points where states change
@@ -659,15 +737,21 @@ class DoctestParser(object):
                     curr_state = TEXT
                 else:
                     curr_state = WANT
-            elif prev_state == DSRC:  # pragma: nobranch
+            elif prev_state in {DSRC, DCNT}:  # pragma: nobranch
                 if len(strip_line) == 0 or line_indent < state_indent:
                     curr_state = TEXT
                 # allow source to continue with either PS1 or PS2
                 elif hasprefix(norm_line, ('>>>', '...')):
                     if strip_line == '...':
+                        # TODO: add mechanism for checking next line.
+                        # if the next line is also a continuation
+                        # then dont treat this as an ellipses
                         curr_state = WANT
                     else:
-                        curr_state = DSRC
+                        if hasprefix(norm_line, ('...')):
+                            curr_state = DCNT
+                        else:
+                            curr_state = DSRC
                 else:
                     curr_state = WANT
             else:  # nocover
@@ -680,18 +764,18 @@ class DoctestParser(object):
                 # Handle start of new states
                 if curr_state == TEXT:
                     state_indent = 0
-                if curr_state == DSRC:
+                if curr_state in {DSRC, DCNT}:
                     # Start a new source
                     state_indent = line_indent
                     # renormalize line when indentation changes
                     norm_line = line[state_indent:]
 
             # continue current state
-            if curr_state == DSRC:
+            if curr_state in {DSRC, DCNT}:
                 # source parts may consume more than one line
                 try:
                     for part in _complete_source(line, state_indent, line_iter):
-                        labeled_lines.append((DSRC, part))
+                        labeled_lines.append((curr_state, part))
                 except IncompleteParseError as orig_ex:
                     raise
                 except SyntaxError as orig_ex:
@@ -709,9 +793,9 @@ class DoctestParser(object):
                         print('</LABEL FAIL>')
                     raise
             elif curr_state == WANT:
-                labeled_lines.append((WANT, line))
+                labeled_lines.append((curr_state, line))
             elif curr_state == TEXT:
-                labeled_lines.append((TEXT, line))
+                labeled_lines.append((curr_state, line))
             prev_state = curr_state
 
         if DEBUG > 1:

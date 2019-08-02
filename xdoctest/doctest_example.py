@@ -488,17 +488,26 @@ class DocTest(object):
                 self.failed_part = part
                 got_eval = constants.NOT_EVALED
                 try:
-                    # Compile code, handle syntax errors
-                    mode = 'eval' if part.use_eval else 'exec'
-                    self._partfilename = '<doctest:' + self.node + '>'
-                    # Hack: we will prefix souce with newlines to
-                    # make the exec line number match.
-                    code = compile(
-                        # '\n' * part.line_offset +
-                        part.source, mode=mode,
-                        filename=self._partfilename,
-                        flags=compileflags, dont_inherit=True
-                    )
+                    if part.use_eval == 'single':
+                        mode = 'exec'
+                        self._partfilename = '<doctest:' + self.node + '>'
+                        code = compile(
+                            part.source, mode='single',
+                            filename=self._partfilename,
+                            flags=compileflags, dont_inherit=True
+                        )
+                    else:
+                        # Compile code, handle syntax errors
+                        mode = 'eval' if part.use_eval else 'exec'
+                        self._partfilename = '<doctest:' + self.node + '>'
+                        # Hack: we will prefix souce with newlines to
+                        # make the exec line number match.
+                        code = compile(
+                            # '\n' * part.line_offset +
+                            part.source, mode=mode,
+                            filename=self._partfilename,
+                            flags=compileflags, dont_inherit=True
+                        )
                 except KeyboardInterrupt:  # nocover
                     raise
                 except Exception:
