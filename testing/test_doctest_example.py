@@ -31,8 +31,10 @@ def test_failed_assign_want():
         'anything'
         ''')
     self = doctest_example.DocTest(docsrc=string)
-    result = self.run(on_error='raise')
-    assert result['passed']
+    result = self.run(on_error='return', verbose=0)
+    assert result['failed']
+    fail_text = '\n'.join(self.repr_failure())
+    assert 'Got nothing' in fail_text
 
 
 def test_multiline_list():

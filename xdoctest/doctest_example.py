@@ -197,7 +197,7 @@ class DocTest(object):
         self.logged_evals = OrderedDict()
         self.logged_stdout = OrderedDict()
         self._unmatched_stdout = []
-        self.skipped_parts = []
+        self._skipped_parts = []
 
         self._runstate = None
 
@@ -455,7 +455,7 @@ class DocTest(object):
         self.logged_stdout.clear()
         self._unmatched_stdout = []
 
-        self.skipped_parts = []
+        self._skipped_parts = []
         self.exc_info = None
         self._suppressed_stdout = verbose <= 1
 
@@ -492,7 +492,7 @@ class DocTest(object):
 
                 # Handle runtime actions
                 if runstate['SKIP'] or len(runstate['REQUIRES']) > 0:
-                    self.skipped_parts.append(part)
+                    self._skipped_parts.append(part)
                     continue
 
                 # Prepare to capture stdout and evaluated values
@@ -528,7 +528,7 @@ class DocTest(object):
                             # a doctest part has `compile_mode=eval` we
                             # exepect it to return an object with a repr that
                             # can compared to a "want" statement.
-                            if part.compile_mode:
+                            if part.compile_mode == 'eval':
                                 got_eval = eval(code, test_globals)
                             else:
                                 exec(code, test_globals)
@@ -641,7 +641,7 @@ class DocTest(object):
         if self.exc_info is None:
             self.failed_part = None
 
-        if len(self.skipped_parts) == len(self._parts):
+        if len(self._skipped_parts) == len(self._parts):
             # we skipped everything
             if self.mode == 'pytest':
                 import pytest
@@ -874,7 +874,7 @@ class DocTest(object):
         indent_text = ' ' * (5 + n_digits)
 
         for partx, (part, part_text) in enumerate(zip(self._parts, textgen)):
-            if part in self.skipped_parts:
+            if part in self._skipped_parts:
                 # temp[tindex] += [utils.indent(part_text, ' ' * 4)]
                 # temp[tindex] += [utils.indent(' >>> # skipped', indent_text)]
                 continue
@@ -1007,7 +1007,7 @@ class DocTest(object):
         """
         # print('POST RUN verbose = {!r}'.format(verbose))
 
-        skipped = len(self.skipped_parts) == len(self._parts)
+        skipped = len(self._skipped_parts) == len(self._parts)
         failed = self.exc_info is not None
         passed = not failed and not skipped
 
