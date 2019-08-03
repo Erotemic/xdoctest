@@ -39,7 +39,7 @@ class IncompleteParseError(SyntaxError):
     pass
 
 
-DEBUG = 0
+DEBUG = 10
 
 
 GotWantException = checker.GotWantException
@@ -672,7 +672,11 @@ class DoctestParser(object):
                         # TODO: add mechanism for checking next line.
                         # if the next line is also a continuation
                         # then dont treat this as an ellipses
-                        curr_state = WANT
+                        if prev_state == DCNT:
+                            # Hack to fix continuation issue
+                            curr_state = DCNT
+                        else:
+                            curr_state = WANT
                     else:
                         if hasprefix(norm_line, ('...')):
                             curr_state = DCNT

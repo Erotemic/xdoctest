@@ -37,6 +37,28 @@ def test_failed_assign_want():
     assert 'Got nothing' in fail_text
 
 
+def test_continue_ambiguity():
+    """
+    pytest testing/test_doctest_example.py::test_exit_test_exception
+    """
+    string = utils.codeblock(
+        '''
+        >>> class Lowerer(object):
+        ...     def __init__(self):
+        ...         self.cache = LRI()
+        ...
+        ...     def lower(self, text):
+        ...         return text.lower()
+        ...
+        ''')
+    self = doctest_example.DocTest(docsrc=string)
+    result = self.run(on_error='return', verbose=3)
+    assert result['failed']
+    fail_text = '\n'.join(self.repr_failure())
+    assert 'Got nothing' in fail_text
+
+
+
 def test_multiline_list():
     """
     pytest testing/test_doctest_example.py::test_multiline_list
