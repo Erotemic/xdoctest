@@ -139,6 +139,8 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
             for example in _gather_zero_arg_examples(modpath):
                 if command in example.valid_testnames:
                     enabled_examples.append(example)
+                elif command in ['zero-all', 'zero', 'zero_all']:
+                    enabled_examples.append(example)
 
         if config:
             for example in enabled_examples:
@@ -313,25 +315,19 @@ def _run_examples(enabled_examples, verbose, config=None):
     # It is important to raise immediatly within the test to display errors
     # returned from multiprocessing. Especially in zero-arg mode
 
-    FIRST_TEST_HACK = False  # TODO: remove this code
-
     on_error = 'return' if n_total > 1 else 'raise'
     on_error = 'return'
+
+    verbose = 3
     for example in enabled_examples:
         try:
             try:
                 tic = time.time()
                 summary = example.run(verbose=verbose, on_error=on_error)
                 toc = time.time()
-                if FIRST_TEST_HACK:
-                    # Run the first test again to get a better time estimate
-                    tic = time.time()
-                    summary = example.run(verbose=verbose, on_error=on_error)
-                    toc = time.time()
-                    FIRST_TEST_HACK = False
                 n_seconds = toc - tic
                 times[example] = n_seconds
-            except Exception:
+            except Exception as ex:
                 print('\n'.join(example.repr_failure(with_tb=False)))
                 raise
 

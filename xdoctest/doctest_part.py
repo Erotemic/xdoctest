@@ -68,6 +68,7 @@ class DoctestPart(object):
         orig_lines (list): the original text parsed into exec and want
         _directives (list): directives that this part will apply before being run
         partno (int): identifies the part number in the larger example
+        compile_mode (str): mode passed to compile.
     """
     def __init__(self, exec_lines, want_lines=None, line_offset=0,
                  orig_lines=None, directives=None, partno=None):
@@ -75,7 +76,7 @@ class DoctestPart(object):
         self.want_lines = want_lines
         self.line_offset = line_offset
         self.orig_lines = orig_lines
-        self.use_eval = False
+        self.compile_mode = 'exec'
         self._directives = directives
         self.partno = partno
 

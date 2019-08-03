@@ -416,7 +416,7 @@ if __name__ == '__main__':
     """
     CommandLine:
         export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/testing
-        python ~/code/xdoctest/testing/test_core.py
+        python ~/code/xdoctest/testing/test_core.py zero
         pytest testing/test_core.py -vv
     """
     import xdoctest  # NOQA

@@ -21,6 +21,19 @@ def test_exit_test_exception():
     result = self.run(on_error='raise')
     assert result['passed']
 
+def test_failed_assign_want():
+    """
+    pytest testing/test_doctest_example.py::test_exit_test_exception
+    """
+    string = utils.codeblock(
+        '''
+        >>> name = 'foo'
+        'anything'
+        ''')
+    self = doctest_example.DocTest(docsrc=string)
+    result = self.run(on_error='raise')
+    assert result['passed']
+
 
 def test_multiline_list():
     """

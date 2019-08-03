@@ -10,6 +10,9 @@ def test_final_eval_exec():
     """
     Ensure that if the line before a want is able to be evaled, it is so we can
     compare its value to the want value.
+
+    CommandLine:
+        xdoctest -m ~/code/xdoctest/testing/test_parser.py test_final_eval_exec
     """
     string = utils.codeblock(
         '''
@@ -19,7 +22,11 @@ def test_final_eval_exec():
         ''')
     self = parser.DoctestParser()
     parts = self.parse(string)
-    assert [p.use_eval for p in parts] == [False, True]
+    DEBUG = 0
+    if DEBUG:
+        print(string)
+        print([p.compile_mode for p in parts])
+    assert [p.compile_mode for p in parts] == ['exec', 'eval']
 
     string = utils.codeblock(
         '''
@@ -28,7 +35,10 @@ def test_final_eval_exec():
         ''')
     self = parser.DoctestParser()
     parts = self.parse(string)
-    assert [p.use_eval for p in parts] == [False]
+    if DEBUG:
+        print(string)
+        print([p.compile_mode for p in parts])
+    assert [p.compile_mode for p in parts] == ['exec']
 
     string = utils.codeblock(
         r'''
@@ -41,7 +51,10 @@ def test_final_eval_exec():
         ''')
     self = parser.DoctestParser()
     parts = self.parse(string)
-    assert [p.use_eval for p in parts] == [False, True]
+    if DEBUG:
+        print(string)
+        print([p.compile_mode for p in parts])
+    assert [p.compile_mode for p in parts] == ['exec', 'single']
 
     string = utils.codeblock(
         r'''
@@ -51,10 +64,26 @@ def test_final_eval_exec():
         ''')
     self = parser.DoctestParser()
     parts = self.parse(string)
-    assert [p.use_eval for p in parts] == [False, True]
+    if DEBUG:
+        print(string)
+        print([p.compile_mode for p in parts])
+    assert [p.compile_mode for p in parts] == ['exec', 'eval']
+
+    string = utils.codeblock(
+        r'''
+        >>> if True:
+        ...     2
+        2
+        ''')
+    self = parser.DoctestParser()
+    parts = self.parse(string)
+    if DEBUG:
+        print(string)
+        print([p.compile_mode for p in parts])
+    assert [p.compile_mode for p in parts] == ['single']
 
 
-def test_use_eval_print():
+def test_compile_mode_print():
     string = utils.codeblock(
         r'''
         >>> x = 2
@@ -64,7 +93,7 @@ def test_use_eval_print():
         ''')
     self = parser.DoctestParser()
     parts = self.parse(string)
-    assert [p.use_eval for p in parts] == [False, True]
+    assert [p.compile_mode for p in parts] == ['exec', 'eval']
 
 
 def test_label_lines():
@@ -86,14 +115,14 @@ def test_label_lines():
 def test_label_indented_lines():
     string = '''
             text
-            >>> dsrc()
+            >>> dsrc1()
             want
 
-                >>> dsrc()
+                >>> dsrc2()
                 >>> cont(
                 ... a=b)
                 ... dsrc
-                >>> dsrc():
+                >>> dsrc3():
                 ...     a
                 ...     b = """
                         multiline
@@ -108,21 +137,24 @@ def test_label_indented_lines():
     '''
     self = parser.DoctestParser()
     labeled = self._label_docsrc_lines(string)
+    # import sys
+    # print('EXIT NOW')
+    # sys.exit(1)
     expected = [
         ('text', ''),
         ('text', '            text'),
-        ('dsrc', '            >>> dsrc()'),
+        ('dsrc', '            >>> dsrc1()'),
         ('want', '            want'),
         ('text', ''),
-        ('dsrc', '                >>> dsrc()'),
+        ('dsrc', '                >>> dsrc2()'),
         ('dsrc', '                >>> cont('),
-        ('dsrc', '                ... a=b)'),
-        ('dsrc', '                ... dsrc'),
-        ('dsrc', '                >>> dsrc():'),
-        ('dsrc', '                ...     a'),
-        ('dsrc', '                ...     b = """'),
-        ('dsrc', '                        multiline'),
-        ('dsrc', '                        """'),
+        ('dcnt', '                ... a=b)'),
+        ('dcnt', '                ... dsrc'),
+        ('dsrc', '                >>> dsrc3():'),
+        ('dcnt', '                ...     a'),
+        ('dcnt', '                ...     b = """'),
+        ('dcnt', '                        multiline'),
+        ('dcnt', '                        """'),
         ('want', '                want'),
         ('text', ''),
         ('text', '            text'),
@@ -132,6 +164,19 @@ def test_label_indented_lines():
         ('text', '            text'),
         ('text', '    '),    # FIXME: weird that this space has an indent
     ]
+    if labeled != expected:
+        try:
+            import ubelt as ub
+            import itertools as it
+            for got, want in it.zip_longest(labeled, expected):
+                if got != want:
+                    print(utils.color_text('GOT  = {!r}'.format(got), 'red'))
+                    print(utils.color_text('WANT = {!r}'.format(want), 'blue'))
+                else:
+                    print('PASS = {!r}'.format(got))
+        except ImportError:
+            pass
+        raise AssertionError
     assert labeled == expected
 
 
@@ -688,8 +733,10 @@ def test_gh_issue_25_parsing_failure():
 if __name__ == '__main__':
     """
     CommandLine:
-        python ~/code/xdoctest/testing/test_parser.py
+        python ~/code/xdoctest/testing/test_parser.py --help
         python ~/code/xdoctest/testing/test_parser.py test_inline_directive
+        python ~/code/xdoctest/testing/test_parser.py zero-all
+        python ~/code/xdoctest/testing/test_parser.py test_gh_issue_25_parsing_failure
         pytest testing/test_parser.py -vv
     """
     import xdoctest
