@@ -9,6 +9,7 @@ from os.path import expanduser
 from os.path import isdir
 from os.path import join
 import os
+import xdev
 import six
 from os.path import split
 from os.path import dirname
@@ -51,7 +52,7 @@ def _importlib_import_modpath(modpath):  # nocover
     """
     Alternative to import_module_from_path using importlib mechainsms
     """
-    dpath, rel_modpath = split_modpath(modpath)
+    dpath, rel_modpath = split_modpath(modpath, _expand=False)
     modname = modpath_to_modname(modpath)
     if six.PY2:  # nocover
         import imp
@@ -147,8 +148,8 @@ class PythonPathContext(object):
 
 
 def _custom_import_modpath(modpath, index=-1):
-    dpath, rel_modpath = split_modpath(modpath)
-    modname = modpath_to_modname(modpath)
+    dpath, rel_modpath = split_modpath(modpath, _expand=False)
+    modname = modpath_to_modname(modpath, check=False, _expand=False)
     try:
         with PythonPathContext(dpath, index=index):
             module = import_module_from_name(modname)
@@ -446,7 +447,7 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
                 if _isvalid(modpath, dpath):
                     return modpath
 
-
+@xdev.profile
 def modname_to_modpath(modname, hide_init=True, hide_main=False, sys_path=None):
     """
     Finds the path to a python module from its name.
@@ -539,8 +540,9 @@ def normalize_modpath(modpath, hide_init=True, hide_main=False):
     return modpath
 
 
+@xdev.profile
 def modpath_to_modname(modpath, hide_init=True, hide_main=False, check=True,
-                       relativeto=None):
+                       relativeto=None, _expand=True):
     """
     Determines importable name from file path
 
@@ -591,15 +593,21 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False, check=True,
     if check and relativeto is None:
         if not exists(modpath):
             raise ValueError('modpath={} does not exist'.format(modpath))
-    modpath_ = abspath(expanduser(modpath))
+    if _expand:
+        modpath_ = abspath(expanduser(modpath))
+    else:
+        modpath_ = modpath
 
     modpath_ = normalize_modpath(modpath_, hide_init=hide_init,
                                  hide_main=hide_main)
     if relativeto:
-        dpath = dirname(abspath(expanduser(relativeto)))
+        if _expand:
+            dpath = dirname(abspath(expanduser(relativeto)))
+        else:
+            dpath = dirname(abspath(relativeto))
         rel_modpath = relpath(modpath_, dpath)
     else:
-        dpath, rel_modpath = split_modpath(modpath_, check=check)
+        dpath, rel_modpath = split_modpath(modpath_, check=check, _expand=False)
 
     modname = splitext(rel_modpath)[0]
     if '.' in modname:
@@ -609,7 +617,8 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False, check=True,
     return modname
 
 
-def split_modpath(modpath, check=True):
+@xdev.profile
+def split_modpath(modpath, check=True, _expand=True):
     """
     Splits the modpath into the dir that must be in PYTHONPATH for the module
     to be imported and the modulepath relative to this directory.
@@ -637,7 +646,10 @@ def split_modpath(modpath, check=True):
     if six.PY2:
         if modpath.endswith('.pyc'):
             modpath = modpath[:-1]
-    modpath_ = abspath(expanduser(modpath))
+    if _expand:
+        modpath_ = abspath(expanduser(modpath))
+    else:
+        modpath_ = modpath
     if check:
         if not exists(modpath_):
             if not exists(modpath):
@@ -649,10 +661,15 @@ def split_modpath(modpath, check=True):
     full_dpath, fname_ext = split(modpath_)
     _relmod_parts = [fname_ext]
     # Recurse down directories until we are out of the package
+    # Note: new python standards means this test will no longer work
     dpath = full_dpath
-    while exists(join(dpath, '__init__.py')):
+
+    init_fpath = join(dpath, '__init__.py')
+    while exists(init_fpath):
         dpath, dname = split(dpath)
         _relmod_parts.append(dname)
+        init_fpath = join(dpath, '__init__.py')
+
     relmod_parts = _relmod_parts[::-1]
     rel_modpath = os.path.sep.join(relmod_parts)
     return dpath, rel_modpath

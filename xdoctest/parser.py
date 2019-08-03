@@ -42,6 +42,12 @@ class IncompleteParseError(SyntaxError):
 DEBUG = 0
 
 
+try:
+    import xdev
+except ImportError:
+    pass
+
+
 GotWantException = checker.GotWantException
 
 
@@ -85,6 +91,7 @@ class DoctestParser(object):
     def __init__(self, simulate_repl=False):
         self.simulate_repl = simulate_repl
 
+    @xdev.profile
     def parse(self, string, info=None):
         """
         Divide the given string into examples and interleaving text.
@@ -633,11 +640,6 @@ class DoctestParser(object):
         curr_state = None
         line_iter = enumerate(string.splitlines())
 
-        def hasprefix(line, prefixes):
-            if not isinstance(prefixes, tuple):
-                prefixes = [prefixes]
-            return any(line == p or line.startswith(p + ' ') for p in prefixes)
-
         for line_idx, line in line_iter:
             match = INDENT_RE.search(line)
             line_indent = 0 if match is None else (match.end() - match.start())
@@ -648,7 +650,7 @@ class DoctestParser(object):
             if prev_state == TEXT:
                 # text transitions to source whenever a PS1 line is encountered
                 # the PS1(>>>) can be at an arbitrary indentation
-                if hasprefix(strip_line, '>>>'):
+                if _hasprefix(strip_line, ('>>>',)):
                     curr_state = DSRC
                 else:
                     curr_state = TEXT
@@ -657,7 +659,7 @@ class DoctestParser(object):
                 if len(strip_line) == 0:
                     curr_state = TEXT
                 # source-inconsistent indentation terminates want
-                elif hasprefix(line.strip(), '>>>'):
+                elif _hasprefix(line.strip(), ('>>>',)):
                     curr_state = DSRC
                 elif line_indent < state_indent:
                     curr_state = TEXT
@@ -667,7 +669,7 @@ class DoctestParser(object):
                 if len(strip_line) == 0 or line_indent < state_indent:
                     curr_state = TEXT
                 # allow source to continue with either PS1 or PS2
-                elif hasprefix(norm_line, ('>>>', '...')):
+                elif _hasprefix(norm_line, ('>>>', '...',)):
                     if strip_line == '...':
                         # TODO: add mechanism for checking next line.
                         # if the next line is also a continuation
@@ -678,7 +680,7 @@ class DoctestParser(object):
                         else:
                             curr_state = WANT
                     else:
-                        if hasprefix(norm_line, ('...')):
+                        if _hasprefix(norm_line, ('...',)):
                             curr_state = DCNT
                         else:
                             curr_state = DSRC
@@ -694,14 +696,14 @@ class DoctestParser(object):
                 # Handle start of new states
                 if curr_state == TEXT:
                     state_indent = 0
-                if curr_state in {DSRC, DCNT}:
+                if curr_state in (DSRC, DCNT):
                     # Start a new source
                     state_indent = line_indent
                     # renormalize line when indentation changes
                     norm_line = line[state_indent:]
 
             # continue current state
-            if curr_state in {DSRC, DCNT}:
+            if curr_state in (DSRC, DCNT):
                 # source parts may consume more than one line
                 try:
                     if DEBUG:
@@ -711,7 +713,7 @@ class DoctestParser(object):
                             print('part = {!r}'.format(part))
                             print('norm_line = {!r}'.format(norm_line))
                             print('curr_state = {!r}'.format(curr_state))
-                        if hasprefix(norm_line, ('...',)):
+                        if _hasprefix(norm_line, ('...',)):
                             curr_state = DCNT
                         labeled_lines.append((curr_state, part))
 
@@ -720,7 +722,6 @@ class DoctestParser(object):
                 except SyntaxError as orig_ex:
                     if DEBUG:
                         print('<LABEL FAIL>')
-                        # print('next(line_iter) = {!r}'.format(line_iter))
                         print('state_indent = {!r}'.format(state_indent))
                         print('line = {!r}'.format(line))
                         print('Failed to label source lines')
@@ -775,7 +776,10 @@ def _complete_source(line, state_indent, line_iter):
 
     try:
         while not static.is_balanced_statement(source_parts, only_tokens=True):
-            line_idx, next_line = next(line_iter)
+            try:
+                line_idx, next_line = next(line_iter)
+            except StopIteration:
+                return
             norm_line = next_line[state_indent:]
             prefix = norm_line[:4]
             suffix = norm_line[4:]
@@ -805,7 +809,8 @@ def _complete_source(line, state_indent, line_iter):
                             line_idx, next_line))
             source_parts.append(suffix)
             yield next_line, norm_line
-    except StopIteration:
+    except StopIteration as ex:
+        print('ex = {!r}'.format(ex))
         if DEBUG:
             import ubelt as ub
             print('<FAIL DID NOT COMPLETE SOURCE>')
@@ -887,6 +892,12 @@ def _iterthree(items, pad_value=None):
                 left, mid = mid, right
         right = pad_value
         yield left, mid, right
+
+
+def _hasprefix(line, prefixes):
+    # if not isinstance(prefixes, tuple):
+    #     prefixes = [prefixes]
+    return any(line.startswith(p + ' ') or line == p for p in prefixes)
 
 
 if __name__ == '__main__':

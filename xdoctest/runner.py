@@ -55,7 +55,9 @@ import time
 import warnings
 import sys
 
+import xdev
 
+@xdev.profile
 def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
                    style='auto', verbose=None, config=None, durations=None):
     """
@@ -302,6 +304,7 @@ def _gather_zero_arg_examples(modpath):
                     yield example
 
 
+@xdev.profile
 def _run_examples(enabled_examples, verbose, config=None):
     """
     Internal helper, loops over each example, runs it, returns a summary
@@ -318,7 +321,6 @@ def _run_examples(enabled_examples, verbose, config=None):
     on_error = 'return' if n_total > 1 else 'raise'
     on_error = 'return'
 
-    verbose = 3
     for example in enabled_examples:
         try:
             try:

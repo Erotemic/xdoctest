@@ -11,6 +11,7 @@ import warnings
 import math
 import sys
 import re
+import xdev
 from xdoctest import utils
 from xdoctest import directive
 from xdoctest import constants
@@ -160,6 +161,7 @@ class DocTest(object):
         <DocTest(xdoctest.doctest_example DocTest:0 ln ...)>
     """
 
+    @xdev.profile
     def __init__(self, docsrc, modpath=None, callname=None, num=0,
                  lineno=1, fpath=None, block_type=None, mode='pytest'):
 
@@ -178,7 +180,7 @@ class DocTest(object):
                 assert fpath == modpath, (
                     'only specify fpath for non-python files')
             self.fpath = modpath
-            self.modname = static.modpath_to_modname(modpath)
+            self.modname = utils.modpath_to_modname(modpath, check=False, _expand=False)
         if callname is None:
             self.callname = '<callname?>'
         else:
@@ -432,6 +434,7 @@ class DocTest(object):
         # If everything was skipped, then there will be no stdout
         return len(self.logged_stdout) > 0
 
+    @xdev.profile
     def run(self, verbose=None, on_error=None):
         """
         Executes the doctest, checks the results, reports the outcome.
@@ -682,6 +685,7 @@ class DocTest(object):
     def _block_prefix(self):
         return 'ZERO-ARG' if self.block_type == 'zero-arg' else 'DOCTEST'
 
+    @xdev.profile
     def _pre_run(self, verbose):
         if verbose >= 1:
             if verbose >= 2:

@@ -7,7 +7,6 @@ from __future__ import print_function, division, absolute_import, unicode_litera
 import sys
 import textwrap
 import warnings
-import six
 import itertools as it
 from os.path import exists
 from fnmatch import fnmatch
@@ -18,6 +17,12 @@ from xdoctest import exceptions
 from xdoctest import doctest_example
 from xdoctest import utils  # NOQA
 from xdoctest.docstr import docscrape_google
+
+
+import six
+string_types = six.string_types
+
+
 
 
 DEBUG = False
@@ -31,6 +36,32 @@ DOCTEST_STYLES = [
 ]
 
 
+_respect_google_headers = True
+if _respect_google_headers:  # pragma: nobranch
+    # TODO: make configurable
+    # When in freeform mode we still try to respect google doctest patterns
+    # that prevent a test from being run.
+    _SPECIAL_FREEFORM_SKIP_PATS = tuple(p.lower() for p in [
+        'DisableDoctest:',
+        'DisableExample:',
+        'SkipDoctest:',
+        'Ignore:',
+        'Script:',
+        'Benchmark:',
+        'Sympy:',
+    ])
+else:
+    _SPECIAL_FREEFORM_SKIP_PATS = []  # nocover
+
+
+def _start_ignoring(prev):
+    return (_SPECIAL_FREEFORM_SKIP_PATS and
+            isinstance(prev, string_types) and
+            prev.strip().lower().endswith(_SPECIAL_FREEFORM_SKIP_PATS))
+
+import xdev
+
+@xdev.profile
 def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
                                    lineno=1, fpath=None, asone=True):
     r"""
@@ -84,57 +115,9 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         >>> assert len(examples) == 3
     """
 
-    def doctest_from_parts(parts, num, curr_offset):
-        # FIXME: this will cause line numbers to become misaligned
-        nested = [
-            p.orig_lines
-            if p.want is None else
-            p.orig_lines + p.want.splitlines()
-            for p in parts
-        ]
-        docsrc = '\n'.join(list(it.chain.from_iterable(nested)))
-        docsrc = textwrap.dedent(docsrc)
-
-        example = doctest_example.DocTest(docsrc, modpath=modpath,
-                                          callname=callname, num=num,
-                                          lineno=lineno + curr_offset,
-                                          fpath=fpath)
-        # rebase the offsets relative to the test lineno (ie start at 0)
-        unoffset = parts[0].line_offset
-        for p in parts:
-            p.line_offset -= unoffset
-        # We've already parsed the parts, so we dont need to do it again
-        example._parts = parts
-        return example
-
     if DEBUG:
         print('Parsing docstring for callname={} in modpath={}'.format(
             callname, modpath))
-
-    respect_google_headers = True
-    if respect_google_headers:  # pragma: nobranch
-        # TODO: make configurable
-        # When in freeform mode we still try to respect google doctest patterns
-        # that prevent a test from being run.
-        special_skip_patterns = [
-            'DisableDoctest:',
-            'DisableExample:',
-            'SkipDoctest:',
-            'Ignore:',
-            'Script:',
-            'Benchmark:',
-            'Sympy:',
-        ]
-    else:
-        special_skip_patterns = []  # nocover
-    special_skip_patterns_ = tuple([
-        p.lower() for p in special_skip_patterns
-    ])
-
-    def _start_ignoring(prev):
-        return (special_skip_patterns_ and
-                isinstance(prev, six.string_types) and
-                prev.strip().lower().endswith(special_skip_patterns_))
 
     # parse into doctest and plaintext parts
     info = dict(callname=callname, modpath=modpath, lineno=lineno, fpath=fpath)
@@ -147,7 +130,7 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
     ignoring = False
 
     for part in all_parts:
-        if isinstance(part, six.string_types):
+        if isinstance(part, string_types):
             # Part is a plaintext
             if asone:
                 # Lump all doctest parts into one example
@@ -156,7 +139,7 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
             else:  # nocover
                 if curr_parts:
                     # Group the current parts into a single doctest
-                    example = doctest_from_parts(curr_parts, num, curr_offset)
+                    example = _doctest_from_parts(curr_parts, num, curr_offset, modpath, callname, lineno, fpath)
                     yield example
                     # Initialize empty parts for a new doctest
                     curr_offset += sum(p.n_lines for p in curr_parts)
@@ -182,10 +165,11 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         prev_part = part
     if curr_parts:
         # Group remaining parts into the final doctest
-        example = doctest_from_parts(curr_parts, num, curr_offset)
+        example = _doctest_from_parts(curr_parts, num, curr_offset, modpath, callname, lineno, fpath)
         yield example
 
 
+@xdev.profile
 def parse_google_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
                                  fpath=None, eager_parse=True):
     """
@@ -251,6 +235,7 @@ def parse_auto_docstr_examples(docstr, *args, **kwargs):
             yield example
 
 
+@xdev.profile
 def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
                           style='auto', fpath=None, parser_kw={}):
     """
@@ -368,6 +353,7 @@ def _rectify_to_modpath(modpath_or_name):
     return modpath
 
 
+@xdev.profile
 def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
     """
     Statically generates all callable definitions in a module or package
@@ -383,7 +369,7 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
         >>> testables = list(package_calldefs(modpath_or_name))
         >>> assert len(testables) == 1
         >>> calldefs, modpath = testables[0]
-        >>> assert static.modpath_to_modname(modpath) == modpath_or_name
+        >>> assert utils.modpath_to_modname(modpath) == modpath_or_name
         >>> assert 'package_calldefs' in calldefs
     """
     pkgpath = _rectify_to_modpath(modpath_or_name)
@@ -391,7 +377,7 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
     modpaths = static.package_modpaths(pkgpath, with_pkg=True, with_libs=True)
     modpaths = list(modpaths)
     for modpath in modpaths:
-        modname = static.modpath_to_modname(modpath)
+        modname = utils.modpath_to_modname(modpath, check=False, _expand=False)
         if any(fnmatch(modname, pat) for pat in exclude):
             continue
         if not exists(modpath):
@@ -449,6 +435,7 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
                 yield calldefs, modpath
 
 
+@xdev.profile
 def parse_doctestables(modpath_or_name, exclude=[], style='auto',
                        ignore_syntax_errors=True, parser_kw={}):
     """
@@ -513,6 +500,32 @@ def parse_doctestables(modpath_or_name, exclude=[], style='auto',
                                                      style=style,
                                                      parser_kw=parser_kw):
                     yield example
+
+
+@xdev.profile
+def _doctest_from_parts(parts, num, curr_offset, modpath, callname, lineno, fpath):
+    # FIXME: will this cause line numbers to become misaligned?
+    nested = [
+        p.orig_lines
+        if p.want is None else
+        p.orig_lines + p.want.splitlines()
+        for p in parts
+    ]
+    docsrc = '\n'.join(list(it.chain.from_iterable(nested)))
+    docsrc = textwrap.dedent(docsrc)
+
+    example = doctest_example.DocTest(docsrc, modpath=modpath,
+                                      callname=callname, num=num,
+                                      lineno=lineno + curr_offset,
+                                      fpath=fpath)
+    # rebase the offsets relative to the test lineno (ie start at 0)
+    unoffset = parts[0].line_offset
+    for p in parts:
+        p.line_offset -= unoffset
+    # We've already parsed the parts, so we dont need to do it again
+    example._parts = parts
+    return example
+
 
 
 if __name__ == '__main__':

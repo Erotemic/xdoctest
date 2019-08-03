@@ -15,6 +15,7 @@ import tokenize
 from collections import deque, OrderedDict
 from xdoctest import utils
 
+import xdev
 from xdoctest.utils.util_import import _platform_pylib_exts # NOQA
 from xdoctest.utils.util_import import (  # NOQA
     split_modpath, modname_to_modpath, is_modname_importable,
@@ -400,6 +401,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         return lineno
 
 
+@xdev.profile
 def parse_calldefs(source=None, fpath=None):
     """
     Statically finds top-level callable functions and methods in python source
@@ -527,6 +529,7 @@ def parse_static_value(key, source=None, fpath=None):
     return visitor.value
 
 
+@xdev.profile
 def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True,
                      recursive=True, with_libs=False, check=True):
     r"""
@@ -596,6 +599,7 @@ def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True,
                 break
 
 
+@xdev.profile
 def is_balanced_statement(lines, only_tokens=False):
     r"""
     Checks if the lines have balanced parens, brakets, curlies and strings
@@ -655,7 +659,7 @@ def is_balanced_statement(lines, only_tokens=False):
     """
     # Only iterate through non-empty lines otherwise tokenize will stop short
     lines = list(lines)
-    iterable = (line for line in lines if line)
+    iterable = iter(lines)
     def _readline():
         return next(iterable)
     try:
