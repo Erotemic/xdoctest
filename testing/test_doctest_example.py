@@ -53,7 +53,6 @@ def test_continue_ambiguity():
         ''')
     self = doctest_example.DocTest(docsrc=string)
     result = self.run(on_error='return', verbose=3)
-    assert result['failed']
     fail_text = '\n'.join(self.repr_failure())
     assert 'Got nothing' in fail_text
 
