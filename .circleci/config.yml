@@ -33,7 +33,7 @@ jobs:
   #    # ### INITIALIZE AND CACHE REQUIREMENTS ###
   #    - restore_cache:
   #        keys:
-  #        - v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}
+  #        - v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}
   #    - run:
   #        name: install dependencies
   #        command: |
@@ -43,7 +43,7 @@ jobs:
   #    - save_cache:
   #        paths:
   #          - ./venv
-  #        key: v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}
+  #        key: v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}
   #    # ### RUN TESTS ###
   #    - run:
   #        name: run tests
@@ -67,7 +67,7 @@ jobs:
       # ### INITIALIZE AND CACHE REQUIREMENTS ###
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}
+          - v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}
       - run:
           name: install dependencies
           command: |
@@ -78,7 +78,7 @@ jobs:
       - save_cache:
           paths:
             - ./venv
-          key: v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}
+          key: v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}
       # ### RUN TESTS ###
       - run:
           name: run tests
