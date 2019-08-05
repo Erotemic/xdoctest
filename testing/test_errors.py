@@ -151,9 +151,9 @@ def test_runner_syntax_error():
         runner.doctest_module(modpath, 'all', argv=[''], style='freeform',
                               verbose=0)
 
-    print('CAPTURED <<<<<<<<<<<')
+    print('CAPTURED [[[[[[[[')
     print(utils.indent(cap.text))
-    print('>>>>>>>>>>> # CAPTURED')
+    print(']]]]]]]] # CAPTURED')
 
     if six.PY2:
         captext = utils.ensure_unicode(cap.text)

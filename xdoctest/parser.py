@@ -176,9 +176,9 @@ class DoctestParser(object):
                 tb_text = ub.indent(tb_text)
                 print(tb_text)
 
-                print('Failed to parse string = <<<<<<<<<<<')
+                print('Failed to parse string = <{[<{[<{[')
                 print(string)
-                print('>>>>>>>>>>>  # end string')
+                print(']}>a]}>]}>  # end string')
 
                 print('info = {}'.format(ub.repr2(info)))
                 print('-----')
@@ -729,10 +729,10 @@ class DoctestParser(object):
                         print('state_indent = {!r}'.format(state_indent))
                         print('line = {!r}'.format(line))
                         print('Failed to label source lines')
-                        print('Labeled lines so far: <<<<<<<<<<<')
+                        print('Labeled lines so far: <[[[[[[[[[[')
                         for line in labeled_lines:
                             print(line)
-                        print('>>>>>>>>>>>')
+                        print(']]]]]]]]]]>')
                         print('</LABEL FAIL>')
                     raise
             elif curr_state == WANT:
