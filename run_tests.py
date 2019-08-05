@@ -2,6 +2,15 @@
 if __name__ == '__main__':
     import pytest
     import sys
+
+    try:
+        import xdoctest
+    except ImportError as ex:
+        print("FAIL XDOCTEST IMPORT")
+        print('ex = {!r}'.format(ex))
+        print("FAIL XDOCTEST IMPORT")
+        raise
+
     # NOTE: import to return the correct error code
     sys.exit(pytest.main([
         '-p', 'pytester',
