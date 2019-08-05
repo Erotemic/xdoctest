@@ -420,6 +420,13 @@ def test_syntax_error():
 
 
 def test_nonbalanced_statement():
+    """
+    xdoctest ~/code/xdoctest/testing/test_parser.py test_nonbalanced_statement
+
+    from xdoctest import static_analysis as static
+    lines = ['x = [']
+    static.is_balanced_statement(lines, only_tokens=True)
+    """
     string = utils.codeblock(
         '''
         >>> x = [

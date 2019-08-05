@@ -58,6 +58,42 @@ def test_continue_ambiguity():
 
 
 
+def test_failed_assign_want():
+    """
+    pytest testing/test_doctest_example.py::test_exit_test_exception
+    xdoctest ~/code/xdoctest/testing/test_doctest_example.py test_failed_assign_want
+    """
+    string = utils.codeblock(
+        '''
+        >>> name = 'foo'
+        'anything'
+        ''')
+    self = doctest_example.DocTest(docsrc=string)
+    result = self.run(on_error='return', verbose=0)
+    assert result['failed']
+    fail_text = '\n'.join(self.repr_failure())
+    assert 'Got nothing' in fail_text
+
+
+def test_contination_want_ambiguity():
+    """
+    xdoctest ~/code/xdoctest/testing/test_doctest_example.py test_contination_want_ambiguity
+    """
+    string = utils.codeblock(
+        '''
+        >>> class Lowerer(object):
+        ...     def __init__(self):
+        ...         self.cache = LRI()
+        ...
+        ...     def lower(self, text):
+        ...         return text.lower()
+        ...
+        ''')
+    self = doctest_example.DocTest(docsrc=string)
+    result = self.run(on_error='return', verbose=3)
+    assert result['passed']
+
+
 def test_multiline_list():
     """
     pytest testing/test_doctest_example.py::test_multiline_list
@@ -251,6 +287,7 @@ if __name__ == '__main__':
     CommandLine:
         export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/testing
         python ~/code/xdoctest/testing/test_doctest_example.py
+        xdoctest ~/code/xdoctest/testing/test_doctest_example.py zero-args
     """
     import xdoctest
     xdoctest.doctest_module(__file__)

@@ -464,12 +464,17 @@ class DoctestParser(object):
                 b = len(lines)
                 while b > 0:
                     # move the head pointer up until we become balanced
-                    while not static.is_balanced_statement(lines[a:b], only_tokens=True):
+                    while not static.is_balanced_statement(lines[a:b], only_tokens=True) and a >= 0:
                         a -= 1
+                    if a < 0:
+                        raise IncompleteParseError(
+                            'ill-formed doctest: cannot find balanced ps1 lines.')
                     # we found a balanced interval
                     intervals.append((a, b))
                     b = a
                     a = a - 1
+
+
                 intervals = intervals[::-1]
                 return intervals
             intervals = balanced_intervals(lines)

@@ -4,6 +4,23 @@ We are currently working on porting this changelog to the specifications in
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## Version 0.10.0 [Unreleased]
+
+### Added
+* Can now specify zero-args as the command to the xdoctest CLI to run all zero-args functions in a file.  
+* Add known issue: note about possible want-reporting bug.
+* 
+
+### Changed 
+* Improved backwards compatibility. Explicit continuations now work more similarly to the original doctest. 
+* You no longer need a comment to denote that a `...` is a continuation and not a ellipsis.
+* Want statements will check against return values in nested continuations
+
+### Fixed
+* `run_tests.py` now returns the correct error code. (fixes CircleCI)
+
+
 ## Version 0.9.1 [Released 2019-07-16]
 
 

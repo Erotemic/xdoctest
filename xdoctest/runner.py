@@ -139,7 +139,8 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
             for example in _gather_zero_arg_examples(modpath):
                 if command in example.valid_testnames:
                     enabled_examples.append(example)
-                elif command in ['zero-all', 'zero', 'zero_all']:
+
+                elif command in ['zero-all', 'zero', 'zero_all', 'zero-args']:
                     enabled_examples.append(example)
 
         if config:
