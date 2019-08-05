@@ -21,6 +21,7 @@ def test_exit_test_exception():
     result = self.run(on_error='raise')
     assert result['passed']
 
+
 def test_failed_assign_want():
     """
     pytest testing/test_doctest_example.py::test_exit_test_exception
@@ -53,8 +54,7 @@ def test_continue_ambiguity():
         ''')
     self = doctest_example.DocTest(docsrc=string)
     result = self.run(on_error='return', verbose=3)
-    fail_text = '\n'.join(self.repr_failure())
-    assert 'Got nothing' in fail_text
+    assert result['passed']
 
 
 
