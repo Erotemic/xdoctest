@@ -39,10 +39,19 @@ after_success: |
     echo "TRAVIS_BRANCH = $TRAVIS_BRANCH"
     # Package and publish to pypi (if on release)
     set -x
-    pip install twine
-    if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      pip install --upgrade pyOpenSSL
+    if [ "$TRAVIS_BRANCH" == "release" ]; then
+        pip install twine
+        if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+          pip install six pyopenssl ndg-httpsclient pyasn1 -U --user
+          pip install requests[security] twine --user
+        elfi
+        if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+          pip install six twine
+          pip install --upgrade pyOpenSSL
+        fi
+
+        # TODO: reliable and secure gpg keys
+        # Relies on a specific environmenmt being available 
+        ./publish.sh yes
+        set +x
     fi
-    # Relies on a specific environmenmt being available 
-    ./publish.sh yes
-    set +x
