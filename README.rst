@@ -297,7 +297,7 @@ just be better to use an ``assert`` statement.
 Backwards Incompatibility
 -------------------------
 
-There are a few cases that are currently backwards incompatible.
+There are a few cases that ~~are currently~~ were backwards incompatible.
 
 Evaluating multiple items in a for loop no longer works:
 
