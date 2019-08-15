@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 """
+The XDoctest Parser
+-------------------
+This parses a docstring into one or more "doctest part" *after* the docstrings
+have been extracted from the source code by either static or dynamic means.
+
 Terms and definitions:
 
     logical block: a snippet of code that can be executed by itself if given
@@ -20,6 +25,10 @@ Terms and definitions:
 
     want statement: Lines directly after a logical block of code in a doctest
         indicating the desired result of executing the previous block.
+
+While I do believe this AST-based code is a significant improvement over the
+RE-based builtin doctest parser, I acknowledge that I'm not an AST expert and
+there is room for improvement here.
 """
 from __future__ import print_function, division, absolute_import, unicode_literals
 import six
@@ -35,14 +44,7 @@ from xdoctest import doctest_part
 from xdoctest import static_analysis as static
 
 
-class IncompleteParseError(SyntaxError):
-    pass
-
-
 DEBUG = 0
-
-
-GotWantException = checker.GotWantException
 
 
 INDENT_RE = re.compile(r'^([ ]*)(?=\S)', re.MULTILINE)
@@ -65,6 +67,17 @@ class DoctestParser(object):
         >>> print('\n'.join(list(map(str, doctest_parts))))
         <DoctestPart(ln 0, src="j = 0...", want=None)>
         <DoctestPart(ln 3, src="print(j)...", want="10...")>
+
+    Example:
+        >>> # Having multiline strings in doctests can be nice
+        >>> string = utils.codeblock(
+                '''
+                >>> name = 'name'
+                'anything'
+                ''')
+        >>> self = DoctestParser()
+        >>> doctest_parts = self.parse(string)
+        >>> print('\n'.join(list(map(str, doctest_parts))))
     """
 
     def __init__(self, simulate_repl=False):
@@ -130,7 +143,7 @@ class DoctestParser(object):
 
         string = string.expandtabs()
         # If all lines begin with the same indentation, then strip it.
-        min_indent = min_indentation(string)
+        min_indent = _min_indentation(string)
         if min_indent > 0:
             string = '\n'.join([l[min_indent:] for l in string.splitlines()])
 
@@ -161,9 +174,9 @@ class DoctestParser(object):
                 tb_text = ub.indent(tb_text)
                 print(tb_text)
 
-                print('Failed to parse string = <<<<<<<<<<<')
+                print('Failed to parse string = <{[<{[<{[')
                 print(string)
-                print('>>>>>>>>>>>  # end string')
+                print(']}>a]}>]}>  # end string')
 
                 print('info = {}'.format(ub.repr2(info)))
                 print('-----')
@@ -205,6 +218,8 @@ class DoctestParser(object):
         own part.  Otherwise, statements are grouped by the closest `want`
         statement.
 
+        TODO: EXCEPT IN CASES OF EXPLICIT CONTINUATION
+
         Example:
             >>> from xdoctest.parser import *
             >>> raw_source_lines = ['>>> "string"']
@@ -235,6 +250,7 @@ class DoctestParser(object):
         # Find the line number of each standalone statement
         ps1_linenos, eval_final = self._locate_ps1_linenos(source_lines)
         if DEBUG > 1:
+            print('eval_final = {!r}'.format(eval_final))
             print(' * located ps1 lines')
 
         # Find all directives here:
@@ -297,20 +313,88 @@ class DoctestParser(object):
         s2 = None
 
         example = slice_example(s1, s2, want_lines)
-        example.use_eval = bool(want_lines) and eval_final
-        # example.use_eval = eval_final
+        if not bool(want_lines):
+            example.compile_mode = 'exec'
+        else:
+            if eval_final is True:
+                example.compile_mode = 'eval'
+            elif eval_final is False:
+                example.compile_mode = 'exec'
+            elif eval_final == 'single':
+                example.compile_mode = 'single'
+            else:
+                raise KeyError(eval_final)
+
         if DEBUG > 1:
+            print('example.compile_mode = {!r}'.format(example.compile_mode))
             print('<YIELD CHUNK>')
         yield example
 
     def _group_labeled_lines(self, labeled_lines):
+        """
+        Group labeled lines into logical parts to be executed together
+
+        Returns:
+            List[List[str] | Tuple[List[str], str]]:
+                A list of parts. Text parts are just returned as a list of
+                lines.  Executable parts are returned as a tuple of source
+                lines and an optional "want" statement.
+        """
         if DEBUG > 1:
             print('<GROUP LABEL LINES>')
-        # Now that lines have types, group them. This could have done this
+        # Now that lines have types, groups them. This could have done this
         # above, but functionality is split for readability.
         prev_source = None
         grouped_lines = []
-        for state, group in it.groupby(labeled_lines, lambda t: t[0]):
+
+        # WORKON_BACKWARDS_COMPAT_CONTINUE_EVAL
+        # Break up explicit continuations for backwards compat
+        groups = []
+        current = []
+        state = None
+        if DEBUG > 4:
+            print('labeled_lines = {!r}'.format(labeled_lines))
+
+        # Need to ensure that old-style continuations with want statements are
+        # placed in their own group, so they can be executed as "single".
+        for left, mid, right in _iterthree(labeled_lines, pad_value=(None, None)):
+            if left[0] != mid[0] or (mid[0] == 'dsrc' and right[0] == 'dcnt'):
+                if not (left[0] == 'dsrc' and mid[0] == 'dcnt'):
+                    # Start a new group
+                    if state is not None:
+                        groups.append((state, current))
+                    state = mid[0]
+                    current = []
+            current.append(mid)
+        if current:
+            groups.append((state, current))
+
+        if DEBUG > 4:
+            print('groups = {!r}'.format(groups))
+
+        # need to merge consecutive dsrc groups without want statements
+        merged_groups = []
+        current = []
+        state = None
+        for left, mid, right in _iterthree(groups, pad_value=(None, None)):
+            # Merge consecutive groups unless it is followed by a want
+            if left[0] == mid[0] and right[0] != 'want':
+                # extend the previous group
+                current.extend(mid[1])
+            else:
+                # start a new group
+                if state is not None:
+                    merged_groups.append((left[0], current))
+                state = mid[0]
+                current = []
+                current.extend(mid[1])
+        if current:
+            merged_groups.append((state, current))
+
+        # More iterating and grouping. This section needs a careful rewrite
+        prev_source = None
+        grouped_lines = []
+        for state, group in merged_groups:
             block = [t[1] for t in group]
             if state == 'text':
                 if prev_source is not None:
@@ -323,13 +407,18 @@ class DoctestParser(object):
                 assert prev_source is not None, 'impossible'
                 grouped_lines.append((prev_source, block))
                 prev_source = None
-            elif state == 'dsrc':
+            elif state in {'dsrc', 'dcnt'}:
+                if prev_source is not None:
+                    # accept a source block without a want block
+                    grouped_lines.append((prev_source, ''))
+                    prev_source = None
                 # need to check if there is a want after us
                 prev_source = block
         # Case where last block is source
         if prev_source:
             grouped_lines.append((prev_source, ''))
-        if DEBUG > 1:
+
+        if DEBUG > 1:  # nocover
             print('</GROUP LABEL LINES>')
         return grouped_lines
 
@@ -338,13 +427,13 @@ class DoctestParser(object):
         Determines which lines in the source begin a "logical block" of code.
 
         Args:
-            source_lines (list): lines belonging only to the doctest src
+            source_lines (List[str]): lines belonging only to the doctest src
                 these will be unindented, prefixed, and without any want.
 
         Returns:
-            (list, bool): a list of indices indicating which lines
-               are considered "PS1" and a flag indicating if the final line
-               should be considered for a got/want assertion.
+            Tuple[List[int], bool]: a list of indices indicating which lines
+                are considered "PS1" and a flag indicating if the final line
+                should be considered for a got/want assertion.
 
         Example:
             >>> self = DoctestParser()
@@ -360,10 +449,8 @@ class DoctestParser(object):
             >>> assert linenos == [0, 2]
             >>> assert eval_final is True
         """
-        # print('source_lines = {!r}'.format(source_lines))
         # Strip indentation (and PS1 / PS2 from source)
         exec_source_lines = [p[4:] for p in source_lines]
-        # print('\n'.join(exec_source_lines))
 
         def _hack_comment_statements(lines):
             # Hack to make comments appear like executable statements
@@ -382,12 +469,16 @@ class DoctestParser(object):
                 b = len(lines)
                 while b > 0:
                     # move the head pointer up until we become balanced
-                    while not static.is_balanced_statement(lines[a:b], only_tokens=True):
+                    while not static.is_balanced_statement(lines[a:b], only_tokens=True) and a >= 0:
                         a -= 1
+                    if a < 0:
+                        raise exceptions.IncompleteParseError(
+                            'ill-formed doctest: cannot find balanced ps1 lines.')
                     # we found a balanced interval
                     intervals.append((a, b))
                     b = a
                     a = a - 1
+
                 intervals = intervals[::-1]
                 return intervals
             intervals = balanced_intervals(lines)
@@ -441,6 +532,14 @@ class DoctestParser(object):
                 # (todo: ensure this is true)
                 eval_final = isinstance(statement_nodes[-1], ast.Expr)
 
+        # WORKON_BACKWARDS_COMPAT_CONTINUE_EVAL:
+        # Force doctests parts to evaluate in backwards compatible "single"
+        # mode when using old style doctest syntax.
+        if len(source_lines) > 1:
+            if source_lines[0].startswith('>>> '):
+                if all(_hasprefix(s, ('...',)) for s in source_lines[1:]):
+                    eval_final = 'single'
+
         return ps1_linenos, eval_final
 
     @staticmethod
@@ -466,8 +565,8 @@ class DoctestParser(object):
         Notes:
             A patch for this issue exists
             `https://github.com/python/cpython/pull/1800`. This workaround is a
-            no-op when the line numbers are correct, so nothing should break
-            when this bug is fixed.
+            idempotent (i.e. a no-op) when line numbers are correct, so nothing
+            should break when this bug is fixed.
 
             Starting from the end look at consecutive pairs of indices to
             inspect the statement it corresponds to.  (the first statement goes
@@ -496,6 +595,18 @@ class DoctestParser(object):
 
     def _label_docsrc_lines(self, string):
         """
+        Give each line in the docstring a label so we can distinguish
+        what parts are text, what parts are code, and what parts are "want"
+        string.
+
+        Args:
+            string (str): doctest source
+
+        Returns:
+            List[Tuple[str, str]]: labeled_lines - the above source broken
+                up by lines, each with a label indicating its type for later
+                use in parsing.
+
         Example:
             >>> from xdoctest.parser import *
             >>> # Having multiline strings in doctests can be nice
@@ -515,102 +626,13 @@ class DoctestParser(object):
             >>>     ('text', 'text'),
             >>>     ('dsrc', ">>> items = ['also', 'nice', 'to', 'not', 'worry',"),
             >>>     ('dsrc', ">>>          'about', '...', 'vs', '>>>']"),
-            >>>     ('dsrc', "... print('but its still allowed')"),
+            >>>     ('dcnt', "... print('but its still allowed')"),
             >>>     ('want', 'but its still allowed'),
             >>>     ('text', ''),
             >>>     ('text', 'more text')
             >>> ]
             >>> assert labeled == expected
         """
-
-        def _complete_source(line, state_indent, line_iter):
-            """
-            helper
-            remove lines from the iterator if they are needed to complete source
-            """
-
-            norm_line = line[state_indent:]  # Normalize line indentation
-            prefix = norm_line[:4]
-            suffix = norm_line[4:]
-            assert prefix.strip() in {'>>>', '...'}, '{}'.format(prefix)
-            yield line
-
-            source_parts = [suffix]
-
-            # These hacks actually modify the input doctest slighly
-            HACK_TRIPLE_QUOTE_FIX = True
-
-            try:
-                while not static.is_balanced_statement(source_parts, only_tokens=True):
-                    line_idx, next_line = next(line_iter)
-                    norm_line = next_line[state_indent:]
-                    prefix = norm_line[:4]
-                    suffix = norm_line[4:]
-
-                    if prefix.strip() not in {'>>>', '...', ''}:  # nocover
-                        error = True
-                        if HACK_TRIPLE_QUOTE_FIX:
-                            # TODO: make a more robust patch
-                            if any("'''" in s or '"""' in s for s in source_parts):
-                                # print('HACK FIXING TRIPLE QUOTE')
-                                next_line = next_line[:state_indent] + '... ' + norm_line
-                                norm_line = '... ' + norm_line
-                                prefix = ''
-                                suffix = norm_line
-                                error = False
-
-                        if error:
-                            if DEBUG:
-                                print(' * !!!ERROR!!!')
-                                print(' * source_parts = {!r}'.format(source_parts))
-                                print(' * prefix = {!r}'.format(prefix))
-                                print(' * norm_line = {!r}'.format(norm_line))
-                                print(' * !!!!!!!!!!!!!')
-
-                            raise SyntaxError(
-                                'Bad indentation in doctest on line {}: {!r}'.format(
-                                    line_idx, next_line))
-                    source_parts.append(suffix)
-                    yield next_line
-            except StopIteration:
-                if DEBUG:
-                    import ubelt as ub
-                    print('<FAIL DID NOT COMPLETE SOURCE>')
-                    import traceback
-                    tb_text = traceback.format_exc()
-                    tb_text = ub.highlight_code(tb_text)
-                    tb_text = ub.indent(tb_text)
-                    print(tb_text)
-                    print(' * line_iter = {!r}'.format(line_iter))
-                    print(' * state_indent = {!r}'.format(state_indent))
-                    print(' * line = {!r}'.format(line))
-                    # print('source =\n{}'.format('\n'.join(source_parts)))
-                    print('# Ensure that the following line should actually fail')
-                    print('source_parts = {}'.format(ub.repr2(source_parts, nl=2)))
-                    print(ub.codeblock(
-                        r'''
-                        from xdoctest import static_analysis as static
-                        static.is_balanced_statement(source_parts, only_tokens=False)
-                        static.is_balanced_statement(source_parts, only_tokens=True)
-                        text = '\n'.join(source_parts)
-                        print(text)
-                        static.six_axt_parse(text)
-                        '''))
-                    print('</FAIL DID NOT COMPLETE SOURCE>')
-                    # sys.exit(1)
-                # TODO: use AST to reparse all doctest parts to discover
-                # where the syntax error in the doctest is and then raise
-                # it.
-                raise IncompleteParseError(
-                    'ill-formed doctest: all parts have been processed '
-                    'but the doctest source is not balanced')
-            else:
-                if DEBUG > 1:
-                    import ubelt as ub
-                    print('<SUCCESS COMPLETED SOURCE>')
-                    print(' * line_iter = {!r}'.format(line_iter))
-                    print('source_parts = {}'.format(ub.repr2(source_parts, nl=2)))
-                    print('</SUCCESS COMPLETED SOURCE>')
 
         # parse and differentiate between doctest source and want statements.
         labeled_lines = []
@@ -619,20 +641,17 @@ class DoctestParser(object):
         # line states
         TEXT = 'text'
         DSRC = 'dsrc'
+        DCNT = 'dcnt'  # explicit continuation  **new in 0.10.0**
         WANT = 'want'
 
         # Move through states, keeping track of points where states change
         #     text -> [text, dsrc]
-        #     dsrc -> [dsrc, want, text]
+        #     dsrc -> [dsrc, dcnt, want, text]
+        #     dcnt -> [dsrc, dcnt, want, text]
         #     want -> [want, text, dsrc]
         prev_state = TEXT
         curr_state = None
         line_iter = enumerate(string.splitlines())
-
-        def hasprefix(line, prefixes):
-            if not isinstance(prefixes, tuple):
-                prefixes = [prefixes]
-            return any(line == p or line.startswith(p + ' ') for p in prefixes)
 
         for line_idx, line in line_iter:
             match = INDENT_RE.search(line)
@@ -644,7 +663,7 @@ class DoctestParser(object):
             if prev_state == TEXT:
                 # text transitions to source whenever a PS1 line is encountered
                 # the PS1(>>>) can be at an arbitrary indentation
-                if hasprefix(strip_line, '>>>'):
+                if _hasprefix(strip_line, ('>>>',)):
                     curr_state = DSRC
                 else:
                     curr_state = TEXT
@@ -653,21 +672,31 @@ class DoctestParser(object):
                 if len(strip_line) == 0:
                     curr_state = TEXT
                 # source-inconsistent indentation terminates want
-                elif hasprefix(line.strip(), '>>>'):
+                elif _hasprefix(line.strip(), ('>>>',)):
                     curr_state = DSRC
                 elif line_indent < state_indent:
                     curr_state = TEXT
                 else:
                     curr_state = WANT
-            elif prev_state == DSRC:  # pragma: nobranch
+            elif prev_state in {DSRC, DCNT}:  # pragma: nobranch
                 if len(strip_line) == 0 or line_indent < state_indent:
                     curr_state = TEXT
                 # allow source to continue with either PS1 or PS2
-                elif hasprefix(norm_line, ('>>>', '...')):
+                elif _hasprefix(norm_line, ('>>>', '...')):
                     if strip_line == '...':
-                        curr_state = WANT
+                        # TODO: add mechanism for checking next line.
+                        # if the next line is also a continuation
+                        # then dont treat this as an ellipses
+                        if prev_state == DCNT:
+                            # Hack to fix continuation issue
+                            curr_state = DCNT
+                        else:
+                            curr_state = WANT
                     else:
-                        curr_state = DSRC
+                        if _hasprefix(norm_line, ('...',)):
+                            curr_state = DCNT
+                        else:
+                            curr_state = DSRC
                 else:
                     curr_state = WANT
             else:  # nocover
@@ -680,42 +709,52 @@ class DoctestParser(object):
                 # Handle start of new states
                 if curr_state == TEXT:
                     state_indent = 0
-                if curr_state == DSRC:
+                if curr_state in {DSRC, DCNT}:
                     # Start a new source
                     state_indent = line_indent
                     # renormalize line when indentation changes
                     norm_line = line[state_indent:]
 
             # continue current state
-            if curr_state == DSRC:
+            if curr_state in {DSRC, DCNT}:
                 # source parts may consume more than one line
                 try:
-                    for part in _complete_source(line, state_indent, line_iter):
-                        labeled_lines.append((DSRC, part))
-                except IncompleteParseError as orig_ex:
+                    if DEBUG:  # nocover
+                        print('completing source')
+                    for part, norm_line in _complete_source(line, state_indent, line_iter):
+                        if DEBUG> 4:  # nocover
+                            print('part = {!r}'.format(part))
+                            print('norm_line = {!r}'.format(norm_line))
+                            print('curr_state = {!r}'.format(curr_state))
+                        if _hasprefix(norm_line, ('...',)):
+                            curr_state = DCNT
+                        labeled_lines.append((curr_state, part))
+
+                except exceptions.IncompleteParseError as orig_ex:
                     raise
                 except SyntaxError as orig_ex:
-                    if DEBUG:
+                    if DEBUG:  # nocover
                         print('<LABEL FAIL>')
-                        print('line_iter = {!r}'.format(line_iter))
                         # print('next(line_iter) = {!r}'.format(line_iter))
                         print('state_indent = {!r}'.format(state_indent))
                         print('line = {!r}'.format(line))
                         print('Failed to label source lines')
-                        print('Labeled lines so far: <<<<<<<<<<<')
+                        print('Labeled lines so far: <[[[[[[[[[[')
                         for line in labeled_lines:
                             print(line)
-                        print('>>>>>>>>>>>')
+                        print(']]]]]]]]]]>')
                         print('</LABEL FAIL>')
                     raise
             elif curr_state == WANT:
-                labeled_lines.append((WANT, line))
+                labeled_lines.append((curr_state, line))
             elif curr_state == TEXT:
-                labeled_lines.append((TEXT, line))
+                labeled_lines.append((curr_state, line))
             prev_state = curr_state
 
-        if DEBUG > 1:
+        if DEBUG > 1:  # nocover
             import ubelt as ub
+            # if DEBUG > 3:
+            #     print('string = {!r}'.format(string))
             print('<FINISH LABELED LINES')
             print('labeled_lines = {}'.format(ub.repr2(labeled_lines, nl=1)))
             print('</FINISH LABELED LINES>')
@@ -723,13 +762,151 @@ class DoctestParser(object):
         return labeled_lines
 
 
-def min_indentation(s):
+def _min_indentation(s):
     "Return the minimum indentation of any non-blank line in `s`"
     indents = [len(indent) for indent in INDENT_RE.findall(s)]
     if len(indents) > 0:
         return min(indents)
     else:
         return 0
+
+
+def _complete_source(line, state_indent, line_iter):
+    """
+    helper
+    remove lines from the iterator if they are needed to complete source
+    """
+    norm_line = line[state_indent:]  # Normalize line indentation
+    prefix = norm_line[:4]
+    suffix = norm_line[4:]
+    assert prefix.strip() in {'>>>', '...'}, '{}'.format(prefix)
+    yield line, norm_line
+
+    source_parts = [suffix]
+
+    # These hacks actually modify the input doctest slighly
+    HACK_TRIPLE_QUOTE_FIX = True
+
+    try:
+        while not static.is_balanced_statement(source_parts, only_tokens=True):
+            line_idx, next_line = next(line_iter)
+            norm_line = next_line[state_indent:]
+            prefix = norm_line[:4]
+            suffix = norm_line[4:]
+
+            if prefix.strip() not in {'>>>', '...', ''}:  # nocover
+                error = True
+                if HACK_TRIPLE_QUOTE_FIX:
+                    # TODO: make a more robust patch
+                    if any("'''" in s or '"""' in s for s in source_parts):
+                        # print('HACK FIXING TRIPLE QUOTE')
+                        next_line = next_line[:state_indent] + '... ' + norm_line
+                        norm_line = '... ' + norm_line
+                        prefix = ''
+                        suffix = norm_line
+                        error = False
+
+                if error:
+                    if DEBUG:
+                        print(' * !!!ERROR!!!')
+                        print(' * source_parts = {!r}'.format(source_parts))
+                        print(' * prefix = {!r}'.format(prefix))
+                        print(' * norm_line = {!r}'.format(norm_line))
+                        print(' * !!!!!!!!!!!!!')
+
+                    raise SyntaxError(
+                        'Bad indentation in doctest on line {}: {!r}'.format(
+                            line_idx, next_line))
+            source_parts.append(suffix)
+            yield next_line, norm_line
+    except StopIteration:
+        if DEBUG:
+            import ubelt as ub
+            print('<FAIL DID NOT COMPLETE SOURCE>')
+            import traceback
+            tb_text = traceback.format_exc()
+            tb_text = ub.highlight_code(tb_text)
+            tb_text = ub.indent(tb_text)
+            print(tb_text)
+            # print(' * line_iter = {!r}'.format(line_iter))
+            print(' * state_indent = {!r}'.format(state_indent))
+            print(' * line = {!r}'.format(line))
+            # print('source =\n{}'.format('\n'.join(source_parts)))
+            print('# Ensure that the following line should actually fail')
+            print('source_parts = {}'.format(ub.repr2(source_parts, nl=2)))
+            print(ub.codeblock(
+                r'''
+                from xdoctest import static_analysis as static
+                static.is_balanced_statement(source_parts, only_tokens=False)
+                static.is_balanced_statement(source_parts, only_tokens=True)
+                text = '\n'.join(source_parts)
+                print(text)
+                static.six_axt_parse(text)
+                '''))
+            print('</FAIL DID NOT COMPLETE SOURCE>')
+            # sys.exit(1)
+        # TODO: use AST to reparse all doctest parts to discover where the
+        # syntax error in the doctest is and then raise it.
+        raise exceptions.IncompleteParseError(
+            'ill-formed doctest: all parts have been processed '
+            'but the doctest source is not balanced')
+    else:
+        if DEBUG > 1:
+            import ubelt as ub
+            print('<SUCCESS COMPLETED SOURCE>')
+            # print(' * line_iter = {!r}'.format(line_iter))
+            print('source_parts = {}'.format(ub.repr2(source_parts, nl=2)))
+            print('</SUCCESS COMPLETED SOURCE>')
+
+
+def _iterthree(items, pad_value=None):
+    """
+    Iterate over a sliding window of size 3 with None padding on
+    both sides.
+
+    Example:
+        >>> from xdoctest.parser import *
+        >>> print(list(_iterthree([])))
+        >>> print(list(_iterthree(range(1))))
+        >>> print(list(_iterthree([1, 2])))
+        >>> print(list(_iterthree([1, 2, 3])))
+        >>> print(list(_iterthree(range(4))))
+        >>> print(list(_iterthree(range(7))))
+    """
+    # Initialize the return window to pad values
+    left = mid = right = pad_value
+    # Create an iterator
+    item_iter = iter(items)
+    # Check the first item, if we dont have it, then dont return anything
+    try:
+        mid = next(item_iter)
+    except StopIteration:
+        return
+    else:
+        # Check the second item, if we dont have it, we have to return
+        # the values we've seen so far.
+        try:
+            right = next(item_iter)
+        except StopIteration:
+            yield left, mid, right
+            return
+        else:
+            # If we have both mid and right, then yield both
+            yield left, mid, right
+            left, mid = mid, right
+            # If there is still data
+            for right in item_iter:
+                yield left, mid, right
+                left, mid = mid, right
+        right = pad_value
+        yield left, mid, right
+
+
+def _hasprefix(line, prefixes):
+    """ helper prefix test """
+    # if not isinstance(prefixes, tuple):
+    #     prefixes = [prefixes]
+    return any(line == p or line.startswith(p + ' ') for p in prefixes)
 
 
 if __name__ == '__main__':

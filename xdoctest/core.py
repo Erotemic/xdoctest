@@ -16,7 +16,7 @@ from xdoctest import static_analysis as static
 from xdoctest import parser
 from xdoctest import exceptions
 from xdoctest import doctest_example
-from xdoctest import utils  # NOQA
+from xdoctest import utils
 from xdoctest.docstr import docscrape_google
 
 
@@ -375,8 +375,8 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
     Args:
         modpath_or_name (str): path to or name of the module to be tested
         exclude (List[str]): glob-patterns of file names to exclude
-        ignore_syntax_errors (bool): if False raise an error when syntax errors
-            occur in a doctest (default True)
+        ignore_syntax_errors (bool, default=True):
+            if False raise an error when syntax errors occur in a doctest
 
     Example:
         >>> modpath_or_name = 'xdoctest.core'
@@ -459,8 +459,8 @@ def parse_doctestables(modpath_or_name, exclude=[], style='auto',
         modpath_or_name (str|PathLike): path or name of a module
         exclude (List[str]): glob-patterns of file names to exclude
         style (str): expected doctest style (e.g. google, freeform, auto)
-        ignore_syntax_errors (bool): if False raise an error when syntax errors
-            occur in a doctest (default True)
+        ignore_syntax_errors (bool, default=True):
+            if False raise an error when syntax errors
         parser_kw: extra args passed to the parser
 
     Yields:

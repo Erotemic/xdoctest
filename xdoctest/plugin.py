@@ -14,9 +14,7 @@ To ensure maximum backwards compatibility with the original doctest module,
 this code is heavilly based on `pytest/_pytest/doctest.py` plugin file:
     https://github.com/pytest-dev/pytest
 
------------
 """
-# -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 import pytest
 from _pytest._code import code
@@ -93,28 +91,6 @@ def pytest_addoption(parser):
         group.addoption, prefix=['xdoctest', 'xdoc'],
         defaults=dict(verbose=0)
     )
-
-    # group.addoption('--xdoctest-options', '--xdoc-options',
-    #                 type=str_lower, default=None,
-    #                 help='default directive flags for doctests',
-    #                 dest='xdoctest_options')
-
-    # group.addoption('--xdoctest-report', '--xdoc-report',
-    #                 type=str_lower, default='udiff',
-    #                 help='choose another output format for diffs on xdoctest failure',
-    #                 choices=DOCTEST_REPORT_CHOICES,
-    #                 dest='xdoctest_reportchoice')
-
-    # group.addoption('--xdoctest-nocolor', '--xdoc-nocolor',
-    #                 action='store_false', default=True,
-    #                 help='Turns off ansii colors in stdout',
-    #                 dest='xdoctest_colored')
-
-    # group.addoption('--xdoctest-offset', '--xdoc-offset',
-    #                 action='store_true', default=False,
-    #                 help=('Doctest outputs will display line numbers '
-    #                       'wrt to the source file.'),
-    #                 dest='xdoctest_offset_linenos')
 
 
 def pytest_collect_file(path, parent):
@@ -204,22 +180,6 @@ class _XDoctestBase(pytest.Module):
 
         from xdoctest import doctest_example
         self._examp_conf = doctest_example.Config()._populate_from_cli(ns)
-
-        # directive_optparts = self.config.getini('xdoctest_options")
-        # from xdoctest.directive import parse_directive_optstr
-        # directive_optstr = self.config.getvalue('xdoctest_options')
-        # default_runtime_state = {}
-        # if directive_optstr:
-        #     for optpart in directive_optstr.split(','):
-        #         directive = parse_directive_optstr(optpart)
-        #         default_runtime_state[directive.name] = directive.positive
-
-        # self._examp_conf = {
-        #     'default_runtime_state': default_runtime_state,
-        #     'offset_linenos': self.config.getvalue('xdoctest_offset_linenos'),
-        #     'colored': self.config.getvalue('xdoctest_colored'),
-        #     'reportchoice': self.config.getoption("xdoctest_reportchoice"),
-        # }
 
 
 class XDoctestTextfile(_XDoctestBase):

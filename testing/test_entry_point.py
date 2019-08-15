@@ -69,3 +69,25 @@ def test_xdoc_console_script_exec():
         info = cmd('xdoctest')
     print('info = {!r}'.format(info))
     assert 'usage' in info['err']
+
+
+def test_xdoc_cli_version():
+    """
+    CommandLine:
+        xdoctest -m ~/code/xdoctest/testing/test_entry_point.py test_xdoc_cli_version
+
+    """
+    import xdoctest
+    info = cmd('xdoctest --version')
+    print('info = {!r}'.format(info))
+    print('xdoctest.__version__ = {!r}'.format(xdoctest.__version__))
+    assert xdoctest.__version__ in info['out']
+
+
+if __name__ == '__main__':
+    """
+    CommandLine:
+        python ~/code/xdoctest/testing/test_entry_point.py
+    """
+    import xdoctest
+    xdoctest.doctest_module(__file__)

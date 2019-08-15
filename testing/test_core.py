@@ -11,6 +11,7 @@ def _test_status(docstr):
     try:
         temp = utils.util_misc.TempDoctest(docstr=docstr)
     except Exception:
+        raise
         # pytest seems to load an older version of xdoctest for some reason
         import xdoctest
         import inspect
@@ -363,7 +364,10 @@ def test_delayed_want_pass_cases():
 
 
 def test_delayed_want_fail_cases():
-
+    """
+    CommandLine:
+        xdoctest -m ~/code/xdoctest/testing/test_core.py test_delayed_want_fail_cases
+    """
     # Fail Case4: "more text has not been printed yet"
     status = _test_status(
         """
@@ -412,11 +416,94 @@ def test_delayed_want_fail_cases():
     assert not status['passed']
 
 
+def test_indented_grouping():
+    """
+    Initial changes in 0.10.0 broke parsing of some ubelt tests, check to
+    ensure using `...` in indented blocks is ok (as long as there is no want
+    string in the indented block).
+
+    CommandLine:
+        xdoctest -m ~/code/xdoctest/testing/test_core.py test_indented_grouping
+    """
+    from xdoctest.doctest_example import DocTest
+    example = DocTest(
+        utils.codeblock(r"""
+        >>> from xdoctest.utils import codeblock
+        >>> # Simulate an indented part of code
+        >>> if True:
+        >>>     # notice the indentation on this will be normal
+        >>>     codeblock_version = codeblock(
+        ...             '''
+        ...             def foo():
+        ...                 return 'bar'
+        ...             '''
+        ...         )
+        >>>     # notice the indentation and newlines on this will be odd
+        >>>     normal_version = ('''
+        ...         def foo():
+        ...             return 'bar'
+        ...     ''')
+        >>> assert normal_version != codeblock_version
+        """))
+    # print(example.format_src())
+    status = example.run(verbose=0)
+    assert status['passed']
+
+
+def test_backwards_compat_eval_in_loop():
+    """
+    Test that changes in 0.10.0 fix backwards compatibility issue.
+
+    CommandLine:
+        xdoctest -m ~/code/xdoctest/testing/test_core.py test_backwards_compat_eval_in_loop
+    """
+    from xdoctest.doctest_example import DocTest
+    example = DocTest(
+        utils.codeblock(r"""
+        >>> for i in range(2):
+        ...     '%s' % i
+        ...
+        '0'
+        '1'
+        """))
+    # print(example.format_src())
+    status = example.run(verbose=0)
+    assert status['passed']
+
+    example = DocTest(
+        utils.codeblock(r"""
+        >>> for i in range(2):
+        ...     '%s' % i
+        '0'
+        '1'
+        """))
+    status = example.run(verbose=0)
+    assert status['passed']
+
+
+def test_backwards_compat_indent_value():
+    """
+    CommandLine:
+        xdoctest -m ~/code/xdoctest/testing/test_core.py test_backwards_compat_indent_value
+    """
+    from xdoctest.doctest_example import DocTest
+    example = DocTest(
+        utils.codeblock(r"""
+        >>> b = 3
+        >>> if True:
+        ...     a = 1
+        ...     isinstance(1, int)
+        True
+        """))
+    status = example.run(verbose=0)
+    assert status['passed']
+
+
 if __name__ == '__main__':
     """
     CommandLine:
         export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/testing
-        python ~/code/xdoctest/testing/test_core.py
+        python ~/code/xdoctest/testing/test_core.py zero
         pytest testing/test_core.py -vv
     """
     import xdoctest  # NOQA

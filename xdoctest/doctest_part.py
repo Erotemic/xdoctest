@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-TODO:
-    perhaps rename doctest part to DoctestCell, because there is a striking
-    similarity between Jupyter notebook cells and doctests.
-
 Simple storage container used to store a single executable part of a doctest
 example. Multiple parts are kept by a `xdoctest.doctest_example.Doctest`, which
 manages execution of each part.
+
+TODO:
+    perhaps rename doctest part to DoctestCell, because there is a striking
+    similarity between Jupyter notebook cells and doctest parts.
 """
 from __future__ import print_function, division, absolute_import, unicode_literals
 import math
@@ -14,46 +14,6 @@ from xdoctest import utils
 from xdoctest import checker
 from xdoctest import directive
 from xdoctest import constants
-
-
-# HACKED IN, IDK WHY I NEEDED TO DO THIS HERE
-def add_line_numbers(source, start=1, n_digits=None):
-    """
-    Prefixes code with line numbers
-
-    Example:
-        >>> from xdoctest.utils.util_str import *
-        >>> print(chr(10).join(add_line_numbers(['a', 'b', 'c'])))
-        1 a
-        2 b
-        3 c
-        >>> print(add_line_numbers(chr(10).join(['a', 'b', 'c'])))
-        1 a
-        2 b
-        3 c
-    """
-    import math
-    import six
-    was_string = isinstance(source, six.string_types)
-    part_lines = source.splitlines() if was_string else source
-
-    if n_digits is None:
-        endline = start + len(part_lines)
-        n_digits = math.log(max(1, endline), 10)
-        n_digits = int(math.ceil(n_digits))
-
-    src_fmt = '{count:{n_digits}d} {line}'
-
-    part_lines = [
-        src_fmt.format(n_digits=n_digits, count=count, line=line)
-        for count, line in enumerate(part_lines, start=start)
-    ]
-
-    if was_string:
-        return '\n'.join(part_lines)
-    else:
-        return part_lines
-setattr(utils, 'add_line_numbers', add_line_numbers)
 
 
 class DoctestPart(object):
@@ -68,6 +28,7 @@ class DoctestPart(object):
         orig_lines (list): the original text parsed into exec and want
         _directives (list): directives that this part will apply before being run
         partno (int): identifies the part number in the larger example
+        compile_mode (str): mode passed to compile.
     """
     def __init__(self, exec_lines, want_lines=None, line_offset=0,
                  orig_lines=None, directives=None, partno=None):
@@ -75,7 +36,7 @@ class DoctestPart(object):
         self.want_lines = want_lines
         self.line_offset = line_offset
         self.orig_lines = orig_lines
-        self.use_eval = False
+        self.compile_mode = 'exec'
         self._directives = directives
         self.partno = partno
 
@@ -253,9 +214,15 @@ class DoctestPart(object):
             print(123)
         """
         from xdoctest import utils
-        src_text = self.source
         if prefix:
-            src_text = utils.indent(src_text, '>>> ')
+            # Show the original line prefix when possible
+            if self.orig_lines is None:
+                src_text = utils.indent(self.source, '>>> ')
+            else:
+                src_text = '\n'.join(self.orig_lines)
+        else:
+            src_text = self.source
+
         want_text = self.want if self.want else ''
 
         if n_digits is None:
@@ -269,8 +236,8 @@ class DoctestPart(object):
         if linenos:
             n_spaces += n_digits + 1
             start = startline + self.line_offset
-            part_lines = add_line_numbers(part_lines, n_digits=n_digits,
-                                          start=start)
+            part_lines = utils.add_line_numbers(part_lines, n_digits=n_digits,
+                                                start=start)
 
         if partnos:
             part_lines = [

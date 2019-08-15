@@ -22,25 +22,25 @@ from xdoctest import exceptions
 
 class Config(dict):
     """
+    Doctest configuration
+
+    TODO:
+        -[ ] rename to DoctestConfig?
+
     Static configuration for collection, execution, and reporting doctests.
     Note dynamic directives are not managed by Config, they use RuntimeState.
     """
     def __init__(self, *args, **kwargs):
         super(Config, self).__init__(*args, **kwargs)
         self.update({
-
             # main options exposed by command line runner/plugin
-
             'colored': hasattr(sys.stdout, 'isatty') and sys.stdout.isatty(),
             'reportchoice': 'udiff',
             'default_runtime_state': {},
             'offset_linenos': False,
             'global_exec': None,
-
-            # 'colored': False,
             'on_error': 'raise',
             'partnos': False,
-            # 'partnos': True,
             'verbose': 1,
         })
 
@@ -105,17 +105,6 @@ class Config(dict):
                 kw['dest'] = prefix[0] + '_' + kw['dest']
             add_argument(*alias, **kw)
 
-    # def simple_argparse(self):
-    #     parser = argparse.ArgumentParser(
-    #         prog='xdoctest',
-    #         description=utils.codeblock(
-    #             '''
-    #             discover and run doctests within a python package
-    #             ''')
-    #     )
-    #     # parser.add_argument('modname', help='what files to run')
-    #     # parser.add_argument('command', help='a doctest name or a command (list|all)', default='list')
-
     def getvalue(self, key, given=None):
         if given is None:
             return self[key]
@@ -129,12 +118,27 @@ class DocTest(object):
 
     Attributes:
 
+        docsrc (str): doctest source code
+
+        modpath (PathLike, optional): module the source was read from
+
+        callname (PathLike, optional): name of the function/method/module being tested
+
         num (int): the index of the doctest in the docstring. (i.e.
             this object refers to the num-th doctest within a docstring)
 
         lineno (int): the line (starting from 1) in the file that the doctest
             begins on. (i.e. if you were to go to this line in the file, the
             first line of the doctest should be on this line).
+
+        fpath (PathLike): typically the same as modpath, only specified for
+            non-python files
+
+        block_type (str): code indicating the type of block. Can be
+            ('Example', 'Doctest', 'Script', 'Benchmark', 'zero-arg', None).
+
+        mode (str, default='pytest'):  hint at what created / is running this
+            doctest.
 
     CommandLine:
         xdoctest -m xdoctest.doctest_example DocTest
@@ -193,7 +197,7 @@ class DocTest(object):
         self.logged_evals = OrderedDict()
         self.logged_stdout = OrderedDict()
         self._unmatched_stdout = []
-        self.skipped_parts = []
+        self._skipped_parts = []
 
         self._runstate = None
 
@@ -390,6 +394,10 @@ class DocTest(object):
             part.partno = partno
 
     def _import_module(self):
+        """
+        After this point we are in dynamic analysis mode, in most cases
+        xdoctest should have been in static-analysis-only mode.
+        """
         if self.module is None:
             if not self.modname.startswith('<'):
                 # self.module = utils.import_module_from_path(self.modpath, index=0)
@@ -427,6 +435,9 @@ class DocTest(object):
     def run(self, verbose=None, on_error=None):
         """
         Executes the doctest, checks the results, reports the outcome.
+
+        Returns:
+            Dict : summary
         """
         on_error = self.config.getvalue('on_error', on_error)
         verbose = self.config.getvalue('verbose', verbose)
@@ -444,7 +455,7 @@ class DocTest(object):
         self.logged_stdout.clear()
         self._unmatched_stdout = []
 
-        self.skipped_parts = []
+        self._skipped_parts = []
         self.exc_info = None
         self._suppressed_stdout = verbose <= 1
 
@@ -458,9 +469,6 @@ class DocTest(object):
         if global_exec:
             # Hack to make it easier to specify multi-line input on the CLI
             global_source = utils.codeblock(global_exec.replace('\\n', '\n'))
-            # print('global_source = {!r}'.format(global_source))
-            # print(global_source)
-            # print('global_source = {!r}'.format(global_source))
             global_code = compile(
                 global_source, mode='exec',
                 filename='<doctest:' + self.node + ':' + 'global_exec>',
@@ -481,7 +489,7 @@ class DocTest(object):
 
                 # Handle runtime actions
                 if runstate['SKIP'] or len(runstate['REQUIRES']) > 0:
-                    self.skipped_parts.append(part)
+                    self._skipped_parts.append(part)
                     continue
 
                 # Prepare to capture stdout and evaluated values
@@ -489,13 +497,11 @@ class DocTest(object):
                 got_eval = constants.NOT_EVALED
                 try:
                     # Compile code, handle syntax errors
-                    mode = 'eval' if part.use_eval else 'exec'
+                    #   part.compile_mode can be single, exec, or eval.
+                    #   Typically single is used instead of eval
                     self._partfilename = '<doctest:' + self.node + '>'
-                    # Hack: we will prefix souce with newlines to
-                    # make the exec line number match.
                     code = compile(
-                        # '\n' * part.line_offset +
-                        part.source, mode=mode,
+                        part.source, mode=part.compile_mode,
                         filename=self._partfilename,
                         flags=compileflags, dont_inherit=True
                     )
@@ -516,10 +522,10 @@ class DocTest(object):
                         # one dict, otherwise there is weird behavior
                         with cap:
                             # We can execute each part using exec or eval.  If
-                            # a doctest part is flagged as `use_eval` we
+                            # a doctest part has `compile_mode=eval` we
                             # exepect it to return an object with a repr that
                             # can compared to a "want" statement.
-                            if part.use_eval:
+                            if part.compile_mode == 'eval':
                                 got_eval = eval(code, test_globals)
                             else:
                                 exec(code, test_globals)
@@ -632,31 +638,45 @@ class DocTest(object):
         if self.exc_info is None:
             self.failed_part = None
 
-        if len(self.skipped_parts) == len(self._parts):
+        if len(self._skipped_parts) == len(self._parts):
             # we skipped everything
             if self.mode == 'pytest':
                 import pytest
                 pytest.skip()
 
-        return self._post_run(verbose)
+        summary = self._post_run(verbose)
+        return summary
 
     @property
     def cmdline(self):
+        """
+        A cli-instruction that can be used to execute *this* doctest.
+
+        Returns:
+            str:
+        """
         if self.mode == 'pytest':
             return 'pytest ' + self.node
         elif self.mode == 'native':
-            in_path = static.is_modname_importable(self.modname)
-            if in_path:
-                # should be able to find the module by name
-                return 'python -m xdoctest ' + self.modname + ' ' + self.unique_callname
+            ALLOW_MODNAME_CMDLINE = False
+            if ALLOW_MODNAME_CMDLINE:
+                # not 100% reliable if any dynamic code has executed before
+                # or we are doing self-testing
+                in_path = static.is_modname_importable(self.modname)
+                if in_path:
+                    # should be able to find the module by name
+                    return 'python -m xdoctest ' + self.modname + ' ' + self.unique_callname
+                else:
+                    # needs the full path to be able to run the module
+                    return 'python -m xdoctest ' + self.modpath + ' ' + self.unique_callname
             else:
-                # needs the full path to be able to run the module
+                # Probably safer to always use the path
                 return 'python -m xdoctest ' + self.modpath + ' ' + self.unique_callname
         else:
             raise KeyError(self.mode)
 
     @property
-    def block_prefix(self):
+    def _block_prefix(self):
         return 'ZERO-ARG' if self.block_type == 'zero-arg' else 'DOCTEST'
 
     def _pre_run(self, verbose):
@@ -670,10 +690,9 @@ class DocTest(object):
             else:
                 print('* DOCTEST : {}, line {}'.format(self.node, self.lineno) + self._color(' <- wrt source file', 'white'))
             if verbose >= 3:
-                print(self._color(self.block_prefix + ' SOURCE', 'white'))
+                print(self._color(self._block_prefix + ' SOURCE', 'white'))
                 print(self.format_src())
-                # print(self._color('* ----------', 'white'))
-                print(self._color(self.block_prefix + ' STDOUT/STDERR', 'white'))
+                print(self._color(self._block_prefix + ' STDOUT/STDERR', 'white'))
 
     def failed_line_offset(self):
         """
@@ -765,7 +784,6 @@ class DocTest(object):
         #     lines += ['DEBUG PARTS: ']
         #     for partx, part in enumerate(self._parts):
         #         lines += [str(partx) + ': ' + str(part)]
-        #         lines += ['  use_eval: {!r}'.format(part.use_eval)]
         #         lines += ['  directives: {!r}'.format(part.directives)]
         #         lines += ['  want: {!r}'.format(str(part.want)[0:25])]
         #         val = self.logged_evals.get(partx, None)
@@ -812,7 +830,7 @@ class DocTest(object):
 
         lines = [
             '* REASON: {}'.format(ex_type.__name__),
-            self._color(self.block_prefix + ' DEBUG INFO', 'white'),
+            self._color(self._block_prefix + ' DEBUG INFO', 'white'),
             '  XDoc "{}", line {}'.format(self.node, fail_offset + 1) +
             self._color(' <- wrt doctest', 'red'),
         ]
@@ -853,7 +871,7 @@ class DocTest(object):
         indent_text = ' ' * (5 + n_digits)
 
         for partx, (part, part_text) in enumerate(zip(self._parts, textgen)):
-            if part in self.skipped_parts:
+            if part in self._skipped_parts:
                 # temp[tindex] += [utils.indent(part_text, ' ' * 4)]
                 # temp[tindex] += [utils.indent(' >>> # skipped', indent_text)]
                 continue
@@ -871,7 +889,7 @@ class DocTest(object):
             # if part_eval is not NOT_EVALED:
             #     temp[tindex] += [repr(part_eval)]
 
-        lines += [self._color(self.block_prefix + ' PART BREAKDOWN', 'white')]
+        lines += [self._color(self._block_prefix + ' PART BREAKDOWN', 'white')]
         if before_part_lines:
             lines += ['Passed Parts:']
             lines += before_part_lines
@@ -884,7 +902,7 @@ class DocTest(object):
             lines += ['Remaining Parts:']
             lines += after_parts_lines
 
-        lines += [self._color(self.block_prefix + ' TRACEBACK', 'white')]
+        lines += [self._color(self._block_prefix + ' TRACEBACK', 'white')]
         if hasattr(ex_value, 'output_difference'):
             lines += [
                 ex_value.output_difference(self._runstate, colored=colored),
@@ -956,7 +974,7 @@ class DocTest(object):
                     new_tblines = tbtext.splitlines()
                 lines += new_tblines
 
-        lines += [self._color(self.block_prefix + ' REPRODUCTION', 'white')]
+        lines += [self._color(self._block_prefix + ' REPRODUCTION', 'white')]
         lines += ['CommandLine:']
         lines += ['    ' + self.cmdline]
         return lines
@@ -980,9 +998,13 @@ class DocTest(object):
         return text
 
     def _post_run(self, verbose):
+        """
+        Returns:
+            Dict : summary
+        """
         # print('POST RUN verbose = {!r}'.format(verbose))
 
-        skipped = len(self.skipped_parts) == len(self._parts)
+        skipped = len(self._skipped_parts) == len(self._parts)
         failed = self.exc_info is not None
         passed = not failed and not skipped
 
@@ -994,7 +1016,7 @@ class DocTest(object):
         }
 
         if verbose >= 2:
-            print(self._color(self.block_prefix + ' RESULT', 'white'))
+            print(self._color(self._block_prefix + ' RESULT', 'white'))
         if self.exc_info is None:
             if verbose >= 1:
                 if verbose >= 2:

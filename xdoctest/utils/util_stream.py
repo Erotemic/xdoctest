@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+Utilities for capturing stdout
+"""
 from __future__ import print_function, division, absolute_import, unicode_literals
 import sys
 import six

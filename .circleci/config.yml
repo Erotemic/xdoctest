@@ -33,17 +33,18 @@ jobs:
   #    # ### INITIALIZE AND CACHE REQUIREMENTS ###
   #    - restore_cache:
   #        keys:
-  #        - v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}
+  #        - v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}
   #    - run:
   #        name: install dependencies
   #        command: |
   #          python -m venv venv || virtualenv -v venv  # first command is python3 || second is python2
   #          . venv/bin/activate
   #          pip install -r requirements.txt  # The "minimal" tests install barebones requirements
+  #          pip install .
   #    - save_cache:
   #        paths:
   #          - ./venv
-  #        key: v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}
+  #        key: v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}
   #    # ### RUN TESTS ###
   #    - run:
   #        name: run tests
@@ -67,7 +68,7 @@ jobs:
       # ### INITIALIZE AND CACHE REQUIREMENTS ###
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}
+          - v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}
       - run:
           name: install dependencies
           command: |
@@ -75,10 +76,11 @@ jobs:
             . venv/bin/activate
             # The "minimal" tests install barebones requirements
             pip install -r requirements.txt
+            pip install .
       - save_cache:
           paths:
             - ./venv
-          key: v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}
+          key: v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}
       # ### RUN TESTS ###
       - run:
           name: run tests

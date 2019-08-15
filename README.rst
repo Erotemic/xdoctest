@@ -294,30 +294,20 @@ this module should support that level of configuration. If the test
 requires a high degree of specificity in the got/want checker, it may
 just be better to use an ``assert`` statement.
 
-Backwards Incompatibility
--------------------------
+Backwards Compatibility
+-----------------------
+We (I) have removed all known backwards syntax incompatibilities. This is based
+on running doctests on real life examples: `boltons`, `ubelt`, `networkx`,
+`pytorch` (pending their acceptance of a pull-request), and on a set of
+extensive self-testing. Please raise an issue or submit a merge/pull request.
 
-There are a few cases that are currently backwards incompatible.
+Despite full syntax backwards compatibility, there are directive
+incompatibilities by design. The directives we expose are more consise and
+expressive. Our "got"/"want" checker is also much more permissive. We recommend
+that you rely on coded `assert`-statements for system-critical code. This also
+makes it much easier to transform your `xdoctest` into a `unittest` when you
+realize your doctests start getting too long.
 
-Evaluating multiple items in a for loop no longer works:
-
-.. code:: python
-
-        >>> for i in range(2):
-        ...     '%s' % i
-        ...
-        '0'
-        '1'
-
-Instead do:
-
-.. code:: python
-
-        >>> for i in range(2):
-        ...     print('%s' % i)
-        ...
-        0
-        1
 
 Unfinished Tasks: 
 -----------------
@@ -325,12 +315,18 @@ Unfinished Tasks:
 This module is in a working state. It is nearly complete, but there are a few
 todo items: 
 
-Parsing:
-^^^^^^^^
-
+Extraction:
+^^^^^^^^^^^
 -  [x] Parse freeform-style doctest examples
 -  [x] Parse google-style doctest examples
 -  [ ] Parse numpy-style doctest examples
+
+
+Parsing:
+^^^^^^^^
+
+-  [X] Removed all known syntax backwards incompatibility. 
+-  [ ] Removed all known directive backwards incompatibility. 
 
 Checking:
 ^^^^^^^^^

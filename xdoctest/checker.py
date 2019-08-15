@@ -279,11 +279,16 @@ def normalize(got, want, runstate=None):
         got = utils.strip_ansi(got)
         want = utils.strip_ansi(want)
 
-    # normalize python 2/3 byte/unicode prefixes
     if True:
+        # normalize python 2/3 byte/unicode prefixes
         got = remove_prefixes(unicode_literal_re, got)
         want = remove_prefixes(unicode_literal_re, want)
 
+        # Note: normalizing away prefixes can cause weird "got"
+        # results to print when there is a got-want mismatch.
+        # For instance, if you get {'b': 22} but you want {'b': 2}
+        # this will cause xdoctest to report that you wanted {'': 2}
+        # because it reports the normalized version of the want message
         got = remove_prefixes(bytes_literal_re, got)
         want = remove_prefixes(bytes_literal_re, want)
 
@@ -441,16 +446,16 @@ class GotWantException(AssertionError):
                 if colored:
                     got = utils.color_text(got, 'red')
                     want = utils.color_text(want, 'red')
-                text = 'Expected:\n%s\nGot:\n%s' % (
-                    utils.indent(want), utils.indent(got))
+                text = 'Expected:\n{}\nGot:\n{}'.format(
+                    utils.indent(self.want), utils.indent(self.got))
             elif want:
                 if colored:
                     got = utils.color_text(got, 'red')
                     want = utils.color_text(want, 'red')
-                text = 'Expected:\n%s\nGot nothing\n' % utils.indent(want)
+                text = 'Expected:\n{}\nGot nothing\n'.format(utils.indent(want))
             elif got:  # nocover
                 raise AssertionError('impossible state')
-                text = 'Expected nothing\nGot:\n%s' % utils.indent(got)
+                text = 'Expected nothing\nGot:\n{}'.format(utils.indent(got))
             else:  # nocover
                 raise AssertionError('impossible state')
                 text = 'Expected nothing\nGot nothing\n'
