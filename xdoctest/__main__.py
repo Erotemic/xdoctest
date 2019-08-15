@@ -32,6 +32,7 @@ def main():
             Defaults --modname to arg.pop(0).
             Defaults --command to arg.pop(0).
             '''))
+    parser.add_argument('--version', action='store_true', help='display version info and quit')
 
     # The bulk of the argparse CLI is defined in the doctest example
     from xdoctest import doctest_example
@@ -41,6 +42,11 @@ def main():
 
     args, unknown = parser.parse_known_args()
     ns = args.__dict__.copy()
+
+    if ns['version']:
+        import xdoctest
+        print(xdoctest.__version__)
+        sys.exit(0)
 
     # ... postprocess args
     modname = ns['modname']
@@ -77,6 +83,11 @@ def main():
     # ---
 
     import xdoctest
+
+    if ns['version']:
+        print(xdoctest.__version__)
+        sys.exit(0)
+
 
     options = ns['options']
     if options is None:

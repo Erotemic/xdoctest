@@ -11,6 +11,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Can now specify zero-args as the command to the xdoctest CLI to run all zero-args functions in a file.  
 * Add known issue: note about possible want-reporting bug.
 * More docstrings
+* Add `--version` option to CLI interface
 
 ### Changed 
 * Improved backwards compatibility. Explicit continuations now work more similarly to the original doctest. 
