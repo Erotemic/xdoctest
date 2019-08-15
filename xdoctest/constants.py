@@ -1,4 +1,8 @@
-# sentinal value
+# -*- coding: utf-8 -*-
+"""
+Defines sentinal values for internal xdoctest usage
+"""
+from __future__ import print_function, division, absolute_import, unicode_literals
 
 if False:
     NOT_EVALED = object()  # nocover

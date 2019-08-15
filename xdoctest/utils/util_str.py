@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+Utilities related to string manipulations
+"""
 from __future__ import print_function, division, absolute_import, unicode_literals
 import six
 import math

@@ -18,27 +18,11 @@ The following documents all supported basic directives.
 Advanced Directives
 -------------------
 
-Advanced directives may take arguments and are more conditional in nature. The
-names of the advanced directives do not correspond to a runtime state
-attribute. Instead they represent a conditional modification of a basic runtime
-state attribute.  For example, the advanced directive `+REQUIRES(flag)` will
-correspond to a `+SKIP` directive if the condition (a command line argument or
-platform name) represented by `flag` is satisfied.
-
-
-TODO
-----
-
-* Directives are currently subject to change. The current documented behavior
-is broken see GH #18. The fixing change will likely be backwards incompatible.
-
-* Do we:
-    (a) Maintain a directive stack to allow push and pop of SKIP directives
-    (b) Only allow the positive form of +SKIP? And disallow negative -SKIP?
-    (b.1) is the negative version of the directive every really that useful?
-    (c) perhaps a +SKIP can only update the runtime state to be positive
-        and -SKIP can only change to be negative (ie a failed +SKIP will not
-        sudently set SKIP to False)
+Advanced directives may take arguments, be conditional, or modify the runtime
+state in complex ways.  For instance, whereas most directives modify a boolean
+value in the runtime state, the advanced `REQUIRES` directive either adds or
+removes a value from a `set` of unmet requirements. Doctests will only run if
+there are no unmet requirements.
 
 
 CommandLine:
@@ -74,8 +58,7 @@ Example:
 
 Example:
     This next examples illustrates how to use the advanced `+REQURIES()`
-    directive. Note, REQUIRES currently only modifies SKIP, but in the
-    future it may track its own state.
+    directive. Note, the REQUIRES and SKIP states are independent.
 
     >>> import sys
     >>> count = 0
@@ -91,7 +74,6 @@ Example:
     >>> assert sys.platform.startswith('darwin')
     >>> count += 1
     >>> # xdoctest: -REQUIRES(DARWIN)
-    >>> # xdoctest: -SKIP
     >>> print(count)
     >>> assert count == 1, 'Exactly one of the above parts should have run'
     >>> # xdoctest: +REQUIRES(--verbose)

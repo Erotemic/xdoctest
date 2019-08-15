@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+Utilities that are mainly used in self-testing
+"""
 from __future__ import print_function, division, absolute_import, unicode_literals
 from os.path import join
 import random

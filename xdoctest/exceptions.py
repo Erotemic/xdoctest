@@ -1,3 +1,7 @@
+"""
+Define errors that may be raised by xdoctest
+"""
+
 class MalformedDocstr(Exception):
     """
     Exception raised when the docstring itself does not conform to the expected
@@ -19,6 +23,13 @@ class DoctestParseError(Exception):
 
 
 class ExitTestException(Exception):
+    pass
+
+
+class IncompleteParseError(SyntaxError):
+    """
+    Used when something goes wrong in the xdoctest parser
+    """
     pass
 
 try:

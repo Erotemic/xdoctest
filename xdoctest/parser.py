@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 """
+The XDoctest Parser
+-------------------
+This parses a docstring into one or more "doctest part" *after* the docstrings
+have been extracted from the source code by either static or dynamic means.
+
 Terms and definitions:
 
     logical block: a snippet of code that can be executed by itself if given
@@ -20,6 +25,10 @@ Terms and definitions:
 
     want statement: Lines directly after a logical block of code in a doctest
         indicating the desired result of executing the previous block.
+
+While I do believe this AST-based code is a significant improvement over the
+RE-based builtin doctest parser, I acknowledge that I'm not an AST expert and
+there is room for improvement here.
 """
 from __future__ import print_function, division, absolute_import, unicode_literals
 import six
@@ -35,20 +44,10 @@ from xdoctest import doctest_part
 from xdoctest import static_analysis as static
 
 
-class IncompleteParseError(SyntaxError):
-    pass
-
-
 DEBUG = 0
 
 
-GotWantException = checker.GotWantException
-
-
 INDENT_RE = re.compile(r'^([ ]*)(?=\S)', re.MULTILINE)
-
-
-WORKON_BACKWARDS_COMPAT_CONTINUE_EVAL = 1
 
 
 class DoctestParser(object):
@@ -70,7 +69,6 @@ class DoctestParser(object):
         <DoctestPart(ln 3, src="print(j)...", want="10...")>
 
     Example:
-        >>> from xdoctest.parser import *
         >>> # Having multiline strings in doctests can be nice
         >>> string = utils.codeblock(
                 '''
@@ -145,7 +143,7 @@ class DoctestParser(object):
 
         string = string.expandtabs()
         # If all lines begin with the same indentation, then strip it.
-        min_indent = min_indentation(string)
+        min_indent = _min_indentation(string)
         if min_indent > 0:
             string = '\n'.join([l[min_indent:] for l in string.splitlines()])
 
@@ -342,76 +340,55 @@ class DoctestParser(object):
         prev_source = None
         grouped_lines = []
 
-        if WORKON_BACKWARDS_COMPAT_CONTINUE_EVAL:
-            groups = []
-            current = []
-            state = None
-            # Break up explicit continuations for backwards compat
-            if DEBUG > 4:
-                print('labeled_lines = {!r}'.format(labeled_lines))
+        # WORKON_BACKWARDS_COMPAT_CONTINUE_EVAL
+        # Break up explicit continuations for backwards compat
+        groups = []
+        current = []
+        state = None
+        if DEBUG > 4:
+            print('labeled_lines = {!r}'.format(labeled_lines))
 
-            for left, mid, right in _iterthree(labeled_lines, pad_value=(None, None)):
-                if left[0] != mid[0] or mid[0] == 'dsrc' and right[0] == 'dcnt':
-                    if not (left[0] == 'dsrc' and mid[0] == 'dcnt'):
-                        if state is not None:
-                            groups.append((state, current))
-                        state = mid[0]
-                        current = []
-                current.append(mid)
-            if current:
-                groups.append((state, current))
+        for left, mid, right in _iterthree(labeled_lines, pad_value=(None, None)):
+            if left[0] != mid[0] or mid[0] == 'dsrc' and right[0] == 'dcnt':
+                if not (left[0] == 'dsrc' and mid[0] == 'dcnt'):
+                    if state is not None:
+                        groups.append((state, current))
+                    state = mid[0]
+                    current = []
+            current.append(mid)
+        if current:
+            groups.append((state, current))
 
-            if DEBUG > 4:
-                print('groups = {!r}'.format(groups))
+        if DEBUG > 4:
+            print('groups = {!r}'.format(groups))
 
-            prev_source = None
-            grouped_lines = []
-            for state, group in groups:
-                block = [t[1] for t in group]
-                if state == 'text':
-                    if prev_source is not None:
-                        # accept a source block without a want block
-                        grouped_lines.append((prev_source, ''))
-                        prev_source = None
-                    # accept the text
-                    grouped_lines.append(block)
-                elif state == 'want':
-                    assert prev_source is not None, 'impossible'
-                    grouped_lines.append((prev_source, block))
+        prev_source = None
+        grouped_lines = []
+        for state, group in groups:
+            block = [t[1] for t in group]
+            if state == 'text':
+                if prev_source is not None:
+                    # accept a source block without a want block
+                    grouped_lines.append((prev_source, ''))
                     prev_source = None
-                elif state in {'dsrc', 'dcnt'}:
-                    if prev_source is not None:
-                        # accept a source block without a want block
-                        grouped_lines.append((prev_source, ''))
-                        prev_source = None
-                    # need to check if there is a want after us
-                    prev_source = block
-            # Case where last block is source
-            if prev_source:
-                grouped_lines.append((prev_source, ''))
-
-        else:
-
-            for state, group in it.groupby(labeled_lines, lambda t: t[0]):
-                block = [t[1] for t in group]
-                if state == 'text':
-                    if prev_source is not None:
-                        # accept a source block without a want block
-                        grouped_lines.append((prev_source, ''))
-                        prev_source = None
-                    # accept the text
-                    grouped_lines.append(block)
-                elif state == 'want':
-                    assert prev_source is not None, 'impossible'
-                    grouped_lines.append((prev_source, block))
+                # accept the text
+                grouped_lines.append(block)
+            elif state == 'want':
+                assert prev_source is not None, 'impossible'
+                grouped_lines.append((prev_source, block))
+                prev_source = None
+            elif state in {'dsrc', 'dcnt'}:
+                if prev_source is not None:
+                    # accept a source block without a want block
+                    grouped_lines.append((prev_source, ''))
                     prev_source = None
-                elif state in {'dsrc', 'dcnt'}:
-                    # need to check if there is a want after us
-                    prev_source = block
-            # Case where last block is source
-            if prev_source:
-                grouped_lines.append((prev_source, ''))
-        if DEBUG > 1:
+                # need to check if there is a want after us
+                prev_source = block
+        # Case where last block is source
+        if prev_source:
+            grouped_lines.append((prev_source, ''))
+
+        if DEBUG > 1:  # nocover
             print('</GROUP LABEL LINES>')
         return grouped_lines
 
@@ -420,13 +397,13 @@ class DoctestParser(object):
         Determines which lines in the source begin a "logical block" of code.
 
         Args:
-            source_lines (list): lines belonging only to the doctest src
+            source_lines (List[str]): lines belonging only to the doctest src
                 these will be unindented, prefixed, and without any want.
 
         Returns:
-            (list, bool): a list of indices indicating which lines
-               are considered "PS1" and a flag indicating if the final line
-               should be considered for a got/want assertion.
+            Tuple[List[int], bool]: a list of indices indicating which lines
+                are considered "PS1" and a flag indicating if the final line
+                should be considered for a got/want assertion.
 
         Example:
             >>> self = DoctestParser()
@@ -467,13 +444,12 @@ class DoctestParser(object):
                     while not static.is_balanced_statement(lines[a:b], only_tokens=True) and a >= 0:
                         a -= 1
                     if a < 0:
-                        raise IncompleteParseError(
+                        raise exceptions.IncompleteParseError(
                             'ill-formed doctest: cannot find balanced ps1 lines.')
                     # we found a balanced interval
                     intervals.append((a, b))
                     b = a
                     a = a - 1
-
 
                 intervals = intervals[::-1]
                 return intervals
@@ -528,11 +504,11 @@ class DoctestParser(object):
                 # (todo: ensure this is true)
                 eval_final = isinstance(statement_nodes[-1], ast.Expr)
 
-        if WORKON_BACKWARDS_COMPAT_CONTINUE_EVAL:
-            if len(source_lines) > 1:
-                if source_lines[0].startswith('>>> '):
-                    if all(s.startswith('... ') for s in source_lines[1:]):
-                        eval_final = 'single'
+        # WORKON_BACKWARDS_COMPAT_CONTINUE_EVAL:
+        if len(source_lines) > 1:
+            if source_lines[0].startswith('>>> '):
+                if all(s.startswith('... ') for s in source_lines[1:]):
+                    eval_final = 'single'
 
         return ps1_linenos, eval_final
 
@@ -559,8 +535,8 @@ class DoctestParser(object):
         Notes:
             A patch for this issue exists
             `https://github.com/python/cpython/pull/1800`. This workaround is a
-            no-op when the line numbers are correct, so nothing should break
-            when this bug is fixed.
+            idempotent (i.e. a no-op) when line numbers are correct, so nothing
+            should break when this bug is fixed.
 
             Starting from the end look at consecutive pairs of indices to
             inspect the statement it corresponds to.  (the first statement goes
@@ -592,6 +568,14 @@ class DoctestParser(object):
         Give each line in the docstring a label so we can distinguish
         what parts are text, what parts are code, and what parts are "want"
         string.
+
+        Args:
+            string (str): doctest source
+
+        Returns:
+            List[Tuple[str, str]]: labeled_lines - the above source broken
+                up by lines, each with a label indicating its type for later
+                use in parsing.
 
         Example:
             >>> from xdoctest.parser import *
@@ -627,21 +611,17 @@ class DoctestParser(object):
         # line states
         TEXT = 'text'
         DSRC = 'dsrc'
-        DCNT = 'dcnt'  # explicit continuation
+        DCNT = 'dcnt'  # explicit continuation  **new in 0.10.0**
         WANT = 'want'
 
         # Move through states, keeping track of points where states change
         #     text -> [text, dsrc]
-        #     dsrc -> [dsrc, want, text]
+        #     dsrc -> [dsrc, dcnt, want, text]
+        #     dcnt -> [dsrc, dcnt, want, text]
         #     want -> [want, text, dsrc]
         prev_state = TEXT
         curr_state = None
         line_iter = enumerate(string.splitlines())
-
-        def hasprefix(line, prefixes):
-            if not isinstance(prefixes, tuple):
-                prefixes = [prefixes]
-            return any(line == p or line.startswith(p + ' ') for p in prefixes)
 
         for line_idx, line in line_iter:
             match = INDENT_RE.search(line)
@@ -653,7 +633,7 @@ class DoctestParser(object):
             if prev_state == TEXT:
                 # text transitions to source whenever a PS1 line is encountered
                 # the PS1(>>>) can be at an arbitrary indentation
-                if hasprefix(strip_line, '>>>'):
+                if _hasprefix(strip_line, ('>>>',)):
                     curr_state = DSRC
                 else:
                     curr_state = TEXT
@@ -662,7 +642,7 @@ class DoctestParser(object):
                 if len(strip_line) == 0:
                     curr_state = TEXT
                 # source-inconsistent indentation terminates want
-                elif hasprefix(line.strip(), '>>>'):
+                elif _hasprefix(line.strip(), ('>>>',)):
                     curr_state = DSRC
                 elif line_indent < state_indent:
                     curr_state = TEXT
@@ -672,7 +652,7 @@ class DoctestParser(object):
                 if len(strip_line) == 0 or line_indent < state_indent:
                     curr_state = TEXT
                 # allow source to continue with either PS1 or PS2
-                elif hasprefix(norm_line, ('>>>', '...')):
+                elif _hasprefix(norm_line, ('>>>', '...')):
                     if strip_line == '...':
                         # TODO: add mechanism for checking next line.
                         # if the next line is also a continuation
@@ -683,7 +663,7 @@ class DoctestParser(object):
                         else:
                             curr_state = WANT
                     else:
-                        if hasprefix(norm_line, ('...')):
+                        if _hasprefix(norm_line, ('...',)):
                             curr_state = DCNT
                         else:
                             curr_state = DSRC
@@ -709,21 +689,21 @@ class DoctestParser(object):
             if curr_state in {DSRC, DCNT}:
                 # source parts may consume more than one line
                 try:
-                    if DEBUG:
+                    if DEBUG:  # nocover
                         print('completing source')
                     for part, norm_line in _complete_source(line, state_indent, line_iter):
-                        if DEBUG> 4:
+                        if DEBUG> 4:  # nocover
                             print('part = {!r}'.format(part))
                             print('norm_line = {!r}'.format(norm_line))
                             print('curr_state = {!r}'.format(curr_state))
-                        if hasprefix(norm_line, ('...',)):
+                        if _hasprefix(norm_line, ('...',)):
                             curr_state = DCNT
                         labeled_lines.append((curr_state, part))
 
-                except IncompleteParseError as orig_ex:
+                except exceptions.IncompleteParseError as orig_ex:
                     raise
                 except SyntaxError as orig_ex:
-                    if DEBUG:
+                    if DEBUG:  # nocover
                         print('<LABEL FAIL>')
                         # print('next(line_iter) = {!r}'.format(line_iter))
                         print('state_indent = {!r}'.format(state_indent))
@@ -741,7 +721,7 @@ class DoctestParser(object):
                 labeled_lines.append((curr_state, line))
             prev_state = curr_state
 
-        if DEBUG > 1:
+        if DEBUG > 1:  # nocover
             import ubelt as ub
             # if DEBUG > 3:
             #     print('string = {!r}'.format(string))
@@ -752,7 +732,7 @@ class DoctestParser(object):
         return labeled_lines
 
 
-def min_indentation(s):
+def _min_indentation(s):
     "Return the minimum indentation of any non-blank line in `s`"
     indents = [len(indent) for indent in INDENT_RE.findall(s)]
     if len(indents) > 0:
@@ -766,7 +746,6 @@ def _complete_source(line, state_indent, line_iter):
     helper
     remove lines from the iterator if they are needed to complete source
     """
-
     norm_line = line[state_indent:]  # Normalize line indentation
     prefix = norm_line[:4]
     suffix = norm_line[4:]
@@ -836,10 +815,9 @@ def _complete_source(line, state_indent, line_iter):
                 '''))
             print('</FAIL DID NOT COMPLETE SOURCE>')
             # sys.exit(1)
-        # TODO: use AST to reparse all doctest parts to discover
-        # where the syntax error in the doctest is and then raise
-        # it.
-        raise IncompleteParseError(
+        # TODO: use AST to reparse all doctest parts to discover where the
+        # syntax error in the doctest is and then raise it.
+        raise exceptions.IncompleteParseError(
             'ill-formed doctest: all parts have been processed '
             'but the doctest source is not balanced')
     else:
@@ -892,6 +870,13 @@ def _iterthree(items, pad_value=None):
                 left, mid = mid, right
         right = pad_value
         yield left, mid, right
+
+
+def _hasprefix(line, prefixes):
+    """ helper prefix test """
+    # if not isinstance(prefixes, tuple):
+    #     prefixes = [prefixes]
+    return any(line == p or line.startswith(p + ' ') for p in prefixes)
 
 
 if __name__ == '__main__':
