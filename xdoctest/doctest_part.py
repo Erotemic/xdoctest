@@ -214,9 +214,15 @@ class DoctestPart(object):
             print(123)
         """
         from xdoctest import utils
-        src_text = self.source
         if prefix:
-            src_text = utils.indent(src_text, '>>> ')
+            # Show the original line prefix when possible
+            if self.orig_lines is None:
+                src_text = utils.indent(self.source, '>>> ')
+            else:
+                src_text = '\n'.join(self.orig_lines)
+        else:
+            src_text = self.source
+
         want_text = self.want if self.want else ''
 
         if n_digits is None:

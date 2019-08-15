@@ -469,9 +469,6 @@ class DocTest(object):
         if global_exec:
             # Hack to make it easier to specify multi-line input on the CLI
             global_source = utils.codeblock(global_exec.replace('\\n', '\n'))
-            # print('global_source = {!r}'.format(global_source))
-            # print(global_source)
-            # print('global_source = {!r}'.format(global_source))
             global_code = compile(
                 global_source, mode='exec',
                 filename='<doctest:' + self.node + ':' + 'global_exec>',

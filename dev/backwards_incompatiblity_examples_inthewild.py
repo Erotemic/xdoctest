@@ -21,8 +21,7 @@
 
 def known_indent_value_case():
     """
-
-    Not sure if we can do anything about this
+    xdoctest -m ~/code/xdoctest/dev/backwards_incompatiblity_examples_inthewild.py known_indent_value_case
 
     >>> b = 3
     >>> if True:
@@ -31,8 +30,6 @@ def known_indent_value_case():
     True
 
     """
-
-
 
 
 def foo():
@@ -47,3 +44,19 @@ def foo():
     >>> pp(dict(omd))
     {'a': 3, 'b': 222}
     """
+
+
+def eval_in_loop_case():
+    """
+    xdoctest -m ~/code/xdoctest/dev/backwards_incompatiblity_examples_inthewild.py eval_in_loop_case
+
+    >>> for i in range(2):
+    ...     '%s' % i
+    ...
+    '0'
+    '1'
+    """
+
+
+
+

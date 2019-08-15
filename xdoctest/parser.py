@@ -250,6 +250,7 @@ class DoctestParser(object):
         # Find the line number of each standalone statement
         ps1_linenos, eval_final = self._locate_ps1_linenos(source_lines)
         if DEBUG > 1:
+            print('eval_final = {!r}'.format(eval_final))
             print(' * located ps1 lines')
 
         # Find all directives here:
@@ -419,10 +420,8 @@ class DoctestParser(object):
             >>> assert linenos == [0, 2]
             >>> assert eval_final is True
         """
-        # print('source_lines = {!r}'.format(source_lines))
         # Strip indentation (and PS1 / PS2 from source)
         exec_source_lines = [p[4:] for p in source_lines]
-        # print('\n'.join(exec_source_lines))
 
         def _hack_comment_statements(lines):
             # Hack to make comments appear like executable statements
@@ -505,9 +504,11 @@ class DoctestParser(object):
                 eval_final = isinstance(statement_nodes[-1], ast.Expr)
 
         # WORKON_BACKWARDS_COMPAT_CONTINUE_EVAL:
+        # Force doctests parts to evaluate in backwards compatible "single"
+        # mode when using old style doctest syntax.
         if len(source_lines) > 1:
             if source_lines[0].startswith('>>> '):
-                if all(s.startswith('... ') for s in source_lines[1:]):
+                if all(_hasprefix(s, ('...',)) for s in source_lines[1:]):
                     eval_final = 'single'
 
         return ps1_linenos, eval_final

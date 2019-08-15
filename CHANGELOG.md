@@ -17,6 +17,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * You no longer need a comment to denote that a `...` is a continuation and not a ellipsis.
 * Want statements will check against return values in nested continuations
 * Cleaned up internal code, private APIs may break.
+* Failed doctests will now print their original line prefixes (either `>>> ` or `... ` when possible)
 
 ### Fixed
 * `run_tests.py` now returns the correct error code. (fixes CircleCI)

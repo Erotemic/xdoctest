@@ -319,6 +319,13 @@ Instead do:
         0
         1
 
+
+**NEW in 0.10.0**: new improvments to backwards compatibility have been made,
+and both of the above now work. We still do not gaurentee full 100% backwards
+compatibility, but we do attempt to support it. Please submit an issue if
+xdoctest does not work on your project due to backwards incompatibility.
+
+
 Unfinished Tasks: 
 -----------------
 
