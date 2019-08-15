@@ -58,5 +58,30 @@ def eval_in_loop_case():
     """
 
 
+def breaking():
+    """
+    CommandLine:
+        xdoctest -m ~/code/xdoctest/dev/backwards_incompatiblity_examples_inthewild.py breaking
 
-
+    Example:
+        >>> from xdoctest.utils import codeblock
+        >>> # Simulate an indented part of code
+        >>> if True:
+        >>>     # notice the indentation on this will be normal
+        >>>     codeblock_version = codeblock(
+        ...             '''
+        ...             def foo():
+        ...                 return 'bar'
+        ...             '''
+        ...         )
+        >>>     # notice the indentation and newlines on this will be odd
+        >>>     normal_version = ('''
+        ...         def foo():
+        ...             return 'bar'
+        ...     ''')
+        >>> assert normal_version != codeblock_version
+        >>> print('Without codeblock')
+        >>> print(normal_version)
+        >>> print('With codeblock')
+        >>> print(codeblock_version)
+    """

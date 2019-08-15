@@ -333,6 +333,12 @@ class DoctestParser(object):
     def _group_labeled_lines(self, labeled_lines):
         """
         Group labeled lines into logical parts to be executed together
+
+        Returns:
+            List[List[str] | Tuple[List[str], str]]:
+                A list of parts. Text parts are just returned as a list of
+                lines.  Executable parts are returned as a tuple of source
+                lines and an optional "want" statement.
         """
         if DEBUG > 1:
             print('<GROUP LABEL LINES>')
@@ -349,9 +355,12 @@ class DoctestParser(object):
         if DEBUG > 4:
             print('labeled_lines = {!r}'.format(labeled_lines))
 
+        # Need to ensure that old-style continuations with want statements are
+        # placed in their own group, so they can be executed as "single".
         for left, mid, right in _iterthree(labeled_lines, pad_value=(None, None)):
-            if left[0] != mid[0] or mid[0] == 'dsrc' and right[0] == 'dcnt':
+            if left[0] != mid[0] or (mid[0] == 'dsrc' and right[0] == 'dcnt'):
                 if not (left[0] == 'dsrc' and mid[0] == 'dcnt'):
+                    # Start a new group
                     if state is not None:
                         groups.append((state, current))
                     state = mid[0]
@@ -363,9 +372,29 @@ class DoctestParser(object):
         if DEBUG > 4:
             print('groups = {!r}'.format(groups))
 
+        # need to merge consecutive dsrc groups without want statements
+        merged_groups = []
+        current = []
+        state = None
+        for left, mid, right in _iterthree(groups, pad_value=(None, None)):
+            # Merge consecutive groups unless it is followed by a want
+            if left[0] == mid[0] and right[0] != 'want':
+                # extend the previous group
+                current.extend(mid[1])
+            else:
+                # start a new group
+                if state is not None:
+                    merged_groups.append((left[0], current))
+                state = mid[0]
+                current = []
+                current.extend(mid[1])
+        if current:
+            merged_groups.append((state, current))
+
+        # More iterating and grouping. This section needs a careful rewrite
         prev_source = None
         grouped_lines = []
-        for state, group in groups:
+        for state, group in merged_groups:
             block = [t[1] for t in group]
             if state == 'text':
                 if prev_source is not None:
