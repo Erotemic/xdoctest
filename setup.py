@@ -95,6 +95,7 @@ if __name__ == '__main__':
             'all': parse_requirements('requirements/optional.txt')
         },
         long_description=parse_description(),
+        long_description_content_type='text/x-rst',
         entry_points={
             # the pytest11 entry point makes the plugin available to pytest
             'pytest11': [
