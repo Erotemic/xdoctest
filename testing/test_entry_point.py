@@ -71,12 +71,16 @@ def test_xdoc_console_script_exec():
     assert 'usage' in info['err']
 
 
+
 def test_xdoc_cli_version():
     """
     CommandLine:
         xdoctest -m ~/code/xdoctest/testing/test_entry_point.py test_xdoc_cli_version
-
     """
+    import sys
+    if sys.platform.startswith('win32'):
+        pytest.skip()
+
     import xdoctest
     info = cmd('xdoctest --version')
     print('info = {!r}'.format(info))
