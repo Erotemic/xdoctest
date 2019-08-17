@@ -1,6 +1,6 @@
 #!/bin/bash
 __heredoc__="""
-Script to publish a new version of xdoctest on PyPI
+Script to publish a new version of this library on PyPI
 
 TODO:
     - [ ] Do a digital signature of release
