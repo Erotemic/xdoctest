@@ -317,9 +317,9 @@ todo items:
 
 Extraction:
 ^^^^^^^^^^^
--  [x] Parse freeform-style doctest examples
--  [x] Parse google-style doctest examples
--  [ ] Parse numpy-style doctest examples
+-  [x] Parse freeform-style doctest examples (builtin-doctest default)
+-  [x] Parse google-style doctest examples explicitly
+-  [ ] Parse numpy-style doctest examples explicitly
 
 
 Parsing:
