@@ -1,4 +1,4 @@
-|CircleCI| |Travis| |Appveyor| |Codecov| |Pypi| |Downloads|
+|CircleCI| |Travis| |Appveyor| |Codecov| |Pypi| |Downloads| |ReadTheDocs|
 
 
 .. The large version wont work because github strips rst image rescaling. 
@@ -413,3 +413,5 @@ Uncategorized:
    :target: https://pypi.python.org/pypi/xdoctest
 .. |Downloads| image:: https://img.shields.io/pypi/dm/xdoctest.svg
    :target: https://pypistats.org/packages/xdoctest
+.. |ReadTheDocs| image:: https://readthedocs.org/projects/xdoctest/badge/?version=latest
+    :target: http://xdoctest.readthedocs.io/en/latest/

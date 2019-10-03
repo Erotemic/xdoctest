@@ -85,3 +85,16 @@ def breaking():
         >>> print('With codeblock')
         >>> print(codeblock_version)
     """
+
+
+
+def linestep():
+    r"""
+    CommandLine:
+        xdoctest -m ~/code/xdoctest/dev/backwards_incompatiblity_examples_inthewild.py linestep
+
+        python -m doctest ~/code/xdoctest/dev/backwards_incompatiblity_examples_inthewild.py linestep
+
+    >>> print(r'foo\r\n')
+    'foo'
+    """
