@@ -18,6 +18,7 @@ from os.path import basename
 from os.path import isfile
 from os.path import realpath
 import sys
+import warnings
 
 
 def is_modname_importable(modname, sys_path=None, exclude=None):
@@ -107,8 +108,15 @@ class PythonPathContext(object):
         >>> with PythonPathContext('bar', 0):
         >>>     assert sys.path[0] == 'bar'
         >>> assert sys.path[0] != 'bar'
+
+    Ignore:
+        >>> # Mangle the path inside the context
+        >>> self = PythonPathContext('foo', 0)
+        >>> self.__enter__()
+        >>> sys.path.insert(0, 'mangled')
+        >>> self.__exit__(None, None, None)
     """
-    def __init__(self, dpath, index=-1):
+    def __init__(self, dpath, index=0):
         self.dpath = dpath
         self.index = index
 
@@ -118,16 +126,21 @@ class PythonPathContext(object):
         sys.path.insert(self.index, self.dpath)
 
     def __exit__(self, type, value, trace):
-        msg_parts = [
-            'ERROR: sys.path significantly changed while in PythonPathContext.',
-        ]
         if len(sys.path) <= self.index:  # nocover
+            msg_parts = [
+                'ERROR: sys.path significantly changed while in PythonPathContext.',
+            ]
             msg_parts.append(
                 'len(sys.path) = {!r} but index is {!r}'.format(
                     len(sys.path), self.index))
             raise RuntimeError('\n'.join(msg_parts))
 
         if sys.path[self.index] != self.dpath:  # nocover
+            # The path is not where we put it, the path must have been mangled
+            # warn and try to recover.
+            msg_parts = [
+                'sys.path changed while in PythonPathContext'
+            ]
             msg_parts.append((
                 'Expected dpath={!r} at index={!r} in sys.path, '
                 'but got dpath={!r}'
@@ -136,14 +149,18 @@ class PythonPathContext(object):
             ))
             try:
                 real_index = sys.path.index(self.dpath)
+            except ValueError:
+                msg_parts.append('Expected dpath was not in sys.path')
+                raise RuntimeError('\n'.join(msg_parts))
+            else:
                 msg_parts.append((
                     'Expected dpath was at index {}. '
                     'This could indicate conflicting module namespaces.'
                 ).format(real_index))
-            except IndexError:
-                msg_parts.append('Expected dpath was not in sys.path')
-            raise RuntimeError('\n'.join(msg_parts))
-        sys.path.pop(self.index)
+                warnings.warn('\n'.join(msg_parts))
+                sys.path.pop(real_index)
+        else:
+            sys.path.pop(self.index)
 
 
 def _custom_import_modpath(modpath, index=-1):
