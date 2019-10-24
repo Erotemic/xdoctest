@@ -94,15 +94,12 @@ def _pkgutil_modname_to_modpath(modname):  # nocover
 
 
 class PythonPathContext(object):
-    """
+    r"""
     Context for temporarily adding a dir to the PYTHONPATH. Used in testing
 
     Args:
         dpath (str): directory to insert into the PYTHONPATH
         index (int): position to add to. Typically either -1 or 0.
-
-    CommandLine:
-        xdoctest -m xdoctest.utils.util_import PythonPathContext
 
     Example:
         >>> with PythonPathContext('foo', -1):
@@ -118,6 +115,14 @@ class PythonPathContext(object):
         >>> self.__enter__()
         >>> sys.path.insert(0, 'mangled')
         >>> self.__exit__(None, None, None)
+
+    Example:
+        >>> self = PythonPathContext('foo', 0)
+        >>> self.__enter__()
+        >>> sys.path.remove('foo')
+        >>> import pytest
+        >>> with pytest.raises(RuntimeError):
+        >>>     self.__exit__(None, None, None)
     """
     def __init__(self, dpath, index=0):
         self.dpath = dpath
