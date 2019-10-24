@@ -101,6 +101,9 @@ class PythonPathContext(object):
         dpath (str): directory to insert into the PYTHONPATH
         index (int): position to add to. Typically either -1 or 0.
 
+    CommandLine:
+        xdoctest -m xdoctest.utils.util_import PythonPathContext
+
     Example:
         >>> with PythonPathContext('foo', -1):
         >>>     assert sys.path[-1] == 'foo'
@@ -109,7 +112,7 @@ class PythonPathContext(object):
         >>>     assert sys.path[0] == 'bar'
         >>> assert sys.path[0] != 'bar'
 
-    Ignore:
+    Example:
         >>> # Mangle the path inside the context
         >>> self = PythonPathContext('foo', 0)
         >>> self.__enter__()
@@ -126,33 +129,36 @@ class PythonPathContext(object):
         sys.path.insert(self.index, self.dpath)
 
     def __exit__(self, type, value, trace):
+        need_recover = False
         if len(sys.path) <= self.index:  # nocover
             msg_parts = [
-                'ERROR: sys.path significantly changed while in PythonPathContext.',
-            ]
-            msg_parts.append(
+                'sys.path changed while in PythonPathContext.',
                 'len(sys.path) = {!r} but index is {!r}'.format(
-                    len(sys.path), self.index))
-            raise RuntimeError('\n'.join(msg_parts))
+                    len(sys.path), self.index),
+            ]
+            need_recover = True
 
         if sys.path[self.index] != self.dpath:  # nocover
             # The path is not where we put it, the path must have been mangled
-            # warn and try to recover.
             msg_parts = [
-                'sys.path changed while in PythonPathContext'
+                'sys.path changed while in PythonPathContext',
+                'Expected dpath={!r} at index={!r} in sys.path, but got '
+                'dpath={!r}'.format(
+                    self.dpath, self.index, sys.path[self.index]
+                )
             ]
-            msg_parts.append((
-                'Expected dpath={!r} at index={!r} in sys.path, '
-                'but got dpath={!r}'
-            ).format(
-                self.dpath, self.index, sys.path[self.index]
-            ))
+            need_recover = True
+
+        if need_recover:
+            # Try and find where the temporary path went
             try:
                 real_index = sys.path.index(self.dpath)
             except ValueError:
                 msg_parts.append('Expected dpath was not in sys.path')
                 raise RuntimeError('\n'.join(msg_parts))
             else:
+                # We were able to recover, but warn the user. This method of
+                # recovery is a hueristic and doesnt work in some cases.
                 msg_parts.append((
                     'Expected dpath was at index {}. '
                     'This could indicate conflicting module namespaces.'
