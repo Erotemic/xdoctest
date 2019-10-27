@@ -28,11 +28,6 @@ script:
   #- travis_wait ./run_tests.py
   #- travis_wait python run_tests.py
   - travis_wait pytest --cov=xdoctest
-#after_failure: 
-#  - cat failed_doctests.txt
-#after_success:
-#    - codecov 
-#    - coveralls || echo "Coveralls upload failed"
 after_success: |
     codecov 
     #coveralls || echo "Coveralls upload failed"
