@@ -4,8 +4,14 @@ We are currently working on porting this changelog to the specifications in
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Version 0.10.1] - Unreleased
 
-## Version 0.10.0 [Unreleased]
+### Changed
+* `PythonPathContext` now works in more corner cases, although some rarer
+  corner cases will now break. This trade-off should be a net positive. 
+
+
+## [Version 0.10.0] - Released 2019-08-15]
 
 ### Added
 * Can now specify zero-args as the command to the xdoctest CLI to run all zero-args functions in a file.  
@@ -25,7 +31,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Fixed outdated docs in the directive file
 
 
-## Version 0.9.1 [Released 2019-07-16]
+## [Version 0.9.1] - Released 2019-07-16
 
 
 ### Changed 
@@ -37,7 +43,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Removed debug print
 
 
-## Version 0.9.0 [Released 2019-07-16]
+## [Version 0.9.0] - Released 2019-07-16
 
 ### Added
 * Add skip count to the native runner
@@ -59,12 +65,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * The REQUIRES directive no longer clobbers the previous SKIP state.
 
 
-## Version 0.8.3 [Released 2019-07-15]
+## [Version 0.8.3] - Released 2019-07-15
 
 ### Fixed
 * The native runner now exits with a non-zero error code on failure
 
-## Version 0.8.2 [Released 2019-07-14]
+## [Version 0.8.2] - Released 2019-07-14
 
 ### Changed
 * Slight modifications to file structure
@@ -74,13 +80,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Fixed issue with nested functions and exec in older python versions
 * Fixed issue in modsplit with multidot suffixes.
 
-## Version 0.8.1 [Released 2019-05-24]
+## [Version 0.8.1] - Released 2019-05-24
 
 ### Fixed
 
 * Minor fixes to readme and docs
 
-## Version 0.8.0
+## [Version 0.8.0]
 
 ### Added
 * Added docs! Finally!
@@ -89,7 +95,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Got-want exceptions now return a special error if it fails to create a string-representation of the object instead of crashing.
 * The `index` argument in `import_module_from_path` is now correctly used.
 
-## Version 0.7.3
+## [Version 0.7.3]
 
 ### Added
 * The REQUIRES directive can now accept python modules in the form: `# xdoctest: +REQUIRES(module:<my_modname>)`
@@ -100,19 +106,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Reduced import overhead time from 20ms to 1ms.
 
 
-## Version 0.7.2
+## [Version 0.7.2]
 
 ### Changed
 * Removed warning if `pygments` is not installed
 
 
-## Version 0.7.1
+## [Version 0.7.1]
 
 ### Changed
 * Changed verbosity defaults
 
 
-## Version 0.7.0
+## [Version 0.7.0]
 
 ### Added
 * Added `global-exec` to native xdoctest CLI and `xdoctest-global-exec` to the `pytest` plugin CLI
@@ -125,7 +131,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Fixed issue in `traceback` parsing that sometimes caused incorrectly offset line numbers.
 
 
-## Version 0.6.2
+## [Version 0.6.2]
 
 ### Fixed
 * Fixed bug in `static_analysis.is_balanced_statement` and
@@ -135,13 +141,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Added option to print test times in the runner.
 
 
-## Version 0.6.1
+## [Version 0.6.1]
 
 ### Fixed
 * Fixed python2 unicode error in collection phase
 
 
-## Version 0.6.0
+## [Version 0.6.0]
 
 ### Added
 * Added nocolor command line arg
@@ -153,13 +159,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Tests for malformed google docstr case.
 
 
-## Version 0.5.8
+## [Version 0.5.8]
 
 ### Fixed
 * Fixed install issues (/introduced hack FIXME later)
 * Fixed issue with raw string lineno parsing
 
-## Version 0.5.0
+## [Version 0.5.0]
 
 ### Added
 * Added config option for lineno offsets. (corresponding arguments added to
@@ -179,13 +185,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Fixed GH#20 where `doclineno_end` was incorrectly parsed
 * Fixed issue where google style block lineno was incorrect
 
-## Version 0.4.1
+## [Version 0.4.1]
 
 ### Fixed
 * Fixed bug with reporting elapsed time in native runner
 
 
-## Version 0.4.0
+## [Version 0.4.0]
 
 ### Added
 * Added auto parsing style. This first tries to use Google, but falls back on
@@ -201,30 +207,30 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * All parsers now default to the new "auto" style.
 * Colorized doctest now highlights "want" lines in a distinct (green) color
 
-## Version 0.3.5
+## [Version 0.3.5]
 
 ### Changed
 * Changed development status to Beta
 * Output difference now strips the `BLANKLINE` marker if enabled
 
-## Version 0.3.4
+## [Version 0.3.4]
 
 ### Changed
 * The reported difference between got and want now preserves newlines for
   better visibility.
 
-## Version 0.3.3
+## [Version 0.3.3]
 
 ### Fixed
 * Fixed bug where pytest would collect all tests twice 
   (because the `__init__.py` file was normalized to a directory in `package_modpaths`)
 
-## Version 0.3.2
+## [Version 0.3.2]
 
 ### Added
 * API update to facilitate `mkinit`
 
-## Version 0.3.1
+## [Version 0.3.1]
 
 ### Added
 * Improved doctest syntax error message
@@ -232,32 +238,32 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * `PythonPathContext` can now insert into front or back of sys.path
 * Flags can now be specified before or after positional arguments when using the __main__ script
 
-## Version 0.3.0
+## [Version 0.3.0]
 
 ### Added
 * Added entry point script
 * example command lines now use the full path if the module is not in the `PYTHONPATH`
 * Can now override `sys.path` when calling `modname_to_modpath` and `is_modname_importable` (API change)
 
-## Version 0.2.4
+## [Version 0.2.4]
 
 ### Added
 * added `IGNORE_WANT` directive
 * added separator between printout of docsrc and its stdout
 
-## Version 0.2.3
+## [Version 0.2.3]
 
 ### Changed
 * Print correct doctest line number in the traceback
 * Runner `on_error` will now default to return instead of raise
 
-## Version 0.2.2
+## [Version 0.2.2]
 
 ### Fixed
 * Fixed option parsing bug in __main__ script
 
 
-## Version 0.2.1
+## [Version 0.2.1]
 
 ### Added
 * The default runtime state can be customized with the `xdoc-options` command line argument.
@@ -267,7 +273,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Fix issue in `_docstr_line_workaround`
 
 
-## Version 0.2.0
+## [Version 0.2.0]
 
 ### Added
 * Starting keeping a changelog, all changes before this point are only
