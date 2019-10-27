@@ -1,5 +1,2 @@
 Pygments >= 2.2.0
-codecov
 colorama >= 0.4.1
-pytest >= 3.3.1
-pytest-cov
