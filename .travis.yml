@@ -67,12 +67,13 @@ after_success:
     - | # Import GPG keys
         gpg --import dev/travis_public_gpg_key.pgp
         gpg --import dev/travis_secret_gpg_key.pgp
+        gpg --list-keys
     - |
         # Package and publish to pypi (if on release)
         echo "TRAVIS_BRANCH = $TRAVIS_BRANCH"
-        set -x
         if [ "$TRAVIS_BRANCH" == "release" ]; then
-
+            # use set +x to log all intermediate commands 
+            set +x
             pip install twine
             if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
               pip install six pyopenssl ndg-httpsclient pyasn1 -U --user
@@ -85,6 +86,6 @@ after_success:
 
             # TODO: reliable and secure gpg keys
             # Relies on a specific environmenmt being available 
-            ./publish.sh yes
+            USE_GPG=True DEPLOY_BRANCH=release ANS=yes ./publish.sh
+            set -x
         fi
-        set +x
