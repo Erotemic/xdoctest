@@ -30,6 +30,7 @@ script:
   - travis_wait pytest --cov=xdoctest
 after_success: 
     - codecov 
+    - gpg --version
     - | 
         __heredoc__='''
         # HOW TO SETUP A GPG KEY
@@ -55,14 +56,15 @@ after_success:
         # The following commands will output lines that will need to be
         # manually added to this file. You could run with --add, but it messes
         # up the formatting of this file. 
-        travis encrypt-file dev/travis_secret_gpg_key.pgp dev/travis_secret_gpg_key.pgp.enc 
-        travis encrypt-file dev/travis_public_gpg_key.pgp dev/travis_public_gpg_key.pgp.enc
+        travis encrypt-file dev/travis_secret_gpg_key.pgp dev/travis_secret_gpg_key.pgp.enc --force
+        travis encrypt-file dev/travis_public_gpg_key.pgp dev/travis_public_gpg_key.pgp.enc --force
         '''  # <hack vim "regex" parser> '
     - |
         # Unpack encrypted GPG keys
         openssl aes-256-cbc -K $encrypted_e3bb652dc81d_key -iv $encrypted_e3bb652dc81d_iv -in dev/travis_public_gpg_key.pgp.enc -out dev/travis_public_gpg_key.pgp -d
         openssl aes-256-cbc -K $encrypted_e3bb652dc81d_key -iv $encrypted_e3bb652dc81d_iv -in dev/travis_secret_gpg_key.pgp.enc -out dev/travis_secret_gpg_key.pgp -d
-        
+    - cat dev/travis_public_gpg_key.pgp
+    - | # Import GPG keys
         gpg --import dev/travis_public_gpg_key.pgp
         gpg --import dev/travis_secret_gpg_key.pgp
     - |
