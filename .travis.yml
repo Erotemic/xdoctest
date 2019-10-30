@@ -31,28 +31,28 @@ script:
 after_success: 
     - codecov 
     # Decrypt GPG keys
-    - openssl aes-256-cbc -K $encrypted_606692db624d_key -iv $encrypted_606692db624d_iv -in travis_public_gpg_key.pgp.enc -out travis_public_gpg_key.pgp -d
-    - openssl aes-256-cbc -K $encrypted_606692db624d_key -iv $encrypted_606692db624d_iv -in travis_secret_gpg_key.pgp.enc -out travis_secret_gpg_key.pgp -d
+    - openssl aes-256-cbc -K $encrypted_606692db624d_key -iv $encrypted_606692db624d_iv -in dev/travis_public_gpg_key.pgp.enc -out travis_public_gpg_key.pgp -d
+    - openssl aes-256-cbc -K $encrypted_606692db624d_key -iv $encrypted_606692db624d_iv -in dev/travis_secret_gpg_key.pgp.enc -out travis_secret_gpg_key.pgp -d
     - gpg --import travis_public_gpg_key.pgp
     - gpg --import travis_secret_gpg_key.pgp
     # Package and publish to pypi (if on release)
     - |
-    echo "TRAVIS_BRANCH = $TRAVIS_BRANCH"
-    set -x
-    if [ "$TRAVIS_BRANCH" == "release" ]; then
+        echo "TRAVIS_BRANCH = $TRAVIS_BRANCH"
+        set -x
+        if [ "$TRAVIS_BRANCH" == "release" ]; then
 
-        pip install twine
-        if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-          pip install six pyopenssl ndg-httpsclient pyasn1 -U --user
-          pip install requests[security] twine --user
-        elfi
-        if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-          pip install six twine
-          pip install --upgrade pyOpenSSL
+            pip install twine
+            if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+              pip install six pyopenssl ndg-httpsclient pyasn1 -U --user
+              pip install requests[security] twine --user
+            elfi
+            if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+              pip install six twine
+              pip install --upgrade pyOpenSSL
+            fi
+
+            # TODO: reliable and secure gpg keys
+            # Relies on a specific environmenmt being available 
+            ./publish.sh yes
+            set +x
         fi
-
-        # TODO: reliable and secure gpg keys
-        # Relies on a specific environmenmt being available 
-        ./publish.sh yes
-        set +x
-    fi
