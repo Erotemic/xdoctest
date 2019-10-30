@@ -30,13 +30,43 @@ script:
   - travis_wait pytest --cov=xdoctest
 after_success: 
     - codecov 
-    # Decrypt GPG keys
-    - openssl aes-256-cbc -K $encrypted_606692db624d_key -iv $encrypted_606692db624d_iv -in dev/travis_public_gpg_key.pgp.enc -out travis_public_gpg_key.pgp -d
-    - openssl aes-256-cbc -K $encrypted_606692db624d_key -iv $encrypted_606692db624d_iv -in dev/travis_secret_gpg_key.pgp.enc -out travis_secret_gpg_key.pgp -d
-    - gpg --import travis_public_gpg_key.pgp
-    - gpg --import travis_secret_gpg_key.pgp
-    # Package and publish to pypi (if on release)
+    - | 
+        __heredoc__='''
+        # HOW TO SETUP A GPG KEY
+        #
+        # References:
+        # .. [1] https://github.com/travis-ci/travis.rb
+        # .. [2] https://docs.travis-ci.com/user/encrypting-files/
+
+        # After you have setup your GPG key (plenty of resources on google about how to do this)
+        IDENTIFIER="travis-ci-Erotemic"
+        KEYID=$(gpg --list-keys --keyid-format LONG "$IDENTIFIER" | head -n 2 | tail -n 1 | awk '{print $1}' | tail -c 9)
+        echo "KEYID = $KEYID"
+
+        cd $HOME/code/xdoctest
+        gpg --armor --export-secret-keys $KEYID > dev/travis_secret_gpg_key.pgp
+        gpg --armor --export $KEYID > dev/travis_public_gpg_key.pgp
+
+        # Login to travis (requires authentication)
+        source $(secret_loader.sh)
+        travis login --github-token $GITHUB_TOKEN
+        source $(secret_unloader.sh)
+        
+        # The following commands will output lines that will need to be
+        # manually added to this file. You could run with --add, but it messes
+        # up the formatting of this file. 
+        travis encrypt-file dev/travis_secret_gpg_key.pgp dev/travis_secret_gpg_key.pgp.enc 
+        travis encrypt-file dev/travis_public_gpg_key.pgp dev/travis_public_gpg_key.pgp.enc
+        '''  # <hack vim "regex" parser> '
     - |
+        # Unpack encrypted GPG keys
+        openssl aes-256-cbc -K $encrypted_e3bb652dc81d_key -iv $encrypted_e3bb652dc81d_iv -in dev/travis_public_gpg_key.pgp.enc -out dev/travis_public_gpg_key.pgp -d
+        openssl aes-256-cbc -K $encrypted_e3bb652dc81d_key -iv $encrypted_e3bb652dc81d_iv -in dev/travis_secret_gpg_key.pgp.enc -out dev/travis_secret_gpg_key.pgp -d
+        
+        gpg --import dev/travis_public_gpg_key.pgp
+        gpg --import dev/travis_secret_gpg_key.pgp
+    - |
+        # Package and publish to pypi (if on release)
         echo "TRAVIS_BRANCH = $TRAVIS_BRANCH"
         set -x
         if [ "$TRAVIS_BRANCH" == "release" ]; then
