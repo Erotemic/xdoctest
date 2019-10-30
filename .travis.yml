@@ -28,17 +28,17 @@ script:
   #- travis_wait ./run_tests.py
   #- travis_wait python run_tests.py
   - travis_wait pytest --cov=xdoctest
-after_success: |
-    codecov 
-    #coveralls || echo "Coveralls upload failed"
-    echo "TRAVIS_BRANCH = $TRAVIS_BRANCH"
-    # Package and publish to pypi (if on release)
-    set -x
+after_success: 
+    - codecov 
     # Decrypt GPG keys
-    openssl aes-256-cbc -K $encrypted_606692db624d_key -iv $encrypted_606692db624d_iv -in travis_public_gpg_key.pgp.enc -out travis_public_gpg_key.pgp -d
-    openssl aes-256-cbc -K $encrypted_606692db624d_key -iv $encrypted_606692db624d_iv -in travis_secret_gpg_key.pgp.enc -out travis_secret_gpg_key.pgp -d
-    gpg --import travis_public_gpg_key.pgp
-    gpg --import travis_secret_gpg_key.pgp
+    - openssl aes-256-cbc -K $encrypted_606692db624d_key -iv $encrypted_606692db624d_iv -in travis_public_gpg_key.pgp.enc -out travis_public_gpg_key.pgp -d
+    - openssl aes-256-cbc -K $encrypted_606692db624d_key -iv $encrypted_606692db624d_iv -in travis_secret_gpg_key.pgp.enc -out travis_secret_gpg_key.pgp -d
+    - gpg --import travis_public_gpg_key.pgp
+    - gpg --import travis_secret_gpg_key.pgp
+    # Package and publish to pypi (if on release)
+    - |
+    echo "TRAVIS_BRANCH = $TRAVIS_BRANCH"
+    set -x
     if [ "$TRAVIS_BRANCH" == "release" ]; then
 
         pip install twine
