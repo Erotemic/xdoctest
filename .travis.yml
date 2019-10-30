@@ -86,5 +86,5 @@ after_success:
             # TODO: reliable and secure gpg keys
             # Relies on a specific environmenmt being available 
             ./publish.sh yes
-            set +x
         fi
+        set +x
