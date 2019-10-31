@@ -82,8 +82,9 @@ if [ "$USE_GPG" == "True" ]; then
     # https://stackoverflow.com/questions/45188811/how-to-gpg-sign-a-file-that-is-built-by-travis-ci
     # secure gpg --export-secret-keys > all.gpg
 
-    GPG_IDENTIFIER=${GPG_IDENTIFIER:-"travis-ci-Erotemic"}
-    GPG_KEYID=$(gpg --list-keys --keyid-format LONG "$GPG_IDENTIFIER" | head -n 2 | tail -n 1 | awk '{print $1}' | tail -c 9)
+    #GPG_IDENTIFIER=${GPG_IDENTIFIER:-"travis-ci-Erotemic"}
+    #GPG_KEYID=$(gpg --list-keys --keyid-format LONG "$GPG_IDENTIFIER" | head -n 2 | tail -n 1 | awk '{print $1}' | tail -c 9)
+    GPG_KEYID=D297D757
     # REQUIRES GPG >= 2.2
     echo "GPG_IDENTIFIER = $GPG_IDENTIFIER"
     echo "GPG_KEYID=$GPG_KEYID"
