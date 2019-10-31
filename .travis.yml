@@ -161,16 +161,6 @@ after_success:
         if [[ "$TRAVIS_BRANCH" == "release" ]]; then
             # use set +x to log all intermediate commands 
             set +x
-            pip install twine
-            if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-              pip install six pyopenssl ndg-httpsclient pyasn1 -U --user
-              pip install requests[security] twine --user
-            elfi
-            if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-              pip install six twine
-              pip install --upgrade pyOpenSSL
-            fi
-
             # TODO: reliable and secure gpg keys
             # Relies on a specific environmenmt being available 
             GPG_EXECUTABLE=$GPG_EXECUTABLE GPG_IDENTIFIER=travis-ci-Erotemic USE_GPG=True DEPLOY_BRANCH=release TAG_AND_UPLOAD=yes ./publish.sh
