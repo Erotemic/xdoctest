@@ -74,14 +74,14 @@ after_success:
         # Or we can do this
         travis encrypt TRAVIS_SECRET=$TRAVIS_SECRET
         echo $TRAVIS_SECRET
-        openssl aes-256-cbc -iter 100 -k $TRAVIS_SECRET -in dev/travis_public_gpg_key.pgp -e > dev/travis_public_gpg_key.pgp.enc
-        openssl aes-256-cbc -iter 100 -k $TRAVIS_SECRET -in dev/travis_secret_gpg_key.pgp -e > dev/travis_secret_gpg_key.pgp.enc
-        openssl aes-256-cbc -iter 100 -k $TRAVIS_SECRET -in dev/gpg_owner_trust -e > dev/gpg_owner_trust.enc
+        openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/travis_public_gpg_key.pgp -e > dev/travis_public_gpg_key.pgp.enc
+        openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/travis_secret_gpg_key.pgp -e > dev/travis_secret_gpg_key.pgp.enc
+        openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/gpg_owner_trust -e > dev/gpg_owner_trust.enc
 
 
-        openssl aes-256-cbc -iter 100 -k $TRAVIS_SECRET -in dev/travis_public_gpg_key.pgp.enc -d 
-        openssl aes-256-cbc -iter 100 -k $TRAVIS_SECRET -in dev/travis_secret_gpg_key.pgp.enc -d 
-        openssl aes-256-cbc -iter 100 -k $TRAVIS_SECRET -in dev/gpg_owner_trust.enc -d 
+        openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/travis_public_gpg_key.pgp.enc -d 
+        openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/travis_secret_gpg_key.pgp.enc -d 
+        openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/gpg_owner_trust.enc -d 
 
         # Export and encrpyt trust
         GPG_OWNERTRUST=$(gpg --export-ownertrust | base64)
@@ -96,9 +96,9 @@ after_success:
         '''  # <hack vim "regex" parser> '
     - cat dev/travis_public_gpg_key.pgp
     # Decrypt and import GPG Keys / trust
-    - openssl aes-256-cbc -iter 100 -k $TRAVIS_SECRET -in dev/travis_public_gpg_key.pgp.enc -d | $GPG_EXECUTABLE --import 
-    - openssl aes-256-cbc -iter 100 -k $TRAVIS_SECRET -in dev/travis_secret_gpg_key.pgp.enc -d | $GPG_EXECUTABLE --import 
-    - openssl aes-256-cbc -iter 100 -k $TRAVIS_SECRET -in dev/gpg_owner_trust.enc -d | $GPG_EXECUTABLE --import-ownertrust
+    - openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/travis_public_gpg_key.pgp.enc -d | $GPG_EXECUTABLE --import 
+    - openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/travis_secret_gpg_key.pgp.enc -d | $GPG_EXECUTABLE --import 
+    - openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/gpg_owner_trust.enc -d | $GPG_EXECUTABLE --import-ownertrust
     - gpg --list-keys
     - |
         # Package and publish to pypi (if on release)
