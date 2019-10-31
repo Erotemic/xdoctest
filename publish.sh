@@ -83,6 +83,7 @@ if [ "$USE_GPG" == "True" ]; then
 
     GPG_IDENTIFIER=${GPG_IDENTIFIER:-"travis-ci-Erotemic"}
     GPG_KEYID=$(gpg --list-keys --keyid-format LONG "$GPG_IDENTIFIER" | head -n 2 | tail -n 1 | awk '{print $1}' | tail -c 9)
+    # REQUIRES GPG >= 2.2
     echo "GPG_IDENTIFIER = $GPG_IDENTIFIER"
     echo "GPG_KEYID=$GPG_KEYID"
 
@@ -122,6 +123,10 @@ if [[ "$TAG_AND_UPLOAD" == "yes" ]]; then
 
     if [[ "$GITHUB_USERNAME" == "" ]]; then
         echo "Error GITHUB_USERNAME is not set"
+        exit 1
+    fi
+    if [[ "$TWINE_PASSWORD" == "" ]]; then
+        echo "Error TWINE_PASSWORD is not set"
         exit 1
     fi
 

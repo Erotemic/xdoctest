@@ -4,6 +4,9 @@ env:
         - secure: "iwE1/wyEIrgli3AVccmtEkNyU4NVe6UThs0iL7YQ6vFwsMCJjrBzK0tCqccBx2Toz07JWa8CORL48BgHNfsZeDvKZvWW8JUjC6tmwJnAzzHY0s+2S3xEkaqWpuXrwjKTcZxzGuZ5IvXXXja1IpDSo+mMuU8ETp4V3aWp7alfpxjbi+shI7UYxz7nRmnCo0vWyrzTH5SeHm68EEjoXcD3QaF4DwTFBtmEZ3PtD88Gvt8HKF2VpuQoNruAzyLeinXX1Zprt2h67ee/uveAuRYMWLYQGWxynOowxFk46whLeL//QvGuR4FE3C3jXp4nbnoHjUoVOCeODHZ7HegqWE6mybCz5slE8ZlPaS8dKfRNHRWVnIqYWXpeRBV6FqaBGw7qp+iV3VfRb5rdnYRzoTEmguRI3TFb4RPkUhIW/cfco/zfoFXJDgpdwizUEv5I6TRqphGCvdJTnwMilYXK1PJg0yzw76tsRWPYqmF/i9CrbiHT5+Wgi0I2rGukmHMZhifFwy3jmreBXNBjG5/KZFbYpDG6+aHMDwyAheG4UYOzYUhLRU02U5TlAH67HHgf5y6GQh1RCROJOgIjBvOfPprL2FqWhG+9FJILBte3GH1czHXiGiAUltkC1V/5IZGxDKNhDsotBHltjs7DAvBF5yQ2T2lgw3IGhzNTvn0Z4cWaHDo="
         # travis encrypt TWINE_PASSWORD=$TWINE_PASSWORD
         - secure: "ieDarSvpKjIr9Ek3aVyMvVX/tIgAa/LiCtU5tRsLm+UnPqu9fwmFsl++oz0jP6IdJHK/cuX9pasA4Le8Ljk2E9+ywyD9ijUXKf2EpeLg4xAdKA/1MpbB+MyC3GBkUW+TV7y874gTtbg2acgi7klHyhYdF6zdbFnJtJcg8N8tOMUgFShwtMkvSvsilbspFAo+C+6TDQX8fiaECiyZ9MW+W0GSTgYX9Kc5YAi1TxCrfZc8QUivSZaMTxOlae7rJxXKoF6xZSyP1s3hY1n2tz+44bFnb5VP70W5025hSGMSSA1FuvIp3cV25HQekflKn2tICkLviUs7cMzZosbwQrBuneRYzKy1y9G5i4pheA2sTw/6ThQ1pGCK2yjdZy1fvyQ0acGn2hvKrWwIP2p5f0plFcGpnFqf5d+CNLHIQwabtmgJQA8u9o0Ac/m4gJutyTkpHTnZhuudUIBq70Nm82wZLSKQepUvurwWq+b6kdvhPY5F+Xa1EUWsq07Ap5FnVURAAoTNpU7P1BnTRjrVllAGeJvyB91SaODJG/xxfdh15YpvlfK0M/kjansMLXUQwpXRsBQwUqEI8X/lQIkxAFvnUcIgtXIX1CV4C0sEpjUc9ZmPdsWFBKgnjzr0urgV28/6o9uEQ/4qDKAbg/kM0djcVLyQ2h6jdLiNhUM3dMJDBlY="
+        # travis encrypt GPG_OWNERTRUST="$GPG_OWNERTRUST"
+        - secure: "ibK1mL3zp5pzRIkg9De8ZP0MPFjzhIHmpXQYwTH9zSGYpxzFtme1UUJ2rW5KUVn5xYlWG+Jj1uXEul7GErQzAAjYoR3qOOw9bRwZcwKHxGU9NQLO22T94CFcDKFfBjRhJlAxkjI02Tf1dfWYXAasCnq95FfPVP8Eh62zFC4jK7siQOZ6zHXR88jH8zuxttGjRfrFn6IYKwStBo8400pO3bp2K7rGixh4//3HtIEpwm4saXeT7NkoSIVyhoD81XgBYIFDULLBSo83HLQkByQtxlRE/mNSfzPQuEZ8ya1Az8f+F3QuH9nyUlJVWW5OX+AsKrDvOZRhf7bCMnXnlPWYYpi1HTyxbErLJc4+mbn7Q8QYoiOh19r3JgUNIsvmD1tXI7UG6zsKkeBBaJfgUZFoStBB97rOAAuPWJx4z2bQXeZ/bjtRySfMVOICO+nMCC/ucPo+omh8D/rGk4VxNirSdZk/CbnPagMtHQaQxOWTN0i/9nNbMazK5lvKaEYXrbk7scsv2iXPMMGHzy6lMbOyOHCE5VdKIQCbjRptkBCp1g9mdMOP1NiN9yqPSlZmtD+aMtip3XBNUrsQJ+39V6glm0w1ubeHfWzmwSMCL007vG9LFcRIyiBYZhxJs8A78OXO3WCsuBZH8fqbzupFYRMXsVx75Lf2WnCaHocG8EUQnR4="
+          
 
 language: python
 sudo: false
@@ -58,6 +61,17 @@ after_success:
         # up the formatting of this file. 
         travis encrypt-file dev/travis_secret_gpg_key.pgp dev/travis_secret_gpg_key.pgp.enc --force
         travis encrypt-file dev/travis_public_gpg_key.pgp dev/travis_public_gpg_key.pgp.enc --force
+
+        # Export and encrpyt trust
+        GPG_OWNERTRUST=$(gpg --export-ownertrust | base64)
+        echo $GPG_OWNERTRUST
+        echo "$GPG_OWNERTRUST" | base64 --decode
+        travis encrypt GPG_OWNERTRUST="$GPG_OWNERTRUST"
+
+        # Note: cant do this. travis gives a data too large error
+        #GPG_SECRET_KEYS=$(gpg -a --export-secret-keys $IDENTIFIER | base64)
+        #travis encrypt GPG_SECRET_KEYS="$GPG_SECRET_KEYS"
+
         '''  # <hack vim "regex" parser> '
     - |
         # Unpack encrypted GPG keys
@@ -65,8 +79,10 @@ after_success:
         openssl aes-256-cbc -K $encrypted_e3bb652dc81d_key -iv $encrypted_e3bb652dc81d_iv -in dev/travis_secret_gpg_key.pgp.enc -out dev/travis_secret_gpg_key.pgp -d
     - cat dev/travis_public_gpg_key.pgp
     - | # Import GPG keys
-        gpg --import dev/travis_public_gpg_key.pgp
-        gpg --import dev/travis_secret_gpg_key.pgp
+        GPG_EXECUTABLE=gpg
+        $GPG_EXECUTABLE --import dev/travis_public_gpg_key.pgp
+        $GPG_EXECUTABLE --import dev/travis_secret_gpg_key.pgp
+        echo "$GPG_OWNERTRUST" | base64 --decode | $GPG_EXECUTABLE --import-ownertrust
         gpg --list-keys
     - |
         # Package and publish to pypi (if on release)
@@ -86,6 +102,6 @@ after_success:
 
             # TODO: reliable and secure gpg keys
             # Relies on a specific environmenmt being available 
-            USE_GPG=True DEPLOY_BRANCH=release ANS=yes ./publish.sh
+            GPG_IDENTIFIER=travis-ci-Erotemic USE_GPG=True DEPLOY_BRANCH=release TAG_AND_UPLOAD=yes ./publish.sh
             set -x
         fi
