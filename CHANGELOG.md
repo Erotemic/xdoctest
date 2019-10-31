@@ -4,14 +4,15 @@ We are currently working on porting this changelog to the specifications in
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Version 0.10.1] - Unreleased
+## [Version 0.10.1] - Released 2019-10-31
 
 ### Changed
 * `PythonPathContext` now works in more corner cases, although some rarer
   corner cases will now break. This trade-off should be a net positive. 
+* Releases are handled by TravisCI and will be signed with the GPG key 98007794ED130347559354B1109AC852D297D757 (note we will rotate this key in 1 year).
 
 
-## [Version 0.10.0] - Released 2019-08-15]
+## [Version 0.10.0] - Released 2019-08-15
 
 ### Added
 * Can now specify zero-args as the command to the xdoctest CLI to run all zero-args functions in a file.  
