@@ -146,6 +146,16 @@ after_success:
     - TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
     - $GPG_EXECUTABLE --list-keys
     - |
+        pip install twine
+        if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+          pip install six pyopenssl ndg-httpsclient pyasn1 -U --user
+          pip install requests[security] twine --user
+        elfi
+        if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+          pip install six twine
+          pip install --upgrade pyOpenSSL
+        fi
+    - |
         # Package and publish to pypi (if on release)
         echo "TRAVIS_BRANCH = $TRAVIS_BRANCH"
         if [ "$TRAVIS_BRANCH" == "release" ]; then
