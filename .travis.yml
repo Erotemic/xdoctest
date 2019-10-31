@@ -53,9 +53,7 @@ after_success:
         cd $HOME/code/xdoctest
         gpg --armor --export-secret-keys $KEYID > dev/travis_secret_gpg_key.pgp
         gpg --armor --export $KEYID > dev/travis_public_gpg_key.pgp
-
         gpg --export-ownertrust > dev/gpg_owner_trust
-        cat dev/gpg_owner_trust
 
         # Login to travis (requires authentication)
         source $(secret_loader.sh)
@@ -65,15 +63,14 @@ after_success:
         # The following commands will output lines that will need to be
         # manually added to this file. You could run with --add, but it messes
         # up the formatting of this file. 
-        travis encrypt-file dev/travis_secret_gpg_key.pgp dev/travis_secret_gpg_key.pgp.enc --force
-        travis encrypt-file dev/travis_public_gpg_key.pgp dev/travis_public_gpg_key.pgp.enc --force
+        #travis encrypt-file dev/travis_secret_gpg_key.pgp dev/travis_secret_gpg_key.pgp.enc --force
+        #travis encrypt-file dev/travis_public_gpg_key.pgp dev/travis_public_gpg_key.pgp.enc --force
 
         # Note:
         # You can set secret variables here in travis here:
         #  https://travis-ci.org/Erotemic/xdoctest/settings
-        
 
-        # Or we can do this
+        # Manually encrypt the secret files (TODO: need to vet this procedure)
         travis encrypt TRAVIS_SECRET=$TRAVIS_SECRET
         echo $TRAVIS_SECRET
         openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/travis_public_gpg_key.pgp -e > dev/travis_public_gpg_key.pgp.enc
@@ -81,35 +78,27 @@ after_success:
         openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/gpg_owner_trust -e > dev/gpg_owner_trust.enc
 
 
-        openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/travis_public_gpg_key.pgp.enc -d 
-        openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/travis_secret_gpg_key.pgp.enc -d 
-        openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/gpg_owner_trust.enc -d 
-
         TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/travis_public_gpg_key.pgp > dev/travis_public_gpg_key.pgp.enc
-        cat dev/travis_public_gpg_key.pgp.enc
-
         TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/travis_secret_gpg_key.pgp > dev/travis_secret_gpg_key.pgp.enc
-        cat dev/travis_secret_gpg_key.pgp.enc
-
         TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/gpg_owner_trust > dev/gpg_owner_trust.enc
-        cat dev/gpg_owner_trust.enc
 
+        cat dev/travis_public_gpg_key.pgp.enc
+        cat dev/travis_secret_gpg_key.pgp.enc
+        cat dev/gpg_owner_trust.enc
 
         TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/travis_public_gpg_key.pgp.enc
         TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/travis_secret_gpg_key.pgp.enc
         TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/gpg_owner_trust.enc
 
         # Export and encrpyt trust
-        GPG_OWNERTRUST=$(gpg --export-ownertrust | base64)
-        echo $GPG_OWNERTRUST
-        echo "$GPG_OWNERTRUST" | base64 --decode
-        travis encrypt GPG_OWNERTRUST="$GPG_OWNERTRUST"
-
+        #GPG_OWNERTRUST=$(gpg --export-ownertrust | base64)
+        #echo $GPG_OWNERTRUST
+        #echo "$GPG_OWNERTRUST" | base64 --decode
+        #travis encrypt GPG_OWNERTRUST="$GPG_OWNERTRUST"
 
         # Note: cant do this. travis gives a data too large error
         #GPG_SECRET_KEYS=$(gpg -a --export-secret-keys $IDENTIFIER | base64)
         #travis encrypt GPG_SECRET_KEYS="$GPG_SECRET_KEYS"
-
         '''  # <hack vim "regex" parser> '
     - cat dev/travis_public_gpg_key.pgp
     #- |
@@ -150,13 +139,13 @@ after_success:
     #        cd $OLD
     #    fi
     # Decrypt and import GPG Keys / trust
-    - gpg --version
+    - $GPG_EXECUTABLE --version
     - openssl version
-    - gpg --list-keys
-    - TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/travis_public_gpg_key.pgp.enc | gpg --import 
-    - TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/travis_secret_gpg_key.pgp.enc | gpg --import 
-    - TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/gpg_owner_trust.enc | gpg --import-ownertrust
-    - gpg --list-keys
+    - $GPG_EXECUTABLE --list-keys
+    - TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/travis_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+    - TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/travis_secret_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+    - TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
+    - $GPG_EXECUTABLE --list-keys
     - |
         # Package and publish to pypi (if on release)
         echo "TRAVIS_BRANCH = $TRAVIS_BRANCH"
