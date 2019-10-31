@@ -155,10 +155,10 @@ after_success:
           pip install six twine
           pip install --upgrade pyOpenSSL
         fi
+    # Package and publish to pypi (if on release)
     - |
-        # Package and publish to pypi (if on release)
         echo "TRAVIS_BRANCH = $TRAVIS_BRANCH"
-        if [ "$TRAVIS_BRANCH" == "release" ]; then
+        if [[ "$TRAVIS_BRANCH" == "release" ]]; then
             # use set +x to log all intermediate commands 
             set +x
             pip install twine
@@ -176,8 +176,5 @@ after_success:
             GPG_EXECUTABLE=$GPG_EXECUTABLE GPG_IDENTIFIER=travis-ci-Erotemic USE_GPG=True DEPLOY_BRANCH=release TAG_AND_UPLOAD=yes ./publish.sh
             set -x
         else
-            set +x
             GPG_EXECUTABLE=$GPG_EXECUTABLE GPG_IDENTIFIER=travis-ci-Erotemic USE_GPG=True DEPLOY_BRANCH=release TAG_AND_UPLOAD=no ./publish.sh
-            set -x
         fi
-    - GPG_EXECUTABLE=$GPG_EXECUTABLE GPG_IDENTIFIER=travis-ci-Erotemic USE_GPG=True DEPLOY_BRANCH=release TAG_AND_UPLOAD=no ./publish.sh
