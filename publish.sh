@@ -119,7 +119,7 @@ if [[ "$TAG_AND_UPLOAD" != "yes" ]]; then
         echo "ANS = $ANS"
         TAG_AND_UPLOAD="$ANS"
     else
-        echo "Not ready to publish VERSION='$VERSION' on branch='$TRAVIS_BRANCH'" 
+        echo "Ready to publish VERSION='$VERSION' on branch='$TRAVIS_BRANCH'" 
     fi
 else
     echo "Not ready to publish VERSION='$VERSION' on branch='$TRAVIS_BRANCH'" 
@@ -141,11 +141,11 @@ if [[ "$TAG_AND_UPLOAD" == "yes" ]]; then
         git tag $VERSION -m "tarball tag $VERSION"
         git push --tags origin $DEPLOY_BRANCH
         if [ "$USE_GPG" == "True" ]; then
-            twine upload --username $GITHUB_USERNAME --password=$TWINE_PASSWORD --sign $BDIST_WHEEL_PATH.asc $BDIST_WHEEL_PATH
-            twine upload --username $GITHUB_USERNAME --password=$TWINE_PASSWORD --sign $SDIST_PATH.asc $SDIST_PATH
+            twine upload --username $GITHUB_USERNAME --password $TWINE_PASSWORD --sign $BDIST_WHEEL_PATH.asc $BDIST_WHEEL_PATH
+            twine upload --username $GITHUB_USERNAME --password $TWINE_PASSWORD --sign $SDIST_PATH.asc $SDIST_PATH
         else
-            twine upload --username $GITHUB_USERNAME --password=$TWINE_PASSWORD $BDIST_WHEEL_PATH 
-            twine upload --username $GITHUB_USERNAME --password=$TWINE_PASSWORD $SDIST_PATH 
+            twine upload --username $GITHUB_USERNAME --password $TWINE_PASSWORD $BDIST_WHEEL_PATH 
+            twine upload --username $GITHUB_USERNAME --password $TWINE_PASSWORD $SDIST_PATH 
         fi
     else
         echo "TRAVIS_BRANCH!=DEPLOY_BRANCH. skipping tag and upload"
