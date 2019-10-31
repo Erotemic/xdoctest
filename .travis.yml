@@ -1,12 +1,13 @@
 env:
     global:
+        - GPG_EXECUTABLE=gpg2
         # travis encrypt GITHUB_USERNAME=$GITHUB_USERNAME
         - secure: "iwE1/wyEIrgli3AVccmtEkNyU4NVe6UThs0iL7YQ6vFwsMCJjrBzK0tCqccBx2Toz07JWa8CORL48BgHNfsZeDvKZvWW8JUjC6tmwJnAzzHY0s+2S3xEkaqWpuXrwjKTcZxzGuZ5IvXXXja1IpDSo+mMuU8ETp4V3aWp7alfpxjbi+shI7UYxz7nRmnCo0vWyrzTH5SeHm68EEjoXcD3QaF4DwTFBtmEZ3PtD88Gvt8HKF2VpuQoNruAzyLeinXX1Zprt2h67ee/uveAuRYMWLYQGWxynOowxFk46whLeL//QvGuR4FE3C3jXp4nbnoHjUoVOCeODHZ7HegqWE6mybCz5slE8ZlPaS8dKfRNHRWVnIqYWXpeRBV6FqaBGw7qp+iV3VfRb5rdnYRzoTEmguRI3TFb4RPkUhIW/cfco/zfoFXJDgpdwizUEv5I6TRqphGCvdJTnwMilYXK1PJg0yzw76tsRWPYqmF/i9CrbiHT5+Wgi0I2rGukmHMZhifFwy3jmreBXNBjG5/KZFbYpDG6+aHMDwyAheG4UYOzYUhLRU02U5TlAH67HHgf5y6GQh1RCROJOgIjBvOfPprL2FqWhG+9FJILBte3GH1czHXiGiAUltkC1V/5IZGxDKNhDsotBHltjs7DAvBF5yQ2T2lgw3IGhzNTvn0Z4cWaHDo="
         # travis encrypt TWINE_PASSWORD=$TWINE_PASSWORD
         - secure: "ieDarSvpKjIr9Ek3aVyMvVX/tIgAa/LiCtU5tRsLm+UnPqu9fwmFsl++oz0jP6IdJHK/cuX9pasA4Le8Ljk2E9+ywyD9ijUXKf2EpeLg4xAdKA/1MpbB+MyC3GBkUW+TV7y874gTtbg2acgi7klHyhYdF6zdbFnJtJcg8N8tOMUgFShwtMkvSvsilbspFAo+C+6TDQX8fiaECiyZ9MW+W0GSTgYX9Kc5YAi1TxCrfZc8QUivSZaMTxOlae7rJxXKoF6xZSyP1s3hY1n2tz+44bFnb5VP70W5025hSGMSSA1FuvIp3cV25HQekflKn2tICkLviUs7cMzZosbwQrBuneRYzKy1y9G5i4pheA2sTw/6ThQ1pGCK2yjdZy1fvyQ0acGn2hvKrWwIP2p5f0plFcGpnFqf5d+CNLHIQwabtmgJQA8u9o0Ac/m4gJutyTkpHTnZhuudUIBq70Nm82wZLSKQepUvurwWq+b6kdvhPY5F+Xa1EUWsq07Ap5FnVURAAoTNpU7P1BnTRjrVllAGeJvyB91SaODJG/xxfdh15YpvlfK0M/kjansMLXUQwpXRsBQwUqEI8X/lQIkxAFvnUcIgtXIX1CV4C0sEpjUc9ZmPdsWFBKgnjzr0urgV28/6o9uEQ/4qDKAbg/kM0djcVLyQ2h6jdLiNhUM3dMJDBlY="
-        # travis encrypt GPG_OWNERTRUST=$GPG_OWNERTRUST
-        - secure: "MmaYmMTtDtjE7v8b18BRoOKVBCuneLBeckcFV63L1TM3OvlMarOASdl1osDU00+4A9J4xInQax7B1C2PTpxCQGlGYMaA8iJAQBGSmjwfV4w+zDgW1J5cR/culERMtdm6Ba/BEPQ/47QX0oL2eLdTKOT5bZLyS8bJapc4pWFMTykm5s/vqbCQPIKfP6lGoRWMJ9o3ADLiFkxE01UbbP4oCgG2PR3imMXFNZNXdJYphKCRTGqw7SlSUfbKnEfgsfsBajEbApOHPwam8JaUB7cst1p1JfYePbJ8d8Ib8BMcWoRhNyLekuHjqIIr0/b10AvZ0ZQU9H75PLn5htS6leBsNRtyd0FLoLNRR02m6RFdQ9MnC90Kld8o+bv3+lvT87ErSM3SAUiIhbLaOFzdCS97jwPwaPWP06sMX3hEI8cJx//QvCcIA7By01XfLZXlmzxhEwNl4IpqOKQnPPEqptFFaMgjZ7TheCBo9lYyoVAuxOrlLK0/KgrcGAzo/p92V2nYGsEtyYJKgQFcJcSdm/CPRSpMERaR1b3bJqqeJdghvINBwBAkRm384MmijVkUlc3XnmHMLQeewdlaEE7ursiJfkXocbg65x8veNUIeZBB+IVLVu8acqmb9LFeE7J75aZ8XH46ooRxdziTWo0ZNeCd7+JsyumsD1SXUWADbs7uthk="
-
+        # travis encrypt TRAVIS_SECRET=$TRAVIS_SECRET
+        - secure: "nv9QrVtEG7AtFvR6r1+YK0T06YW0Oya4ONXtiHkmLxt2ncqDcUBvxYXSZBtQ6d+ABV1FO1Z8pf5qkEv1Q0YRZd9PL1y7hE//NgjrXAruDtuXf2j0jTDzeR6dTp9gHoXJTNOHrQHPt9/GfceVXRKvDxNU84vU5dBX1SVCKcGBsXrlmvQgTVuGAojmK8w/RHPhHEUbC0/aSFlkc0z/U5U05UyLaJ7cJN1+0mFa+wlXTyPkiJ9O1rbVz5/7NTKZJvobqjKP4i+j/7yjqXXTdBm2KDa41wGQCuvBUk1B8ewYvEpdyyF8LoNpGJYUniGrpPW46u1Jz4U1fZsCYwa2kWmJqmCLCVwtuvVj81E7fLvLK0nzqOgmK8yaFfOM+lv8vu7PSV0ofPWbRGAI95HP2lfCCiDW2fNW9zkELYTU9vgMJw+U6dX7Z++EfFeDJ5N6PY7lgtYjYO9w1FjiYS5fH2S0DgsJu4gWnXvv9E0xiFXRlot+Ja5o93/WJWSBT12GdXDKlXp8PorVaT69d3TUjW1ZqDv2QJ3H8+nl6JbnOg7xop1zfqqShnZcsc5Kl7Zj0PvyMgWYzydvk/f+hErhkFS9g7NGxdDnCNa8Bt5xF8/hRAW/8AGlSeNC7yRacIDzr3bd4rrXJNln4Z6cY4HsZ7FF4TW/rYfWqrBRT80cN9+78RM="
+          
 language: python
 sudo: false
 
@@ -54,6 +55,9 @@ after_success:
         gpg --armor --export-secret-keys $KEYID > dev/travis_secret_gpg_key.pgp
         gpg --armor --export $KEYID > dev/travis_public_gpg_key.pgp
 
+        gpg --export-ownertrust > dev/gpg_owner_trust
+        cat dev/gpg_owner_trust
+
         # Login to travis (requires authentication)
         source $(secret_loader.sh)
         travis login --github-token $GITHUB_TOKEN
@@ -64,6 +68,23 @@ after_success:
         # up the formatting of this file. 
         travis encrypt-file dev/travis_secret_gpg_key.pgp dev/travis_secret_gpg_key.pgp.enc --force
         travis encrypt-file dev/travis_public_gpg_key.pgp dev/travis_public_gpg_key.pgp.enc --force
+
+        # Note:
+        # You can set secret variables here in travis here:
+        #  https://travis-ci.org/Erotemic/xdoctest/settings
+        
+
+        # Or we can do this
+        travis encrypt TRAVIS_SECRET=$TRAVIS_SECRET
+        echo $TRAVIS_SECRET
+        openssl aes-256-cbc -iter 100 -k $TRAVIS_SECRET -in dev/travis_public_gpg_key.pgp -e > dev/travis_public_gpg_key.pgp.enc
+        openssl aes-256-cbc -iter 100 -k $TRAVIS_SECRET -in dev/travis_secret_gpg_key.pgp -e > dev/travis_secret_gpg_key.pgp.enc
+        openssl aes-256-cbc -iter 100 -k $TRAVIS_SECRET -in dev/gpg_owner_trust -e > dev/gpg_owner_trust.enc
+
+
+        openssl aes-256-cbc -iter 100 -k $TRAVIS_SECRET -in dev/travis_public_gpg_key.pgp.enc -d 
+        openssl aes-256-cbc -iter 100 -k $TRAVIS_SECRET -in dev/travis_secret_gpg_key.pgp.enc -d 
+        openssl aes-256-cbc -iter 100 -k $TRAVIS_SECRET -in dev/gpg_owner_trust.enc -d 
 
         # Export and encrpyt trust
         GPG_OWNERTRUST=$(gpg --export-ownertrust | base64)
@@ -77,11 +98,10 @@ after_success:
 
         '''  # <hack vim "regex" parser> '
     - cat dev/travis_public_gpg_key.pgp
-    - | # Import GPG keys
-        GPG_EXECUTABLE=gpg2
-        $GPG_EXECUTABLE --import dev/travis_public_gpg_key.pgp
-        $GPG_EXECUTABLE --import dev/travis_secret_gpg_key.pgp
-        echo "$GPG_OWNERTRUST" | base64 --decode | $GPG_EXECUTABLE --import-ownertrust
+    # Decrypt and import GPG Keys / trust
+    - openssl aes-256-cbc -iter 100 -k $TRAVIS_SECRET -in dev/travis_public_gpg_key.pgp.enc -d | $GPG_EXECUTABLE --import 
+    - openssl aes-256-cbc -iter 100 -k $TRAVIS_SECRET -in dev/travis_secret_gpg_key.pgp.enc -d | $GPG_EXECUTABLE --import 
+    - openssl aes-256-cbc -iter 100 -k $TRAVIS_SECRET -in dev/gpg_owner_trust.enc -d | $GPG_EXECUTABLE --import-ownertrust
     - gpg --list-keys
     - |
         # Package and publish to pypi (if on release)
