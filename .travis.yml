@@ -37,7 +37,7 @@ after_success:
     - gpg2 --version
     - openssl version
     - gpg --list-keys
-    - TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -pass env:TSP -d -S "103219BED49E213B" -in dev/travis_public_gpg_key.pgp.enc
+    - TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/travis_public_gpg_key.pgp.enc
     - | 
         __heredoc__='''
         # HOW TO SETUP A GPG KEY
@@ -86,16 +86,19 @@ after_success:
         openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/travis_secret_gpg_key.pgp.enc -d 
         openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/gpg_owner_trust.enc -d 
 
-        openssl enc -aes-256-cbc -k $TRAVIS_SECRET -e -S "103219BED49E213B" -in dev/gpg_owner_trust > dev/gpg_owner_trust.enc
-        openssl enc -aes-256-cbc -k $TRAVIS_SECRET -e -S "103219BED49E213B" -in dev/travis_secret_gpg_key.pgp > dev/travis_secret_gpg_key.pgp.enc
-        openssl enc -aes-256-cbc -k $TRAVIS_SECRET -e -S "103219BED49E213B" -in dev/travis_public_gpg_key.pgp > dev/travis_public_gpg_key.pgp.enc
+        TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/travis_public_gpg_key.pgp > dev/travis_public_gpg_key.pgp.enc
+        cat dev/travis_public_gpg_key.pgp.enc
 
+        TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/travis_secret_gpg_key.pgp > dev/travis_secret_gpg_key.pgp.enc
+        cat dev/travis_secret_gpg_key.pgp.enc
 
+        TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/gpg_owner_trust > dev/gpg_owner_trust.enc
         cat dev/gpg_owner_trust.enc
 
-        TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -pass env:TSP -d -S "103219BED49E213B" -in dev/travis_public_gpg_key.pgp.enc
-        TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -pass env:TSP -d -S "103219BED49E213B" -in dev/travis_secret_gpg_key.pgp.enc
-        TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -pass env:TSP -d -S "103219BED49E213B" -in dev/gpg_owner_trust.enc
+
+        TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/travis_public_gpg_key.pgp.enc
+        TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/travis_secret_gpg_key.pgp.enc
+        TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/gpg_owner_trust.enc
 
         # Export and encrpyt trust
         GPG_OWNERTRUST=$(gpg --export-ownertrust | base64)
@@ -151,12 +154,13 @@ after_success:
     - gpg --version
     - openssl version
     - openssl version
+    - gpg --list-keys
     #- openssl aes-256-cbc -k ${TRAVIS_SECRET} -in dev/travis_public_gpg_key.pgp.enc -d | gpg --import 
     #- openssl aes-256-cbc -k ${TRAVIS_SECRET} -in dev/travis_secret_gpg_key.pgp.enc -d | gpg --import 
     #- openssl aes-256-cbc -k ${TRAVIS_SECRET} -in dev/gpg_owner_trust.enc -d | gpg --import-ownertrust
-    - TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -pass env:TSP -d -S "103219BED49E213B" -in dev/travis_public_gpg_key.pgp.enc | gpg --import 
-    - TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -pass env:TSP -d -S "103219BED49E213B" -in dev/travis_secret_gpg_key.pgp.enc | gpg --import 
-    - TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -pass env:TSP -d -S "103219BED49E213B" -in dev/gpg_owner_trust.enc | gpg --import-ownertrust
+    - TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/travis_public_gpg_key.pgp.enc | gpg --import 
+    - TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/travis_secret_gpg_key.pgp.enc | gpg --import 
+    - TSP=$TRAVIS_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/gpg_owner_trust.enc | gpg --import-ownertrust
     - gpg --list-keys
     - |
         # Package and publish to pypi (if on release)
