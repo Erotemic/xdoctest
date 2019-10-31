@@ -100,7 +100,6 @@ after_success:
         #GPG_SECRET_KEYS=$(gpg -a --export-secret-keys $IDENTIFIER | base64)
         #travis encrypt GPG_SECRET_KEYS="$GPG_SECRET_KEYS"
         '''  # <hack vim "regex" parser> '
-    - cat dev/travis_public_gpg_key.pgp
     #- |
     #    # Install a more recent version of GPG
     #    # https://gnupg.org/download/
@@ -166,4 +165,6 @@ after_success:
             # Relies on a specific environmenmt being available 
             GPG_IDENTIFIER=travis-ci-Erotemic USE_GPG=True DEPLOY_BRANCH=release TAG_AND_UPLOAD=yes ./publish.sh
             set -x
+        else
+            GPG_IDENTIFIER=travis-ci-Erotemic USE_GPG=True DEPLOY_BRANCH=release TAG_AND_UPLOAD=no ./publish.sh
         fi

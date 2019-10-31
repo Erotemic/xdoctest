@@ -112,11 +112,15 @@ echo "
 
 # Verify that we want to publish
 if [[ "$TAG_AND_UPLOAD" != "yes" ]]; then
-    read -p "Are you ready to publish version='$VERSION' on branch='$TRAVIS_BRANCH'? (input 'yes' to confirm)" ANS
-    echo "ANS = $ANS"
-    TAG_AND_UPLOAD="$ANS"
+    if [[ "$TAG_AND_UPLOAD" != "no" ]]; then
+        read -p "Are you ready to publish version='$VERSION' on branch='$TRAVIS_BRANCH'? (input 'yes' to confirm)" ANS
+        echo "ANS = $ANS"
+        TAG_AND_UPLOAD="$ANS"
+    else
+        echo "Not ready to publish VERSION='$VERSION' on branch='$TRAVIS_BRANCH'" 
+    fi
 else
-    echo "Not read publish VERSION='$VERSION' on branch='$TRAVIS_BRANCH'" 
+    echo "Not ready to publish VERSION='$VERSION' on branch='$TRAVIS_BRANCH'" 
 fi
 
 if [[ "$TAG_AND_UPLOAD" == "yes" ]]; then
