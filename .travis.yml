@@ -23,6 +23,9 @@ python:
   - "3.6"
   - "3.7"
 before_install:
+  # Unpack encrypted GPG keys
+  - openssl aes-256-cbc -K $encrypted_e3bb652dc81d_key -iv $encrypted_e3bb652dc81d_iv -in dev/travis_public_gpg_key.pgp.enc -out dev/travis_public_gpg_key.pgp -d
+  - openssl aes-256-cbc -K $encrypted_e3bb652dc81d_key -iv $encrypted_e3bb652dc81d_iv -in dev/travis_secret_gpg_key.pgp.enc -out dev/travis_secret_gpg_key.pgp -d
   - pip install pip -U
   - pip install -r requirements.txt -U
 install:
@@ -34,6 +37,7 @@ script:
 after_success: 
     - codecov 
     - gpg --version
+    - gpg2 --version
     - | 
         __heredoc__='''
         # HOW TO SETUP A GPG KEY
@@ -73,16 +77,13 @@ after_success:
         #travis encrypt GPG_SECRET_KEYS="$GPG_SECRET_KEYS"
 
         '''  # <hack vim "regex" parser> '
-    # Unpack encrypted GPG keys
-    - openssl aes-256-cbc -K $encrypted_e3bb652dc81d_key -iv $encrypted_e3bb652dc81d_iv -in dev/travis_public_gpg_key.pgp.enc -out dev/travis_public_gpg_key.pgp -d
-    - openssl aes-256-cbc -K $encrypted_e3bb652dc81d_key -iv $encrypted_e3bb652dc81d_iv -in dev/travis_secret_gpg_key.pgp.enc -out dev/travis_secret_gpg_key.pgp -d
     - cat dev/travis_public_gpg_key.pgp
     - | # Import GPG keys
-        GPG_EXECUTABLE=gpg
+        GPG_EXECUTABLE=gpg2
         $GPG_EXECUTABLE --import dev/travis_public_gpg_key.pgp
         $GPG_EXECUTABLE --import dev/travis_secret_gpg_key.pgp
         echo "$GPG_OWNERTRUST" | base64 --decode | $GPG_EXECUTABLE --import-ownertrust
-        gpg --list-keys
+    - gpg --list-keys
     - |
         # Package and publish to pypi (if on release)
         echo "TRAVIS_BRANCH = $TRAVIS_BRANCH"
