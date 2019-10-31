@@ -21,7 +21,7 @@ setupkw = dict(
 )
 
 
-def parse_version(fpath):
+def parse_version(fpath='xdoctest/__init__.py'):
     """
     Statically parse the version number from a python file
     """
