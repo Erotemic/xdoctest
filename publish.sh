@@ -36,14 +36,15 @@ Usage:
 if [[ "$USER" == "joncrall" ]]; then
     GITHUB_USERNAME=erotemic
 fi
-TWINE_PASSWORD=${TWINE_PASSWORD:"<unknown>"}
-TAG_AND_UPLOAD=${TAG_AND_UPLOAD:-$1}
-USE_GPG=${USE_GPG:-"True"}
+TWINE_PASSWORD=${TWINE_PASSWORD:="<unknown>"}
+TAG_AND_UPLOAD=${TAG_AND_UPLOAD:=$1}
+USE_GPG=${USE_GPG:="True"}
 
 # First tag the source-code
 TRAVIS_BRANCH=${TRAVIS_BRANCH:=$(git branch | grep \* | cut -d ' ' -f2)}
 DEPLOY_BRANCH=${DEPLOY_BRANCH:=release}
 VERSION=$(python -c "import setup; print(setup.parse_version())")
+GPG_EXECUTABLE=${GPG_EXECUTABLE:=gpg}
 
 
 echo "
