@@ -1,6 +1,5 @@
 env:
     global:
-        - GPG_EXECUTABLE=gpg2
         # travis encrypt GITHUB_USERNAME=$GITHUB_USERNAME
         - secure: "iwE1/wyEIrgli3AVccmtEkNyU4NVe6UThs0iL7YQ6vFwsMCJjrBzK0tCqccBx2Toz07JWa8CORL48BgHNfsZeDvKZvWW8JUjC6tmwJnAzzHY0s+2S3xEkaqWpuXrwjKTcZxzGuZ5IvXXXja1IpDSo+mMuU8ETp4V3aWp7alfpxjbi+shI7UYxz7nRmnCo0vWyrzTH5SeHm68EEjoXcD3QaF4DwTFBtmEZ3PtD88Gvt8HKF2VpuQoNruAzyLeinXX1Zprt2h67ee/uveAuRYMWLYQGWxynOowxFk46whLeL//QvGuR4FE3C3jXp4nbnoHjUoVOCeODHZ7HegqWE6mybCz5slE8ZlPaS8dKfRNHRWVnIqYWXpeRBV6FqaBGw7qp+iV3VfRb5rdnYRzoTEmguRI3TFb4RPkUhIW/cfco/zfoFXJDgpdwizUEv5I6TRqphGCvdJTnwMilYXK1PJg0yzw76tsRWPYqmF/i9CrbiHT5+Wgi0I2rGukmHMZhifFwy3jmreBXNBjG5/KZFbYpDG6+aHMDwyAheG4UYOzYUhLRU02U5TlAH67HHgf5y6GQh1RCROJOgIjBvOfPprL2FqWhG+9FJILBte3GH1czHXiGiAUltkC1V/5IZGxDKNhDsotBHltjs7DAvBF5yQ2T2lgw3IGhzNTvn0Z4cWaHDo="
         # travis encrypt TWINE_PASSWORD=$TWINE_PASSWORD
@@ -134,9 +133,10 @@ after_success:
             cd $OLD
         fi
     # Decrypt and import GPG Keys / trust
-    - openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/travis_public_gpg_key.pgp.enc -d | $GPG_EXECUTABLE --import 
-    - openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/travis_secret_gpg_key.pgp.enc -d | $GPG_EXECUTABLE --import 
-    - openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/gpg_owner_trust.enc -d | $GPG_EXECUTABLE --import-ownertrust
+    - gpg --version
+    - openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/travis_public_gpg_key.pgp.enc -d | gpg --import 
+    - openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/travis_secret_gpg_key.pgp.enc -d | gpg --import 
+    - openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/gpg_owner_trust.enc -d | gpg --import-ownertrust
     - gpg --list-keys
     - |
         # Package and publish to pypi (if on release)
