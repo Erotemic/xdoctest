@@ -7,7 +7,6 @@ Args:
     TWINE_USERNAME : username for pypi
     TWINE_PASSWORD : password for pypi
     USE_GPG : defaults to True
-    GPG_IDENTIFIER
 
 Requirements:
      twine
