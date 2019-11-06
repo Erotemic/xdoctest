@@ -4,7 +4,7 @@ Script to publish a new version of this library on PyPI
 
 Args:
     # These environment variables must / should be set
-    GITHUB_USERNAME : username for pypi
+    TWINE_USERNAME : username for pypi
     TWINE_PASSWORD : password for pypi
     USE_GPG : defaults to True
     GPG_IDENTIFIER
@@ -20,7 +20,7 @@ Usage:
     cd <YOUR REPO>
 
     # Set your variables or load your secrets
-    export GITHUB_USERNAME=<pypi-username>
+    export TWINE_USERNAME=<pypi-username>
     export TWINE_PASSWORD=<pypi-password>
 
     source $(secret_loader.sh)
@@ -32,27 +32,59 @@ Usage:
     #./publish.sh yes
 '''
 
-# Options
-if [[ "$USER" == "joncrall" ]]; then
-    GITHUB_USERNAME=erotemic
-fi
-TWINE_PASSWORD=${TWINE_PASSWORD:="<unknown>"}
-TAG_AND_UPLOAD=${TAG_AND_UPLOAD:=$1}
-USE_GPG=${USE_GPG:="True"}
+check_variable(){
+    KEY=$1
+    VAL=${!KEY}
+    echo "[DEBUG] CHECK VARIABLE: $KEY=\"$VAL\""
+    if [[ "$VAL" == "" ]]; then
+        echo "[ERROR] UNSET VARIABLE: $KEY=\"$VAL\""
+        exit 1;
+    fi
+}
 
-# First tag the source-code
-TRAVIS_BRANCH=${TRAVIS_BRANCH:=$(git branch | grep \* | cut -d ' ' -f2)}
+# Options
+CURRENT_BRANCH=${CURRENT_BRANCH:=$(git branch | grep \* | cut -d ' ' -f2)}
 DEPLOY_BRANCH=${DEPLOY_BRANCH:=release}
+DEPLOY_REMOTE=${DEPLOY_REMOTE:=origin}
 VERSION=$(python -c "import setup; print(setup.parse_version())")
+
+check_variable CURRENT_BRANCH
+check_variable DEPLOY_BRANCH
+check_variable DEPLOY_REMOTE
+check_variable VERSION || exit 1
+
+TAG_AND_UPLOAD=${TAG_AND_UPLOAD:=$1}
+TWINE_USERNAME=${TWINE_USERNAME:=""}
+TWINE_PASSWORD=${TWINE_PASSWORD:=""}
+
+USE_GPG=${USE_GPG:="True"}
 GPG_EXECUTABLE=${GPG_EXECUTABLE:=gpg}
+
+__note___='''
+GPG_IDENTIFIER=Erotemic
+KEYID=$(gpg --list-keys --keyid-format LONG "$GPG_IDENTIFIER" | head -n 2 | tail -n 1 | awk '{print $1}' | tail -c 9)
+echo "KEYID = '$KEYID'"
+
+# https://help.github.com/en/articles/signing-commits
+git config --local commit.gpgsign true
+# Note the GPG key needs to match the email
+git config --local user.email $UserEmail
+# Tell git which key to sign
+git config --local user.signingkey $KEYID
+git config --local -l
+
+GPG_KEY=297D757
+'''
+
+GPG_KEYID=${GPG_KEYID:=$(git config --local user.signingkey)}
 
 
 echo "
 === PYPI BUILDING SCRIPT ==
-TRAVIS_BRANCH='$TRAVIS_BRANCH'
+CURRENT_BRANCH='$CURRENT_BRANCH'
 DEPLOY_BRANCH='$DEPLOY_BRANCH'
 VERSION='$VERSION'
-GITHUB_USERNAME='$GITHUB_USERNAME'
+TWINE_USERNAME='$TWINE_USERNAME'
 "
 
 
@@ -71,6 +103,10 @@ echo "VERSION='$VERSION'"
 BDIST_WHEEL_PATH='$BDIST_WHEEL_PATH'
 SDIST_PATH='$SDIST_PATH'
 "
+
+check_variable BDIST_WHEEL_PATH
+check_variable SDIST_PATH 
+
 echo "
 === <END BUILD WHEEL> ===
 "
@@ -82,15 +118,16 @@ if [ "$USE_GPG" == "True" ]; then
     # https://stackoverflow.com/questions/45188811/how-to-gpg-sign-a-file-that-is-built-by-travis-ci
     # secure gpg --export-secret-keys > all.gpg
 
-    #GPG_IDENTIFIER=${GPG_IDENTIFIER:-"travis-ci-Erotemic"}
-    #GPG_KEYID=$(gpg --list-keys --keyid-format LONG "$GPG_IDENTIFIER" | head -n 2 | tail -n 1 | awk '{print $1}' | tail -c 9)
-    GPG_KEYID=D297D757
     # REQUIRES GPG >= 2.2
-    echo "GPG_IDENTIFIER = $GPG_IDENTIFIER"
-    echo "GPG_KEYID=$GPG_KEYID"
+    check_variable GPG_KEYID
 
-    echo "Removing old signatures"
-    rm dist/*.asc
+    OLD_SIGS=$(ls dist/*.asc)
+    if [[ "$OLD_SIGS" == "" ]]; then
+        echo "Removing old signatures"
+        rm $OLD_SIGS
+    else
+        echo "dist dir is clearn"
+    fi
 
     echo "Signing wheels"
     GPG_SIGN_CMD="$GPG_EXECUTABLE --batch --yes --detach-sign --armor --local-user $GPG_KEYID"
@@ -104,6 +141,9 @@ if [ "$USE_GPG" == "True" ]; then
     echo "Verifying wheels"
     gpg --verify $BDIST_WHEEL_PATH.asc $BDIST_WHEEL_PATH 
     gpg --verify $SDIST_PATH.asc $SDIST_PATH 
+
+    check_variable BDIST_WHEEL_PATH
+    check_variable SDIST_PATH
 else
     echo "USE_GPG=False, Skipping GPG sign"
 fi
@@ -127,42 +167,41 @@ fi
 
 if [[ "$TAG_AND_UPLOAD" == "yes" ]]; then
 
-    if [[ "$GITHUB_USERNAME" == "" ]]; then
-        echo "Error GITHUB_USERNAME is not set"
-        exit 1
-    fi
-    if [[ "$TWINE_PASSWORD" == "" ]]; then
-        echo "Error TWINE_PASSWORD is not set"
-        exit 1
-    fi
+    check_variable TWINE_USERNAME
+    check_variable TWINE_PASSWORD
 
-    if [[ "$TRAVIS_BRANCH" == "$DEPLOY_BRANCH" ]]; then
-        echo "TRAVIS_BRANCH = $TRAVIS_BRANCH"
+    if [[ "$CURRENT_BRANCH" == "$DEPLOY_BRANCH" ]]; then
+        echo "CURRENT_BRANCH = $CURRENT_BRANCH"
         git tag $VERSION -m "tarball tag $VERSION"
         git push --tags origin $DEPLOY_BRANCH
         if [ "$USE_GPG" == "True" ]; then
-            twine upload --username $GITHUB_USERNAME --password $TWINE_PASSWORD --sign $BDIST_WHEEL_PATH.asc $BDIST_WHEEL_PATH
-            twine upload --username $GITHUB_USERNAME --password $TWINE_PASSWORD --sign $SDIST_PATH.asc $SDIST_PATH
+            twine upload --username $TWINE_USERNAME --password=$TWINE_PASSWORD --sign $BDIST_WHEEL_PATH.asc $BDIST_WHEEL_PATH
+            twine upload --username $TWINE_USERNAME --password=$TWINE_PASSWORD --sign $SDIST_PATH.asc $SDIST_PATH
         else
-            twine upload --username $GITHUB_USERNAME --password $TWINE_PASSWORD $BDIST_WHEEL_PATH 
-            twine upload --username $GITHUB_USERNAME --password $TWINE_PASSWORD $SDIST_PATH 
+            twine upload --username $TWINE_USERNAME --password=$TWINE_PASSWORD $BDIST_WHEEL_PATH 
+            twine upload --username $TWINE_USERNAME --password=$TWINE_PASSWORD $SDIST_PATH 
         fi
     else
-        echo "TRAVIS_BRANCH!=DEPLOY_BRANCH. skipping tag and upload"
-        echo "ONLY ABLE TO PUBLISH ON DEPLOY TRAVIS_BRANCH
+        echo "CURRENT_BRANCH!=DEPLOY_BRANCH. skipping tag and upload"
+        echo "ONLY ABLE TO PUBLISH ON DEPLOY CURRENT_BRANCH
 
-        TRAVIS_BRANCH = $TRAVIS_BRANCH
+        CURRENT_BRANCH = $CURRENT_BRANCH
         DEPLOY_BRANCH = $DEPLOY_BRANCH
         "
     fi
+    echo " !!! FINISH: LIVE RUN !!!"
 else  
-    echo "Dry run"
-    echo "skiping tag and upload"
+    echo "... Skiping tag and upload"
+    echo " !!! FINISH: DRY RUN !!!"
+    echo "To do live run set TAG_AND_UPLOAD=yes"
 fi
 
 __notes__="""
 Notes:
     # References: https://docs.travis-ci.com/user/deployment/pypi/
+
+    source $(load_secrets.sh)
     travis encrypt TWINE_PASSWORD=$TWINE_PASSWORD  
-    travis encrypt GITHUB_USERNAME=$GITHUB_USERNAME 
+    travis encrypt TWINE_USERNAME=$TWINE_USERNAME 
+    source $(unload_secrets.sh)
 """
