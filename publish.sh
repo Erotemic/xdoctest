@@ -172,7 +172,7 @@ if [[ "$TAG_AND_UPLOAD" == "yes" ]]; then
     if [[ "$CURRENT_BRANCH" == "$DEPLOY_BRANCH" ]]; then
         echo "CURRENT_BRANCH = $CURRENT_BRANCH"
         git tag $VERSION -m "tarball tag $VERSION"
-        git push --tags origin $DEPLOY_BRANCH
+        git push --tags $DEPLOY_REMOTE $DEPLOY_BRANCH
         if [ "$USE_GPG" == "True" ]; then
             twine upload --username $TWINE_USERNAME --password=$TWINE_PASSWORD --sign $BDIST_WHEEL_PATH.asc $BDIST_WHEEL_PATH
             twine upload --username $TWINE_USERNAME --password=$TWINE_PASSWORD --sign $SDIST_PATH.asc $SDIST_PATH
