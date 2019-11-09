@@ -88,7 +88,7 @@ def _pkgutil_modname_to_modpath(modname):  # nocover
     import pkgutil
     loader = pkgutil.find_loader(modname)
     if loader is None:
-        raise Exception('No module named {} in the PYTHONPATH'.format(modname))
+        raise Exception('No module named {a} in the PYTHONPATH'.format(a=modname))
     modpath = loader.get_filename().replace('.pyc', '.py')
     return modpath
 
@@ -165,9 +165,9 @@ class PythonPathContext(object):
                 # We were able to recover, but warn the user. This method of
                 # recovery is a hueristic and doesnt work in some cases.
                 msg_parts.append((
-                    'Expected dpath was at index {}. '
+                    'Expected dpath was at index {a}. '
                     'This could indicate conflicting module namespaces.'
-                ).format(real_index))
+                ).format(a=real_index))
                 warnings.warn('\n'.join(msg_parts))
                 sys.path.pop(real_index)
         else:
@@ -182,10 +182,10 @@ def _custom_import_modpath(modpath, index=-1):
             module = import_module_from_name(modname)
     except Exception as ex:  # nocover
         msg_parts = [
-            'ERROR: Failed to import modname={} with modpath={}'.format(
-                modname, modpath)
+            'ERROR: Failed to import modname={a} with modpath={b}'.format(
+                a=modname, b=modpath)
         ]
-        msg_parts.append('Caused by: {}'.format(str(ex)))
+        msg_parts.append('Caused by: {a}'.format(a=str(ex)))
         raise RuntimeError('\n'.join(msg_parts))
         # print('ERROR: Failed to import modname={} with modpath={}'.format(
         #     modname, modpath))
@@ -296,7 +296,7 @@ def import_module_from_path(modpath, index=-1):
                 zimp_file = zipimport.zipimporter(archivepath)
                 module = zimp_file.load_module(modname)
                 return module
-        raise IOError('modpath={} does not exist'.format(modpath))
+        raise IOError('modpath={a} does not exist'.format(a=modpath))
     else:
         # the importlib version doesnt work in pytest
         module = _custom_import_modpath(modpath, index=index)
@@ -327,21 +327,26 @@ def import_module_from_name(modname):
         >>> assert [m.__name__ for m in modules] == modname_list
         >>> assert all(m in sys.modules for m in modname_list)
     """
-    if True:
+    if six.PY2:
+        try:
+            import importlib
+        except ImportError:
+            # The __import__ statment is weird
+            if '.' in modname:
+                fromlist = modname.split('.')[-1]
+                fromlist_ = list(map(str, fromlist))  # needs to be ascii for python2.7
+                module = __import__(modname, {}, {}, fromlist_, 0)
+            else:
+                module = __import__(modname, {}, {}, [], 0)
+        else:
+            module = importlib.import_module(modname)
+    else:
         # See if this fixes the Docker issue we saw but were unable to
         # reproduce on another environment. Either way its better to use the
         # standard importlib implementation than the one I wrote a long time
-        # ago.
+        # ago. (note the one I used a long time ago works in Python 2.6)
         import importlib
         module = importlib.import_module(modname)
-    else:
-        # The __import__ statment is weird
-        if '.' in modname:
-            fromlist = modname.split('.')[-1]
-            fromlist_ = list(map(str, fromlist))  # needs to be ascii for python2.7
-            module = __import__(modname, {}, {}, fromlist_, 0)
-        else:
-            module = __import__(modname, {}, {}, [], 0)
     return module
 
 
@@ -372,14 +377,26 @@ def _platform_pylib_exts():  # nocover
     .cpython-35m-x86_64-linux-gnu) flags. On python2 returns with
     and without multiarch.
     """
-    import sysconfig
     valid_exts = []
     if six.PY2:
         # see also 'SHLIB_EXT'
-        base_ext = '.' + sysconfig.get_config_var('SO').split('.')[-1]
+        try:
+            import sysconfig
+            base_ext = '.' + sysconfig.get_config_var('SO').split('.')[-1]
+        except ImportError:
+            # python 2.6
+            if sys.platform.startswith('win32'):
+                return ('.dll', '.pyd', '.so',)
+            elif sys.platform.startswith('darwin'):
+                return ('.dylib', '.so',)
+            elif sys.platform.startswith('linux'):
+                return ('.so',)
+            else:
+                return ('.so',)
     else:
         # return with and without API flags
         # handle PEP 3149 -- ABI version tagged .so files
+        import sysconfig
         base_ext = '.' + sysconfig.get_config_var('EXT_SUFFIX').split('.')[-1]
     for tag in _extension_module_tags():
         valid_exts.append('.' + tag + base_ext)
@@ -455,7 +472,7 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
             else:
                 return realpath(p)
         # Keep only the paths not in exclude
-        real_exclude = {normalize(p) for p in exclude}
+        real_exclude = set([normalize(p) for p in exclude])
         candidate_dpaths = [p for p in candidate_dpaths
                             if normalize(p) not in real_exclude]
 
@@ -618,7 +635,7 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False, check=True,
     """
     if check and relativeto is None:
         if not exists(modpath):
-            raise ValueError('modpath={} does not exist'.format(modpath))
+            raise ValueError('modpath={a} does not exist'.format(a=modpath))
     modpath_ = abspath(expanduser(modpath))
 
     modpath_ = normalize_modpath(modpath_, hide_init=hide_init,
@@ -669,11 +686,11 @@ def split_modpath(modpath, check=True):
     if check:
         if not exists(modpath_):
             if not exists(modpath):
-                raise ValueError('modpath={} does not exist'.format(modpath))
-            raise ValueError('modpath={} is not a module'.format(modpath))
+                raise ValueError('modpath={a} does not exist'.format(a=modpath))
+            raise ValueError('modpath={a} is not a module'.format(a=modpath))
         if isdir(modpath_) and not exists(join(modpath, '__init__.py')):
             # dirs without inits are not modules
-            raise ValueError('modpath={} is not a module'.format(modpath))
+            raise ValueError('modpath={a} is not a module'.format(a=modpath))
     full_dpath, fname_ext = split(modpath_)
     _relmod_parts = [fname_ext]
     # Recurse down directories until we are out of the package

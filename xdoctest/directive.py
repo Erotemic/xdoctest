@@ -88,7 +88,6 @@ import os
 import re
 import copy
 import warnings
-import operator as op
 from xdoctest import static_analysis as static
 from xdoctest import utils
 from collections import OrderedDict
@@ -98,7 +97,7 @@ from collections import namedtuple
 
 def named(key, pattern):
     """ helper for regex """
-    return '(?P<{}>{})'.format(key, pattern)
+    return '(?P<{key}>{pattern})'.format(key=key, pattern=pattern)
 
 
 # TODO: modify global directive defaults via a config file
@@ -493,8 +492,12 @@ COMMANDS = list(DEFAULT_RUNTIME_STATE.keys()) + [
 ]
 DIRECTIVE_PATTERNS = [
     #r'\s*\+\s*' + named('style1', '.*'),
+
     r'x?doctest:\s*' + named('style2', '.*'),
     r'x?doc:\s*' + named('style3', '.*'),
+
+    # 'x?doctest:\\s*' + named('style2', '.*'),
+    # 'x?doc:\\s*' + named('style3', '.*'),
 ]
 DIRECTIVE_RE = re.compile('|'.join(DIRECTIVE_PATTERNS), flags=re.IGNORECASE)
 

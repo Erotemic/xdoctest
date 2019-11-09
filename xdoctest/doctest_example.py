@@ -266,10 +266,10 @@ class DocTest(object):
 
     @property
     def valid_testnames(self):
-        return {
+        return set([
             self.callname,
             self.unique_callname,
-        }
+        ])
 
     def wants(self):
         """
@@ -441,7 +441,7 @@ class DocTest(object):
         """
         on_error = self.config.getvalue('on_error', on_error)
         verbose = self.config.getvalue('verbose', verbose)
-        if on_error not in {'raise', 'return'}:
+        if on_error not in ['raise', 'return']:
             raise KeyError(on_error)
 
         self._parse()  # parse out parts if we have not already done so
@@ -589,7 +589,7 @@ class DocTest(object):
 
                     DEBUG = 1
                     if DEBUG:
-                        print('_ex_dbg = {!r}'.format(_ex_dbg))
+                        print('_ex_dbg = {a}'.format(a=repr(_ex_dbg)))
                         print('<DEBUG: doctest encountered exception>', file=sys.stderr)
                         print(''.join(traceback.format_tb(tb)), file=sys.stderr)
                         print('</DEBUG>', file=sys.stderr)
@@ -609,7 +609,7 @@ class DocTest(object):
                         # The only traceback remaining should be
                         # the part that is relevant to the user
                         print('<DEBUG: best sub_tb>', file=sys.stderr)
-                        print('found_lineno = {!r}'.format(found_lineno), file=sys.stderr)
+                        print('found_lineno = {a}'.format(a=repr(found_lineno)), file=sys.stderr)
                         print(''.join(traceback.format_tb(sub_tb)), file=sys.stderr)
                         print('</DEBUG>', file=sys.stderr)
 
@@ -617,7 +617,7 @@ class DocTest(object):
                         if DEBUG:
                             print('UNABLE TO CLEAN TRACEBACK. EXIT DUE TO DEBUG')
                             sys.exit(1)
-                        raise ValueError('Could not clean traceback: ex = {!r}'.format(_ex_dbg))
+                        raise ValueError('Could not clean traceback: ex = {a}'.format(a=repr(_ex_dbg)))
                     else:
                         self.failed_tb_lineno = found_lineno
 
@@ -686,9 +686,9 @@ class DocTest(object):
                 print(barrier)
             if self.block_type == 'zero-arg':
                 # zero-arg funcs arent doctests, but we can still run them
-                print('* ZERO-ARG FUNC : {}'.format(self.node))
+                print('* ZERO-ARG FUNC : {a}'.format(a=self.node))
             else:
-                print('* DOCTEST : {}, line {}'.format(self.node, self.lineno) + self._color(' <- wrt source file', 'white'))
+                print('* DOCTEST : {a}, line {b}'.format(a=self.node, b=self.lineno) + self._color(' <- wrt source file', 'white'))
             if verbose >= 3:
                 print(self._color(self._block_prefix + ' SOURCE', 'white'))
                 print(self.format_src())
@@ -829,16 +829,16 @@ class DocTest(object):
         fail_lineno = self.failed_lineno()
 
         lines = [
-            '* REASON: {}'.format(ex_type.__name__),
+            '* REASON: {a}'.format(a=ex_type.__name__),
             self._color(self._block_prefix + ' DEBUG INFO', 'white'),
-            '  XDoc "{}", line {}'.format(self.node, fail_offset + 1) +
+            '  XDoc "{a}", line {b}'.format(a=self.node, b=fail_offset + 1) +
             self._color(' <- wrt doctest', 'red'),
         ]
 
         colored = self.config['colored']
         if fail_lineno is not None:
             fpath = '<file?>' if self.fpath is None else self.fpath
-            lines += ['  File "{}", line {},'.format(fpath, fail_lineno) +
+            lines += ['  File "{a}", line {b},'.format(a=fpath, b=fail_lineno) +
                       self._color(' <- wrt source file', 'red')]
 
         # lines += ['  in doctest "{}", line {}'.format(self.unique_callname,
@@ -1026,11 +1026,11 @@ class DocTest(object):
                     success = self._color('SKIPPED', 'yellow')
                 else:
                     success = self._color('SUCCESS', 'green')
-                print('* {}: {}'.format(success, self.node))
+                print('* {a}: {b}'.format(a=success, b=self.node))
         else:
             if verbose >= 1:
                 failure = self._color('FAILURE', 'red')
-                print('* {}: {}'.format(failure, self.node))
+                print('* {a}: {b}'.format(a=failure, b=self.node))
 
                 if verbose >= 2:
                     lines = self.repr_failure()

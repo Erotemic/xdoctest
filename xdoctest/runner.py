@@ -79,7 +79,7 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
         >>> modname = 'xdoctest.dynamic_analysis'
         >>> result = doctest_module(modname, 'list', argv=[''])
     """
-    print('Start doctest_module({!r})'.format(modpath_or_name))
+    print('Start doctest_module({n})'.format(n=repr(modpath_or_name)))
 
     # Determine package name via caller if not specified
     if modpath_or_name is None:
@@ -194,7 +194,7 @@ def _convert_to_test_module(enabled_examples):
                 body_part += '\n' + want_text
             body_lines.append(body_part)
         body = '\n'.join(body_lines)
-        func_text = 'def {}():\n'.format(func_name) + utils.indent(body)
+        func_text = 'def {a}():\n'.format(a=func_name) + utils.indent(body)
         module_lines.append(func_text)
 
     module_text = '\n\n\n'.join(module_lines)
@@ -218,21 +218,21 @@ def _print_summary_report(run_summary, parse_warnlist, n_seconds,
 
     # report parse-time warnings
     if parse_warnlist:
-        cprint('\n=== Found {} parse-time warnings ==='.format(
-            len(parse_warnlist)), 'yellow')
+        cprint('\n=== Found {a} parse-time warnings ==='.format(
+            a=len(parse_warnlist)), 'yellow')
 
         for warn_idx, warn in enumerate(parse_warnlist, start=1):
-            cprint('--- Parse Warning: {} / {} ---'.format(
-                warn_idx, len(parse_warnlist)), 'yellow')
+            cprint('--- Parse Warning: {a} / {b} ---'.format(
+                a=warn_idx, b=len(parse_warnlist)), 'yellow')
             print(utils.indent(
                 warnings.formatwarning(warn.message, warn.category,
                                        warn.filename, warn.lineno)))
 
     # report run-time warnings
     if warned:
-        cprint('\n=== Found {} run-time warnings ==='.format(len(warned)), 'yellow')
+        cprint('\n=== Found {a} run-time warnings ==='.format(a=len(warned)), 'yellow')
         for warn_idx, example in enumerate(warned, start=1):
-            cprint('--- Runtime Warning: {} / {} ---'.format(warn_idx, len(warned)),
+            cprint('--- Runtime Warning: {a} / {b} ---'.format(a=warn_idx, b=len(warned)),
                    'yellow')
             print('example = {!r}'.format(example))
             for warn in example.warn_list:
@@ -243,9 +243,9 @@ def _print_summary_report(run_summary, parse_warnlist, n_seconds,
     if failed and len(enabled_examples) > 1:
         # If there is more than one test being run, print out all the
         # errors that occured so they are consolidated in a single place.
-        cprint('\n=== Found {} errors ==='.format(len(failed)), 'red')
+        cprint('\n=== Found {a} errors ==='.format(a=len(failed)), 'red')
         for fail_idx, example in enumerate(failed, start=1):
-            cprint('--- Error: {} / {} ---'.format(fail_idx, len(failed)), 'red')
+            cprint('--- Error: {a} / {b} ---'.format(a=fail_idx, b=len(failed)), 'red')
             print(utils.indent('\n'.join(example.repr_failure())))
 
     # Print command lines to re-run failed tests
@@ -279,7 +279,7 @@ def _print_summary_report(run_summary, parse_warnlist, n_seconds,
         if durations > 0:
             test_time_tups = test_time_tups[-durations:]
         for example, n_secs in test_time_tups:
-            print('time: {:0.8f}, test: {}'.format(n_secs, example.cmdline))
+            print('time: {a:0.8f}, test: {b}'.format(a=n_secs, b=example.cmdline))
 
 
 def _gather_zero_arg_examples(modpath):
@@ -294,7 +294,7 @@ def _gather_zero_arg_examples(modpath):
                 n_args = len(calldef.args.args) - len(calldef.args.defaults)
                 if n_args == 0:
                     # Create a dummy doctest example for a zero-arg function
-                    docsrc = '>>> {}()'.format(callname)
+                    docsrc = '>>> {a}()'.format(a=callname)
                     example = doctest_example.DocTest(docsrc=docsrc,
                                                       modpath=_modpath,
                                                       callname=callname,
@@ -401,7 +401,7 @@ def _parse_commandline(command=None, style='auto', verbose=None, argv=None):
     if argv is None:
         argv = sys.argv[1:]
     else:
-        print('argv = {!r}'.format(argv))
+        print('argv = {n}'.format(n=repr(argv)))
 
     if command is None:
         if len(argv) >= 1:

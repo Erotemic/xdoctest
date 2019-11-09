@@ -74,7 +74,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         ...    ''')
         >>> self = TopLevelVisitor.parse(source)
         >>> callnames = set(self.calldefs.keys())
-        >>> assert callnames == {'foo', 'bar', 'Spam', 'Spam.eggs', 'Spam.hams'}
+        >>> assert callnames == set(['foo', 'bar', 'Spam', 'Spam.eggs', 'Spam.hams'])
         >>> assert self.calldefs['foo'].docstr.strip() == 'my docstring'
         >>> assert 'subfunc' not in self.calldefs
     """

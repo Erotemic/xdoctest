@@ -60,7 +60,7 @@ def check_got_vs_want(want, got_stdout, got_eval=constants.NOT_EVALED,
             try:
                 got = repr(got_eval)
             except Exception as ex:
-                raise ExtractGotReprException('Error calling repr for {}. Caused by: {!r}'.format(type(got_eval), ex), ex)
+                raise ExtractGotReprException('Error calling repr for {a}. Caused by: {b}'.format(a=type(got_eval), b=repr(ex)), ex)
             flag = check_output(got, want, runstate)
         else:
             # If there was eval and stdout, defer to stdout
@@ -211,8 +211,8 @@ def _ellipsis_match(got, want):
     # ws = want.split(ELLIPSIS_MARKER)
     # MODIFICATION: the ellipsis consumes all whitespace around it
     # for compatibility with whitespace normalization.
-    ws = re.split(r'\s*{}\s*'.format(re.escape(ELLIPSIS_MARKER)), want,
-                  flags=re.MULTILINE)
+    ws = re.split(r'\s*{a}\s*'.format(a=re.escape(ELLIPSIS_MARKER)), want,
+                  re.MULTILINE)
     assert len(ws) >= 2
 
     # Deal with exact matches possibly needed at one or both ends.
@@ -446,16 +446,16 @@ class GotWantException(AssertionError):
                 if colored:
                     got = utils.color_text(got, 'red')
                     want = utils.color_text(want, 'red')
-                text = 'Expected:\n{}\nGot:\n{}'.format(
-                    utils.indent(self.want), utils.indent(self.got))
+                text = 'Expected:\n{a}\nGot:\n{b}'.format(
+                    a=utils.indent(self.want), b=utils.indent(self.got))
             elif want:
                 if colored:
                     got = utils.color_text(got, 'red')
                     want = utils.color_text(want, 'red')
-                text = 'Expected:\n{}\nGot nothing\n'.format(utils.indent(want))
+                text = 'Expected:\n{a}\nGot nothing\n'.format(a=utils.indent(want))
             elif got:  # nocover
                 raise AssertionError('impossible state')
-                text = 'Expected nothing\nGot:\n{}'.format(utils.indent(got))
+                text = 'Expected nothing\nGot:\n{a}'.format(a=utils.indent(got))
             else:  # nocover
                 raise AssertionError('impossible state')
                 text = 'Expected nothing\nGot nothing\n'

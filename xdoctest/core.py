@@ -108,8 +108,8 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         return example
 
     if DEBUG:
-        print('Parsing docstring for callname={} in modpath={}'.format(
-            callname, modpath))
+        print('Parsing docstring for callname={a} in modpath={b}'.format(
+            a=callname, b=modpath))
 
     respect_google_headers = True
     if respect_google_headers:  # pragma: nobranch
@@ -203,8 +203,8 @@ def parse_google_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
     try:
         blocks = docscrape_google.split_google_docblocks(docstr)
     except exceptions.MalformedDocstr:
-        print('ERROR PARSING {} GOOGLE BLOCKS IN {} ON line {}'.format(
-            callname, modpath, lineno))
+        print('ERROR PARSING {a} GOOGLE BLOCKS IN {b} ON line {c}'.format(
+            a=callname, b=modpath, c=lineno))
         print('Did you forget to make a docstr with newlines raw?')
         raise
     example_blocks = []
@@ -295,7 +295,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
     """
     if DEBUG:
         print('Parsing docstring examples for '
-              'callname={} in modpath={}'.format(callname, modpath))
+              'callname={a} in modpath={b}'.format(a=callname, b=modpath))
     if style == 'freeform':
         parser = parse_freeform_docstr_examples
     elif style == 'google':
@@ -306,8 +306,8 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
     # elif style == 'numpy':
     #     parser = parse_numpy_docstr_examples
     else:
-        raise KeyError('Unknown style={}. Valid styles are {}'.format(
-            style, DOCTEST_STYLES))
+        raise KeyError('Unknown style={a}. Valid styles are {b}'.format(
+            a=style, b=DOCTEST_STYLES))
 
     if DEBUG:
         print('parser = {!r}'.format(parser))
@@ -321,15 +321,15 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
     except Exception as ex:
         if DEBUG:
             print('Caught an error when parsing')
-        msg = ('Cannot scrape callname={} in modpath={} line={}.\n'
-               'Caused by: {}\n')
+        msg = ('Cannot scrape callname={a} in modpath={b} line={c}.\n'
+               'Caused by: {d}\n')
         # raise
-        msg = msg.format(callname, modpath, lineno, repr(ex))
+        msg = msg.format(a=callname, b=modpath, c=lineno, d=repr(ex))
         if isinstance(ex, exceptions.DoctestParseError):
             # TODO: Can we print a nicer syntax error here?
 
-            msg += '{}\n'.format(ex.string)
-            msg += 'Original Error: {}\n'.format(repr(ex.orig_ex))
+            msg += '{a}\n'.format(a=ex.string)
+            msg += 'Original Error: {a}\n'.format(a=repr(ex.orig_ex))
 
             if isinstance(ex.orig_ex, SyntaxError):
                 extra_help = ''
@@ -342,7 +342,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
 
         # Always warn when something bad is happening.
         # However, dont error if the docstr simply has bad syntax
-        print('msg = {}'.format(msg))
+        print('msg = {m}'.format(m=msg))
         warnings.warn(msg)
         if isinstance(ex, exceptions.MalformedDocstr):
             pass
@@ -351,7 +351,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
         else:
             raise
     if DEBUG:
-        print('Finished parsing {} examples'.format(n_parsed))
+        print('Finished parsing {a} examples'.format(a=n_parsed))
 
 
 def _rectify_to_modpath(modpath_or_name):
@@ -364,7 +364,7 @@ def _rectify_to_modpath(modpath_or_name):
         if exists(modpath_or_name):
             modpath = modpath_or_name
         else:
-            raise ValueError('Cannot find module={}'.format(modpath_or_name))
+            raise ValueError('Cannot find module={a}'.format(a=modpath_or_name))
     return modpath
 
 
@@ -497,8 +497,8 @@ def parse_doctestables(modpath_or_name, exclude=[], style='auto',
     """
 
     if style not in DOCTEST_STYLES:
-        raise KeyError('Unknown style={}. Valid styles are {}'.format(
-            style, DOCTEST_STYLES))
+        raise KeyError('Unknown style={a}. Valid styles are {b}'.format(
+            a=style, b=DOCTEST_STYLES))
 
     # Statically parse modules and their doctestable callables in a package
     for calldefs, modpath in package_calldefs(modpath_or_name, exclude,

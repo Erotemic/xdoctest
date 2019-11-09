@@ -33,11 +33,9 @@ there is room for improvement here.
 from __future__ import print_function, division, absolute_import, unicode_literals
 import six
 import ast
-import sys
+# import sys
 import re
-import itertools as it
 from xdoctest import utils
-from xdoctest import checker
 from xdoctest import directive
 from xdoctest import exceptions
 from xdoctest import doctest_part
@@ -135,7 +133,8 @@ class DoctestParser(object):
         """
         if DEBUG > 1:
             print('\n===== PARSE ====')
-        if sys.version_info.major == 2:  # nocover
+        # if sys.version_info.major == 2:  # nocover
+        if six.PY2:
             string = utils.ensure_unicode(string)
 
         if not isinstance(string, six.string_types):
@@ -178,16 +177,16 @@ class DoctestParser(object):
                 print(string)
                 print(']}>a]}>]}>  # end string')
 
-                print('info = {}'.format(ub.repr2(info)))
+                print('info = {a}'.format(a=ub.repr2(info)))
                 print('-----')
-                print('orig_ex = {}'.format(orig_ex))
-                print('labeled_lines = {}'.format(ub.repr2(labeled_lines)))
-                print('grouped_lines = {}'.format(ub.repr2(grouped_lines, nl=3)))
-                print('all_parts = {}'.format(ub.repr2(all_parts)))
+                print('orig_ex = {a}'.format(a=orig_ex))
+                print('labeled_lines = {a}'.format(a=ub.repr2(labeled_lines)))
+                print('grouped_lines = {a}'.format(a=ub.repr2(grouped_lines, nl=3)))
+                print('all_parts = {a}'.format(a=ub.repr2(all_parts)))
                 print('</FAILPOINT>')
                 # sys.exit(1)
             raise exceptions.DoctestParseError(
-                'Failed to parse doctest in {}'.format(failpoint),
+                'Failed to parse doctest in {a}'.format(a=failpoint),
                 string=string, info=info, orig_ex=orig_ex)
         if DEBUG > 1:
             print('\n===== FINISHED PARSE ====')
@@ -197,7 +196,7 @@ class DoctestParser(object):
         if DEBUG > 1:
             import ubelt as ub
             print('<PACKAGE LABEL GROUPS>')
-            print('grouped_lines = {}'.format(ub.repr2(grouped_lines, nl=2)))
+            print('grouped_lines = {a}'.format(a=ub.repr2(grouped_lines, nl=2)))
         lineno = 0
         for chunk in grouped_lines:
             if isinstance(chunk, tuple):
@@ -394,6 +393,12 @@ class DoctestParser(object):
         # More iterating and grouping. This section needs a careful rewrite
         prev_source = None
         grouped_lines = []
+
+        # note: the inline syntax is faster than dereferencing a variable, but
+        # sets are always faster than lists. The only reason we dont use inline
+        # set syntax is due to tenative Python 2.6 support.
+        DSRC_DCNT = set(['dsrc', 'dcnt'])
+
         for state, group in merged_groups:
             block = [t[1] for t in group]
             if state == 'text':
@@ -407,7 +412,7 @@ class DoctestParser(object):
                 assert prev_source is not None, 'impossible'
                 grouped_lines.append((prev_source, block))
                 prev_source = None
-            elif state in {'dsrc', 'dcnt'}:
+            elif state in DSRC_DCNT:
                 if prev_source is not None:
                     # accept a source block without a want block
                     grouped_lines.append((prev_source, ''))
@@ -482,7 +487,7 @@ class DoctestParser(object):
                 intervals = intervals[::-1]
                 return intervals
             intervals = balanced_intervals(lines)
-            interval_starts = {t[0] for t in intervals}
+            interval_starts = set([t[0] for t in intervals])
             for i, line in enumerate(lines):
                 if i in interval_starts and line.startswith('#'):
                     # Replace any comment that is not within an interval with a
@@ -515,16 +520,17 @@ class DoctestParser(object):
                 ps1_linenos, exec_source_lines)
 
         # Respect any line explicitly defined as PS2 (via its prefix)
-        ps2_linenos = {
+        ps2_linenos = set([
             x for x, p in enumerate(source_lines) if p[:4] != '>>> '
-        }
+        ])
         ps1_linenos = sorted(set(ps1_linenos).difference(ps2_linenos))
 
         if len(statement_nodes) == 0:
             eval_final = False
         else:
             # Is the last statement evaluate-able?
-            if sys.version_info.major == 2:  # nocover
+            if six.PY2:  # nocover
+                # if sys.version_info.major == 2:  # nocover
                 eval_final = isinstance(statement_nodes[-1], (
                     ast.Expr, ast.Print))
             else:
@@ -643,6 +649,7 @@ class DoctestParser(object):
         DSRC = 'dsrc'
         DCNT = 'dcnt'  # explicit continuation  **new in 0.10.0**
         WANT = 'want'
+        DSRC_DCNT = set([DSRC, DCNT])  # python 2.6
 
         # Move through states, keeping track of points where states change
         #     text -> [text, dsrc]
@@ -678,7 +685,7 @@ class DoctestParser(object):
                     curr_state = TEXT
                 else:
                     curr_state = WANT
-            elif prev_state in {DSRC, DCNT}:  # pragma: nobranch
+            elif prev_state in DSRC_DCNT:  # pragma: nobranch
                 if len(strip_line) == 0 or line_indent < state_indent:
                     curr_state = TEXT
                 # allow source to continue with either PS1 or PS2
@@ -701,28 +708,28 @@ class DoctestParser(object):
                     curr_state = WANT
             else:  # nocover
                 # This should never happen
-                raise AssertionError('Unknown state prev_state={}'.format(
-                    prev_state))
+                raise AssertionError('Unknown state prev_state={a}'.format(
+                    a=prev_state))
 
             # Handle transitions
             if prev_state != curr_state:
                 # Handle start of new states
                 if curr_state == TEXT:
                     state_indent = 0
-                if curr_state in {DSRC, DCNT}:
+                if curr_state in DSRC_DCNT:
                     # Start a new source
                     state_indent = line_indent
                     # renormalize line when indentation changes
                     norm_line = line[state_indent:]
 
             # continue current state
-            if curr_state in {DSRC, DCNT}:
+            if curr_state in DSRC_DCNT:
                 # source parts may consume more than one line
                 try:
                     if DEBUG:  # nocover
                         print('completing source')
                     for part, norm_line in _complete_source(line, state_indent, line_iter):
-                        if DEBUG> 4:  # nocover
+                        if DEBUG > 4:  # nocover
                             print('part = {!r}'.format(part))
                             print('norm_line = {!r}'.format(norm_line))
                             print('curr_state = {!r}'.format(curr_state))
@@ -730,9 +737,9 @@ class DoctestParser(object):
                             curr_state = DCNT
                         labeled_lines.append((curr_state, part))
 
-                except exceptions.IncompleteParseError as orig_ex:
+                except exceptions.IncompleteParseError:
                     raise
-                except SyntaxError as orig_ex:
+                except SyntaxError:
                     if DEBUG:  # nocover
                         print('<LABEL FAIL>')
                         # print('next(line_iter) = {!r}'.format(line_iter))
@@ -756,7 +763,7 @@ class DoctestParser(object):
             # if DEBUG > 3:
             #     print('string = {!r}'.format(string))
             print('<FINISH LABELED LINES')
-            print('labeled_lines = {}'.format(ub.repr2(labeled_lines, nl=1)))
+            print('labeled_lines = {a}'.format(a=ub.repr2(labeled_lines, nl=1)))
             print('</FINISH LABELED LINES>')
 
         return labeled_lines
@@ -779,7 +786,7 @@ def _complete_source(line, state_indent, line_iter):
     norm_line = line[state_indent:]  # Normalize line indentation
     prefix = norm_line[:4]
     suffix = norm_line[4:]
-    assert prefix.strip() in {'>>>', '...'}, '{}'.format(prefix)
+    assert prefix.strip() in ['>>>', '...'], '{a}'.format(a=prefix)
     yield line, norm_line
 
     source_parts = [suffix]
@@ -794,7 +801,7 @@ def _complete_source(line, state_indent, line_iter):
             prefix = norm_line[:4]
             suffix = norm_line[4:]
 
-            if prefix.strip() not in {'>>>', '...', ''}:  # nocover
+            if prefix.strip() not in ['>>>', '...', '']:  # nocover
                 error = True
                 if HACK_TRIPLE_QUOTE_FIX:
                     # TODO: make a more robust patch
@@ -815,8 +822,8 @@ def _complete_source(line, state_indent, line_iter):
                         print(' * !!!!!!!!!!!!!')
 
                     raise SyntaxError(
-                        'Bad indentation in doctest on line {}: {!r}'.format(
-                            line_idx, next_line))
+                        'Bad indentation in doctest on line {a}: {b}'.format(
+                            a=line_idx, b=repr(next_line)))
             source_parts.append(suffix)
             yield next_line, norm_line
     except StopIteration:
@@ -831,9 +838,9 @@ def _complete_source(line, state_indent, line_iter):
             # print(' * line_iter = {!r}'.format(line_iter))
             print(' * state_indent = {!r}'.format(state_indent))
             print(' * line = {!r}'.format(line))
-            # print('source =\n{}'.format('\n'.join(source_parts)))
+            # print('source =\n{a}'.format(a='\n'.join(source_parts)))
             print('# Ensure that the following line should actually fail')
-            print('source_parts = {}'.format(ub.repr2(source_parts, nl=2)))
+            print('source_parts = {a}'.format(a=ub.repr2(source_parts, nl=2)))
             print(ub.codeblock(
                 r'''
                 from xdoctest import static_analysis as static
@@ -855,7 +862,7 @@ def _complete_source(line, state_indent, line_iter):
             import ubelt as ub
             print('<SUCCESS COMPLETED SOURCE>')
             # print(' * line_iter = {!r}'.format(line_iter))
-            print('source_parts = {}'.format(ub.repr2(source_parts, nl=2)))
+            print('source_parts = {a}'.format(a=ub.repr2(source_parts, nl=2)))
             print('</SUCCESS COMPLETED SOURCE>')
 
 
