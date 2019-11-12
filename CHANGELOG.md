@@ -4,6 +4,14 @@ We are currently working on porting this changelog to the specifications in
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Version 0.10.2] - Unreleased
+
+### Changed
+* The `--xdoc-glob` list of patterns now defaults to empty.  In general it is
+  not safe to assume a default pattern. This means the user must opt-in to
+  testing text files as if they were doctests.
+
+
 ## [Version 0.10.1] - Released 2019-10-31
 
 ### Changed

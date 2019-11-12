@@ -73,7 +73,8 @@ def pytest_addoption(parser):
                     dest='xdoctestmodules')
     group.addoption('--xdoctest-glob', '--xdoc-glob',
                     action='append', default=[], metavar='pat',
-                    help='xdoctests file matching pattern, default: test*.txt',
+                    # help='xdoctests file matching pattern, default: test*.txt',
+                    help='add a pattern that will be checked for doctests',
                     dest='xdoctestglob')
     group.addoption('--xdoctest-ignore-syntax-errors',
                     action='store_true', default=False,
@@ -103,13 +104,16 @@ def pytest_collect_file(path, parent):
 
 
 def _is_xdoctest(config, path, parent):
+    matched = False
     if path.ext in ('.txt', '.rst') and parent.session.isinitpath(path):
-        return True
-    globs = config.getoption("xdoctestglob") or ['test*.txt']
-    for glob in globs:
-        if path.check(fnmatch=glob):
-            return True
-    return False
+        matched = True
+    else:
+        globs = config.getoption("xdoctestglob")
+        for glob in globs:
+            if path.check(fnmatch=glob):
+                matched = True
+                break
+    return matched
 
 
 class ReprFailXDoctest(code.TerminalRepr):
@@ -186,6 +190,10 @@ class XDoctestTextfile(_XDoctestBase):
     obj = None
 
     def collect(self):
+        """
+        Ignore:
+            file = open('test_big5.txt', 'r')
+        """
         from xdoctest import core
         encoding = self.config.getini("xdoctest_encoding")
         text = self.fspath.read_text(encoding)
