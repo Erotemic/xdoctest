@@ -48,6 +48,8 @@ def monkey_patch_disable_normal_doctest():
             # prevent conflicts with this module.
             def pytest_collect_file(path, parent):
                 return None
+            # Not sure why, but _is_doctest seems to be called even when
+            # pytest_collect_file is monkey patched out
             def _is_doctest(config, path, parent):
                 return False
             doctest.pytest_collect_file = pytest_collect_file
