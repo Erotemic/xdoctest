@@ -43,12 +43,15 @@ def monkey_patch_disable_normal_doctest():
     # Only perform the monkey patch if it is clear the xdoctest plugin is
     # wanted instead of the standard _pytest.doctest pluginn
     if '--doctest-modules' not in sys.argv:
-        if '--xdoctest-modules' in sys.argv or '--xdoctest' in sys.argv:
+        if '--xdoctest-modules' in sys.argv or '--xdoctest' in sys.argv or '--xdoc' in sys.argv:
             # overwriting the collect function will cripple _pytest.doctest and
             # prevent conflicts with this module.
             def pytest_collect_file(path, parent):
                 return None
+            def _is_doctest(config, path, parent):
+                return False
             doctest.pytest_collect_file = pytest_collect_file
+            doctest._is_doctest = _is_doctest
 
 
 monkey_patch_disable_normal_doctest()
