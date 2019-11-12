@@ -43,12 +43,17 @@ def monkey_patch_disable_normal_doctest():
     # Only perform the monkey patch if it is clear the xdoctest plugin is
     # wanted instead of the standard _pytest.doctest pluginn
     if '--doctest-modules' not in sys.argv:
-        if '--xdoctest-modules' in sys.argv or '--xdoctest' in sys.argv:
+        if '--xdoctest-modules' in sys.argv or '--xdoctest' in sys.argv or '--xdoc' in sys.argv:
             # overwriting the collect function will cripple _pytest.doctest and
             # prevent conflicts with this module.
             def pytest_collect_file(path, parent):
                 return None
+            # Not sure why, but _is_doctest seems to be called even when
+            # pytest_collect_file is monkey patched out
+            def _is_doctest(config, path, parent):
+                return False
             doctest.pytest_collect_file = pytest_collect_file
+            doctest._is_doctest = _is_doctest
 
 
 monkey_patch_disable_normal_doctest()
@@ -73,7 +78,12 @@ def pytest_addoption(parser):
                     dest='xdoctestmodules')
     group.addoption('--xdoctest-glob', '--xdoc-glob',
                     action='append', default=[], metavar='pat',
-                    help='xdoctests file matching pattern, default: test*.txt',
+                    help=(
+                        'text files matching this pattern will be checked '
+                        'for doctests. This option may be specified multiple '
+                        'times. XDoctest does not check any text files by '
+                        'default. For compatibility with doctest set this to '
+                        'test*.txt'),
                     dest='xdoctestglob')
     group.addoption('--xdoctest-ignore-syntax-errors',
                     action='store_true', default=False,
@@ -103,13 +113,16 @@ def pytest_collect_file(path, parent):
 
 
 def _is_xdoctest(config, path, parent):
+    matched = False
     if path.ext in ('.txt', '.rst') and parent.session.isinitpath(path):
-        return True
-    globs = config.getoption("xdoctestglob") or ['test*.txt']
-    for glob in globs:
-        if path.check(fnmatch=glob):
-            return True
-    return False
+        matched = True
+    else:
+        globs = config.getoption("xdoctestglob")
+        for glob in globs:
+            if path.check(fnmatch=glob):
+                matched = True
+                break
+    return matched
 
 
 class ReprFailXDoctest(code.TerminalRepr):
@@ -239,139 +252,6 @@ def _setup_fixtures(xdoctest_item):
     fixture_request = fixtures.FixtureRequest(xdoctest_item)
     fixture_request._fillfixtures()
     return fixture_request
-
-
-# def _get_checker():
-#     """
-#     Returns a doctest.OutputChecker subclass that takes in account the
-#     ALLOW_UNICODE option to ignore u'' prefixes in strings and ALLOW_BYTES
-#     to strip b'' prefixes.
-#     Useful when the same doctest should run in Python 2 and Python 3.
-
-#     An inner class is used to avoid importing "doctest" at the module
-#     level.
-#     """
-#     if hasattr(_get_checker, 'LiteralsOutputChecker'):
-#         return _get_checker.LiteralsOutputChecker()
-
-#     import doctest
-#     import re
-
-#     class LiteralsOutputChecker(doctest.OutputChecker):
-#         """
-#         Copied from doctest_nose_plugin.py from the nltk project:
-#             https://github.com/nltk/nltk
-
-#         Further extended to also support byte literals.
-#         """
-
-#         _unicode_literal_re = re.compile(r"(\W|^)[uU]([rR]?[\'\"])", re.UNICODE)
-#         _bytes_literal_re = re.compile(r"(\W|^)[bB]([rR]?[\'\"])", re.UNICODE)
-
-#         def check_output(self, want, got, optionflags):
-#             res = doctest.OutputChecker.check_output(self, want, got,
-#                                                      optionflags)
-#             if res:
-#                 return True
-
-#             allow_unicode = optionflags & _get_allow_unicode_flag()
-#             allow_bytes = optionflags & _get_allow_bytes_flag()
-#             if not allow_unicode and not allow_bytes:
-#                 return False
-
-#             else:  # pragma: no cover
-#                 def remove_prefixes(regex, txt):
-#                     return re.sub(regex, r'\1\2', txt)
-
-#                 if allow_unicode:
-#                     want = remove_prefixes(self._unicode_literal_re, want)
-#                     got = remove_prefixes(self._unicode_literal_re, got)
-#                 if allow_bytes:
-#                     want = remove_prefixes(self._bytes_literal_re, want)
-#                     got = remove_prefixes(self._bytes_literal_re, got)
-#                 res = doctest.OutputChecker.check_output(self, want, got,
-#                                                          optionflags)
-#                 return res
-
-#     _get_checker.LiteralsOutputChecker = LiteralsOutputChecker
-#     return _get_checker.LiteralsOutputChecker()
-
-
-# def _get_allow_unicode_flag():
-#     """
-#     Registers and returns the ALLOW_UNICODE flag.
-#     """
-#     import doctest
-#     return doctest.register_optionflag('ALLOW_UNICODE')
-
-
-# def _get_allow_bytes_flag():
-#     """
-#     Registers and returns the ALLOW_BYTES flag.
-#     """
-#     import doctest
-#     return doctest.register_optionflag('ALLOW_BYTES')
-
-
-DOCTEST_REPORT_CHOICE_NONE = 'none'
-DOCTEST_REPORT_CHOICE_CDIFF = 'cdiff'
-DOCTEST_REPORT_CHOICE_NDIFF = 'ndiff'
-DOCTEST_REPORT_CHOICE_UDIFF = 'udiff'
-DOCTEST_REPORT_CHOICE_ONLY_FIRST_FAILURE = 'only_first_failure'
-
-DOCTEST_REPORT_CHOICES = (
-    DOCTEST_REPORT_CHOICE_NONE,
-    DOCTEST_REPORT_CHOICE_CDIFF,
-    DOCTEST_REPORT_CHOICE_NDIFF,
-    DOCTEST_REPORT_CHOICE_UDIFF,
-    DOCTEST_REPORT_CHOICE_ONLY_FIRST_FAILURE,
-)
-
-
-# def _fix_spoof_python2(runner, encoding):
-#     """
-#     Installs a "SpoofOut" into the given DebugRunner so it properly deals with unicode output. This
-#     should patch only doctests for text files because they don't have a way to declare their
-#     encoding. Doctests in docstrings from Python modules don't have the same problem given that
-#     Python already decoded the strings.
-
-#     This fixes the problem related in issue #2434.
-#     """
-#     from _pytest.compat import _PY2
-#     if not _PY2:
-#         return
-
-#     from doctest import _SpoofOut
-
-#     class UnicodeSpoof(_SpoofOut):
-
-#         def getvalue(self):
-#             result = _SpoofOut.getvalue(self)
-#             if encoding:
-#                 result = result.decode(encoding)
-#             return result
-
-#     runner._fakeout = UnicodeSpoof()
-
-# def _get_flag_lookup():
-#     import doctest
-#     return dict(DONT_ACCEPT_TRUE_FOR_1=doctest.DONT_ACCEPT_TRUE_FOR_1,
-#                 DONT_ACCEPT_BLANKLINE=doctest.DONT_ACCEPT_BLANKLINE,
-#                 NORMALIZE_WHITESPACE=doctest.NORMALIZE_WHITESPACE,
-#                 ELLIPSIS=doctest.ELLIPSIS,
-#                 IGNORE_EXCEPTION_DETAIL=doctest.IGNORE_EXCEPTION_DETAIL,
-#                 COMPARISON_FLAGS=doctest.COMPARISON_FLAGS,
-#                 ALLOW_UNICODE=_get_allow_unicode_flag(),
-#                 ALLOW_BYTES=_get_allow_bytes_flag(),
-#                 )
-
-
-# def get_optionflags(parent):
-#     flag_lookup_table = _get_flag_lookup()
-#     flag_acc = 0
-#     for flag in optionflags_str:
-#         flag_acc |= flag_lookup_table[flag]
-#     return flag_acc
 
 
 @pytest.fixture(scope='session')
