@@ -73,8 +73,12 @@ def pytest_addoption(parser):
                     dest='xdoctestmodules')
     group.addoption('--xdoctest-glob', '--xdoc-glob',
                     action='append', default=[], metavar='pat',
-                    # help='xdoctests file matching pattern, default: test*.txt',
-                    help='add a pattern that will be checked for doctests',
+                    help=(
+                        'text files matching this pattern will be checked '
+                        'for doctests. This option may be specified multiple '
+                        'times. XDoctest does not check any text files by '
+                        'default. For compatibility with doctest set this to '
+                        'test*.txt'),
                     dest='xdoctestglob')
     group.addoption('--xdoctest-ignore-syntax-errors',
                     action='store_true', default=False,
