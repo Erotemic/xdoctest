@@ -76,7 +76,7 @@ def color_text(text, color):
 
         try:
             ansi_text = pygments.console.colorize(color, text)
-        except KeyError as ex:
+        except KeyError:
             import warnings
             warnings.warn('unable to fine color: {!r}'.format(color))
             return text

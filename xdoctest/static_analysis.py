@@ -424,7 +424,7 @@ def parse_calldefs(source=None, fpath=None):
         try:
             with open(fpath, 'rb') as file_:
                 source = file_.read().decode('utf-8')
-        except Exception as ex:
+        except Exception:
             try:
                 with open(fpath, 'rb') as file_:
                     source = file_.read()
@@ -506,7 +506,7 @@ def parse_static_value(key, source=None, fpath=None):
         try:
             with open(fpath, 'rb') as file_:
                 source = file_.read().decode('utf-8')
-        except Exception as ex:
+        except Exception:
             with open(fpath, 'rb') as file_:
                 source = file_.read()
     pt = ast.parse(source)
@@ -723,7 +723,7 @@ def extract_comments(source):
         for t in tokenize.generate_tokens(_readline):
             if t[0] == tokenize.COMMENT:
                 yield t[1]
-    except tokenize.TokenError as ex:
+    except tokenize.TokenError:
         pass
 
 

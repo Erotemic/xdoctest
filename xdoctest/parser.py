@@ -35,9 +35,7 @@ import six
 import ast
 import sys
 import re
-import itertools as it
 from xdoctest import utils
-from xdoctest import checker
 from xdoctest import directive
 from xdoctest import exceptions
 from xdoctest import doctest_part
@@ -722,7 +720,7 @@ class DoctestParser(object):
                     if DEBUG:  # nocover
                         print('completing source')
                     for part, norm_line in _complete_source(line, state_indent, line_iter):
-                        if DEBUG> 4:  # nocover
+                        if DEBUG > 4:  # nocover
                             print('part = {!r}'.format(part))
                             print('norm_line = {!r}'.format(norm_line))
                             print('curr_state = {!r}'.format(curr_state))
@@ -730,9 +728,9 @@ class DoctestParser(object):
                             curr_state = DCNT
                         labeled_lines.append((curr_state, part))
 
-                except exceptions.IncompleteParseError as orig_ex:
+                except exceptions.IncompleteParseError:
                     raise
-                except SyntaxError as orig_ex:
+                except SyntaxError:
                     if DEBUG:  # nocover
                         print('<LABEL FAIL>')
                         # print('next(line_iter) = {!r}'.format(line_iter))

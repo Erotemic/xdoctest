@@ -88,7 +88,6 @@ import os
 import re
 import copy
 import warnings
-import operator as op
 from xdoctest import static_analysis as static
 from xdoctest import utils
 from collections import OrderedDict

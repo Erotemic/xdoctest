@@ -237,7 +237,7 @@ def is_defined_by_module(item, module):
                 # hack for cv2 and xfeatures2d
                 name = static.modpath_to_modname(module.__file__)
                 flag = name in str(item)
-            except:
+            except Exception:
                 flag = False
         else:
             item_modpath = os.path.realpath(os.path.dirname(item.__file__))
