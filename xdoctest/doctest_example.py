@@ -91,6 +91,11 @@ class Config(dict):
                                      help='exec these lines before every test')),
             (['--verbose'], dict(type=int, default=defaults.get('verbose', 3), dest='verbose',
                                      help='verbosity level')),
+            # (['--verbose'], dict(action='store_true', dest='verbose')),
+            (['--quiet'], dict(action='store_true', dest='verbose',
+                                help='sets verbosity to 1')),
+            (['--silent'], dict(action='store_false', dest='verbose',
+                                help='sets verbosity to 0')),
         ]
 
         if prefix is None:

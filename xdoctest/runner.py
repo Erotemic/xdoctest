@@ -56,6 +56,11 @@ import warnings
 import sys
 
 
+def log(msg, verbose):
+    if verbose > 0:
+        print(msg)
+
+
 def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
                    style='auto', verbose=None, config=None, durations=None):
     """
@@ -64,13 +69,34 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
 
     Args:
         modname (str): name of or path to the module.
-        command (str): determines which doctests to run.
+
+        command (str):
+            determines which doctests to run.
             if command is None, this is determined by parsing sys.argv
-        argv (list): if None uses sys.argv
-        verbose (bool):  verbosity flag
-        exclude (list): ignores any modname matching any of these
-            glob-like patterns
-        config (dict): modifies each examples configuration
+            Value values are
+                'all' - find and run all tests in a module
+                'list' - list the tests in a module
+                'dump' - dumps tests to stdout
+
+        argv (List[str], default=None):
+            if specified, command line flags that might influence beharior.
+            if None uses sys.argv.
+            SeeAlso :func:_update_argparse_cli
+            SeeAlso :func:doctest_example.Config._update_argparse_cli
+
+        verbose (int, default=None):
+            Verbosity level.
+                0 - disables all text
+                1 - minimal printing
+                3 - verbose printing
+
+        exclude (List[str]):
+            ignores any modname matching any of these glob-like patterns
+
+        config (Dict[str, object]):
+            modifies each examples configuration
+
+        durations (int, default=None): if specified report top N slowest tests
 
     Returns:
         Dict: run_summary
@@ -78,9 +104,11 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
     Example:
         >>> modname = 'xdoctest.dynamic_analysis'
         >>> result = doctest_module(modname, 'list', argv=[''])
-    """
-    print('Start doctest_module({!r})'.format(modpath_or_name))
 
+    Example:
+        >>> modname = 'xdoctest.dynamic_analysis'
+        >>> result = doctest_module(modname, 'list', argv=[''])
+    """
     # Determine package name via caller if not specified
     if modpath_or_name is None:
         frame_parent = dynamic.get_parent_frame()
@@ -93,13 +121,16 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
 
     command, style, verbose = _parse_commandline(command, style, verbose, argv)
 
-    if command == 'list':
-        print('Listing tests')
+    from functools import partial
+    _log = partial(log, verbose=verbose)
+
+    _log('Start doctest_module({!r})'.format(modpath_or_name))
+    _log('Listing tests')
 
     if command is None:
         # Display help if command is not specified
-        print('Not testname given. Use `all` to run everything or'
-              ' pick from a list of valid choices:')
+        _log('Not testname given. Use `all` to run everything or'
+             ' pick from a list of valid choices:')
         command = 'list'
 
     # TODO: command should not be allowed to be the requested doctest name in
@@ -120,13 +151,13 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
 
     if command == 'list':
         if len(examples) == 0:
-            print('... no docstrings with examples found')
+            _log('... no docstrings with examples found')
         else:
-            print('    ' + '\n    '.join([example.cmdline  # + ' @ ' + str(example.lineno)
+            _log('    ' + '\n    '.join([example.cmdline  # + ' @ ' + str(example.lineno)
                                           for example in examples]))
         run_summary = {'action': 'list'}
     else:
-        print('gathering tests')
+        _log('gathering tests')
         enabled_examples = []
         for example in examples:
             if gather_all or command in example.valid_testnames:
@@ -149,8 +180,10 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
 
         if command == 'dump':
             # format the doctests as normal unit tests
-            print('dumping tests to stdout')
-            _convert_to_test_module(enabled_examples)
+            _log('dumping tests to stdout')
+            module_text = _convert_to_test_module(enabled_examples)
+            _log(module_text)
+
             run_summary = {'action': 'dump'}
         else:
             # Run the gathered doctest examples
@@ -161,7 +194,8 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
                 import random
                 random.shuffle(enabled_examples)
 
-            run_summary = _run_examples(enabled_examples, verbose, config)
+            run_summary = _run_examples(enabled_examples, verbose, config,
+                                        _log=_log)
 
             toc = time.time()
             n_seconds = toc - tic
@@ -170,7 +204,7 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
             if verbose >= 0 and run_summary:
                 _print_summary_report(run_summary, parse_warnlist, n_seconds,
                                       enabled_examples, durations,
-                                      config=config)
+                                      config=config, _log=_log)
 
     return run_summary
 
@@ -198,19 +232,19 @@ def _convert_to_test_module(enabled_examples):
         module_lines.append(func_text)
 
     module_text = '\n\n\n'.join(module_lines)
-    print(module_text)
+    return module_text
 
 
 def _print_summary_report(run_summary, parse_warnlist, n_seconds,
-                          enabled_examples, durations, config=None):
+                          enabled_examples, durations, config=None, _log=None):
     """
     Summary report formatting and printing
     """
     def cprint(text, color):
         if config is not None and config.get('colored', True):
-            print(utils.color_text(text, color))
+            _log(utils.color_text(text, color))
         else:
-            print(text)
+            _log(text)
 
     # report errors
     failed = run_summary.get('failed', [])
@@ -224,7 +258,7 @@ def _print_summary_report(run_summary, parse_warnlist, n_seconds,
         for warn_idx, warn in enumerate(parse_warnlist, start=1):
             cprint('--- Parse Warning: {} / {} ---'.format(
                 warn_idx, len(parse_warnlist)), 'yellow')
-            print(utils.indent(
+            _log(utils.indent(
                 warnings.formatwarning(warn.message, warn.category,
                                        warn.filename, warn.lineno)))
 
@@ -234,25 +268,25 @@ def _print_summary_report(run_summary, parse_warnlist, n_seconds,
         for warn_idx, example in enumerate(warned, start=1):
             cprint('--- Runtime Warning: {} / {} ---'.format(warn_idx, len(warned)),
                    'yellow')
-            print('example = {!r}'.format(example))
+            _log('example = {!r}'.format(example))
             for warn in example.warn_list:
-                print(utils.indent(
+                _log(utils.indent(
                     warnings.formatwarning(warn.message, warn.category,
                                            warn.filename, warn.lineno)))
 
     if failed and len(enabled_examples) > 1:
-        # If there is more than one test being run, print out all the
+        # If there is more than one test being run, _log out all the
         # errors that occured so they are consolidated in a single place.
         cprint('\n=== Found {} errors ==='.format(len(failed)), 'red')
         for fail_idx, example in enumerate(failed, start=1):
             cprint('--- Error: {} / {} ---'.format(fail_idx, len(failed)), 'red')
-            print(utils.indent('\n'.join(example.repr_failure())))
+            _log(utils.indent('\n'.join(example.repr_failure())))
 
     # Print command lines to re-run failed tests
     if failed:
         cprint('\n=== Failed tests ===', 'red')
         for example in failed:
-            print(example.cmdline)
+            _log(example.cmdline)
 
     # final summary
     n_passed = run_summary.get('n_passed', 0)
@@ -279,7 +313,7 @@ def _print_summary_report(run_summary, parse_warnlist, n_seconds,
         if durations > 0:
             test_time_tups = test_time_tups[-durations:]
         for example, n_secs in test_time_tups:
-            print('time: {:0.8f}, test: {}'.format(n_secs, example.cmdline))
+            _log('time: {:0.8f}, test: {}'.format(n_secs, example.cmdline))
 
 
 def _gather_zero_arg_examples(modpath):
@@ -303,12 +337,12 @@ def _gather_zero_arg_examples(modpath):
                     yield example
 
 
-def _run_examples(enabled_examples, verbose, config=None):
+def _run_examples(enabled_examples, verbose, config=None, _log=None):
     """
     Internal helper, loops over each example, runs it, returns a summary
     """
     n_total = len(enabled_examples)
-    print('running %d test(s)' % n_total)
+    _log('running %d test(s)' % n_total)
     summaries = []
     failed = []
     warned = []
@@ -319,7 +353,6 @@ def _run_examples(enabled_examples, verbose, config=None):
     on_error = 'return' if n_total > 1 else 'raise'
     on_error = 'return'
 
-    verbose = 3
     for example in enabled_examples:
         try:
             try:
@@ -328,8 +361,8 @@ def _run_examples(enabled_examples, verbose, config=None):
                 toc = time.time()
                 n_seconds = toc - tic
                 times[example] = n_seconds
-            except Exception as ex:
-                print('\n'.join(example.repr_failure(with_tb=False)))
+            except Exception:
+                _log('\n'.join(example.repr_failure(with_tb=False)))
                 raise
 
             summaries.append(summary)
@@ -353,11 +386,11 @@ def _run_examples(enabled_examples, verbose, config=None):
                 if on_error == 'raise':
                     # What happens if we don't re-raise here?
                     # If it is necessary, write a message explaining why
-                    print('\n'.join(example.repr_failure()))
+                    _log('\n'.join(example.repr_failure()))
                     ex_value = example.exc_info[1]
                     raise ex_value
         except KeyboardInterrupt:
-            print('Caught CTRL+c: Stopping tests')
+            _log('Caught CTRL+c: Stopping tests')
             break
         # except Exception:
         #     summary = {'passed': False}
@@ -365,20 +398,20 @@ def _run_examples(enabled_examples, verbose, config=None):
         #         sys.stdout.write('F')
         #         sys.stdout.flush()
     if verbose == 0:
-        print('')
+        _log('')
     n_passed = sum(s['passed'] for s in summaries)
     n_failed = sum(s['failed'] for s in summaries)
     n_skipped = sum(s['skipped'] for s in summaries)
 
     if config is not None and config.get('colored', True):
-        print(utils.color_text('============', 'white'))
+        _log(utils.color_text('============', 'white'))
     else:
-        print('============')
+        _log('============')
 
     if n_total > 1:
         # and verbose > 0:
-        print('Finished doctests')
-        print('%d / %d passed'  % (n_passed, n_total))
+        _log('Finished doctests')
+        _log('%d / %d passed'  % (n_passed, n_total))
 
     run_summary = {
         'failed': failed,
@@ -400,8 +433,6 @@ def _parse_commandline(command=None, style='auto', verbose=None, argv=None):
 
     if argv is None:
         argv = sys.argv[1:]
-    else:
-        print('argv = {!r}'.format(argv))
 
     if command is None:
         if len(argv) >= 1:
