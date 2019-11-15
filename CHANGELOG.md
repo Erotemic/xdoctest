@@ -4,7 +4,14 @@ We are currently working on porting this changelog to the specifications in
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Version 0.10.2] - Unreleased
+
+## [Version 0.10.3] - Unreleased
+
+### Fixed
+* The verbose flag was previously not taken into account. This is now fixed.
+
+
+## [Version 0.10.2] - Released 2019-11-14
 
 ### Changed
 * The `--xdoc-glob` list of patterns now defaults to empty.  In general it is

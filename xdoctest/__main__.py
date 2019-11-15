@@ -8,6 +8,16 @@ This should work even if the target module is unaware of xdoctest.
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 
+__tests = """
+
+Ignore:
+
+    xdoctest -m xdoctest.demo
+
+
+"""
+
+
 def main():
     """
     python -m xdoctest xdoctest all
@@ -88,7 +98,6 @@ def main():
         print(xdoctest.__version__)
         sys.exit(0)
 
-
     options = ns['options']
     if options is None:
         options = ''
@@ -104,6 +113,23 @@ def main():
 
     from xdoctest import doctest_example
     config = doctest_example.Config()._populate_from_cli(ns)
+
+    import textwrap
+    if config['verbose'] > 2:
+        print(textwrap.dedent(
+            r'''
+            =====================================
+            _  _ ___  ____ ____ ___ ____ ____ ___
+             \/  |  \ |  | |     |  |___ [__   |
+            _/\_ |__/ |__| |___  |  |___ ___]  |
+
+            =====================================
+            '''))
+
+    __DEBUG__ = 0
+    if __DEBUG__:
+        import ubelt as ub
+        print('config = {}'.format(ub.repr2(config)))
 
     run_summary = xdoctest.doctest_module(modname, argv=[command], style=style,
                                           verbose=config['verbose'],

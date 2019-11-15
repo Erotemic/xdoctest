@@ -91,6 +91,11 @@ class Config(dict):
                                      help='exec these lines before every test')),
             (['--verbose'], dict(type=int, default=defaults.get('verbose', 3), dest='verbose',
                                      help='verbosity level')),
+            # (['--verbose'], dict(action='store_true', dest='verbose')),
+            (['--quiet'], dict(action='store_true', dest='verbose',
+                                help='sets verbosity to 1')),
+            (['--silent'], dict(action='store_false', dest='verbose',
+                                help='sets verbosity to 0')),
         ]
 
         if prefix is None:
@@ -587,7 +592,7 @@ class DocTest(object):
                 except Exception as _ex_dbg:
                     ex_type, ex_value, tb = sys.exc_info()
 
-                    DEBUG = 1
+                    DEBUG = 0
                     if DEBUG:
                         print('_ex_dbg = {!r}'.format(_ex_dbg))
                         print('<DEBUG: doctest encountered exception>', file=sys.stderr)

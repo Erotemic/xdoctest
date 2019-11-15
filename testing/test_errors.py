@@ -107,7 +107,7 @@ def test_runner_syntax_error():
         python testing/test_errors.py test_runner_syntax_error
     """
     source = utils.codeblock(
-        '''
+        r'''
         def test_parsetime_syntax_error1():
             """
                 Example:
@@ -149,7 +149,7 @@ def test_runner_syntax_error():
 
     with utils.CaptureStdout() as cap:
         runner.doctest_module(modpath, 'all', argv=[''], style='freeform',
-                              verbose=0)
+                              verbose=1)
 
     print('CAPTURED [[[[[[[[')
     print(utils.indent(cap.text))
@@ -222,6 +222,9 @@ if __name__ == '__main__':
         export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/testing
         python ~/code/xdoctest/testing/test_errors.py
         pytest ~/code/xdoctest/testing/test_errors.py -s --verbose
+
+    CommandLine:
+        xdoctest -m ~/code/xdoctest/testing/test_errors.py test_extract_got_exception zero
     """
     import xdoctest
     xdoctest.doctest_module(__file__)

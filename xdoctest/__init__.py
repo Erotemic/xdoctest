@@ -25,7 +25,16 @@ scripts), but for debugging it may be easier to use the native interface.
 
 """
 # mkinit xdoctest --nomods
-__version__ = '0.10.2'
+__version__ = '0.10.3'
+
+
+# TODO:
+# Perhaps we can write a helper to parse the changelog for the version
+# We can statically modify this to a constant value when we deploy
+# def _parse_changelog(fpath):
+#
+#     pass
+
 
 # Expose only select submodules
 __submodules__ = [
