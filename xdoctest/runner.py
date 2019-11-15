@@ -104,10 +104,6 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
     Example:
         >>> modname = 'xdoctest.dynamic_analysis'
         >>> result = doctest_module(modname, 'list', argv=[''])
-
-    Example:
-        >>> modname = 'xdoctest.dynamic_analysis'
-        >>> result = doctest_module(modname, 'list', argv=[''])
     """
     # Determine package name via caller if not specified
     if modpath_or_name is None:

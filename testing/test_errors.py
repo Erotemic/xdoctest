@@ -222,6 +222,9 @@ if __name__ == '__main__':
         export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/testing
         python ~/code/xdoctest/testing/test_errors.py
         pytest ~/code/xdoctest/testing/test_errors.py -s --verbose
+
+    CommandLine:
+        xdoctest -m ~/code/xdoctest/testing/test_errors.py test_extract_got_exception zero
     """
     import xdoctest
     xdoctest.doctest_module(__file__)
