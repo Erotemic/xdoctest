@@ -592,7 +592,7 @@ class DocTest(object):
                 except Exception as _ex_dbg:
                     ex_type, ex_value, tb = sys.exc_info()
 
-                    DEBUG = 1
+                    DEBUG = 0
                     if DEBUG:
                         print('_ex_dbg = {!r}'.format(_ex_dbg))
                         print('<DEBUG: doctest encountered exception>', file=sys.stderr)
