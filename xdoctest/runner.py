@@ -365,20 +365,22 @@ def _run_examples(enabled_examples, verbose, config=None, _log=None):
             if example.warn_list:
                 warned.append(example)
             if summary['skipped']:
-                if verbose == 0:
-                    # TODO: should we write anything when verbose=0?
-                    sys.stdout.write('S')
-                    sys.stdout.flush()
+                pass
+                # if verbose == 0:
+                #     # TODO: should we write anything when verbose=0?
+                #     sys.stdout.write('S')
+                #     sys.stdout.flush()
             elif summary['passed']:
-                if verbose == 0:
-                    # TODO: should we write anything when verbose=0?
-                    sys.stdout.write('.')
-                    sys.stdout.flush()
+                pass
+                # if verbose == 0:
+                #     # TODO: should we write anything when verbose=0?
+                #     sys.stdout.write('.')
+                #     sys.stdout.flush()
             else:
                 failed.append(example)
-                if verbose == 0:
-                    sys.stdout.write('F')
-                    sys.stdout.flush()
+                # if verbose == 0:
+                #     sys.stdout.write('F')
+                #     sys.stdout.flush()
                 if on_error == 'raise':
                     # What happens if we don't re-raise here?
                     # If it is necessary, write a message explaining why
