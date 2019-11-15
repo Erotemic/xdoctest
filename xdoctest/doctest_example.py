@@ -539,7 +539,7 @@ class DocTest(object):
                         # this doctest_part.
                         self.logged_evals[partx] = got_eval
                         self.logged_stdout[partx] = cap.text
-                    except Exception as ex:
+                    except Exception:
                         if part.want:
                             # A failure may be expected if the traceback
                             # matches the part's want statement.

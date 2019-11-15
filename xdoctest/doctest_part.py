@@ -213,7 +213,6 @@ class DoctestPart(object):
             >>>                       linenos=False, want=False))
             print(123)
         """
-        from xdoctest import utils
         if prefix:
             # Show the original line prefix when possible
             if self.orig_lines is None:

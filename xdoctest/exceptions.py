@@ -2,6 +2,7 @@
 Define errors that may be raised by xdoctest
 """
 
+
 class MalformedDocstr(Exception):
     """
     Exception raised when the docstring itself does not conform to the expected
