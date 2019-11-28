@@ -25,15 +25,19 @@ def main():
     """
     import sys
     import argparse
+    import xdoctest
     from os.path import exists
     from xdoctest import utils
+
+    version = xdoctest.__version__
 
     parser = argparse.ArgumentParser(
         prog='xdoctest',
         description=utils.codeblock(
             '''
-            discover and run doctests within a python package
-            ''')
+            Xdoctest {} - on Python - {} - discover and run doctests within a
+            python package
+            ''').format(version, sys.version)
     )
     parser.add_argument(
         'arg', nargs='*', help=utils.codeblock(
@@ -54,7 +58,6 @@ def main():
     ns = args.__dict__.copy()
 
     if ns['version']:
-        import xdoctest
         print(xdoctest.__version__)
         sys.exit(0)
 
@@ -91,8 +94,6 @@ def main():
             errmsg = '{} errors: {}'.format(len(errors), listed_errors)
         parser.error(errmsg)
     # ---
-
-    import xdoctest
 
     if ns['version']:
         print(xdoctest.__version__)
