@@ -248,6 +248,7 @@ class DocTest(object):
             r'>>>\s*#\s*UNSTABLE',
             r'>>>\s*#\s*FAILING',
             r'>>>\s*#\s*SCRIPT',
+            r'>>>\s*#\s*ENTRYPOINT',
             r'>>>\s*#\s*SLOW_DOCTEST',
             # r'>>>\s*#\s*x?doctest:\s\+SKIP',
         ]
