@@ -445,6 +445,7 @@ def _is_requires_satisfied(arg, argv):
     Returns:
         bool: flag - True if the requirement is met
     """
+    # TODO: add python version options
     SYS_PLATFORM_TAGS = ['win32', 'linux', 'darwin', 'cywgin']
     OS_NAME_TAGS = ['posix', 'nt', 'java']
     if arg.startswith('-'):
