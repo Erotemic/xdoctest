@@ -308,6 +308,7 @@ class Directive(utils.NiceRepr):
             <Directive(+REQUIRES(--show))>
 
             >>> # Malformatted directives are ignored
+            >>> # xdoctest: +REQUIRES(module:pytest)
             >>> text = '# xdoctest: does_not_exist, skip'
             >>> import pytest
             >>> with pytest.warns(None) as record:

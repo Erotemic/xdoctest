@@ -117,6 +117,7 @@ class PythonPathContext(object):
         >>> self.__exit__(None, None, None)
 
     Example:
+        >>> # xdoctest: +REQUIRES(module:pytest)
         >>> self = PythonPathContext('foo', 0)
         >>> self.__enter__()
         >>> sys.path.remove('foo')
@@ -271,6 +272,7 @@ def import_module_from_path(modpath, index=-1):
         >>> assert module.testvar == 1
 
     Doctest:
+        >>> # xdoctest: +REQUIRES(module:pytest)
         >>> import pytest
         >>> with pytest.raises(IOError):
         >>>     import_module_from_path('does-not-exist')
