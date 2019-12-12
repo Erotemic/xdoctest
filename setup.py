@@ -139,12 +139,14 @@ NAME = 'xdoctest'
 try:
     VERSION = parse_version('xdoctest/__init__.py')
 except Exception:
+    raise
     print('failed to parse values in setup.py')
     VERSION = '???'
 
 from setuptools import find_packages  # NOQA
 setupkw = dict(
     name=NAME,
+    version=VERSION,
     packages=find_packages('.'),
     # packages=['xdoctest', 'xdoctest.utils', 'xdoctest.docstr'],
     author='Jon Crall',
@@ -194,6 +196,8 @@ if __name__ == '__main__':
             'Programming Language :: Python :: 2.7',
         ],
     ))
+
+    print(setupkw['extras_require'])
 
     if sys.version_info[0] == 3 and sys.version_info[1] <= 4:
         setupkw.pop('long_description_content_type')
