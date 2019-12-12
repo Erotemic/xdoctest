@@ -70,10 +70,6 @@ def color_text(text, color):
         import pygments.console
 
         if sys.platform.startswith('win32'):  # nocover
-            import os
-            if os.environ.get('XDOC_WIN32_COLORS', 'False') == 'False':
-                # hack: dont color on windows by default
-                return text
             # Hack on win32 to support colored output
             try:
                 import colorama
@@ -82,6 +78,10 @@ def color_text(text, color):
                 import warnings
                 warnings.warn('os is win32 and colorma is not installed {!r}'.format(ex))
                 pass
+            import os
+            if os.environ.get('XDOC_WIN32_COLORS', 'False') == 'False':
+                # hack: dont color on windows by default, but do init colorama
+                return text
 
         try:
             ansi_text = pygments.console.colorize(color, text)
