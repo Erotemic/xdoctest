@@ -1,24 +1,8 @@
-# encoding: utf-8
-"""
-Installation:
-    pip install https://github.com/Erotemic/xdoctest/archive/master.zip
-
-Developing:
-    git clone https://github.com/Erotemic/xdoctest.git
-    pip install -e xdoctest
-"""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from setuptools import setup
 import sys
 from os.path import exists
-
-setupkw = dict(
-    name='xdoctest',
-    packages=['xdoctest', 'xdoctest.utils', 'xdoctest.docstr'],
-    author='Jon Crall',
-    author_email='erotemic@gmail.com',
-    url='https://github.com/Erotemic/xdoctest',
-    license='Apache 2',
-)
 
 
 def parse_version(fpath='xdoctest/__init__.py'):
@@ -129,9 +113,49 @@ def parse_description():
     return ''
 
 
+def native_mb_python_tag():
+    import sys
+    import platform
+    major = sys.version_info[0]
+    minor = sys.version_info[1]
+    ver = '{}{}'.format(major, minor)
+    if platform.python_implementation() == 'CPython':
+        # TODO: get if cp27m or cp27mu
+        impl = 'cp'
+        if ver == '27':
+            IS_27_BUILT_WITH_UNICODE = True  # how to determine this?
+            if IS_27_BUILT_WITH_UNICODE:
+                abi = 'mu'
+            else:
+                abi = 'm'
+        else:
+            abi = 'm'
+    else:
+        raise NotImplementedError(impl)
+    mb_tag = '{impl}{ver}-{impl}{ver}{abi}'.format(**locals())
+    return mb_tag
+
+NAME = 'xdoctest'
+try:
+    VERSION = parse_version('xdoctest/__init__.py')
+except Exception:
+    print('failed to parse values in setup.py')
+    VERSION = '???'
+
+from setuptools import find_packages  # NOQA
+setupkw = dict(
+    name=NAME,
+    packages=find_packages('.'),
+    # packages=['xdoctest', 'xdoctest.utils', 'xdoctest.docstr'],
+    author='Jon Crall',
+    author_email='erotemic@gmail.com',
+    url='https://github.com/Erotemic/xdoctest',
+    license='Apache 2',
+)
+
+
 if __name__ == '__main__':
-    setup(
-        version=parse_version('xdoctest/__init__.py'),
+    setupkw.update(dict(
         description='A rewrite of the builtin doctest module',
         install_requires=parse_requirements('requirements/runtime.txt'),
         extras_require={
@@ -153,16 +177,25 @@ if __name__ == '__main__':
         },
         # custom PyPI classifier for pytest plugins
         classifiers=[
-            'Framework :: Pytest',
-            'Development Status :: 4 - Beta',
+            'Development Status :: 5 - Production/Stable',
             'Intended Audience :: Developers',
             'Topic :: Software Development :: Libraries :: Python Modules',
             'Topic :: Utilities',
+            'Topic :: Software Development :: Testing',
+            'Framework :: Pytest',
             # This should be interpreted as Apache License v2.0
             'License :: OSI Approved :: Apache Software License',
             # Supported Python versions
-            'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3',
+            'Programming Language :: Python :: 3.7',
+            'Programming Language :: Python :: 3.6',
+            'Programming Language :: Python :: 3.5',
+            'Programming Language :: Python :: 3.4',
+            'Programming Language :: Python :: 2.7',
         ],
-        **setupkw
-    )
+    ))
+
+    if sys.version_info[0] == 3 and sys.version_info[1] <= 4:
+        setupkw.pop('long_description_content_type')
+
+    setup(**setupkw)
