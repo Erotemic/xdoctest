@@ -13,8 +13,7 @@ __tests = """
 Ignore:
 
     xdoctest -m xdoctest.demo
-
-
+    xdoctest ~/code/xdoctest/xdoctest/demo.py
 """
 
 
@@ -134,10 +133,10 @@ def main():
             =====================================
             '''))
 
-    # __DEBUG__ = 0
-    # if __DEBUG__:
-    #     import ubelt as ub
-    #     print('config = {}'.format(ub.repr2(config)))
+    __DEBUG__ = 0
+    if __DEBUG__:
+        import ubelt as ub
+        print('config = {}'.format(ub.repr2(config)))
 
     run_summary = xdoctest.doctest_module(modname, argv=[command], style=style,
                                           verbose=config['verbose'],

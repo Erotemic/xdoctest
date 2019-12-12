@@ -112,31 +112,31 @@ jobs:
     <<: *test-full-template
     docker:
       - image: circleci/python:3.7
-    working_directory: ~/repo-$job_name 
+    working_directory: ~/repo-full-37
 
   test-full-3.6:
     <<: *test-full-template
     docker:
       - image: circleci/python:3.5
-    working_directory: ~/repo-$job_name 
+    working_directory: ~/repo-full-36
 
   test-full-3.5:
     <<: *test-full-template
     docker:
       - image: circleci/python:3.5
-    working_directory: ~/repo-$job_name 
+    working_directory: ~/repo-full-35
 
   test-full-3.4:
     <<: *test-full-template
     docker:
       - image: circleci/python:3.4
-    working_directory: ~/repo-$job_name 
+    working_directory: ~/repo-full-34
 
   test-full-2.7:
     <<: *test-full-template
     docker:
       - image: circleci/python:2.7
-    working_directory: ~/repo-$job_name 
+    working_directory: ~/repo-full-27
 
   # ------------
 
@@ -144,31 +144,37 @@ jobs:
     <<: *test-minimal-template
     docker:
       - image: circleci/python:3.7
-    working_directory: ~/repo-$job_name 
+    working_directory: ~/repo-minimal-37
 
   test-minimal-3.6:
     <<: *test-minimal-template
     docker:
       - image: circleci/python:3.6
-    working_directory: ~/repo-$job_name 
+    working_directory: ~/repo-minimal-36
 
   test-minimal-3.5:
     <<: *test-minimal-template
     docker:
       - image: circleci/python:3.5
-    working_directory: ~/repo-$job_name 
+    working_directory: ~/repo-minimal-35
+
+  test-minimal-3.4:
+    <<: *test-minimal-template
+    docker:
+      - image: circleci/python:3.4
+    working_directory: ~/repo-minimal-34
 
   test-minimal-2.7:
     <<: *test-minimal-template
     docker:
       - image: circleci/python:2.7
-    working_directory: ~/repo-$job_name 
+    working_directory: ~/repo-minimal-27
 
   test-minimal-pypy3:
-    <<: *test-full-template
+    # TODO: generalize the minimal template to allow for pypy or cpython
     docker:
       - image: pypy:3
-    working_directory: ~/repo-$job_name 
+    working_directory: ~/repo-minimal-pypy3
     steps:
       - checkout
       # ### INITIALIZE AND CACHE REQUIREMENTS ###
@@ -197,3 +203,15 @@ jobs:
       - store_artifacts:
           path: test-reports
           destination: test-reports
+
+  heredoc:
+    docker:
+      - image: pypy:3
+    working_directory: ~/repo-minimal-pypy3
+    steps:
+      - | 
+        __heredoc__=" 
+        docker run -v $HOME/code/xdoctest:/io -it pypy:3 bash
+        fds
+        "
+
