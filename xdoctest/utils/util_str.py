@@ -70,6 +70,10 @@ def color_text(text, color):
         import pygments.console
 
         if sys.platform.startswith('win32'):  # nocover
+            import os
+            if os.environ.get('XDOC_WIN32_COLORS', 'False') == 'False':
+                # hack: dont color on windows by default
+                return text
             # Hack on win32 to support colored output
             try:
                 import colorama
