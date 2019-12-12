@@ -409,12 +409,13 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
         ...static_analysis.py
         >>> print(_syspath_modname_to_modpath('xdoctest'))
         ...xdoctest
-        >>> print(_syspath_modname_to_modpath('_ctypes'))
-        ..._ctypes...
         >>> assert _syspath_modname_to_modpath('xdoctest', sys_path=[]) is None
         >>> assert _syspath_modname_to_modpath('xdoctest.static_analysis', sys_path=[]) is None
         >>> assert _syspath_modname_to_modpath('_ctypes', sys_path=[]) is None
         >>> assert _syspath_modname_to_modpath('this', sys_path=[]) is None
+        >>> # xdoctest: +REQUIRES(CPython)
+        >>> print(_syspath_modname_to_modpath('_ctypes'))
+        ..._ctypes...
 
     Example:
         >>> # test what happens when the module is not visible in the path

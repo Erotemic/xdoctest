@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 * REQUIRES directive now supports CPython, IronPython, Jython, and PyPy
+* REQUIRES directive now supports PY2, PY3
 
 
 ## [Version 0.10.3] - Unreleased
