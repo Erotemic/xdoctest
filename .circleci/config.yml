@@ -41,7 +41,7 @@ jobs:
       # ### INITIALIZE AND CACHE REQUIREMENTS ###
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}
+          - v2-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}
       - run:
           name: install dependencies
           command: |
@@ -54,7 +54,7 @@ jobs:
       - save_cache:
           paths:
             - ./venv
-          key: v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}
+          key: v2-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}
       # ### RUN TESTS ###
       - run:
           name: run tests
@@ -74,7 +74,7 @@ jobs:
       # ### INITIALIZE AND CACHE REQUIREMENTS ###
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}
+          - v2-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}
       - run:
           name: install dependencies
           command: |
@@ -86,7 +86,7 @@ jobs:
       - save_cache:
           paths:
             - ./venv
-          key: v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}
+          key: v2-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}
       # ### RUN TESTS ###
       - run:
           name: run tests
@@ -212,6 +212,18 @@ jobs:
       - | 
         __heredoc__=" 
         docker run -v $HOME/code/xdoctest:/io -it pypy:3 bash
-        fds
+
+        cd /io
+
+        pypy3 -m venv venv 
+        . venv/bin/activate
+        # The "minimal" tests install barebones requirements
+        pip install -r requirements/tests.txt
+        pip install -r requirements/runtime.txt 
+        pip install .
+
+        ./run_doctests.sh
+
+        ./run_tests.sh
         "
 

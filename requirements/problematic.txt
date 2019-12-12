@@ -1,0 +1,3 @@
+# Causing python3.4 issues on win32
+colorama >= 0.4.1;python_version>"3.4"
+# colorama <= 0.4.1;python_version<="3.4"
