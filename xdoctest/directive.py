@@ -450,6 +450,7 @@ def _is_requires_satisfied(arg, argv):
     SYS_PLATFORM_TAGS = ['win32', 'linux', 'darwin', 'cywgin']
     OS_NAME_TAGS = ['posix', 'nt', 'java']
     PY_IMPL_TAGS = ['CPython', 'IronPython', 'Jython', 'PyPy']
+    PY_VER_TAGS = ['PY2', 'PY3']
 
     if arg.startswith('-'):
         flag = arg in argv
@@ -467,6 +468,13 @@ def _is_requires_satisfied(arg, argv):
     elif arg.lower() in PY_IMPL_TAGS:
         import platform
         flag = platform.python_implementation().startswith(arg.lower())
+    elif arg.lower() in PY_VER_TAGS:
+        if sys.version_info[0] == 2:
+            flag = arg.lower() == 'PY2'
+        elif sys.version_info[0] == 3:
+            flag = arg.lower() == 'PY3'
+        else:
+            flag = False
     else:
         msg = utils.codeblock(
             '''
