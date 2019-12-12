@@ -139,7 +139,7 @@ jobs:
   test-minimal-3.7:
     <<: *test-minimal-template
     docker:
-      - image: circleci/python:3.7:
+      - image: circleci/python:3.7
     working_directory: ~/repo-$job_name 
 
   test-minimal-3.6:
