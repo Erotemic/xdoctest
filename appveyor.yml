@@ -19,10 +19,12 @@ environment:
 
 install:
   # We need wheel installed to build wheels
+  - "%PYTHON%\\python.exe -m pip install colorama==4.1.0"
   - "%PYTHON%\\python.exe -m pip install pytest==4.1.0"
   - "%PYTHON%\\python.exe -m pip install wheel"
   - "%PYTHON%\\python.exe -m pip install -r requirements.txt"
-  - "%PYTHON%\\python.exe -m pip install -e ."
+  - "%PYTHON%\\python.exe setup.py develop"
+  #- "%PYTHON%\\python.exe -m pip install -e ."
 
 build: off
 
