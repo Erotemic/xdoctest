@@ -79,6 +79,7 @@ def _pkgutil_modname_to_modpath(modname):  # nocover
         >>> modname = 'xdoctest.static_analysis'
         >>> _pkgutil_modname_to_modpath(modname)
         ...static_analysis.py
+        >>> # xdoctest: +REQUIRES(CPython)
         >>> _pkgutil_modname_to_modpath('_ctypes')
         ..._ctypes...
 
@@ -411,9 +412,9 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
         ...xdoctest
         >>> assert _syspath_modname_to_modpath('xdoctest', sys_path=[]) is None
         >>> assert _syspath_modname_to_modpath('xdoctest.static_analysis', sys_path=[]) is None
-        >>> assert _syspath_modname_to_modpath('_ctypes', sys_path=[]) is None
         >>> assert _syspath_modname_to_modpath('this', sys_path=[]) is None
         >>> # xdoctest: +REQUIRES(CPython)
+        >>> assert _syspath_modname_to_modpath('_ctypes', sys_path=[]) is None
         >>> print(_syspath_modname_to_modpath('_ctypes'))
         ..._ctypes...
 
@@ -505,6 +506,7 @@ def modname_to_modpath(modname, hide_init=True, hide_main=False, sys_path=None):
         >>> modname = 'xdoctest'
         >>> modpath = modname_to_modpath(modname, hide_init=False)
         >>> assert modpath.endswith('__init__.py')
+        >>> # xdoctest: +REQUIRES(CPython)
         >>> modpath = basename(modname_to_modpath('_ctypes'))
         >>> assert 'ctypes' in modpath
     """
@@ -610,6 +612,7 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False, check=True,
         >>> assert modpath_to_modname(dirname(xdoctest.__file__.replace('.pyc', '.py'))) == 'xdoctest'
 
     Example:
+        >>> # xdoctest: +REQUIRES(CPython)
         >>> modpath = modname_to_modpath('_ctypes')
         >>> modname = modpath_to_modname(modpath)
         >>> assert modname == '_ctypes'

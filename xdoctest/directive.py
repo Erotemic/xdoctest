@@ -449,8 +449,9 @@ def _is_requires_satisfied(arg, argv):
     # TODO: add python version options
     SYS_PLATFORM_TAGS = ['win32', 'linux', 'darwin', 'cywgin']
     OS_NAME_TAGS = ['posix', 'nt', 'java']
-    PY_IMPL_TAGS = ['CPython', 'IronPython', 'Jython', 'PyPy']
-    PY_VER_TAGS = ['PY2', 'PY3']
+    PY_IMPL_TAGS = ['cpython', 'ironpython', 'jython', 'pypy']
+    # TODO: tox tags: https://tox.readthedocs.io/en/latest/example/basic.html
+    PY_VER_TAGS = ['py2', 'py3']
 
     if arg.startswith('-'):
         flag = arg in argv
