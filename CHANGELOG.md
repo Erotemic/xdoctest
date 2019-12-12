@@ -5,6 +5,12 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Version 0.11.0] - Unreleased
+
+### Added
+* REQUIRES directive now supports CPython, IronPython, Jython, and PyPy
+
+
 ## [Version 0.10.3] - Unreleased
 
 ### Fixed

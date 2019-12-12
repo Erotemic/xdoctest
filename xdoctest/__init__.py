@@ -25,7 +25,7 @@ scripts), but for debugging it may be easier to use the native interface.
 
 """
 # mkinit xdoctest --nomods
-__version__ = '0.10.3'
+__version__ = '0.11.0'
 
 
 # TODO:

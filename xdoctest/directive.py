@@ -449,6 +449,8 @@ def _is_requires_satisfied(arg, argv):
     # TODO: add python version options
     SYS_PLATFORM_TAGS = ['win32', 'linux', 'darwin', 'cywgin']
     OS_NAME_TAGS = ['posix', 'nt', 'java']
+    PY_IMPL_TAGS = ['CPython', 'IronPython', 'Jython', 'PyPy']
+
     if arg.startswith('-'):
         flag = arg in argv
     elif arg.startswith('module:'):
@@ -462,6 +464,9 @@ def _is_requires_satisfied(arg, argv):
         flag = sys.platform.startswith(arg.lower())
     elif arg.lower() in OS_NAME_TAGS:
         flag = os.name.startswith(arg.lower())
+    elif arg.lower() in PY_IMPL_TAGS:
+        import platform
+        flag = platform.python_implementation().startswith(arg.lower())
     else:
         msg = utils.codeblock(
             '''
