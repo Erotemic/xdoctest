@@ -250,13 +250,13 @@ def import_module_from_path(modpath, index=-1):
         >>> assert module is xdoctest
 
     Example:
+        >>> # KNOWN FAILURE ON PYPY
         >>> # Test importing a module from within a zipfile
         >>> import zipfile
         >>> from xdoctest import utils
         >>> from os.path import join, expanduser
         >>> dpath = expanduser('~/.cache/xdoctest')
         >>> dpath = utils.ensuredir(dpath)
-        >>> #dpath = utils.TempDir().ensure()
         >>> # Write to an external module named bar
         >>> external_modpath = join(dpath, 'bar.py')
         >>> open(external_modpath, 'w').write('testvar = 1')
@@ -265,11 +265,15 @@ def import_module_from_path(modpath, index=-1):
         >>> zippath = join(dpath, 'myzip.zip')
         >>> with zipfile.ZipFile(zippath, 'w') as myzip:
         >>>     myzip.write(external_modpath, internal)
+        >>> assert exists(zippath)
         >>> # Import the bar module from within the zipfile
         >>> modpath = zippath + ':' + internal
         >>> modpath = zippath + os.path.sep + internal
         >>> module = import_module_from_path(modpath)
         >>> assert module.__name__ == os.path.normpath('folder/bar')
+        >>> print('module = {!r}'.format(module))
+        >>> print('module.__file__ = {!r}'.format(module.__file__))
+        >>> print(dir(module))
         >>> assert module.testvar == 1
 
     Doctest:

@@ -204,6 +204,9 @@ def is_defined_by_module(item, module):
 
     This check may not always work, especially for decorated functions.
 
+    CommandLine:
+        xdoctest -m xdoctest.dynamic_analysis is_defined_by_module
+
     Example:
         >>> from xdoctest import dynamic_analysis
         >>> item = dynamic_analysis.is_defined_by_module
@@ -214,6 +217,7 @@ def is_defined_by_module(item, module):
         >>> item = dynamic_analysis.six.print_
         >>> assert not is_defined_by_module(item, module)
         >>> assert not is_defined_by_module(print, module)
+        >>> # xdoctest: +REQUIRES(CPython)
         >>> import _ctypes
         >>> item = _ctypes.Array
         >>> module = _ctypes
