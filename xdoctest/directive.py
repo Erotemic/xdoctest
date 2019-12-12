@@ -445,6 +445,14 @@ def _is_requires_satisfied(arg, argv):
 
     Returns:
         bool: flag - True if the requirement is met
+
+    Example:
+        >>> _is_requires_satisfied('PY2', argv=[])
+        >>> _is_requires_satisfied('PY3', argv=[])
+        >>> _is_requires_satisfied('cpython', argv=[])
+        >>> _is_requires_satisfied('pypy', argv=[])
+        >>> _is_requires_satisfied('nt', argv=[])
+        >>> _is_requires_satisfied('linux', argv=[])
     """
     # TODO: add python version options
     SYS_PLATFORM_TAGS = ['win32', 'linux', 'darwin', 'cywgin']
@@ -470,7 +478,7 @@ def _is_requires_satisfied(arg, argv):
         import platform
         flag = platform.python_implementation().startswith(arg.lower())
     elif arg.lower() in PY_VER_TAGS:
-        if sys.version_info[0] == 2:
+        if sys.version_info[0] == 2:  # nocover
             flag = arg.lower() == 'PY2'
         elif sys.version_info[0] == 3:
             flag = arg.lower() == 'PY3'
