@@ -19,6 +19,7 @@ environment:
 
 install:
   # We need wheel installed to build wheels
+  - set PYTHONIOENCODING=utf-8
   - "%PYTHON%\\python.exe -m pip install colorama==0.4.1"
   - "%PYTHON%\\python.exe -m pip install pytest==4.1.0"
   - "%PYTHON%\\python.exe -m pip install wheel"
@@ -37,6 +38,7 @@ test_script:
   # Note that you must use the environment variable %PYTHON% to refer to
   # the interpreter you're using - Appveyor does not do anything special
   # to put the Python version you want to use on PATH.
+  - set PYTHONIOENCODING=utf-8
   - "%PYTHON%\\python.exe -m xdoctest xdoctest"
   - "%PYTHON%\\python.exe -m pytest"
 
