@@ -3,6 +3,7 @@
 The core logic that allows for xdoctest to parse source statically
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
+import sys
 from os.path import exists
 from os.path import isfile
 from os.path import join
@@ -227,6 +228,8 @@ class TopLevelVisitor(ast.NodeVisitor):
 
     def _docstr_line_workaround(self, docstr, sourcelines, endpos):
         r"""
+        Find the which sourcelines contain the docstring
+
         Args:
             docstr (str): the extracted docstring.
 
@@ -245,11 +248,13 @@ class TopLevelVisitor(ast.NodeVisitor):
                 stop: the line position (0 based) that the docstring stops
 
                 such that sourcelines[start:stop] will contain the docstring
+
         CommandLine:
-            python -m xdoctest.static_analysis TopLevelVisitor._docstr_line_workaround
+            python -m xdoctest xdoctest.static_analysis TopLevelVisitor._docstr_line_workaround
 
         Example:
             >>> from xdoctest.static_analysis import *
+            >>> sys.DEBUG = 0
             >>> sq = chr(39)  # single quote
             >>> dq = chr(34)  # double quote
             >>> source = utils.codeblock(
@@ -288,23 +293,47 @@ class TopLevelVisitor(ast.NodeVisitor):
             >>> ]
             >>> self = TopLevelVisitor.parse(source)
             >>> pt = ast.parse(source.encode('utf8'))
+            >>> sourcelines = source.splitlines()
+            >>> # THIS IS A KNOWN PYPY FAILURE CASE
             >>> print('\n\n====\n\n')
+            >>> #for i in [1]:
             >>> for i in range(len(targets)):
             >>>     print('----------')
-            >>>     sourcelines = source.splitlines()
             >>>     funcnode = pt.body[i]
+            >>>     print('funcnode = {!r}'.format(funcnode))
             >>>     docnode = funcnode.body[0]
+            >>>     print('docnode.value.s = {!r}'.format(docnode.value.s))
+            >>>     print('docnode.col_offset = {!r}'.format(docnode.col_offset))
+            >>>     print('docnode = {!r}'.format(docnode))
+            >>>     #import IPython
+            >>>     #IPython.embed()
+            >>>     print('docnode.lineno = {!r}'.format(docnode.lineno))
             >>>     docstr = ast.get_docstring(funcnode, clean=False)
+            >>>     print(len(docstr))
             >>>     endpos = docnode.lineno - 1
+            >>>     print('endpos = {!r}'.format(endpos))
             >>>     start, end = self._docstr_line_workaround(docstr, sourcelines, endpos)
+            >>>     print('i = {!r}'.format(i))
             >>>     print('got  = {}, {}'.format(start, end))
             >>>     print('want = {}, {}'.format(*targets[i]))
-            >>>     assert targets[i] == (start, end)
+            >>>     if targets[i] != (start, end):
+            >>>         print('---')
+            >>>         print(docstr)
+            >>>         print('---')
+            >>>         print('sourcelines = [\n{}\n]'.format(', \n'.join(list(map(repr, sourcelines)))))
+            >>>         print('endpos = {!r}'.format(endpos))
+            >>>         raise AssertionError('docstr workaround is failing')
             >>>     print('----------')
+            >>> sys.DEBUG = 0
         """
         # First assume a one-line string that starts and stops on the same line
         start = endpos
         stop = endpos + 1
+        if getattr(sys, 'DEBUG', 0):
+            print('----<<<')
+            print('endpos = {!r}'.format(endpos))
+            print('start = {!r}'.format(start))
+            print('stop = {!r}'.format(stop))
 
         # Determine if the docstring is a triple quoted string, by trying both
         # triple quote styles and checking if the string starts and ends with
@@ -314,6 +343,8 @@ class TopLevelVisitor(ast.NodeVisitor):
         trips = ("'''", '"""')
         endline = sourcelines[stop - 1]
         for trip in trips:
+            if getattr(sys, 'DEBUG', 0):
+                print('trip = {!r}'.format(trip))
             pattern = re.escape(trip) + r'\s*#.*$'
             # Assuming the multiline string is using `trip` as the triple quote
             # format, then the first instance of that pattern must terminate
@@ -346,6 +377,10 @@ class TopLevelVisitor(ast.NodeVisitor):
                     # Conditions failed, revert to assuming a one-line string.
                     start = stop - 1
 
+        if getattr(sys, 'DEBUG', 0):
+            print('start = {!r}'.format(start))
+            print('stop = {!r}'.format(stop))
+            print('----<<<')
         return start, stop
 
     def _get_docstring(self, node):

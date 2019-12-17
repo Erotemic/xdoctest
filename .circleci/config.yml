@@ -13,74 +13,80 @@ workflows:
   version: 2
   test:
     jobs:
+      - test-full-3.7
       - test-full-3.6
       - test-full-3.5
+      - test-full-3.4
       - test-full-2.7
-      #- test-minimal-3.6
-      #- test-minimal-3.5
-      #- test-minimal-2.7
+      #- test-full-pypy3
+
+      - test-minimal-3.7
+      - test-minimal-3.6
+      - test-minimal-3.5
+      - test-minimal-3.4
+      - test-minimal-2.7
+      - test-minimal-pypy3
 
 jobs:
 
-  # DEFINE minimal dependency install and tests
-  # define the "test-minimal-3.6" job and register it as a template
-  #test-minimal-3.6: &test-minimal-template  
-  #  docker:
-  #    - image: circleci/python:3.6.1
-  #  working_directory: ~/repo-test-minimal-3.6
-  #  steps:
-  #    - checkout
-  #    # ### INITIALIZE AND CACHE REQUIREMENTS ###
-  #    - restore_cache:
-  #        keys:
-  #        - v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}
-  #    - run:
-  #        name: install dependencies
-  #        command: |
-  #          python -m venv venv || virtualenv -v venv  # first command is python3 || second is python2
-  #          . venv/bin/activate
-  #          pip install -r requirements.txt  # The "minimal" tests install barebones requirements
-  #          pip install .
-  #    - save_cache:
-  #        paths:
-  #          - ./venv
-  #        key: v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}
-  #    # ### RUN TESTS ###
-  #    - run:
-  #        name: run tests
-  #        command: |
-  #          . venv/bin/activate
-  #          python run_tests.py
-  #    - store_artifacts:
-  #        path: test-reports
-  #        destination: test-reports
+  ###########
+  # TEMPLATES
+  ###########
 
-
-  # define the "test-full-3.6" job and register it as a template
-  test-full-3.6: &test-full-template  
-    #<<: *test-minimal-template
+  .test-minimal-template: &test-minimal-template  
     docker:
-      - image: circleci/python:3.6.1
-    working_directory: ~/repo-test-full-3.6
-    # TODO: can we deduplicate most of this (except the requirements part?)
+      - image: circleci/python
     steps:
       - checkout
       # ### INITIALIZE AND CACHE REQUIREMENTS ###
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}
+          - v2-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}
       - run:
           name: install dependencies
           command: |
             python -m venv venv || virtualenv -v venv  # first command is python3 || second is python2
             . venv/bin/activate
             # The "minimal" tests install barebones requirements
+            pip install -r requirements/tests.txt
+            pip install -r requirements/runtime.txt 
+            pip install .
+      - save_cache:
+          paths:
+            - ./venv
+          key: v2-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}
+      # ### RUN TESTS ###
+      - run:
+          name: run tests
+          command: |
+            . venv/bin/activate
+            python run_tests.py
+      - store_artifacts:
+          path: test-reports
+          destination: test-reports
+
+
+  .test-full-template: &test-full-template  
+    docker:
+      - image: circleci/python
+    steps:
+      - checkout
+      # ### INITIALIZE AND CACHE REQUIREMENTS ###
+      - restore_cache:
+          keys:
+          - v2-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}
+      - run:
+          name: install dependencies
+          command: |
+            python -m venv venv || virtualenv -v venv  # first command is python3 || second is python2
+            . venv/bin/activate
+            # The "full" dependency install
             pip install -r requirements.txt
             pip install .
       - save_cache:
           paths:
             - ./venv
-          key: v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}
+          key: v2-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}
       # ### RUN TESTS ###
       - run:
           name: run tests
@@ -106,28 +112,117 @@ jobs:
     <<: *test-full-template
     docker:
       - image: circleci/python:3.7
-    working_directory: ~/repo-test-full-3.7
+    working_directory: ~/repo-full-37
+
+  test-full-3.6:
+    <<: *test-full-template
+    docker:
+      - image: circleci/python:3.5
+    working_directory: ~/repo-full-36
 
   test-full-3.5:
     <<: *test-full-template
     docker:
       - image: circleci/python:3.5
-    working_directory: ~/repo-test-full-3.5
+    working_directory: ~/repo-full-35
+
+  test-full-3.4:
+    <<: *test-full-template
+    docker:
+      - image: circleci/python:3.4
+    working_directory: ~/repo-full-34
 
   test-full-2.7:
     <<: *test-full-template
     docker:
       - image: circleci/python:2.7
-    working_directory: ~/repo-test-full-2.7
+    working_directory: ~/repo-full-27
 
-  #test-minimal-3.5:
-  #  <<: *test-minimal-template
-  #  docker:
-  #    - image: circleci/python:3.5
-  #  working_directory: ~/repo-test-minimal-3.5
+  # ------------
 
-  #test-minimal-2.7:
-  #  <<: *test-minimal-template
-  #  docker:
-  #    - image: circleci/python:2.7
-  #  working_directory: ~/repo-test-minimal-2.7
+  test-minimal-3.7:
+    <<: *test-minimal-template
+    docker:
+      - image: circleci/python:3.7
+    working_directory: ~/repo-minimal-37
+
+  test-minimal-3.6:
+    <<: *test-minimal-template
+    docker:
+      - image: circleci/python:3.6
+    working_directory: ~/repo-minimal-36
+
+  test-minimal-3.5:
+    <<: *test-minimal-template
+    docker:
+      - image: circleci/python:3.5
+    working_directory: ~/repo-minimal-35
+
+  test-minimal-3.4:
+    <<: *test-minimal-template
+    docker:
+      - image: circleci/python:3.4
+    working_directory: ~/repo-minimal-34
+
+  test-minimal-2.7:
+    <<: *test-minimal-template
+    docker:
+      - image: circleci/python:2.7
+    working_directory: ~/repo-minimal-27
+
+  test-minimal-pypy3:
+    # TODO: generalize the minimal template to allow for pypy or cpython
+    docker:
+      - image: pypy:3
+    working_directory: ~/repo-minimal-pypy3
+    steps:
+      - checkout
+      # ### INITIALIZE AND CACHE REQUIREMENTS ###
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}
+      - run:
+          name: install dependencies
+          command: |
+            pypy3 -m venv venv 
+            . venv/bin/activate
+            # The "minimal" tests install barebones requirements
+            pip install -r requirements/tests.txt
+            pip install -r requirements/runtime.txt 
+            pip install .
+      - save_cache:
+          paths:
+            - ./venv
+          key: v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}
+      # ### RUN TESTS ###
+      - run:
+          name: run tests
+          command: |
+            . venv/bin/activate
+            python run_tests.py || echo "pypy failed, but this is allowed"
+      - store_artifacts:
+          path: test-reports
+          destination: test-reports
+
+  heredoc:
+    docker:
+      - image: pypy:3
+    working_directory: ~/repo-minimal-pypy3
+    steps:
+      - | 
+        __heredoc__=" 
+        docker run -v $HOME/code/xdoctest:/io -it pypy:3 bash
+
+        cd /io
+
+        pypy3 -m venv venv 
+        . venv/bin/activate
+        # The "minimal" tests install barebones requirements
+        pip install -r requirements/tests.txt
+        pip install -r requirements/runtime.txt 
+        pip install .
+
+        ./run_doctests.sh || echo "pypy failed, but this is allowed"
+        ./run_tests.sh || echo "pypy failed, but this is allowed"
+        "
+

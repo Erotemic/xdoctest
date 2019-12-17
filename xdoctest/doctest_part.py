@@ -136,6 +136,7 @@ class DoctestPart(object):
                 parts want.
 
         Example:
+            >>> # xdoctest: +REQUIRES(module:pytest)
             >>> import pytest
             >>> got_stdout = 'more text\n'
             >>> unmatched = ['some text\n']

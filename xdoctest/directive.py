@@ -308,6 +308,7 @@ class Directive(utils.NiceRepr):
             <Directive(+REQUIRES(--show))>
 
             >>> # Malformatted directives are ignored
+            >>> # xdoctest: +REQUIRES(module:pytest)
             >>> text = '# xdoctest: does_not_exist, skip'
             >>> import pytest
             >>> with pytest.warns(None) as record:
@@ -444,10 +445,22 @@ def _is_requires_satisfied(arg, argv):
 
     Returns:
         bool: flag - True if the requirement is met
+
+    Example:
+        >>> _is_requires_satisfied('PY2', argv=[])
+        >>> _is_requires_satisfied('PY3', argv=[])
+        >>> _is_requires_satisfied('cpython', argv=[])
+        >>> _is_requires_satisfied('pypy', argv=[])
+        >>> _is_requires_satisfied('nt', argv=[])
+        >>> _is_requires_satisfied('linux', argv=[])
     """
     # TODO: add python version options
     SYS_PLATFORM_TAGS = ['win32', 'linux', 'darwin', 'cywgin']
     OS_NAME_TAGS = ['posix', 'nt', 'java']
+    PY_IMPL_TAGS = ['cpython', 'ironpython', 'jython', 'pypy']
+    # TODO: tox tags: https://tox.readthedocs.io/en/latest/example/basic.html
+    PY_VER_TAGS = ['py2', 'py3']
+
     if arg.startswith('-'):
         flag = arg in argv
     elif arg.startswith('module:'):
@@ -461,6 +474,16 @@ def _is_requires_satisfied(arg, argv):
         flag = sys.platform.startswith(arg.lower())
     elif arg.lower() in OS_NAME_TAGS:
         flag = os.name.startswith(arg.lower())
+    elif arg.lower() in PY_IMPL_TAGS:
+        import platform
+        flag = platform.python_implementation().startswith(arg.lower())
+    elif arg.lower() in PY_VER_TAGS:
+        if sys.version_info[0] == 2:  # nocover
+            flag = arg.lower() == 'PY2'
+        elif sys.version_info[0] == 3:
+            flag = arg.lower() == 'PY3'
+        else:
+            flag = False
     else:
         msg = utils.codeblock(
             '''

@@ -79,6 +79,7 @@ def _pkgutil_modname_to_modpath(modname):  # nocover
         >>> modname = 'xdoctest.static_analysis'
         >>> _pkgutil_modname_to_modpath(modname)
         ...static_analysis.py
+        >>> # xdoctest: +REQUIRES(CPython)
         >>> _pkgutil_modname_to_modpath('_ctypes')
         ..._ctypes...
 
@@ -117,6 +118,7 @@ class PythonPathContext(object):
         >>> self.__exit__(None, None, None)
 
     Example:
+        >>> # xdoctest: +REQUIRES(module:pytest)
         >>> self = PythonPathContext('foo', 0)
         >>> self.__enter__()
         >>> sys.path.remove('foo')
@@ -248,13 +250,13 @@ def import_module_from_path(modpath, index=-1):
         >>> assert module is xdoctest
 
     Example:
+        >>> # KNOWN FAILURE ON PYPY
         >>> # Test importing a module from within a zipfile
         >>> import zipfile
         >>> from xdoctest import utils
         >>> from os.path import join, expanduser
         >>> dpath = expanduser('~/.cache/xdoctest')
         >>> dpath = utils.ensuredir(dpath)
-        >>> #dpath = utils.TempDir().ensure()
         >>> # Write to an external module named bar
         >>> external_modpath = join(dpath, 'bar.py')
         >>> open(external_modpath, 'w').write('testvar = 1')
@@ -263,14 +265,19 @@ def import_module_from_path(modpath, index=-1):
         >>> zippath = join(dpath, 'myzip.zip')
         >>> with zipfile.ZipFile(zippath, 'w') as myzip:
         >>>     myzip.write(external_modpath, internal)
+        >>> assert exists(zippath)
         >>> # Import the bar module from within the zipfile
         >>> modpath = zippath + ':' + internal
         >>> modpath = zippath + os.path.sep + internal
         >>> module = import_module_from_path(modpath)
         >>> assert module.__name__ == os.path.normpath('folder/bar')
+        >>> print('module = {!r}'.format(module))
+        >>> print('module.__file__ = {!r}'.format(module.__file__))
+        >>> print(dir(module))
         >>> assert module.testvar == 1
 
     Doctest:
+        >>> # xdoctest: +REQUIRES(module:pytest)
         >>> import pytest
         >>> with pytest.raises(IOError):
         >>>     import_module_from_path('does-not-exist')
@@ -407,12 +414,13 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
         ...static_analysis.py
         >>> print(_syspath_modname_to_modpath('xdoctest'))
         ...xdoctest
-        >>> print(_syspath_modname_to_modpath('_ctypes'))
-        ..._ctypes...
         >>> assert _syspath_modname_to_modpath('xdoctest', sys_path=[]) is None
         >>> assert _syspath_modname_to_modpath('xdoctest.static_analysis', sys_path=[]) is None
-        >>> assert _syspath_modname_to_modpath('_ctypes', sys_path=[]) is None
         >>> assert _syspath_modname_to_modpath('this', sys_path=[]) is None
+        >>> # xdoctest: +REQUIRES(CPython)
+        >>> assert _syspath_modname_to_modpath('_ctypes', sys_path=[]) is None
+        >>> print(_syspath_modname_to_modpath('_ctypes'))
+        ..._ctypes...
 
     Example:
         >>> # test what happens when the module is not visible in the path
@@ -502,6 +510,7 @@ def modname_to_modpath(modname, hide_init=True, hide_main=False, sys_path=None):
         >>> modname = 'xdoctest'
         >>> modpath = modname_to_modpath(modname, hide_init=False)
         >>> assert modpath.endswith('__init__.py')
+        >>> # xdoctest: +REQUIRES(CPython)
         >>> modpath = basename(modname_to_modpath('_ctypes'))
         >>> assert 'ctypes' in modpath
     """
@@ -607,6 +616,7 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False, check=True,
         >>> assert modpath_to_modname(dirname(xdoctest.__file__.replace('.pyc', '.py'))) == 'xdoctest'
 
     Example:
+        >>> # xdoctest: +REQUIRES(CPython)
         >>> modpath = modname_to_modpath('_ctypes')
         >>> modname = modpath_to_modname(modpath)
         >>> assert modname == '_ctypes'

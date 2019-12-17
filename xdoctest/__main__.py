@@ -13,8 +13,7 @@ __tests = """
 Ignore:
 
     xdoctest -m xdoctest.demo
-
-
+    xdoctest ~/code/xdoctest/xdoctest/demo.py
 """
 
 
@@ -29,15 +28,26 @@ def main():
     from os.path import exists
     from xdoctest import utils
 
-    version = xdoctest.__version__
+    version_info = {
+        'xdoc_version': xdoctest.__version__,
+        'sys_version': sys.version,
+    }
+
+    if '--version' in sys.argv:
+        print(version_info['xdoc_version'])
+        sys.exit(0)
+
+    if '--version-info' in sys.argv:
+        for key, value in sorted(version_info.items()):
+            print('{} = {}'.format(key, value))
+        sys.exit(0)
 
     parser = argparse.ArgumentParser(
         prog='xdoctest',
-        description=utils.codeblock(
-            '''
-            Xdoctest {} - on Python - {} - discover and run doctests within a
-            python package
-            ''').format(version, sys.version)
+        description=(
+            'Xdoctest {xdoc_version} - on Python - {sys_version} - '
+            'discover and run doctests within a python package'
+        ).format(**version_info)
     )
     parser.add_argument(
         'arg', nargs='*', help=utils.codeblock(
@@ -94,10 +104,6 @@ def main():
             errmsg = '{} errors: {}'.format(len(errors), listed_errors)
         parser.error(errmsg)
     # ---
-
-    if ns['version']:
-        print(xdoctest.__version__)
-        sys.exit(0)
 
     options = ns['options']
     if options is None:
