@@ -22,6 +22,9 @@ from xdoctest.utils.util_import import (  # NOQA
     modpath_to_modname)
 
 
+HAS_UPDATED_LINENOS = sys.version_info[0] >= 3 and sys.version_info[1] >= 8
+
+
 class CallDefNode(object):
     """
     Attributes:
@@ -216,7 +219,16 @@ class TopLevelVisitor(ast.NodeVisitor):
 
     def _docnode_line_workaround(self, docnode):
         # lineno points to the last line of a string
-        endpos = docnode.lineno - 1
+
+        # if HAS_UPDATED_LINENOS:
+        #     endpos = docnode.lineno
+        # else:
+        if hasattr(docnode, 'end_lineno'):
+            endpos = docnode.end_lineno - 1
+        else:
+            # Hack for older versions
+            endpos = docnode.lineno - 1
+
         docstr = utils.ensure_unicode(docnode.value.s)
         sourcelines = self.sourcelines
         start, stop = self._docstr_line_workaround(docstr, sourcelines, endpos)
@@ -251,10 +263,11 @@ class TopLevelVisitor(ast.NodeVisitor):
 
         CommandLine:
             python -m xdoctest xdoctest.static_analysis TopLevelVisitor._docstr_line_workaround
+            python -m xdoctest xdoctest.static_analysis TopLevelVisitor._docstr_line_workaround --debug
 
         Example:
             >>> from xdoctest.static_analysis import *
-            >>> sys.DEBUG = 0
+            >>> sys.DEBUG = '--debug' in sys.argv
             >>> sq = chr(39)  # single quote
             >>> dq = chr(34)  # double quote
             >>> source = utils.codeblock(
@@ -296,21 +309,27 @@ class TopLevelVisitor(ast.NodeVisitor):
             >>> sourcelines = source.splitlines()
             >>> # THIS IS A KNOWN PYPY FAILURE CASE
             >>> print('\n\n====\n\n')
-            >>> #for i in [1]:
+            >>> #for i in [0, 1]:
             >>> for i in range(len(targets)):
             >>>     print('----------')
             >>>     funcnode = pt.body[i]
             >>>     print('funcnode = {!r}'.format(funcnode))
             >>>     docnode = funcnode.body[0]
+            >>>     print('funcnode.__dict__ = {!r}'.format(funcnode.__dict__))
+            >>>     print('docnode = {!r}'.format(docnode))
+            >>>     print('docnode.value = {!r}'.format(docnode.value))
+            >>>     print('docnode.value.__dict__ = {!r}'.format(docnode.value.__dict__))
             >>>     print('docnode.value.s = {!r}'.format(docnode.value.s))
+            >>>     print('docnode.lineno = {!r}'.format(docnode.lineno))
             >>>     print('docnode.col_offset = {!r}'.format(docnode.col_offset))
             >>>     print('docnode = {!r}'.format(docnode))
             >>>     #import IPython
             >>>     #IPython.embed()
-            >>>     print('docnode.lineno = {!r}'.format(docnode.lineno))
             >>>     docstr = ast.get_docstring(funcnode, clean=False)
-            >>>     print(len(docstr))
+            >>>     print('len(docstr) = {}'.format(len(docstr)))
             >>>     endpos = docnode.lineno - 1
+            >>>     if hasattr(docnode, 'end_lineno'):
+            >>>         endpos = docnode.end_lineno - 1
             >>>     print('endpos = {!r}'.format(endpos))
             >>>     start, end = self._docstr_line_workaround(docstr, sourcelines, endpos)
             >>>     print('i = {!r}'.format(i))
@@ -320,7 +339,7 @@ class TopLevelVisitor(ast.NodeVisitor):
             >>>         print('---')
             >>>         print(docstr)
             >>>         print('---')
-            >>>         print('sourcelines = [\n{}\n]'.format(', \n'.join(list(map(repr, sourcelines)))))
+            >>>         print('sourcelines = [\n{}\n]'.format(', \n'.join(list(map(repr, enumerate(sourcelines))))))
             >>>         print('endpos = {!r}'.format(endpos))
             >>>         raise AssertionError('docstr workaround is failing')
             >>>     print('----------')
@@ -329,11 +348,15 @@ class TopLevelVisitor(ast.NodeVisitor):
         # First assume a one-line string that starts and stops on the same line
         start = endpos
         stop = endpos + 1
+        endline = sourcelines[stop - 1]
+
         if getattr(sys, 'DEBUG', 0):
             print('----<<<')
+            #print('sourcelines = [{}]'.format('\n'.join(list(map(repr, sourcelines)))))
             print('endpos = {!r}'.format(endpos))
             print('start = {!r}'.format(start))
             print('stop = {!r}'.format(stop))
+            print('endline = {!r}'.format(endline))
 
         # Determine if the docstring is a triple quoted string, by trying both
         # triple quote styles and checking if the string starts and ends with
@@ -341,7 +364,6 @@ class TopLevelVisitor(ast.NodeVisitor):
         # quoted string literal and can therefore safely extract the starting
         # line position.
         trips = ("'''", '"""')
-        endline = sourcelines[stop - 1]
         for trip in trips:
             if getattr(sys, 'DEBUG', 0):
                 print('trip = {!r}'.format(trip))
@@ -360,7 +382,13 @@ class TopLevelVisitor(ast.NodeVisitor):
             # in the extracted docstring. This works because all newline
             # characters in multiline string literals MUST correspond to actual
             # newlines in the source code.
+            if getattr(sys, 'DEBUG', 0):
+                from xdoctest import utils
+                print('pattern = {!r}'.format(pattern))
+                print('endline_ = {!r}'.format(endline_))
             if endline_.endswith(trip):
+                if getattr(sys, 'DEBUG', 0):
+                    print('endline ended with trip')
                 nlines = docstr.count('\n')
                 # assuming that the docstr is actually terminated with this
                 # kind of triple quote, then the start line is at this position
@@ -371,11 +399,18 @@ class TopLevelVisitor(ast.NodeVisitor):
                 # Account for raw strings. Note f-strings cannot be docstrings
                 if startline.strip().startswith((trip, 'r' + trip)):
                     # Both conditions pass.
+                    if getattr(sys, 'DEBUG', 0):
+                        print('startline did end with trip')
                     start = cand_start_
                     break
                 else:
                     # Conditions failed, revert to assuming a one-line string.
+                    if getattr(sys, 'DEBUG', 0):
+                        print('startline did not end with trip')
                     start = stop - 1
+            else:
+                if getattr(sys, 'DEBUG', 0):
+                    print('endline did not end with trip')
 
         if getattr(sys, 'DEBUG', 0):
             print('start = {!r}'.format(start))
@@ -385,6 +420,9 @@ class TopLevelVisitor(ast.NodeVisitor):
 
     def _get_docstring(self, node):
         """
+        CommandLine:
+            xdoctest -m ~/code/xdoctest/xdoctest/static_analysis.py TopLevelVisitor._get_docstring
+
         Example:
             >>> source = utils.codeblock(
                 '''
@@ -481,6 +519,7 @@ def _parse_static_node_value(node):
     """
     Extract a constant value from a node if possible
     """
+    # TODO: ast.Constant for 3.8
     if isinstance(node, ast.Num):
         value = node.n
     elif isinstance(node, ast.Str):
