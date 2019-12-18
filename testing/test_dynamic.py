@@ -164,7 +164,11 @@ def test_defined_by_module():
         print('Checking {} is not defined by {}'.format(item, module.__name__))
         assert not flag, '{} should not be defined by {}'.format(item, module)
 
-    import _ctypes
+    try:
+        import _ctypes
+    except ImportError:
+        import pytest
+        pytest.skip('ctypes')
 
     items = [
         _ctypes.Array,
