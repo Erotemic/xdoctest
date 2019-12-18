@@ -6,6 +6,7 @@ Provides a simple script for running module doctests.
 This should work even if the target module is unaware of xdoctest.
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
+import sys
 
 
 __tests = """
@@ -22,7 +23,6 @@ def main(argv=None):
     python -m xdoctest xdoctest all
     python -m xdoctest networkx all --options=+IGNORE_WHITESPACE
     """
-    import sys
     import argparse
     import xdoctest
     from os.path import exists
@@ -36,7 +36,6 @@ def main(argv=None):
         'sys_version': sys.version,
     }
 
-    print('argv = {!r}'.format(argv))
     if '--version' in argv:
         print(version_info['xdoc_version'])
         return 0
@@ -68,8 +67,12 @@ def main(argv=None):
     runner._update_argparse_cli(parser.add_argument)
     doctest_example.Config()._update_argparse_cli(parser.add_argument)
 
-    args, unknown = parser.parse_known_args(args=argv)
+    args, unknown = parser.parse_known_args(args=argv[1:])
     ns = args.__dict__.copy()
+
+    __DEBUG__ = '--debug' in sys.argv
+    if __DEBUG__:
+        print('ns = {!r}'.format(ns))
 
     if ns['version']:
         print(xdoctest.__version__)
@@ -137,10 +140,14 @@ def main(argv=None):
             =====================================
             '''))
 
-    __DEBUG__ = 0
     if __DEBUG__:
-        import ubelt as ub
-        print('config = {}'.format(ub.repr2(config)))
+        try:
+            import ubelt as ub
+            print('config = {}'.format(ub.repr2(config)))
+            print('ns = {}'.format(ub.repr2(ns)))
+        except ImportError:
+            pass
+        print('modname = {!r}'.format(modname))
 
     run_summary = xdoctest.doctest_module(modname, argv=[command], style=style,
                                           verbose=config['verbose'],

@@ -20,7 +20,7 @@ from xdoctest import utils
 from xdoctest.docstr import docscrape_google
 
 
-DEBUG = False
+DEBUG = '--debug' in sys.argv
 
 
 DOCTEST_STYLES = [

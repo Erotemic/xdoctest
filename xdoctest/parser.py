@@ -42,7 +42,7 @@ from xdoctest import doctest_part
 from xdoctest import static_analysis as static
 
 
-DEBUG = 0
+DEBUG = '--debug' in sys.argv
 
 
 INDENT_RE = re.compile(r'^([ ]*)(?=\S)', re.MULTILINE)

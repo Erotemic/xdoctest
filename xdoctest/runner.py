@@ -61,6 +61,9 @@ def log(msg, verbose):
         print(msg)
 
 
+DEBUG = '--debug' in sys.argv
+
+
 def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
                    style='auto', verbose=None, config=None, durations=None):
     """
@@ -105,6 +108,20 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
         >>> modname = 'xdoctest.dynamic_analysis'
         >>> result = doctest_module(modname, 'list', argv=[''])
     """
+    from functools import partial
+    _log = partial(log, verbose=DEBUG)
+    _log('------+ DEBUG +------')
+    _log('CALLED doctest_module')
+    _log('exclude = {!r}'.format(exclude))
+    _log('argv = {!r}'.format(argv))
+    _log('command = {!r}'.format(command))
+    _log('modpath_or_name = {!r}'.format(modpath_or_name))
+    _log('durations = {!r}'.format(durations))
+    _log('config = {!r}'.format(config))
+    _log('verbose = {!r}'.format(verbose))
+    _log('style = {!r}'.format(style))
+    _log('------+ /DEBUG +------')
+
     # Determine package name via caller if not specified
     if modpath_or_name is None:
         frame_parent = dynamic.get_parent_frame()
