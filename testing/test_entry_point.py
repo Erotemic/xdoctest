@@ -75,14 +75,28 @@ def test_xdoc_console_script_exec():
 def test_xdoc_cli_version():
     """
     CommandLine:
-        xdoctest -m ~/code/xdoctest/testing/test_entry_point.py test_xdoc_cli_version
+        python -m xdoctest -m ~/code/xdoctest/testing/test_entry_point.py test_xdoc_cli_version
     """
     import sys
     if sys.platform.startswith('win32'):
         pytest.skip()
 
     import xdoctest
-    info = cmd('xdoctest --version')
+    from xdoctest import __main__
+    print('xdoctest = {!r}'.format(xdoctest))
+    print('__main__ = {!r}'.format(__main__))
+    retcode = __main__.main(argv=['--version'])
+    print('retcode = {!r}'.format(retcode))
+    assert retcode == 0
+
+    import xdoctest
+    print('xdoctest = {!r}'.format(xdoctest))
+    try:
+        import ubelt as ub
+    except ImportError:
+        info = cmd('python -m xdoctest --version')
+    else:
+        info = ub.cmd('python -m xdoctest --version')
     print('info = {!r}'.format(info))
     print('xdoctest.__version__ = {!r}'.format(xdoctest.__version__))
     assert xdoctest.__version__ in info['out']

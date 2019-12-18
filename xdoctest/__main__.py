@@ -17,7 +17,7 @@ Ignore:
 """
 
 
-def main():
+def main(argv=None):
     """
     python -m xdoctest xdoctest all
     python -m xdoctest networkx all --options=+IGNORE_WHITESPACE
@@ -28,19 +28,23 @@ def main():
     from os.path import exists
     from xdoctest import utils
 
+    if argv is None:
+        argv = sys.argv
+
     version_info = {
         'xdoc_version': xdoctest.__version__,
         'sys_version': sys.version,
     }
 
-    if '--version' in sys.argv:
+    print('argv = {!r}'.format(argv))
+    if '--version' in argv:
         print(version_info['xdoc_version'])
-        sys.exit(0)
+        return 0
 
-    if '--version-info' in sys.argv:
+    if '--version-info' in argv:
         for key, value in sorted(version_info.items()):
             print('{} = {}'.format(key, value))
-        sys.exit(0)
+        return 0
 
     parser = argparse.ArgumentParser(
         prog='xdoctest',
@@ -64,12 +68,12 @@ def main():
     runner._update_argparse_cli(parser.add_argument)
     doctest_example.Config()._update_argparse_cli(parser.add_argument)
 
-    args, unknown = parser.parse_known_args()
+    args, unknown = parser.parse_known_args(args=argv)
     ns = args.__dict__.copy()
 
     if ns['version']:
         print(xdoctest.__version__)
-        sys.exit(0)
+        return 0
 
     # ... postprocess args
     modname = ns['modname']
@@ -143,10 +147,11 @@ def main():
                                           config=config, durations=durations)
     n_failed = run_summary.get('n_failed', 0)
     if n_failed > 0:
-        sys.exit(1)
+        return 1
     else:
-        sys.exit(0)
+        return 0
 
 
 if __name__ == '__main__':
-    main()
+    retcode = main()
+    sys.exit(retcode)
