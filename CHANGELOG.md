@@ -8,7 +8,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Version 0.11.0] - Unreleased
 
 ### Added
-* Add support for PyPy
+* Add CI support for PyPy
+* Add CI support for CPython 3.8
 * REQUIRES directive now supports CPython, IronPython, Jython, and PyPy
 * REQUIRES directive now supports PY2, PY3
 

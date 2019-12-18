@@ -113,15 +113,32 @@ def parse_description():
     return ''
 
 
-def native_mb_python_tag():
-    import sys
-    import platform
-    major = sys.version_info[0]
-    minor = sys.version_info[1]
-    ver = '{}{}'.format(major, minor)
-    if platform.python_implementation() == 'CPython':
+def native_mb_python_tag(plat_impl=None, version_info=None):
+    """
+
+    CommandLine:
+        python -m xdoctest setup.py native_mb_python_tag
+
+    Example:
+        >>> print(native_mb_python_tag())
+        >>> print(native_mb_python_tag('PyPy', (2, 7)))
+        >>> print(native_mb_python_tag('CPython', (3, 8)))
+    """
+    if plat_impl is None:
+        import platform
+        plat_impl = platform.python_implementation()
+
+    if version_info is None:
+        import sys
+        version_info = sys.version_info
+
+    major = version_info[0]
+    minor = version_info[1]
+
+    if plat_impl == 'CPython':
         # TODO: get if cp27m or cp27mu
         impl = 'cp'
+        ver = '{}.{}'.format(major, minor)
         if ver == '27':
             IS_27_BUILT_WITH_UNICODE = True  # how to determine this?
             if IS_27_BUILT_WITH_UNICODE:
@@ -130,9 +147,14 @@ def native_mb_python_tag():
                 abi = 'm'
         else:
             abi = 'm'
+        mb_tag = '{impl}{ver}-{impl}{ver}{abi}'.format(**locals())
+    elif plat_impl == 'PyPy':
+        abi = ''
+        impl = 'pypy'
+        ver = '{}{}'.format(major, minor)
+        mb_tag = '{impl}-{ver}'.format(**locals())
     else:
-        raise NotImplementedError(impl)
-    mb_tag = '{impl}{ver}-{impl}{ver}{abi}'.format(**locals())
+        raise NotImplementedError(plat_impl)
     return mb_tag
 
 NAME = 'xdoctest'
@@ -142,7 +164,12 @@ except Exception:
     raise
     print('failed to parse values in setup.py')
     VERSION = '???'
-MB_PYTHON_TAG = native_mb_python_tag()
+
+try:
+    MB_PYTHON_TAG = native_mb_python_tag()
+except Exception:
+    # raise
+    MB_PYTHON_TAG = '???'
 
 
 from setuptools import find_packages  # NOQA
