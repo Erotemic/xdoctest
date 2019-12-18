@@ -10,7 +10,8 @@ from xdoctest import utils
 
 def touch(args):
     path = join(*args)
-    open(path, 'w').write('')
+    with open(path, 'w') as file:
+        file.write('')
     return path
 
 

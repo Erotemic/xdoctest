@@ -199,7 +199,8 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            python run_tests.py || echo "pypy failed, but this is allowed"
+            #python run_tests.py || echo "pypy failed, but this is allowed"
+            python run_tests.py
       - store_artifacts:
           path: test-reports
           destination: test-reports
