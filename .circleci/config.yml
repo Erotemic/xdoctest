@@ -220,7 +220,7 @@ jobs:
         # The "minimal" tests install barebones requirements
         pip install -r requirements/tests.txt
         pip install -r requirements/runtime.txt 
-        pip install .
+        pip install -e .
 
         ./run_doctests.sh || echo "pypy failed, but this is allowed"
         ./run_tests.sh || echo "pypy failed, but this is allowed"

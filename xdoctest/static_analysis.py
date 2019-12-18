@@ -227,6 +227,7 @@ class TopLevelVisitor(ast.NodeVisitor):
             endpos = docnode.end_lineno - 1
         else:
             # Hack for older versions
+            # TODO: fix in pypy
             endpos = docnode.lineno - 1
 
         docstr = utils.ensure_unicode(docnode.value.s)
@@ -308,6 +309,8 @@ class TopLevelVisitor(ast.NodeVisitor):
             >>> pt = ast.parse(source.encode('utf8'))
             >>> sourcelines = source.splitlines()
             >>> # THIS IS A KNOWN PYPY FAILURE CASE
+            >>> # PYPY docnode.lineno specify the startpos of a docstring not
+            >>> # the end.
             >>> print('\n\n====\n\n')
             >>> #for i in [0, 1]:
             >>> for i in range(len(targets)):
@@ -350,7 +353,9 @@ class TopLevelVisitor(ast.NodeVisitor):
         stop = endpos + 1
         endline = sourcelines[stop - 1]
 
-        if getattr(sys, 'DEBUG', 0):
+        DEBUG = getattr(sys, 'DEBUG', 0)
+
+        if DEBUG:
             print('----<<<')
             #print('sourcelines = [{}]'.format('\n'.join(list(map(repr, sourcelines)))))
             print('endpos = {!r}'.format(endpos))
@@ -365,7 +370,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         # line position.
         trips = ("'''", '"""')
         for trip in trips:
-            if getattr(sys, 'DEBUG', 0):
+            if DEBUG:
                 print('trip = {!r}'.format(trip))
             pattern = re.escape(trip) + r'\s*#.*$'
             # Assuming the multiline string is using `trip` as the triple quote
@@ -382,12 +387,11 @@ class TopLevelVisitor(ast.NodeVisitor):
             # in the extracted docstring. This works because all newline
             # characters in multiline string literals MUST correspond to actual
             # newlines in the source code.
-            if getattr(sys, 'DEBUG', 0):
-                from xdoctest import utils
+            if DEBUG:
                 print('pattern = {!r}'.format(pattern))
                 print('endline_ = {!r}'.format(endline_))
             if endline_.endswith(trip):
-                if getattr(sys, 'DEBUG', 0):
+                if DEBUG:
                     print('endline ended with trip')
                 nlines = docstr.count('\n')
                 # assuming that the docstr is actually terminated with this
@@ -399,20 +403,20 @@ class TopLevelVisitor(ast.NodeVisitor):
                 # Account for raw strings. Note f-strings cannot be docstrings
                 if startline.strip().startswith((trip, 'r' + trip)):
                     # Both conditions pass.
-                    if getattr(sys, 'DEBUG', 0):
+                    if DEBUG:
                         print('startline did end with trip')
                     start = cand_start_
                     break
                 else:
                     # Conditions failed, revert to assuming a one-line string.
-                    if getattr(sys, 'DEBUG', 0):
+                    if DEBUG:
                         print('startline did not end with trip')
                     start = stop - 1
             else:
-                if getattr(sys, 'DEBUG', 0):
+                if DEBUG:
                     print('endline did not end with trip')
 
-        if getattr(sys, 'DEBUG', 0):
+        if DEBUG:
             print('start = {!r}'.format(start))
             print('stop = {!r}'.format(stop))
             print('----<<<')
