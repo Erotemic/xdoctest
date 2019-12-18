@@ -105,6 +105,8 @@ def test_parse_syntax_error():
 def test_runner_syntax_error():
     """
         python testing/test_errors.py test_runner_syntax_error
+
+        xdoctest -m testing/test_errors.py test_runner_syntax_error
     """
     source = utils.codeblock(
         r'''
@@ -145,7 +147,8 @@ def test_runner_syntax_error():
     temp.ensure()
     dpath = temp.dpath
     modpath = join(dpath, 'test_runner_syntax_error.py')
-    open(modpath, 'w').write(source)
+    with open(modpath, 'w') as file:
+        file.write(source)
 
     with utils.CaptureStdout() as cap:
         runner.doctest_module(modpath, 'all', argv=[''], style='freeform',

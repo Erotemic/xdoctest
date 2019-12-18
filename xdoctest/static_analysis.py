@@ -21,6 +21,9 @@ from xdoctest.utils.util_import import (  # NOQA
     split_modpath, modname_to_modpath, is_modname_importable,
     modpath_to_modname)
 
+import platform
+PLAT_IMPL = platform.python_implementation()
+
 
 HAS_UPDATED_LINENOS = sys.version_info[0] >= 3 and sys.version_info[1] >= 8
 
@@ -218,28 +221,150 @@ class TopLevelVisitor(ast.NodeVisitor):
     # -- helpers ---
 
     def _docnode_line_workaround(self, docnode):
-        # lineno points to the last line of a string
+        """
+        Find the start and ending line numbers of a docstring
 
-        # if HAS_UPDATED_LINENOS:
-        #     endpos = docnode.lineno
-        # else:
+        CommandLine:
+            xdoctest -m xdoctest.static_analysis TopLevelVisitor._docnode_line_workaround
+
+        Example:
+            >>> from xdoctest.static_analysis import *  # NOQA
+            >>> sq = chr(39)  # single quote
+            >>> dq = chr(34)  # double quote
+            >>> source = utils.codeblock(
+                '''
+                def func0():
+                    {ddd} docstr0 {ddd}
+                def func1():
+                    {ddd}
+                    docstr1 {ddd}
+                def func2():
+                    {ddd} docstr2
+                    {ddd}
+                def func3():
+                    {ddd}
+                    docstr3
+                    {ddd}  # foobar
+                def func5():
+                    {ddd}pathological case
+                    {sss} # {ddd} # {sss} # {ddd} # {ddd}
+                def func6():
+                    " single quoted docstr "
+                def func7():
+                    r{ddd}
+                    raw line
+                    {ddd}
+                ''').format(ddd=dq * 3, sss=sq * 3)
+            >>> self = TopLevelVisitor(source)
+            >>> func_nodes = self.syntax_tree().body
+            >>> print(utils.add_line_numbers(utils.highlight_code(source), start=1))
+            >>> wants = [
+            >>>     (2, 2),
+            >>>     (4, 5),
+            >>>     (7, 8),
+            >>>     (10, 12),
+            >>>     (14, 15),
+            >>>     (17, 17),
+            >>>     (19, 21),
+            >>> ]
+            >>> for i, func_node in enumerate(func_nodes):
+            >>>     docnode = func_node.body[0]
+            >>>     got = self._docnode_line_workaround(docnode)
+            >>>     want = wants[i]
+            >>>     print('got = {!r}'.format(got))
+            >>>     print('want = {!r}'.format(want))
+            >>>     assert got == want
+        """
+        # lineno points to the last line of a string in CPython < 3.8
         if hasattr(docnode, 'end_lineno'):
             endpos = docnode.end_lineno - 1
         else:
-            # Hack for older versions
-            # TODO: fix in pypy
-            endpos = docnode.lineno - 1
+            if PLAT_IMPL == 'PyPy':
+                startpos = docnode.lineno - 1
+                docstr = utils.ensure_unicode(docnode.value.s)
+                sourcelines = self.sourcelines
+                start, stop = self._find_docstr_endpos_workaround(docstr,
+                                                                  sourcelines,
+                                                                  startpos)
+                # Convert 0-based line positions to 1-based line numbers
+                doclineno = start + 1
+                doclineno_end = stop + 1
+                return doclineno, doclineno_end
+            else:
+                # Hack for older versions
+                # TODO: fix in pypy
+                endpos = docnode.lineno - 1
 
         docstr = utils.ensure_unicode(docnode.value.s)
         sourcelines = self.sourcelines
-        start, stop = self._docstr_line_workaround(docstr, sourcelines, endpos)
+        start, stop = self._find_docstr_startpos_workaround(docstr, sourcelines, endpos)
         # Convert 0-based line positions to 1-based line numbers
         doclineno = start + 1
         doclineno_end = stop
         # print('docnode = {!r}'.format(docnode))
         return doclineno, doclineno_end
 
-    def _docstr_line_workaround(self, docstr, sourcelines, endpos):
+    @classmethod
+    def _find_docstr_endpos_workaround(cls, docstr, sourcelines, startpos):
+        """
+        Like docstr_line_workaround, but works from the top-down instead of
+        bottom-up. This is for pypy.
+
+
+        Given a docstring, its original source lines, and where the start
+        position is, this function finds the end-position of the docstr
+
+        Example:
+            >>> fmtkw = dict(sss=chr(39) * 3, ddd=chr(34) * 3)
+            >>> source = utils.codeblock(
+                    '''
+                    {ddd}
+                    docstr0
+                    {ddd}
+                    '''.format(**fmtkw))
+            >>> sourcelines = source.splitlines()
+            >>> docstr = eval(source, {}, {})
+            >>> startpos = 0
+            >>> start, stop = TopLevelVisitor._find_docstr_endpos_workaround(docstr, sourcelines, startpos)
+            >>> assert (start, stop) == (0, 2)
+            >>> #
+            >>> source = utils.codeblock(
+                    '''
+                    "docstr0"
+                    '''.format(**fmtkw))
+            >>> sourcelines = source.splitlines()
+            >>> docstr = eval(source, {}, {})
+            >>> startpos = 0
+            >>> start, stop = TopLevelVisitor._find_docstr_endpos_workaround(docstr, sourcelines, startpos)
+            >>> assert (start, stop) == (0, 0)
+        """
+        start = startpos
+        stop = startpos
+        startline = sourcelines[start]
+
+        trips = ("'''", '"""')
+        for trip in trips:
+            if startline.strip().startswith((trip, 'r' + trip)):
+                nlines = docstr.count('\n')
+                # assuming that the docstr is actually terminated with this
+                # kind of triple quote, then the end line is at this position
+                cand_stop_ = start + nlines
+                endline = sourcelines[cand_stop_]
+
+                endpat = re.escape(trip) + r'\s*#.*$'
+                endline_ = re.sub(endpat, trip, endline).strip()
+
+                # The startline should also begin with the same triple quote
+                # Account for raw strings. Note f-strings cannot be docstrings
+                if endline_.endswith(trip):
+                    stop = cand_stop_
+                    break
+                else:
+                    # Conditions failed, revert to assuming a one-line string.
+                    stop = start
+        return start, stop
+
+    def _find_docstr_startpos_workaround(self, docstr, sourcelines, endpos):
         r"""
         Find the which sourcelines contain the docstring
 
@@ -263,10 +388,12 @@ class TopLevelVisitor(ast.NodeVisitor):
                 such that sourcelines[start:stop] will contain the docstring
 
         CommandLine:
-            python -m xdoctest xdoctest.static_analysis TopLevelVisitor._docstr_line_workaround
-            python -m xdoctest xdoctest.static_analysis TopLevelVisitor._docstr_line_workaround --debug
+            python -m xdoctest xdoctest.static_analysis TopLevelVisitor._find_docstr_startpos_workaround
+            python -m xdoctest xdoctest.static_analysis TopLevelVisitor._find_docstr_startpos_workaround --debug
 
         Example:
+            >>> # xdoctest: +REQUIRES(CPython)
+            >>> # This function is a specific workaround for a CPython bug.
             >>> from xdoctest.static_analysis import *
             >>> sys.DEBUG = '--debug' in sys.argv
             >>> sq = chr(39)  # single quote
@@ -308,7 +435,6 @@ class TopLevelVisitor(ast.NodeVisitor):
             >>> self = TopLevelVisitor.parse(source)
             >>> pt = ast.parse(source.encode('utf8'))
             >>> sourcelines = source.splitlines()
-            >>> # THIS IS A KNOWN PYPY FAILURE CASE
             >>> # PYPY docnode.lineno specify the startpos of a docstring not
             >>> # the end.
             >>> print('\n\n====\n\n')
@@ -334,7 +460,7 @@ class TopLevelVisitor(ast.NodeVisitor):
             >>>     if hasattr(docnode, 'end_lineno'):
             >>>         endpos = docnode.end_lineno - 1
             >>>     print('endpos = {!r}'.format(endpos))
-            >>>     start, end = self._docstr_line_workaround(docstr, sourcelines, endpos)
+            >>>     start, end = self._find_docstr_startpos_workaround(docstr, sourcelines, endpos)
             >>>     print('i = {!r}'.format(i))
             >>>     print('got  = {}, {}'.format(start, end))
             >>>     print('want = {}, {}'.format(*targets[i]))
@@ -354,7 +480,6 @@ class TopLevelVisitor(ast.NodeVisitor):
         endline = sourcelines[stop - 1]
 
         DEBUG = getattr(sys, 'DEBUG', 0)
-
         if DEBUG:
             print('----<<<')
             #print('sourcelines = [{}]'.format('\n'.join(list(map(repr, sourcelines)))))
@@ -380,7 +505,7 @@ class TopLevelVisitor(ast.NodeVisitor):
             # ignored. The above pattern will match the first triple quote it
             # sees, and then will remove any trailing comments.
             endline_ = re.sub(pattern, trip, endline).strip()
-            # After removing commends, if the endline endswith a triple quote,
+            # After removing comments, if the endline endswith a triple quote,
             # then we must be in a multiline string IF the startline starts
             # with that same triple quote. We should be able to determine where
             # the startline is because we know how many newline characters are
@@ -449,6 +574,9 @@ class TopLevelVisitor(ast.NodeVisitor):
 
     def _workaround_func_lineno(self, node):
         """
+        Finds the correct line for the original function definition even when
+        decorators are involved.
+
         Example:
             >>> source = utils.codeblock(
                 '''
