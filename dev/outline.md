@@ -16,20 +16,20 @@ Who and Why (Audience)
 ======================
 
 1. Who is this talk for?:
-   1. Python developers wishing to master test-driven-design. 
-   2. People who have been burnt by the doctest module.
+   * Python developers wishing to master test-driven-design. 
+   * People who have been burnt by the doctest module.
 
 2. What background knowledge or experience do you expect the audience to have?:
-    1. The ability to read and write Python code.  (required)
-    2. What a docstring is. (nice to have)
-    3. Some familiarity with IPython. (nice to have)
+   * The ability to read and write Python code.  (required)
+   * What a docstring is. (nice to have)
+   * Some familiarity with IPython. (nice to have)
 
 3. What do you expect the audience to learn after watching the talk?: 
-   1. Why doctests are awesome
-   2. How to write a doctest.
-   3. How to run a test with the builtin doctest module and where issues arise.
-   4. How to fix these issues with xdoctest.
-   5. A little math trivia about how you can’t parse a context-free language with the re module.
+   * Why doctests are awesome
+   * How to write a doctest.
+   * How to run a test with the builtin doctest module and where issues arise.
+   * How to fix these issues with xdoctest.
+   * A little math trivia about how you can’t parse a context-free language with the re module.
 
 
 References:
