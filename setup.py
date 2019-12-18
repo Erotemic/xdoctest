@@ -142,6 +142,8 @@ except Exception:
     raise
     print('failed to parse values in setup.py')
     VERSION = '???'
+MB_PYTHON_TAG = native_mb_python_tag()
+
 
 from setuptools import find_packages  # NOQA
 setupkw = dict(
