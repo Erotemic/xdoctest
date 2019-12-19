@@ -1,11 +1,8 @@
 env:
     global:
-        # travis encrypt GITHUB_USERNAME=$GITHUB_USERNAME
-        - secure: "HrsKrKYdw4z/c5rPRe5rMizxcXBVpLZEz3D+0mF9hxjK8aGJwBXFeBNdmoV5K+FDM2JzLGqnhVx+0nm/gsRK4oh3rqrHclUpnhh/vLaD0omwxca4IzT0iYIUoRwg3NRXuuhSL9Ma3W5zNfRdqBnJgtR3wHKwWs3yljJJVzjyz1ypX9QFLcDJLaD7k0IPMY07kA0Uy1bf7ZqSBmo7uy5EzMkGI9qxdFtzXy+B8RnBFRjeNNhyRSlnzZogSwOBljdKSoT3LgX1VWCdc1BAXgk19iJwbGWkirqQCXVleOkOHwlbJG5GsQ9JmVzidkHvyX3shnagRJr5Uox1DuM5urPAAt7CT/sai+/MvgZBGki62awzsohw/MthLz/dLaCZfviP9CiyCZpPOwyd+vLecSpk6CcFQ4PjCg1L72nvcZqWkXibjWlQB6U68o8It8SaTfMl2wDlLfPR+nBPf6D3mrcaKkhvLF1l4almqqekuswdP+2LJbIzj2v1ZwFdozPejV52GxEafLvCxEVsT9FaHqZRan3i7hbRM1Y9UQiFc45ztOmg6McgOuGw9J4FJhqIrfu2cLVuViHk6leMF5TzKPcz+O0OpVq3hNdibqgWavG3mBthjQRZHx+9FmwolhPKt1GRLNm7Mi/KUa6688nhDSDRLPEGcABog201y/01ujUVOGU="
-        # travis encrypt TWINE_PASSWORD=$TWINE_PASSWORD
-        - secure: "keQ9wkOPpGhlK3WUt3Qr/qtLzKIiag0zbsrHS9MqnbNiwNepbOWYaG0PZZQs7UzxTFSWsawInsiy5FLhJRKMJRw9yZBWVaWQEh3DmkZVovQKL5Eaa2d4kad2VX81emfCjRZnxe1LmDchOxwRgdmu0EkrZFX4iiFWb8VC7gb9TVIreqb8GtyTtPpFxkdvRf1iAlxZh612i+MQACv5y7XkDMzX4FGQIcpIyUr8XmLLwmP9/WF/4K+UuBa0YajKhp4lymAIPQj/wMZs0tDl2jhNaoXoIMXbQjbIw02F2hvTQOfYbkKYMndPDlHvs4/ubkxHJRzRdC8iv5eYHBcFqhjpGSuzbSRhSbsGR5K9uOjhRyCIj3eup4KdSA9irH33EB+9gJX2C66XcA9ry0bVsnWFKEGyiEVqeMd7A0UrOwJVS0M8TSv3FV5OYhdk2A/IMohGB8qhOhWoYkTxl93lP3r8qxmvZSfxAWtzne3K0D6XV20f061FA2OZKiNfJ/2/hAoH2iQxnRp22Zu1D9bL1h1jPXErLdc+Tzz42jUyAnn2ZTv/6kRkLx7RnDYUojoDL8nXh9VBZRQ/ADaZN2G2GCRsAq3yPkNVmP76hmABdsp4VvnFKe8res6JiCEIplBps7rJAlAjkUq4afN3sPENWIKfW/ATXkyr4iksUxmL4M5bpO0="
-        # travis encrypt TRAVIS_SECRET=$TRAVIS_SECRET
-        - secure: "nv9QrVtEG7AtFvR6r1+YK0T06YW0Oya4ONXtiHkmLxt2ncqDcUBvxYXSZBtQ6d+ABV1FO1Z8pf5qkEv1Q0YRZd9PL1y7hE//NgjrXAruDtuXf2j0jTDzeR6dTp9gHoXJTNOHrQHPt9/GfceVXRKvDxNU84vU5dBX1SVCKcGBsXrlmvQgTVuGAojmK8w/RHPhHEUbC0/aSFlkc0z/U5U05UyLaJ7cJN1+0mFa+wlXTyPkiJ9O1rbVz5/7NTKZJvobqjKP4i+j/7yjqXXTdBm2KDa41wGQCuvBUk1B8ewYvEpdyyF8LoNpGJYUniGrpPW46u1Jz4U1fZsCYwa2kWmJqmCLCVwtuvVj81E7fLvLK0nzqOgmK8yaFfOM+lv8vu7PSV0ofPWbRGAI95HP2lfCCiDW2fNW9zkELYTU9vgMJw+U6dX7Z++EfFeDJ5N6PY7lgtYjYO9w1FjiYS5fH2S0DgsJu4gWnXvv9E0xiFXRlot+Ja5o93/WJWSBT12GdXDKlXp8PorVaT69d3TUjW1ZqDv2QJ3H8+nl6JbnOg7xop1zfqqShnZcsc5Kl7Zj0PvyMgWYzydvk/f+hErhkFS9g7NGxdDnCNa8Bt5xF8/hRAW/8AGlSeNC7yRacIDzr3bd4rrXJNln4Z6cY4HsZ7FF4TW/rYfWqrBRT80cN9+78RM="
+        - secure: "P+9EGVR9Z0PSdkuo/xYtGxJRjfjhHLqhCz04bVkbOo/Tpcaqa2sHBYAlWE8jm+m0PODnQ2Mao/xaNqkbmt+bTwmBQ4wPE+OW4+Po8qdZoOz7mv53KN8AUeSUOmifiZsaJSDAQwrnP8KbCRor1zB+0rn6eok3gc2ZWnFs0+t1jfATjlnZfpqfQxxWWSdVO6j24d1+CUiZaCU16q4OiwSePmipKvBySyLEwxTgNuPyESMyGG6UwbBpzSWH2/4iMNUiaEcoR1LaHglhHOa98ZMnwpbU5O3Jj7WSI4UlJqLsK0GnZpNEsXC70mvu4Sq8vqFpvY0zln+8yl9qbdeTU2eLd0PRzpcLhhBdhIBwG2dX8BkP2U6I0wWW8xoME9krtgFmV5f6y3WMsv/WvqEUbP0LD31KLil49IMqh2XcMWjLwgQF9kJ0ANcTN4rIoXvPMWKjfWABb2B7Tf+UxPaN1mAxhr2cv2x2egwAzrQsr9qT0lPEyOz3j4AnN8RDweEcPVT0GpZRjVd6fJ4J/ey89ntF1wYsTGG4kl9861iA+eZyvZM5cIBo69xEJoq9YW7sW5vW3xbxVFViDRM8chM1UXeIvBwl3a3xUYIjJyIwNBKbXZpjeEQnpalvmsZZfQKIAqgkSN1+ylvycDizQm1yAjo9c12S5sj9pS+PZQBVJkBEzC8="
+        - secure: "Art3JeQQ/T5gKT6m4S8xylwweLsXYX3qaVG5ZumsQkWzWrvJwXCeq4o+koa19Z1t9Gszo+WTYifVn95utX9+AUhgcbwUbwvpCACgiBTVlMDdVa9km8egPZ1TvFuOgeIR6xj/hz+p+RtCTlZ1sMgeXV9yTgnlLnFiKecY36ZN2hvWD+cz7idocFfhq+jCfQiaxReRrxO7UwCYxbldduZ1b90DfST+JnJTOW8cf27ChlfguNi6l/k2/guivABH6euBuDojmoKxCzQOJxjrhHw07yaRDLxi0ZTe0LAjOuehLvMmoP+iVKpg2OepMfm+pIPzR4CJeChF0xD6O93uc7zgltQx8QBmwg4Z30y21xzIhtYf6Yw1PTSsWMGTCk9nI7MkdB8Ao4Y2t4MPkN9IlNvQ6fsa5d8fCMf8j2fYPJYv2AgqXE+yyMHhhOUXmQhYW+lDAaNn6NQ7Xnk064UR+Vqdrmg1pUac2tx+wSDvNk96TU1Gdvia8gbKP5UpTFNR90Txxxmdt4pES/jB82zpR0OIC+kpP6p7BiqY/7P/6HJYYQE6TkAubFXOUFyUv5H21JIYGgRTU+i2bSOZYKFrNmjhV143gn/0J1zBnNpOzaPL2Es48w2aY6EJ4pFx3QOpWoUA4e03UcZzbVUv7w7c/isw7aCypGRVi+WdgxKUkKsLFKo="
+        - secure: "SSYizS83MBaq+apUQ8yylitSU6qu5dFrDk96wMeE7gEm6tjhh+JlyFnCqMNNyEpcgvK3s0NlGyt4yP0nMpF0ix3fGEXhLO2A82UDLYbTPFI+c2YHn8DAymg6dEzdIJ44LGzfkU/DFbIqQkvXmxvNP/3l2yXcGehRsHtuN4MEx4FBqT71c7rFKcBroEJl6t8FkV21VvhKUwJRJX5NsxI5+DGEHgvA41ZkTr+rxt+mx/8Y7cql27s0+ef7nKgvb13clFJy1WTa3t+eHuwdfS+6VlpHKk+v8eMddBFeOtAV9qSojGOiWutg3grLabvmJGWOUghUs0/gEYXpV2/MYR2aLdQC9DBB8bcxhsgebuqq8tMBISKzlqtsEAuA67CXMeMTwwhWQfIddim3192HFP0hfaNlqOYVnuYqo5HW8cyX4ek48aujaa2NTbPRqZ+xcVw0C5L8bs13NaaJeyGmVrIHfdvtKgj/PDhyosaH1fopaFjclJyryUV03AwznbcFFdD2bRZnKIq5xDcsVRN2tquAKHGd3n1NXf/vGIQP8KoxZgkF5Fa+FQaB4dlncba/l3x28N28CFSV4eG+0EYTxjRSW4ETJ66GqqgP5eH/NjdvDz7WKjHj7lXem4kewQ4Jq1Inrb8MsEpFhjQZCBHUgvGsLZP9PsZICukIzWsc4kVWXs4="
           
 language: python
 sudo: false
@@ -51,24 +48,26 @@ after_success:
         # You can set secret variables here in travis here:
         #  https://travis-ci.org/Erotemic/xdoctest/settings
 
+        cd $HOME/code/xdoctest
+
         # After you have setup your GPG key (plenty of resources on google about how to do this)
         IDENTIFIER="travis-ci-Erotemic"
         KEYID=$(gpg --list-keys --keyid-format LONG "$IDENTIFIER" | head -n 2 | tail -n 1 | awk '{print $1}' | tail -c 9)
         echo "KEYID = $KEYID"
 
-        cd $HOME/code/xdoctest
-
-        # Login to travis (requires authentication)
+        # Load or generate secrets
         source $(secret_loader.sh)
-
-        travis login --github-token $GITHUB_TOKEN
+        echo $TWINE_USERNAME
+        echo $TWINE_PASSWORD
+        echo $CI_GITHUB_SECRET
+        
         # encrypt relevant travis variables
         # The following commands will output lines that will need to be
         # manually added to this file. You could run with --add, but it messes
         travis encrypt TWINE_USERNAME=$TWINE_USERNAME 
         travis encrypt TWINE_PASSWORD=$TWINE_PASSWORD  
         travis encrypt CI_GITHUB_SECRET=$CI_GITHUB_SECRET
-
+        
         # Export plaintext gpg public keys, private keys, and trust info
         mkdir -p dev
         gpg --armor --export-secret-keys $KEYID > dev/travis_secret_gpg_key.pgp
@@ -76,7 +75,6 @@ after_success:
         gpg --export-ownertrust > dev/gpg_owner_trust
 
         # Manually encrypt the secret files (TODO: need to vet this procedure)
-        travis encrypt TRAVIS_SECRET=$TRAVIS_SECRET
         echo $TRAVIS_SECRET
         openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/travis_public_gpg_key.pgp -e > dev/travis_public_gpg_key.pgp.enc
         openssl aes-256-cbc -k $TRAVIS_SECRET -in dev/travis_secret_gpg_key.pgp -e > dev/travis_secret_gpg_key.pgp.enc
@@ -112,7 +110,6 @@ after_success:
         git status
         git add dev/*.enc
         git add dev/public_gpg_key
-
         #travis encrypt GPG_SECRET_KEYS="$GPG_SECRET_KEYS"
         '''  # <hack vim "regex" parser> '
     - gpg --version
