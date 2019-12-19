@@ -112,7 +112,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 * Minor fixes to readme and docs
 
-## [Version 0.8.0]
+## [Version 0.8.0] - Released 2019-05-03
 
 ### Added
 * Added docs! Finally!
@@ -121,7 +121,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Got-want exceptions now return a special error if it fails to create a string-representation of the object instead of crashing.
 * The `index` argument in `import_module_from_path` is now correctly used.
 
-## [Version 0.7.3]
+## [Version 0.7.3] - Released 2019-03-21
 
 ### Added
 * The REQUIRES directive can now accept python modules in the form: `# xdoctest: +REQUIRES(module:<my_modname>)`
@@ -132,19 +132,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Reduced import overhead time from 20ms to 1ms.
 
 
-## [Version 0.7.2]
+## [Version 0.7.2] - Released 2019-02-02
 
 ### Changed
 * Removed warning if `pygments` is not installed
 
 
-## [Version 0.7.1]
+## [Version 0.7.1] - Released 2019-02-01
 
 ### Changed
 * Changed verbosity defaults
 
 
-## [Version 0.7.0]
+## [Version 0.7.0] - Released 2019-01-18
 
 ### Added
 * Added `global-exec` to native xdoctest CLI and `xdoctest-global-exec` to the `pytest` plugin CLI
@@ -157,7 +157,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Fixed issue in `traceback` parsing that sometimes caused incorrectly offset line numbers.
 
 
-## [Version 0.6.2]
+## [Version 0.6.2] - Released 20l8-12-11
 
 ### Fixed
 * Fixed bug in `static_analysis.is_balanced_statement` and
@@ -167,13 +167,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Added option to print test times in the runner.
 
 
-## [Version 0.6.1]
+## [Version 0.6.1] - Released 2018-11-15
 
 ### Fixed
 * Fixed python2 unicode error in collection phase
 
 
-## [Version 0.6.0]
+## [Version 0.6.0] - Released 2018-10-23
 
 ### Added
 * Added nocolor command line arg
@@ -191,7 +191,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Fixed install issues (/introduced hack FIXME later)
 * Fixed issue with raw string lineno parsing
 
-## [Version 0.5.0]
+## [Version 0.5.0] - Released 2018-07-14
 
 ### Added
 * Added config option for lineno offsets. (corresponding arguments added to
@@ -217,7 +217,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Fixed bug with reporting elapsed time in native runner
 
 
-## [Version 0.4.0]
+## [Version 0.4.0] - Released 2018-06-10
 
 ### Added
 * Added auto parsing style. This first tries to use Google, but falls back on
@@ -233,30 +233,30 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * All parsers now default to the new "auto" style.
 * Colorized doctest now highlights "want" lines in a distinct (green) color
 
-## [Version 0.3.5]
+## [Version 0.3.5] - Released 2018-06-03
 
 ### Changed
 * Changed development status to Beta
 * Output difference now strips the `BLANKLINE` marker if enabled
 
-## [Version 0.3.4]
+## [Version 0.3.4] - Released 2018-05-27
 
 ### Changed
 * The reported difference between got and want now preserves newlines for
   better visibility.
 
-## [Version 0.3.3]
+## [Version 0.3.3] - Released 2018-05-13
 
 ### Fixed
 * Fixed bug where pytest would collect all tests twice 
   (because the `__init__.py` file was normalized to a directory in `package_modpaths`)
 
-## [Version 0.3.2]
+## [Version 0.3.2] - Released 2018-05-08
 
 ### Added
 * API update to facilitate `mkinit`
 
-## [Version 0.3.1]
+## [Version 0.3.1] - Released 2018-04-20
 
 ### Added
 * Improved doctest syntax error message
@@ -264,14 +264,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * `PythonPathContext` can now insert into front or back of sys.path
 * Flags can now be specified before or after positional arguments when using the __main__ script
 
-## [Version 0.3.0]
+## [Version 0.3.0] - Released 2018-04-02
 
 ### Added
 * Added entry point script
 * example command lines now use the full path if the module is not in the `PYTHONPATH`
 * Can now override `sys.path` when calling `modname_to_modpath` and `is_modname_importable` (API change)
 
-## [Version 0.2.4]
+## [Version 0.2.4]  - Released 2018-03-27
 
 ### Added
 * added `IGNORE_WANT` directive
@@ -299,8 +299,25 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Fix issue in `_docstr_line_workaround`
 
 
-## [Version 0.2.0]
+## [Version 0.2.0] - Released 2018-02-20
 
 ### Added
 * Starting keeping a changelog, all changes before this point are only
   documented via the git history.
+
+## [Version 0.1.0] - Released 2018-02-04
+
+### Added
+* Undocumented changes
+
+
+## [Version 0.0.12] - Released 2017-12-29
+
+### Added
+* Undocumented changes
+
+
+## [Version 0.0.1] - Released 2017-09-24
+
+### Added
+* First release
