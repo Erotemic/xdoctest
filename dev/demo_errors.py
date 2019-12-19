@@ -62,6 +62,43 @@ class Demo5(object):
         pass
 
 
+def demo_parsetime_syntax_error1():
+    """
+    Example:
+        >>> from __future__ import print_function
+        >>> print 'Parse-Time Syntax Error'
+    """
+
+
+def demo_parsetime_syntax_error2():
+    """
+    Example:
+        >>> def bad_syntax() return for
+    """
+
+
+def demo_runtime_error():
+    """
+    Example:
+        >>> print('Runtime Error {}'.format(5 / 0))
+    """
+
+
+def demo_runtime_name_error():
+    """
+    Example:
+        >>> print('Name Error {}'.format(foo))
+    """
+
+
+def demo_runtime_warning():
+    """
+    Example:
+        >>> import warnings
+        >>> warnings.warn('in-code warning')
+    """
+
+
 if __name__ == '__main__':
     """
     CommandLine:

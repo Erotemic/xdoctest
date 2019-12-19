@@ -114,8 +114,10 @@ class PythonPathContext(object):
         >>> # Mangle the path inside the context
         >>> self = PythonPathContext('foo', 0)
         >>> self.__enter__()
-        >>> sys.path.insert(0, 'mangled')
-        >>> self.__exit__(None, None, None)
+        >>> import pytest
+        >>> with pytest.warns(UserWarning):
+        >>>     sys.path.insert(0, 'mangled')
+        >>>     self.__exit__(None, None, None)
 
     Example:
         >>> # xdoctest: +REQUIRES(module:pytest)

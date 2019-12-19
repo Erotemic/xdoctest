@@ -110,32 +110,32 @@ def test_runner_syntax_error():
     """
     source = utils.codeblock(
         r'''
-        def test_parsetime_syntax_error1():
+        def demo_parsetime_syntax_error1():
             """
                 Example:
                     >>> from __future__ import print_function
                     >>> print 'Parse-Time Syntax Error'
             """
 
-        def test_parsetime_syntax_error2():
+        def demo_parsetime_syntax_error2():
             """
                 Example:
                     >>> def bad_syntax() return for
             """
 
-        def test_runtime_error():
+        def demo_runtime_error():
             """
                 Example:
                     >>> print('Runtime Error {}'.format(5 / 0))
             """
 
-        def test_runtime_name_error():
+        def demo_runtime_name_error():
             """
                 Example:
                     >>> print('Name Error {}'.format(foo))
             """
 
-        def test_runtime_warning():
+        def demo_runtime_warning():
             """
                 Example:
                     >>> import warnings
@@ -146,7 +146,7 @@ def test_runner_syntax_error():
     temp = utils.TempDir(persist=True)
     temp.ensure()
     dpath = temp.dpath
-    modpath = join(dpath, 'test_runner_syntax_error.py')
+    modpath = join(dpath, 'demo_runner_syntax_error.py')
     with open(modpath, 'w') as file:
         file.write(source)
 
