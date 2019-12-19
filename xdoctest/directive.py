@@ -133,6 +133,8 @@ DEFAULT_RUNTIME_STATE = {
     # Original directives we are currently not supporting:
     # DONT_ACCEPT_TRUE_FOR_1
     # REPORT_ONLY_FIRST_FAILURE
+    # REPORTING_FLAGS
+    # COMPARISON_FLAGS
 }
 
 

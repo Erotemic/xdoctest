@@ -5,22 +5,23 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Version 0.11.0] - Unreleased
+## [Version 0.11.0] - Released 2019-12-18
 
 ### Added
 * Add CI support for PyPy
 * Add CI support for CPython 3.8
+* Added tox
 * REQUIRES directive now supports CPython, IronPython, Jython, and PyPy
 * REQUIRES directive now supports PY2, PY3
 
 
-## [Version 0.10.3] - Unreleased
+## [Version 0.10.3] - Released 2019-11-14
 
 ### Fixed
 * The verbose flag was previously not taken into account. This is now fixed.
 
 
-## [Version 0.10.2] - Released 2019-11-14
+## [Version 0.10.2] - Released 2019-11-12
 
 ### Changed
 * The `--xdoc-glob` list of patterns now defaults to empty.  In general it is
