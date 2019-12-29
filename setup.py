@@ -132,13 +132,12 @@ def native_mb_python_tag(plat_impl=None, version_info=None):
         import sys
         version_info = sys.version_info
 
-    major = version_info[0]
-    minor = version_info[1]
+    major, minor = version_info[0:2]
+    ver = '{}{}'.format(major, minor)
 
     if plat_impl == 'CPython':
         # TODO: get if cp27m or cp27mu
         impl = 'cp'
-        ver = '{}.{}'.format(major, minor)
         if ver == '27':
             IS_27_BUILT_WITH_UNICODE = True  # how to determine this?
             if IS_27_BUILT_WITH_UNICODE:
@@ -146,7 +145,11 @@ def native_mb_python_tag(plat_impl=None, version_info=None):
             else:
                 abi = 'm'
         else:
-            abi = 'm'
+            if ver == '38':
+                # no abi in 38?
+                abi = ''
+            else:
+                abi = 'm'
         mb_tag = '{impl}{ver}-{impl}{ver}{abi}'.format(**locals())
     elif plat_impl == 'PyPy':
         abi = ''
