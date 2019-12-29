@@ -13,19 +13,22 @@ workflows:
   version: 2
   test:
     jobs:
+      - test-full-3.8
       - test-full-3.7
       - test-full-3.6
       - test-full-3.5
       - test-full-3.4
       - test-full-2.7
-      #- test-full-pypy3
 
+      - test-minimal-3.8
       - test-minimal-3.7
       - test-minimal-3.6
       - test-minimal-3.5
       - test-minimal-3.4
       - test-minimal-2.7
+
       - test-minimal-pypy3
+      - test-full-pypy3
 
 jobs:
 
@@ -34,6 +37,9 @@ jobs:
   ###########
 
   .test-minimal-template: &test-minimal-template  
+    environment:
+      # Setting the python executable environ allows template reuse for pypy
+      - PYTHON_EXE: python
     docker:
       - image: circleci/python
     steps:
@@ -45,7 +51,7 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            python -m venv venv || virtualenv -v venv  # first command is python3 || second is python2
+            $PYTHON_EXE -m venv venv || virtualenv -v venv  # first command is python3 || second is python2
             . venv/bin/activate
             # The "minimal" tests install barebones requirements
             pip install -r requirements/tests.txt
@@ -67,6 +73,8 @@ jobs:
 
 
   .test-full-template: &test-full-template  
+    environment:
+      - PYTHON_EXE: python
     docker:
       - image: circleci/python
     steps:
@@ -78,7 +86,7 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            python -m venv venv || virtualenv -v venv  # first command is python3 || second is python2
+            $PYTHON_EXE -m venv venv || virtualenv -v venv  # first command is python3 || second is python2
             . venv/bin/activate
             # The "full" dependency install
             pip install -r requirements.txt
@@ -107,6 +115,12 @@ jobs:
   #
   # All we need to do is change the base docker image so python is the
   # version we want we can reuse everything else from the template
+  
+  test-full-3.8:
+    <<: *test-full-template
+    docker:
+      - image: circleci/python:3.8
+    working_directory: ~/repo-full-38
   
   test-full-3.7:
     <<: *test-full-template
@@ -139,6 +153,12 @@ jobs:
     working_directory: ~/repo-full-27
 
   # ------------
+  
+  test-minimal-3.8:
+    <<: *test-minimal-template
+    docker:
+      - image: circleci/python:3.8
+    working_directory: ~/repo-minimal-38
 
   test-minimal-3.7:
     <<: *test-minimal-template
@@ -170,45 +190,28 @@ jobs:
       - image: circleci/python:2.7
     working_directory: ~/repo-minimal-27
 
+  # --- pypy ----
+
   test-minimal-pypy3:
-    # TODO: generalize the minimal template to allow for pypy or cpython
+    <<: *test-minimal-template
     docker:
       - image: pypy:3
+    environment:
+      - PYTHON_EXE: pypy3
     working_directory: ~/repo-minimal-pypy3
-    steps:
-      - checkout
-      # ### INITIALIZE AND CACHE REQUIREMENTS ###
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}
-      - run:
-          name: install dependencies
-          command: |
-            pypy3 -m venv venv 
-            . venv/bin/activate
-            # The "minimal" tests install barebones requirements
-            pip install -r requirements/tests.txt
-            pip install -r requirements/runtime.txt 
-            pip install .
-      - save_cache:
-          paths:
-            - ./venv
-          key: v1-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}
-      # ### RUN TESTS ###
-      - run:
-          name: run tests
-          command: |
-            . venv/bin/activate
-            #python run_tests.py || echo "pypy failed, but this is allowed"
-            python run_tests.py
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
 
+  test-full-pypy3:
+    <<: *test-full-template
+    docker:
+      - image: pypy:3
+    environment:
+      - PYTHON_EXE: pypy3
+    working_directory: ~/repo-full-pypy3
+        
   heredoc:
     docker:
       - image: pypy:3
-    working_directory: ~/repo-minimal-pypy3
+    working_directory: ~/dev-only-not-a-real-job
     steps:
       - | 
         __heredoc__=" 
@@ -226,4 +229,3 @@ jobs:
         ./run_doctests.sh || echo "pypy failed, but this is allowed"
         ./run_tests.sh || echo "pypy failed, but this is allowed"
         "
-
