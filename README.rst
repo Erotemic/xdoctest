@@ -20,7 +20,9 @@ Quick Start
 Installation: from pypi
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-XDoctest can be installed via the normal pip mechanisms:
+Xdoctest is distributed on pypi as a universal wheel and can be pip installed on
+Python 2.7, Python 3.4+. Installations are tested on CPython and PyPy
+implementations. 
 
 ::
 
@@ -304,15 +306,15 @@ just be better to use an ``assert`` statement.
 Backwards Compatibility
 -----------------------
 We (I) have removed all known backwards syntax incompatibilities. This is based
-on running doctests on real life examples: `boltons`, `ubelt`, `networkx`,
-`pytorch` (pending their acceptance of a pull-request), and on a set of
+on running doctests on real life examples: ``boltons``, ``ubelt``, ``networkx``,
+``pytorch`` (pending their acceptance of a pull-request), and on a set of
 extensive self-testing. Please raise an issue or submit a merge/pull request.
 
 Despite full syntax backwards compatibility, there are directive
 incompatibilities by design. The directives we expose are more consise and
 expressive. Our "got"/"want" checker is also much more permissive. We recommend
-that you rely on coded `assert`-statements for system-critical code. This also
-makes it much easier to transform your `xdoctest` into a `unittest` when you
+that you rely on coded ``assert``-statements for system-critical code. This also
+makes it much easier to transform your ``xdoctest`` into a ``unittest`` when you
 realize your doctests start getting too long.
 
 
