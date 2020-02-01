@@ -51,6 +51,7 @@ from xdoctest import dynamic_analysis as dynamic
 from xdoctest import core
 from xdoctest import doctest_example
 from xdoctest import utils
+from functools import partial
 import time
 import warnings
 import sys
@@ -108,7 +109,6 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
         >>> modname = 'xdoctest.dynamic_analysis'
         >>> result = doctest_module(modname, 'list', argv=[''])
     """
-    from functools import partial
     _log = partial(log, verbose=DEBUG)
     _log('------+ DEBUG +------')
     _log('CALLED doctest_module')
@@ -127,6 +127,10 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
         frame_parent = dynamic.get_parent_frame()
         modpath = frame_parent.f_globals['__file__']
     else:
+        if command is None:
+            # Allow the modname to contain the name of the test to be run
+            if '::' in modpath_or_name:
+                modpath_or_name, command = modpath_or_name.split('::')
         modpath = core._rectify_to_modpath(modpath_or_name)
 
     if config is None:
@@ -134,7 +138,6 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
 
     command, style, verbose = _parse_commandline(command, style, verbose, argv)
 
-    from functools import partial
     _log = partial(log, verbose=verbose)
 
     _log('Start doctest_module({!r})'.format(modpath_or_name))
