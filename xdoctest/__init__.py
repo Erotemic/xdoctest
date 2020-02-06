@@ -24,7 +24,7 @@ Getting Started 0:  Installation
 You should have Python installed. Its also best practice to be in a `virtual
 environment <https://realpython.com/effective-python-environment/>`_. If you
 are a Python beginer and that doesn't make sense, then I would recommend
-setting up a `conda <https://docs.conda.io/en/latest/>`_.  environment. I
+setting up a `conda <https://docs.conda.io/en/latest/>`_ environment. I
 typically do this on Linux as follows:
 
 .. code:: bash
