@@ -68,7 +68,7 @@ interface.
 Check if xdoctest will work on your package
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You can quickly check if ``xdocetst`` will work on your package
+You can quickly check if ``xdoctest`` will work on your package
 out-of-the box by installing it via pip and running
 ``python -m xdoctest <pkg> all``, where ``<pkg>`` is the path to your
 python package / module (or its name if it is installed in your

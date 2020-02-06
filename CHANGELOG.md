@@ -5,6 +5,14 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Version 0.12.0] - Unreleased 
+
+### TODO
+* better docs
+* support for numpy and RST example blocks
+* make `xdoctest -m xdoctest.__init__ __doc__:0` work like `xdoctest -m xdoctest/__init__.py __doc__:0` 
+
+
 ## [Version 0.11.0] - Released 2019-12-18
 
 ### Added
