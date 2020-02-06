@@ -4,11 +4,11 @@
 XDoctest - Extended Doctest
 ===========================
 
-The ``xdoctest`` package is a re-write of Python's builtin ``doctest``
-module. It replaces the old regex-based parser with a new
-abstract-syntax-tree based parser (using Python's ``ast`` module). The
-goal is to make doctests easier to write, simpler to configure, and
-encourage the pattern of test driven development.
+The :py:mod:`xdoctest` package is a re-write of Python's builtin
+:py:mod:`doctest` module. It replaces the old regex-based parser with a new
+abstract-syntax-tree based parser (using Python's :py:mod:`ast` module). The
+goal is to make doctests easier to write, simpler to configure, and encourage
+the pattern of test driven development.
 
 
 Read the docs here: http://xdoctest.readthedocs.io/en/latest/
@@ -21,9 +21,9 @@ Pypi is here: https://pypi.org/project/xdoctest/
 Getting Started 0:  Installation
 --------------------------------
 
-You should have Python installed. Its also best practice to be in a `virtual
-environment <https://realpython.com/effective-python-environment/>`_. If you
-are a Python beginer and that doesn't make sense, then I would recommend
+You should have Python installed. Its also best practice to be in a
+`virtual environment <https://realpython.com/effective-python-environment/>`_.
+If you are a Python beginer and that doesn't make sense, then I would recommend
 setting up a `conda <https://docs.conda.io/en/latest/>`_ environment. I
 typically do this on Linux as follows:
 
@@ -87,8 +87,9 @@ Consider the following implementation the fibonacci function.
 
 
 We can add a "doctest" in the "docstring" as both an example and a test of the
-code. All we have to do is prefix the doctest code with ``>>> ``. We can also
-use xdoctest directives to control the flow of doctest execution.
+code. All we have to do is prefix the doctest code with three right chevrons
+`` >>> ``. We can also use xdoctest directives to control the flow of doctest
+execution.
 
 .. code:: python
 
@@ -138,29 +139,29 @@ Getting Started 2: Running your doctests
 ----------------------------------------
 
 
-There are two ways to run xdoctest: (1) ``pytest`` or (2) the native
-``xdoctest`` interface. The native interface is less opaque and implicit, but
-its purpose is to run doctests. The other option is to use the widely used
-pytest package.  This allows you to run both unit tests and doctests with the
-same command and has many other advantages.
+There are two ways to run xdoctest: (1)  :py:mod:`pytest` or (2) the native
+:py:mod:`xdoctest` interface. The native interface is less opaque and implicit, but its
+purpose is to run doctests. The other option is to use the widely used pytest
+package.  This allows you to run both unit tests and doctests with the same
+command and has many other advantages.
 
-It is recommended to use ``pytest`` for automatic testing (e.g. in your CI
+It is recommended to use pytest for automatic testing (e.g. in your CI
 scripts), but for debugging it may be easier to use the native interface.
 
 
 Using the pytest interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When ``pytest`` is run, ``xdoctest`` is automatically discovered, but is
-disabled by default. This is because ``xdoctest`` needs to replace the builtin
-``doctest`` plugin.
+When pytest is run, xdoctest is automatically discovered, but is disabled by
+default. This is because xdoctest needs to replace the builtin
+:py:mod:`pytest._pytest.doctest` plugin.
 
 To enable this plugin, run ``pytest`` with ``--xdoctest`` or ``--xdoc``.
 This can either be specified on the command line or added to your
 ``addopts`` options in the ``[pytest]`` section of your ``pytest.ini``
 or ``tox.ini``.
 
-To run a specific doctest, ``xdoctest`` sets up ``pytest`` node names
+To run a specific doctest, xdoctest sets up pytest node names
 for these doctests using the following pattern:
 ``<path/to/file.py>::<callname>:<num>``. For example a doctest for a
 function might look like this ``mymod.py::funcname:0``, and a class
@@ -170,8 +171,8 @@ Using the native interface.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-The ``xdoctest`` module contains a ``pytest`` plugin, but also contains a
-native command line interface (cli). The CLI is generated using argparse.
+The :py:mod:`xdoctest` module contains a :py:mod:`pytest` plugin, but also contains
+a native command line interface (cli). The CLI is generated using argparse.
 
 For help you can run
 

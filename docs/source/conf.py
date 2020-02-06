@@ -97,6 +97,9 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.napoleon',
     'sphinx.ext.autosummary',
+
+    'sphinx.ext.githubpages',
+
 ]
 
 autoapi_modules = {
@@ -250,3 +253,27 @@ html_theme_options = {
     # 'logo_only': True,
 }
 
+
+"""
+Test if it worked:
+    python -msphinx.ext.intersphinx ~/code/xdoctest/docs/build/html/objects.inv
+
+    python -msphinx.ext.intersphinx ~/code/xdoctest/docs/build/html/objects.inv | grep pytest
+
+    python -msphinx.ext.intersphinx https://docs.pytest.org/en/latest/objects.inv
+
+    sphobjinv suggest -t 90 -u https://readthedocs.org/projects/pytest/reference/objects.inv
+    "signal.convolve2d"
+
+
+"""
+
+
+intersphinx_mapping = {
+    'pytest': ('https://docs.pytest.org/en/latest/', None),
+    'pytest._pytest.doctest': ('https://docs.pytest.org/en/latest/_modules/_pytest/doctest.html', None),
+    # 'ubelt': ('https://readthedocs.org/projects/ubelt/', None),
+    # 'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+    # 'cv2' : ('http://docs.opencv.org/2.4/', None),
+    # 'h5py' : ('http://docs.h5py.org/en/latest/', None)
+}
