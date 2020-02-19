@@ -76,7 +76,7 @@ class Config(dict):
                                  help=('Disable ANSI coloration in stdout'))),
             (['--offset'], dict(dest='offset_linenos', action='store_true',
                                 default=self['offset_linenos'],
-                                help=('if True formated source linenumbers will agree with '
+                                help=('if True formatted source linenumbers will agree with '
                                       'their location in the source file. Otherwise they '
                                       'will be relative to the doctest itself.'))),
             (['--report'], dict(dest='reportchoice',

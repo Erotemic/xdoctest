@@ -23,7 +23,7 @@ Getting Started 0:  Installation
 
 You should have Python installed. Its also best practice to be in a
 `virtual environment <https://realpython.com/effective-python-environment/>`_.
-If you are a Python beginer and that doesn't make sense, then I would recommend
+If you are a Python beginner and that doesn't make sense, then I would recommend
 setting up a `conda <https://docs.conda.io/en/latest/>`_ environment. I
 typically do this on Linux as follows:
 
@@ -68,7 +68,7 @@ Getting Started 1: Your first doctest
 -------------------------------------
 
 If you already know how to write a doctest then you can skip to the next
-quetsion. If you aren't familiar with doctests, this will help get you up to
+section. If you aren't familiar with doctests, this will help get you up to
 speed.
 
 Consider the following implementation the fibonacci function.
@@ -172,7 +172,8 @@ Using the native interface.
 
 
 The :py:mod:`xdoctest` module contains a :py:mod:`pytest` plugin, but also contains
-a native command line interface (cli). The CLI is generated using argparse.
+a native command line interface (cli). The CLI is generated using
+:py:mod:`argparse`.
 
 For help you can run
 
@@ -215,7 +216,7 @@ which produces something similar to the following output:
       --durations DURATIONS
                             specify execution times for slowest N tests.N=0 will
                             show times for all tests
-      --time                Same as if durrations=0
+      --time                Same as if durations=0
       --nocolor             Disable ANSI coloration in stdout
       --offset              if True formated source linenumbers will agree with
                             their location in the source file. Otherwise they will
