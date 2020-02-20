@@ -11,57 +11,33 @@ goal is to make doctests easier to write, simpler to configure, and encourage
 the pattern of test driven development.
 
 
-Read the docs here: http://xdoctest.readthedocs.io/en/latest/
-
-Github is here: https://github.com/Erotemic/xdoctest
-
-Pypi is here: https://pypi.org/project/xdoctest/
++---------------+-------------------------------------------+
+| Read the docs | http://xdoctest.readthedocs.io/en/latest  |
++---------------+-------------------------------------------+
+| Github        | https://github.com/Erotemic/xdoctest      |
++---------------+-------------------------------------------+
+| Pypi          | https://pypi.org/project/xdoctest         |
++---------------+-------------------------------------------+
 
 
 Getting Started 0:  Installation
 --------------------------------
 
-You should have Python installed. Its also best practice to be in a
-`virtual environment <https://realpython.com/effective-python-environment/>`_.
-If you are a Python beginner and that doesn't make sense, then I would recommend
-setting up a `conda <https://docs.conda.io/en/latest/>`_ environment. I
-typically do this on Linux as follows:
-
-.. code:: bash
-
-    # Download the conda install script
-    mkdir -p ~/tmp
-    cd ~/tmp
-    CONDA_INSTALL_SCRIPT=Miniconda3-latest-Linux-x86_64.sh
-    curl https://repo.continuum.io/miniconda/$CONDA_INSTALL_SCRIPT > $CONDA_INSTALL_SCRIPT
-    chmod +x $CONDA_INSTALL_SCRIPT
-
-    # Install miniconda to user local directory
-    _CONDA_ROOT=$HOME/.local/conda
-    sh $CONDA_INSTALL_SCRIPT -b -p $_CONDA_ROOT
-    # Activate the basic conda environment
-    source $_CONDA_ROOT/etc/profile.d/conda.sh
-    # Update the base and create the virtual environment
-    conda update -y -n base conda
-    conda create -y -n py38 python=3.8
-
-    # Activate your vitualenv
-    # I recommend adding the following steps to your ~/.bashrc
-    _CONDA_ROOT=$HOME/.local/conda
-    source $_CONDA_ROOT/etc/profile.d/conda.sh
-    conda activate py38
-
-
-Now that you are in a conda environment simply
+First ensure that you have :doc:`Python installed <../installing_python>` and
+are ideally in a virtual enviornment. Install xdoctest using the pip.
 
 .. code:: bash
 
     pip install xdoctest
 
+Alternatively you can install xdoctest with optional packages.
 
-Or ``pip install xdoctest[all]`` for all the bells and whistles (like colored
-output).
+.. code:: bash
 
+    pip install xdoctest[all]
+
+This ensures that the :py:mod:`pygments` and :py:mod:`colorama` packages
+are installed, which are required to colored terminal output.
 
 
 Getting Started 1: Your first doctest
@@ -139,11 +115,11 @@ Getting Started 2: Running your doctests
 ----------------------------------------
 
 
-There are two ways to run xdoctest: (1)  :py:mod:`pytest` or (2) the native
-:py:mod:`xdoctest` interface. The native interface is less opaque and implicit, but its
-purpose is to run doctests. The other option is to use the widely used pytest
-package.  This allows you to run both unit tests and doctests with the same
-command and has many other advantages.
+There are two ways to run xdoctest: (1) :py:mod:`pytest` or (2) the native
+:py:mod:`xdoctest` interface. The native interface is less opaque and implicit,
+but its purpose is to run doctests. The other option is to use the widely used
+pytest package.  This allows you to run both unit tests and doctests with the
+same command and has many other advantages.
 
 It is recommended to use pytest for automatic testing (e.g. in your CI
 scripts), but for debugging it may be easier to use the native interface.
@@ -170,9 +146,8 @@ method might look like this: ``mymod.py::ClassName::method:0``
 Using the native interface.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
-The :py:mod:`xdoctest` module contains a :py:mod:`pytest` plugin, but also contains
-a native command line interface (cli). The CLI is generated using
+The :py:mod:`xdoctest` module contains a :py:mod:`pytest` plugin, but also
+contains a native command line interface (CLI). The CLI is generated using
 :py:mod:`argparse`.
 
 For help you can run

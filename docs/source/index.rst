@@ -12,7 +12,6 @@
 
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 
-
 .. The __init__ files contains the top-level documentation overview
 .. autoapimodule:: xdoctest
     :show-inheritance:

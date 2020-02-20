@@ -13,11 +13,14 @@ goal is to make doctests easier to write, simpler to configure, and
 encourage the pattern of test driven development.
 
 
-Read the docs here: http://xdoctest.readthedocs.io/en/latest/
++---------------+-------------------------------------------+
+| Read the docs | http://xdoctest.readthedocs.io/en/latest  |
++---------------+-------------------------------------------+
+| Github        | https://github.com/Erotemic/xdoctest      |
++---------------+-------------------------------------------+
+| Pypi          | https://pypi.org/project/xdoctest         |
++---------------+-------------------------------------------+
 
-Github is here: https://github.com/Erotemic/xdoctest
-
-Pypi is here: https://pypi.org/project/xdoctest/
 
 Quick Start
 -----------
