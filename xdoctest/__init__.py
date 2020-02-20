@@ -36,8 +36,8 @@ Alternatively you can install xdoctest with optional packages.
 
     pip install xdoctest[all]
 
-This ensures that the :py:mod:`pygments` and :py:mod:`colorama` packages
-are installed, which are required to colored terminal output.
+This ensures that the :py:mod:`pygments` and :py:mod:`colorama` packages are
+installed, which are required to color terminal output.
 
 
 Getting Started 1: Your first doctest
