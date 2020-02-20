@@ -24,7 +24,7 @@ Getting Started 0:  Installation
 --------------------------------
 
 First ensure that you have :doc:`Python installed <../installing_python>` and
-are ideally in a virtual enviornment. Install xdoctest using the pip.
+ideally are in a virtual environment. Install xdoctest using the pip.
 
 .. code:: bash
 
@@ -47,7 +47,7 @@ If you already know how to write a doctest then you can skip to the next
 section. If you aren't familiar with doctests, this will help get you up to
 speed.
 
-Consider the following implementation the fibonacci function.
+Consider the following implementation the Fibonacci function.
 
 .. code:: python
 
