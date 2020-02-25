@@ -15,7 +15,7 @@ this code is heavilly based on `pytest/_pytest/doctest.py` plugin file:
     https://github.com/pytest-dev/pytest
 
 """
-from __future__ import print_function, division, absolute_import
+from __future__ import absolute_import, division, print_function
 import pytest
 from _pytest._code import code
 from _pytest import fixtures
@@ -94,6 +94,13 @@ def pytest_addoption(parser):
                     type=str_lower, default='freeform',
                     help='basic style used to write doctests',
                     choices=core.DOCTEST_STYLES,
+                    dest='xdoctest_style')
+
+    group.addoption('--xdoctest-analysis', '--xdoc-analysis',
+                    type=str_lower, default='auto',
+                    help=('How doctests are collected. '
+                          'Can either be static, dynamic, or auto'),
+                    choices=['static', 'dynamic', 'auto'],
                     dest='xdoctest_style')
 
     from xdoctest import doctest_example
@@ -222,10 +229,12 @@ class XDoctestModule(_XDoctestBase):
         modpath = str(self.fspath)
 
         style = self.config.getvalue('xdoctest_style')
+        dynamic = self.config.getvalue('xdoctest_dynamic')
         self._prepare_internal_config()
 
         try:
-            examples = list(core.parse_doctestables(modpath, style=style))
+            examples = list(core.parse_doctestables(modpath, style=style,
+                                                    dynamic=dynamic))
         except SyntaxError:
             if self.config.getvalue('xdoctest_ignore_syntax_errors'):
                 pytest.skip('unable to import module %r' % self.fspath)

@@ -2,7 +2,7 @@
 """
 This module defines the main class that holds a DocTest example
 """
-from __future__ import print_function, division, absolute_import, unicode_literals
+from __future__ import absolute_import, division, print_function, unicode_literals
 import __future__
 from collections import OrderedDict
 import traceback

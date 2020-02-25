@@ -3,7 +3,7 @@
 Core methods used by xdoctest runner and plugin code to statically extract
 doctests from a module or package.
 """
-from __future__ import print_function, division, absolute_import, unicode_literals
+from __future__ import absolute_import, division, print_function, unicode_literals
 import sys
 import textwrap
 import warnings
@@ -11,8 +11,8 @@ import six
 import itertools as it
 from os.path import exists
 from fnmatch import fnmatch
-from xdoctest import dynamic_analysis as dynamic
-from xdoctest import static_analysis as static
+from xdoctest import dynamic_analysis
+from xdoctest import static_analysis
 from xdoctest import parser
 from xdoctest import exceptions
 from xdoctest import doctest_example
@@ -356,7 +356,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
 
 def _rectify_to_modpath(modpath_or_name):
     """ if modpath_or_name is a name, statically converts it to a path """
-    modpath = static.modname_to_modpath(modpath_or_name)
+    modpath = static_analysis.modname_to_modpath(modpath_or_name)
     if modpath is None:
         if six.PY2:
             if modpath_or_name.endswith('.pyc'):
@@ -368,30 +368,40 @@ def _rectify_to_modpath(modpath_or_name):
     return modpath
 
 
-def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
+def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True,
+                     analysis='static'):
     """
     Statically generates all callable definitions in a module or package
 
     Args:
         modpath_or_name (str): path to or name of the module to be tested
+
         exclude (List[str]): glob-patterns of file names to exclude
+
         ignore_syntax_errors (bool, default=True):
             if False raise an error when syntax errors occur in a doctest
+
+        analysis (str, default='static'):
+            if 'static', only static analysis is used to parse call
+            definitions. If 'auto', uses dynamic analysis for compiled python
+            extensions, but static analysis elsewhere, if 'dynamic', then
+            dynamic analysis is used to parse all calldefs.
 
     Example:
         >>> modpath_or_name = 'xdoctest.core'
         >>> testables = list(package_calldefs(modpath_or_name))
         >>> assert len(testables) == 1
         >>> calldefs, modpath = testables[0]
-        >>> assert static.modpath_to_modname(modpath) == modpath_or_name
+        >>> assert static_analysis.modpath_to_modname(modpath) == modpath_or_name
         >>> assert 'package_calldefs' in calldefs
     """
     pkgpath = _rectify_to_modpath(modpath_or_name)
 
-    modpaths = static.package_modpaths(pkgpath, with_pkg=True, with_libs=True)
+    modpaths = static_analysis.package_modpaths(pkgpath, with_pkg=True,
+                                                with_libs=True)
     modpaths = list(modpaths)
     for modpath in modpaths:
-        modname = static.modpath_to_modname(modpath)
+        modname = static_analysis.modpath_to_modname(modpath)
         if any(fnmatch(modname, pat) for pat in exclude):
             continue
         if not exists(modpath):
@@ -400,25 +410,28 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
                 'Is it an old pyc file?'.format(modname))
             continue
 
-        FORCE_DYNAMIC = '--xdoc-force-dynamic' in sys.argv
-        # if false just skip extension modules
-        # ALLOW_DYNAMIC = '--no-xdoc-dynamic' not in sys.argv
-        ALLOW_DYNAMIC = '--allow-xdoc-dynamic' in sys.argv
+        # backwards compatibility hacks
+        if '--allow-xdoc-dynamic' in sys.argv:
+            analysis = 'auto'
+        if '--xdoc-force-dynamic' in sys.argv:
+            analysis = 'dynamic'
 
-        needs_dynamic = False
+        needs_dynamic = modpath.endswith(
+            static_analysis._platform_pylib_exts())
 
-        if FORCE_DYNAMIC:
-            # Force dynamic parsing for everything
+        if analysis == 'static':
+            do_dynamic = False
+        elif analysis == 'dynamic':
             do_dynamic = True
+        elif analysis == 'auto':
+            do_dynamic = needs_dynamic
         else:
-            # Some modules can only be parsed dynamically
-            needs_dynamic = modpath.endswith(static._platform_pylib_exts())
-            do_dynamic = needs_dynamic and ALLOW_DYNAMIC
+            raise KeyError(analysis)
 
         if do_dynamic:
             try:
-                calldefs = dynamic.parse_dynamic_calldefs(modpath)
-            except ImportError as ex:
+                calldefs = dynamic_analysis.parse_dynamic_calldefs(modpath)
+            except (ImportError, RuntimeError) as ex:
                 # Some modules are just c modules
                 msg = 'Cannot dynamically parse module={} at path={}.\nCaused by: {!r} {}'
                 msg = msg.format(modname, modpath, type(ex), ex)
@@ -432,10 +445,10 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
                 yield calldefs, modpath
         else:
             if needs_dynamic:
+                # Some modules can only be parsed dynamically
                 continue
-
             try:
-                calldefs = static.parse_calldefs(fpath=modpath)
+                calldefs = static_analysis.parse_calldefs(fpath=modpath)
             except SyntaxError as ex:
                 # Handle error due to the actual code containing errors
                 msg = 'Cannot parse module={} at path={}.\nCaused by: {}'
@@ -450,18 +463,29 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True):
 
 
 def parse_doctestables(modpath_or_name, exclude=[], style='auto',
-                       ignore_syntax_errors=True, parser_kw={}):
+                       ignore_syntax_errors=True, parser_kw={},
+                       analysis='static'):
     """
     Parses all doctests within top-level callables of a module and generates
     example objects.  The style influences which tests are found.
 
     Args:
-        modpath_or_name (str|PathLike): path or name of a module
+        modpath_or_name (str | PathLike): path or name of a module
+
         exclude (List[str]): glob-patterns of file names to exclude
+
         style (str): expected doctest style (e.g. google, freeform, auto)
+
         ignore_syntax_errors (bool, default=True):
             if False raise an error when syntax errors
+
         parser_kw: extra args passed to the parser
+
+        analysis (str, default='static'):
+            if 'static', only static analysis is used to parse call
+            definitions. If 'auto', uses dynamic analysis for compiled python
+            extensions, but static analysis elsewhere, if 'dynamic', then
+            dynamic analysis is used to parse all calldefs.
 
     Yields:
         xdoctest.doctest_example.DocTest : parsed doctest example objects
@@ -502,7 +526,8 @@ def parse_doctestables(modpath_or_name, exclude=[], style='auto',
 
     # Statically parse modules and their doctestable callables in a package
     for calldefs, modpath in package_calldefs(modpath_or_name, exclude,
-                                              ignore_syntax_errors):
+                                              ignore_syntax_errors,
+                                              analysis=analysis):
         for callname, calldef in calldefs.items():
             docstr = calldef.docstr
             if calldef.docstr is not None:

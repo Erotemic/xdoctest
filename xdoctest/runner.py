@@ -47,7 +47,7 @@ run the doctests as such:
 
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
-from xdoctest import dynamic_analysis as dynamic
+from xdoctest import dynamic_analysis
 from xdoctest import core
 from xdoctest import doctest_example
 from xdoctest import utils
@@ -66,7 +66,8 @@ DEBUG = '--debug' in sys.argv
 
 
 def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
-                   style='auto', verbose=None, config=None, durations=None):
+                   style='auto', verbose=None, config=None, durations=None,
+                   analysis='static'):
     """
     Executes requestsed google-style doctests in a package or module.
     Main entry point into the testing framework.
@@ -102,6 +103,9 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
 
         durations (int, default=None): if specified report top N slowest tests
 
+        analysis (str): determines if doctests are found using static or
+            dynamic analysis.
+
     Returns:
         Dict: run_summary
 
@@ -124,7 +128,7 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
 
     # Determine package name via caller if not specified
     if modpath_or_name is None:
-        frame_parent = dynamic.get_parent_frame()
+        frame_parent = dynamic_analysis.get_parent_frame()
         modpath = frame_parent.f_globals['__file__']
     else:
         if command is None:
@@ -159,7 +163,7 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
     # Parse all valid examples
     with warnings.catch_warnings(record=True) as parse_warnlist:
         examples = list(core.parse_doctestables(modpath, exclude=exclude,
-                                                style=style))
+                                                style=style, analysis=analysis))
         # Set each example mode to native to signal that we are using the
         # native xdoctest runner instead of the pytest runner
         for example in examples:
@@ -490,8 +494,13 @@ def _update_argparse_cli(add_argument, prefix=None):
                  'Defaults to all',
                  default=None)
 
-    add_argument(*('--style',), type=str, help='choose your style',
+    add_argument(*('--style',), type=str,
+                 help='choose the style of doctests that will be parsed',
                  choices=['auto', 'google', 'freeform'], default='auto')
+
+    add_argument(*('--analysis',), type=str,
+                 help='How doctests are collected',
+                 choices=['auto', 'static', 'dynamic'], default='static')
 
     add_argument(*('--durations',), type=int,
                  help=('specify execution times for slowest N tests.'
