@@ -30,9 +30,6 @@ def parse_requirements(fname='requirements.txt'):
     Parse the package dependencies listed in a requirements file but strips
     specific versioning information.
 
-    TODO:
-        perhaps use https://github.com/davidfischer/requirements-parser instead
-
     CommandLine:
         python -c "import setup; print(setup.parse_requirements())"
     """
@@ -115,9 +112,7 @@ def parse_description():
 
 def native_mb_python_tag(plat_impl=None, version_info=None):
     """
-
-    CommandLine:
-        python -m xdoctest setup.py native_mb_python_tag
+    Get the correct manylinux python version tag for this interpreter
 
     Example:
         >>> print(native_mb_python_tag())
@@ -159,6 +154,7 @@ def native_mb_python_tag(plat_impl=None, version_info=None):
     else:
         raise NotImplementedError(plat_impl)
     return mb_tag
+
 
 NAME = 'xdoctest'
 try:

@@ -101,7 +101,7 @@ def pytest_addoption(parser):
                     help=('How doctests are collected. '
                           'Can either be static, dynamic, or auto'),
                     choices=['static', 'dynamic', 'auto'],
-                    dest='xdoctest_style')
+                    dest='xdoctest_analysis')
 
     from xdoctest import doctest_example
     doctest_example.Config()._update_argparse_cli(
@@ -229,12 +229,12 @@ class XDoctestModule(_XDoctestBase):
         modpath = str(self.fspath)
 
         style = self.config.getvalue('xdoctest_style')
-        dynamic = self.config.getvalue('xdoctest_dynamic')
+        analysis = self.config.getvalue('xdoctest_analysis')
         self._prepare_internal_config()
 
         try:
             examples = list(core.parse_doctestables(modpath, style=style,
-                                                    dynamic=dynamic))
+                                                    analysis=analysis))
         except SyntaxError:
             if self.config.getvalue('xdoctest_ignore_syntax_errors'):
                 pytest.skip('unable to import module %r' % self.fspath)
