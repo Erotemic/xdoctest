@@ -8,7 +8,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Version 0.12.0] - Unreleased 
 
 ###  Added
-* CLI support for doctest collector mode
+* CLI support for doctest "analysis" mode. 
 
 ###  Fixed
 * Google docstrings now allow for leading whitespace in the description.
