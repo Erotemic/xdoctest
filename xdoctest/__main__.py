@@ -84,6 +84,7 @@ def main(argv=None):
     arg = ns['arg']
     style = ns['style']
     durations = ns['durations']
+    analysis = ns['analysis']
     if ns['time']:
         durations = 0
     # ---
@@ -151,7 +152,8 @@ def main(argv=None):
 
     run_summary = xdoctest.doctest_module(modname, argv=[command], style=style,
                                           verbose=config['verbose'],
-                                          config=config, durations=durations)
+                                          config=config, durations=durations,
+                                          analysis=analysis)
     n_failed = run_summary.get('n_failed', 0)
     if n_failed > 0:
         return 1

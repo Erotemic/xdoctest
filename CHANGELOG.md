@@ -7,6 +7,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Version 0.12.0] - Unreleased 
 
+###  Added
+* CLI support for doctest collector mode
+
+###  Fixed
+* Google docstrings now allow for leading whitespace in the description.
+
+
 ### TODO
 * better docs
 * support for numpy and RST example blocks

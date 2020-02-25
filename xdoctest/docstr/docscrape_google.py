@@ -284,6 +284,19 @@ def split_google_docblocks(docstr):
         >>> from xdoctest import utils
         >>> docstr = utils.codeblock(
         ...     '''
+        ...      a description with a leading space
+        ...
+        ...     Example:
+        ...         >>> foobar
+        ...     ''')
+        >>> groups = split_google_docblocks(docstr)
+        >>> print('groups = {!r}'.format(groups))
+
+    Example:
+        >>> from xdoctest.docstr.docscrape_google import *  # NOQA
+        >>> from xdoctest import utils
+        >>> docstr = utils.codeblock(
+        ...     '''
         ...     Example:
         ...         >>> foobar
         ...     ''')
@@ -337,7 +350,7 @@ def split_google_docblocks(docstr):
         line_len = [len(line) for line in docstr_lines]
 
     indents = [x for x, f in zip(line_indent, is_nonzero) if f]
-    if len(indents) >= 1:
+    if False and len(indents) >= 1:
         if indents[0] != 0:
             # debug info
             print('INDENTATION ERROR IN PARSING DOCSTRING')
