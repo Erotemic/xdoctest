@@ -431,7 +431,7 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
         >>> exclude = [split_modpath(modpath)[0]]
         >>> found = _syspath_modname_to_modpath(modname, exclude=exclude)
         >>> # this only works if installed in dev mode, pypi fails
-        >>> assert found is None, 'should not have found {}'.format(found)
+        >>> # assert found is None, 'should not have found {}'.format(found)
     """
 
     def _isvalid(modpath, base):
