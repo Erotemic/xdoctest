@@ -23,7 +23,10 @@ def build_demo_extmod():
             ret = os.system(pyexe + ' -m pip ' + ' '.join(pip_args))
         else:
             from pip._internal import main as pip_main
-            ret = pip_main.main(pip_args)
+            if callable(pip_main):
+                ret = pip_main(pip_args)
+            else:
+                ret = pip_main.main(pip_args)
         assert ret == 0, 'unable to build our pybind11 example'
         candidates = list(glob.glob(join(bin_dpath, 'my_ext.*')))
     assert len(candidates) == 1
