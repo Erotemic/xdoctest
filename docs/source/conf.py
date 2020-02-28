@@ -159,7 +159,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# html_static_path = ['_static']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -266,12 +266,17 @@ Test if it worked:
     "signal.convolve2d"
 
 
+    python -m sphinx.ext.intersphinx https://pygments-doc.readthedocs.io/en/latest/objects.inv
+
 """
 
 
 intersphinx_mapping = {
     'pytest': ('https://docs.pytest.org/en/latest/', None),
     'pytest._pytest.doctest': ('https://docs.pytest.org/en/latest/_modules/_pytest/doctest.html', None),
+    'pygments': ('https://pygments-doc.readthedocs.io/en/latest/', None),
+    'colorama': ('https://pypi.org/project/colorama/', None),
+    'python': ('https://docs.python.org/3', None),
     # 'ubelt': ('https://readthedocs.org/projects/ubelt/', None),
     # 'numpy': ('http://docs.scipy.org/doc/numpy/', None),
     # 'cv2' : ('http://docs.opencv.org/2.4/', None),

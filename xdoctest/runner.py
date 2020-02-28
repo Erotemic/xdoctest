@@ -508,7 +508,7 @@ def _update_argparse_cli(add_argument, prefix=None):
                  default=None)
 
     add_argument(*('--time',), dest='time', action='store_true',
-                 help=('Same as if durrations=0'))
+                 help=('Same as if durations=0'))
 
     add_argument_kws = [
         # (['--style'], dict(dest='style',
