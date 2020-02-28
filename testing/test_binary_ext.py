@@ -16,7 +16,9 @@ def build_demo_extmod():
     utils.ensuredir(bin_dpath)
     candidates = list(glob.glob(join(bin_dpath, 'my_ext.*')))
     if len(candidates) == 0:
-        ret = os.system('pip install --target="{}" {}'.format(bin_dpath, src_dpath))
+        import sys
+        pyexe = sys.executable
+        ret = os.system('{} -m pip install --target="{}" {}'.format(pyexe, bin_dpath, src_dpath))
         assert ret == 0
         import glob
         candidates = list(glob.glob(join(bin_dpath, 'my_ext.*')))
