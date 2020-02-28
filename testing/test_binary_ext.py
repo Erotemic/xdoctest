@@ -6,7 +6,7 @@ from xdoctest import utils
 def build_demo_extmod():
     """
     CommandLine:
-        python ~/code/xdoctest/testing/test_binary_ext.py build_test_binary
+        python ~/code/xdoctest/testing/test_binary_ext.py build_demo_extmod
     """
     import os
     import glob
@@ -16,11 +16,15 @@ def build_demo_extmod():
     utils.ensuredir(bin_dpath)
     candidates = list(glob.glob(join(bin_dpath, 'my_ext.*')))
     if len(candidates) == 0:
-        import sys
-        pyexe = sys.executable
-        ret = os.system('{} -m pip install --target="{}" {}'.format(pyexe, bin_dpath, src_dpath))
-        assert ret == 0
-        import glob
+        pip_args = ['install', '--target={}'.format(bin_dpath), src_dpath]
+        if 0:
+            import sys
+            pyexe = sys.executable
+            ret = os.system(pyexe + ' -m pip ' + ' '.join(pip_args))
+        else:
+            from pip._internal import main as pip_main
+            ret = pip_main.main(pip_args)
+        assert ret == 0, 'unable to build our pybind11 example'
         candidates = list(glob.glob(join(bin_dpath, 'my_ext.*')))
     assert len(candidates) == 1
     extmod_fpath = candidates[0]
