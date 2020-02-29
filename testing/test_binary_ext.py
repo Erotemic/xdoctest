@@ -6,19 +6,28 @@ from xdoctest import utils
 def build_demo_extmod():
     """
     CommandLine:
-        python ~/code/xdoctest/testing/test_binary_ext.py build_demo_extmod
+        python testing/test_binary_ext.py build_demo_extmod
     """
     import os
     import glob
+    import sys
     testing_dpath = dirname(__file__)
+
+    verstr, details = sys.version.split(' ', 1)
+    # poor man's hash (in case python wasnt built with hashlib)
+    coded = (int(details.encode('utf8').hex(), 16) % (2 ** 32))
+    hashid = coded.to_bytes(4, 'big').hex()
+
     src_dpath = join(testing_dpath, 'pybind11_test')
-    bin_dpath = join(src_dpath, 'install')
+    bin_dpath = join(src_dpath, 'tmp', 'install_{}.{}'.format(verstr, hashid))
+    print('src_dpath = {!r}'.format(src_dpath))
+    print('bin_dpath = {!r}'.format(bin_dpath))
     utils.ensuredir(bin_dpath)
     candidates = list(glob.glob(join(bin_dpath, 'my_ext.*')))
     if len(candidates) == 0:
         pip_args = ['install', '--target={}'.format(bin_dpath), src_dpath]
+        print('pip_args = {!r}'.format(pip_args))
         if 0:
-            import sys
             pyexe = sys.executable
             ret = os.system(pyexe + ' -m pip ' + ' '.join(pip_args))
         else:

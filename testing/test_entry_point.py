@@ -71,7 +71,6 @@ def test_xdoc_console_script_exec():
     assert 'usage' in info['err']
 
 
-
 def test_xdoc_cli_version():
     """
     CommandLine:
@@ -91,12 +90,14 @@ def test_xdoc_cli_version():
 
     import xdoctest
     print('xdoctest = {!r}'.format(xdoctest))
+
+    sys.executable
     try:
         import ubelt as ub
     except ImportError:
-        info = cmd('python -m xdoctest --version')
+        info = cmd(sys.executable + ' -m xdoctest --version')
     else:
-        info = ub.cmd('python -m xdoctest --version')
+        info = ub.cmd(sys.executable + ' -m xdoctest --version')
     print('info = {!r}'.format(info))
     print('xdoctest.__version__ = {!r}'.format(xdoctest.__version__))
     assert xdoctest.__version__ in info['out']
