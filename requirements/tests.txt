@@ -3,4 +3,5 @@ pytest-cov
 codecov >= 2.0.15
 scikit-build
 cmake
+ninja
 pybind11
