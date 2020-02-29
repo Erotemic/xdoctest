@@ -11,6 +11,15 @@ def build_demo_extmod():
     import os
     import glob
     import sys
+
+    try:
+        import skbuild  # NOQA
+        import pybind11  # NOQA
+        import cmake  # NOQA
+    except Exception:
+        import pytest
+        pytest.skip('skbuild, cmake, or pybind11 not available')
+
     testing_dpath = dirname(__file__)
 
     verstr, details = sys.version.split(' ', 1)
