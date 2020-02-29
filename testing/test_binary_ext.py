@@ -16,16 +16,20 @@ def build_demo_extmod():
         import skbuild  # NOQA
         import pybind11  # NOQA
         import cmake  # NOQA
+        import ninja  # NOQA
     except Exception:
         import pytest
-        pytest.skip('skbuild, cmake, or pybind11 not available')
+        pytest.skip('skbuild, ninja, cmake, or pybind11 not available')
 
     testing_dpath = dirname(__file__)
 
     verstr, details = sys.version.split(' ', 1)
-    # poor man's hash (in case python wasnt built with hashlib)
-    coded = (int(details.encode('utf8').hex(), 16) % (2 ** 32))
-    hashid = coded.to_bytes(4, 'big').hex()
+    try:
+        # poor man's hash (in case python wasnt built with hashlib)
+        coded = (int(details.encode('utf8').hex(), 16) % (2 ** 32))
+        hashid = coded.to_bytes(4, 'big').hex()
+    except Exception:
+        hashid = 'python2isdead'
 
     src_dpath = join(testing_dpath, 'pybind11_test')
     bin_dpath = join(src_dpath, 'tmp', 'install_{}.{}'.format(verstr, hashid))
