@@ -1,3 +1,5 @@
+# yaml merge-expand .travis.ymls _expandyml && cat _expandyml
+# 
 env:
     global:
         - secure: "P+9EGVR9Z0PSdkuo/xYtGxJRjfjhHLqhCz04bVkbOo/Tpcaqa2sHBYAlWE8jm+m0PODnQ2Mao/xaNqkbmt+bTwmBQ4wPE+OW4+Po8qdZoOz7mv53KN8AUeSUOmifiZsaJSDAQwrnP8KbCRor1zB+0rn6eok3gc2ZWnFs0+t1jfATjlnZfpqfQxxWWSdVO6j24d1+CUiZaCU16q4OiwSePmipKvBySyLEwxTgNuPyESMyGG6UwbBpzSWH2/4iMNUiaEcoR1LaHglhHOa98ZMnwpbU5O3Jj7WSI4UlJqLsK0GnZpNEsXC70mvu4Sq8vqFpvY0zln+8yl9qbdeTU2eLd0PRzpcLhhBdhIBwG2dX8BkP2U6I0wWW8xoME9krtgFmV5f6y3WMsv/WvqEUbP0LD31KLil49IMqh2XcMWjLwgQF9kJ0ANcTN4rIoXvPMWKjfWABb2B7Tf+UxPaN1mAxhr2cv2x2egwAzrQsr9qT0lPEyOz3j4AnN8RDweEcPVT0GpZRjVd6fJ4J/ey89ntF1wYsTGG4kl9861iA+eZyvZM5cIBo69xEJoq9YW7sW5vW3xbxVFViDRM8chM1UXeIvBwl3a3xUYIjJyIwNBKbXZpjeEQnpalvmsZZfQKIAqgkSN1+ylvycDizQm1yAjo9c12S5sj9pS+PZQBVJkBEzC8="
@@ -134,6 +136,9 @@ after_success:
             for example: github-push-token:ffjdksajklfdsjak
 
             https://github.com/Erotemic/xdoctest/settings/secrets
+            
+            # Also here
+            https://travis-ci.org/github/Erotemic/xdoctest/settings
 
             # Test that this works in a docker image
             URL_HOST=$(git remote get-url origin | sed -e 's|https\?://.*@||g' | sed -e 's|https\?://||g')
@@ -250,7 +255,6 @@ after_success:
             DEPLOY_BRANCH=release \
             TAG_AND_UPLOAD=$TAG_AND_UPLOAD \
             ./publish.sh
-
         if [[ "$TRAVIS_BRANCH" == "release" ]]; then
             # TODO: incorporate git tagging into release script 
             echo "URL_HOST = $URL_HOST"

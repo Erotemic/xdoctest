@@ -13,6 +13,7 @@ workflows:
   version: 2
   test:
     jobs:
+      - test-full-3.9-rc
       - test-full-3.8
       - test-full-3.7
       - test-full-3.6
@@ -20,6 +21,7 @@ workflows:
       - test-full-3.4
       - test-full-2.7
 
+      - test-minimal-3.9-rc
       - test-minimal-3.8
       - test-minimal-3.7
       - test-minimal-3.6
@@ -119,6 +121,12 @@ jobs:
   # All we need to do is change the base docker image so python is the
   # version we want we can reuse everything else from the template
   
+  test-full-3.9-rc:
+    <<: *test-full-template
+    docker:
+      - image: circleci/python:3.9-rc
+    working_directory: ~/repo-full-39-rc
+  
   test-full-3.8:
     <<: *test-full-template
     docker:
@@ -156,6 +164,12 @@ jobs:
     working_directory: ~/repo-full-27
 
   # ------------
+  
+  test-minimal-3.9-rc:
+    <<: *test-minimal-template
+    docker:
+      - image: circleci/python:3.9-rc
+    working_directory: ~/repo-minimal-39-rc
   
   test-minimal-3.8:
     <<: *test-minimal-template

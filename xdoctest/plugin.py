@@ -114,9 +114,15 @@ def pytest_collect_file(path, parent):
     config = parent.config
     if path.ext == ".py":
         if config.option.xdoctestmodules:
-            return XDoctestModule(path, parent)
+            if hasattr(XDoctestModule, 'from_parent'):
+                return XDoctestModule.from_parent(parent, fspath=path)
+            else:
+                return XDoctestModule(path, parent)
     elif _is_xdoctest(config, path, parent):
-        return XDoctestTextfile(path, parent)
+        if hasattr(XDoctestTextfile, 'from_parent'):
+            return XDoctestTextfile.from_parent(parent, fspath=path)
+        else:
+            return XDoctestTextfile(path, parent)
 
 
 def _is_xdoctest(config, path, parent):
@@ -217,10 +223,18 @@ class XDoctestTextfile(_XDoctestBase):
 
         style = self.config.getvalue('xdoctest_style')
 
-        for example in core.parse_docstr_examples(text, name, fpath=filename, style=style):
+        _example_iter = core.parse_docstr_examples(
+            text, name, fpath=filename, style=style)
+
+        for example in _example_iter:
             example.global_namespace.update(global_namespace)
             example.config.update(self._examp_conf)
-            yield XDoctestItem(name, self, example)
+            if hasattr(XDoctestItem, 'from_parent'):
+                yield XDoctestItem.from_parent(
+                    self, name=name, example=example)
+            else:
+                # direct construction is deprecated
+                yield XDoctestItem(name, self, example)
 
 
 class XDoctestModule(_XDoctestBase):
@@ -244,7 +258,12 @@ class XDoctestModule(_XDoctestBase):
         for example in examples:
             example.config.update(self._examp_conf)
             name = example.unique_callname
-            yield XDoctestItem(name, self, example)
+            if hasattr(XDoctestItem, 'from_parent'):
+                yield XDoctestItem.from_parent(
+                    self, name=name, example=example)
+            else:
+                # direct construction is deprecated
+                yield XDoctestItem(name, self, example)
 
 
 def _setup_fixtures(xdoctest_item):
@@ -256,8 +275,8 @@ def _setup_fixtures(xdoctest_item):
 
     xdoctest_item.funcargs = {}
     fm = xdoctest_item.session._fixturemanager
-    xdoctest_item._fixtureinfo = fm.getfixtureinfo(node=xdoctest_item, func=func,
-                                                   cls=None, funcargs=False)
+    xdoctest_item._fixtureinfo = fm.getfixtureinfo(
+        node=xdoctest_item, func=func, cls=None, funcargs=False)
     fixture_request = fixtures.FixtureRequest(xdoctest_item)
     fixture_request._fillfixtures()
     return fixture_request

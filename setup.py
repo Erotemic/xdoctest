@@ -175,17 +175,11 @@ from setuptools import find_packages  # NOQA
 setupkw = dict(
     name=NAME,
     version=VERSION,
-    packages=find_packages('.'),
-    # packages=['xdoctest', 'xdoctest.utils', 'xdoctest.docstr'],
     author='Jon Crall',
     author_email='erotemic@gmail.com',
     url='https://github.com/Erotemic/xdoctest',
     license='Apache 2',
-    long_description_content_type='text/x-rst',
 )
-
-if sys.version_info[0] == 3 and sys.version_info[1] <= 4:
-    setupkw.pop('long_description_content_type', None)
 
 
 if __name__ == '__main__':
@@ -198,6 +192,7 @@ if __name__ == '__main__':
             'optional': parse_requirements('requirements/optional.txt'),
         },
         long_description=parse_description(),
+        long_description_content_type='text/x-rst',
         entry_points={
             # the pytest11 entry point makes the plugin available to pytest
             'pytest11': [
@@ -208,6 +203,8 @@ if __name__ == '__main__':
                 'xdoctest = xdoctest.__main__:main'
             ]
         },
+        packages=find_packages('.'),
+        # packages=['xdoctest', 'xdoctest.utils', 'xdoctest.docstr'],
         # custom PyPI classifier for pytest plugins
         classifiers=[
             'Development Status :: 5 - Production/Stable',
@@ -227,4 +224,6 @@ if __name__ == '__main__':
             'Programming Language :: Python :: 2.7',
         ],
     ))
+    if sys.version_info[0] == 3 and sys.version_info[1] <= 4:
+        setupkw.pop('long_description_content_type', None)
     setup(**setupkw)

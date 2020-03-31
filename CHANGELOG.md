@@ -8,10 +8,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Version 0.12.0] - Unreleased 
 
 ###  Added
-* CLI support for doctest "analysis" mode. 
+* CLI support for doctest "analysis" mode (which can be either static or dynamic). 
 
 ###  Fixed
 * Google docstrings now allow for leading whitespace in the description.
+* Support python `3.9.0a5` when `eval` returns a coroutine (tentative).
+* Use `from_parent` constructors for `pytest` modules when possible. Fixes deprecation warning.
 
 
 ### TODO

@@ -71,5 +71,6 @@ python_extension_module(my_ext)
 
 # Not sure why I need this on the CI
 target_include_directories(my_ext PUBLIC "${pybind11_SOURCE_DIR}/include")
+set_property(TARGET my_ext PROPERTY CXX_STANDARD 11)
 
 install(TARGETS my_ext LIBRARY DESTINATION .)

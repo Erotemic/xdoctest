@@ -9,7 +9,7 @@ Test this in docker
 
 # cd ~/code/xdoctest
 
-DOCKER_IMAGE=circleci/python
+DOCKER_IMAGE=circleci/python:3.9-rc
 docker run -v $PWD:/io \
     --rm -it $DOCKER_IMAGE bash
 
@@ -17,7 +17,7 @@ docker run -v $PWD:/io \
 
 mkdir -p $HOME/code
 cd $HOME/code
-git clone -b dev/0.12.0 https://github.com/Erotemic/xdoctest.git
+git clone -b dev/hotfix https://github.com/Erotemic/xdoctest.git
 cd $HOME/code/xdoctest
 pip install -e .[all]
 
