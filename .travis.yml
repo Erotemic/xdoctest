@@ -111,6 +111,38 @@ after_success:
         git add dev/*.enc
         git add dev/public_gpg_key
         #travis encrypt GPG_SECRET_KEYS="$GPG_SECRET_KEYS"
+        #
+
+        AUTO-TAG NOTES:
+            To auto-tag a github hosted project we need to generate a personal
+            access token with write access.
+
+            First go to: 
+            https://github.com/settings/tokens/new
+
+            And create a token with "write:packages" checked. Name the token something like
+            github-push-token
+            copy that token and store it somewhere secure. 
+
+            PERSONAL_GITHUB_PUSH_TOKEN=<token-name>:<secret-value>
+
+            Also go to your github project settings page and add a new secret
+            variable named PERSONAL_GITHUB_PUSH_TOKEN with the secret value.
+
+            <token-name>:<secret-value>
+
+            for example: github-push-token:ffjdksajklfdsjak
+
+            https://github.com/Erotemic/xdoctest/settings/secrets
+
+            # Test that this works in a docker image
+            URL_HOST=$(git remote get-url origin | sed -e 's|https\?://.*@||g' | sed -e 's|https\?://||g')
+            echo "URL_HOST = $URL_HOST"
+            git config user.email "travis-ci@github.com"
+            git config user.name "Travis-CI"
+            git tag "test-tag-v5"
+            git push --tags "https://${PERSONAL_GITHUB_PUSH_TOKEN}@${URL_HOST}"
+        #
         '''  # <hack vim "regex" parser> '
     - gpg --version
     - gpg2 --version
@@ -218,3 +250,13 @@ after_success:
             DEPLOY_BRANCH=release \
             TAG_AND_UPLOAD=$TAG_AND_UPLOAD \
             ./publish.sh
+
+        if [[ "$TRAVIS_BRANCH" == "release" ]]; then
+            # TODO: incorporate git tagging into release script 
+            echo "URL_HOST = $URL_HOST"
+            git config user.email "travis-ci@github.com"
+            git config user.name "Travis-CI"
+            VERSION=$(python -c "import setup; print(setup.VERSION)")
+            git tag $VERSION -m "tarball tag $VERSION"
+            git push --tags "https://${PERSONAL_GITHUB_PUSH_TOKEN}@${URL_HOST}"
+        fi
