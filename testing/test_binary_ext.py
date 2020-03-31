@@ -48,9 +48,9 @@ def build_demo_extmod():
         import pytest
         pytest.skip('pypy not supported')
 
-    if sys.platform.startswith('win32'):
-        import pytest
-        pytest.skip('win32 not supported YET')
+    # if sys.platform.startswith('win32'):
+    #     import pytest
+    #     pytest.skip('win32 not supported YET')
 
     try:
         import skbuild  # NOQA

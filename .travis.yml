@@ -136,6 +136,9 @@ after_success:
             for example: github-push-token:ffjdksajklfdsjak
 
             https://github.com/Erotemic/xdoctest/settings/secrets
+            
+            # Also here
+            https://travis-ci.org/github/Erotemic/xdoctest/settings
 
             # Test that this works in a docker image
             URL_HOST=$(git remote get-url origin | sed -e 's|https\?://.*@||g' | sed -e 's|https\?://||g')
