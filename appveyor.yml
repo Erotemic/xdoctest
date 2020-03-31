@@ -41,14 +41,6 @@ environment:
     - PYTHON: "C:\\Python37"
       ARCH_BITS: "32"
 
-    #- PYTHON: "C:\\Python27"
-    #- PYTHON: "C:\\Python34"
-    #- PYTHON: "C:\\Python35"
-    #- PYTHON: "C:\\Python27-x64"
-    #- PYTHON: "C:\\Python33-x64"
-    #  DISTUTILS_USE_SDK: "1"
-    #- PYTHON: "C:\\Python35-x64"
-
 install:
   # We need wheel installed to build wheels
   - set PYTHONIOENCODING=utf-8
@@ -73,7 +65,7 @@ test_script:
   # to put the Python version you want to use on PATH.
   - set PYTHONIOENCODING=utf-8
   - "%PYTHON%\\python.exe -m xdoctest xdoctest"
-  - "build.cmd %PYTHON%\\python.exe -m pytest"
+  - "%PYTHON%\\python.exe -m pytest"
 
 after_test:
   # This step builds your wheels.
