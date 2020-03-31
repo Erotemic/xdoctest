@@ -255,8 +255,10 @@ after_success:
             DEPLOY_BRANCH=release \
             TAG_AND_UPLOAD=$TAG_AND_UPLOAD \
             ./publish.sh
+
+        # TODO: incorporate git tagging into release script 
         if [[ "$TRAVIS_BRANCH" == "release" ]]; then
-            # TODO: incorporate git tagging into release script 
+            URL_HOST=$(git remote get-url origin | sed -e 's|https\?://.*@||g' | sed -e 's|https\?://||g')
             echo "URL_HOST = $URL_HOST"
             git config user.email "travis-ci@github.com"
             git config user.name "Travis-CI"
