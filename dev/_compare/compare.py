@@ -1,7 +1,7 @@
 """
 Compare xdoctest with doctest
 
-This file autogenreates two files: compare_doctest.py and compare_xdoctset.py
+This file autogenreates two files: compare_doctest.py and compare_xdoctest.py
 They will have the same body up until the main block as defined in
 base_diff.py. One will run doctest and the other will run xdoctest. See the
 difference.

@@ -54,6 +54,7 @@ jobs:
             $PYTHON_EXE -m venv venv || virtualenv -v venv  # first command is python3 || second is python2
             . venv/bin/activate
             # The "minimal" tests install barebones requirements
+            pip install pip -U
             pip install -r requirements/tests.txt
             pip install -r requirements/runtime.txt 
             pip install .

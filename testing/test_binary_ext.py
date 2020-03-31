@@ -3,6 +3,36 @@ from os.path import join
 from xdoctest import utils
 
 
+__NOTES__ = """
+
+Test this in docker
+
+# cd ~/code/xdoctest
+
+DOCKER_IMAGE=circleci/python
+docker run -v $PWD:/io \
+    --rm -it $DOCKER_IMAGE bash
+
+# cd /io
+
+mkdir -p $HOME/code
+cd $HOME/code
+git clone -b dev/0.12.0 https://github.com/Erotemic/xdoctest.git
+cd $HOME/code/xdoctest
+pip install -e .[all]
+
+python testing/test_binary_ext.py build_demo_extmod
+
+
+cd /io/testing/pybind11_test
+mkdir -p /io/testing/pybind11_test/build
+cd /io/testing/pybind11_test/build
+cmake ..
+
+
+"""
+
+
 def build_demo_extmod():
     """
     CommandLine:
@@ -44,11 +74,17 @@ def build_demo_extmod():
             pyexe = sys.executable
             ret = os.system(pyexe + ' -m pip ' + ' '.join(pip_args))
         else:
-            from pip._internal import main as pip_main
+            try:
+                from pip.__main__ import _main as pip_main
+            except AttributeError:
+                from pip._internal import main as pip_main
+
             if callable(pip_main):
-                ret = pip_main(pip_args)
+                pip_main_func = pip_main
             else:
-                ret = pip_main.main(pip_args)
+                pip_main_func = pip_main.main
+            ret = pip_main_func(pip_args)
+
         assert ret == 0, 'unable to build our pybind11 example'
         candidates = list(glob.glob(join(bin_dpath, 'my_ext.*')))
     assert len(candidates) == 1
