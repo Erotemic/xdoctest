@@ -19,6 +19,11 @@ from xdoctest import parser
 from xdoctest import checker
 from xdoctest import exceptions
 
+from distutils.version import LooseVersion
+
+
+EVAL_MIGHT_RETURN_COROUTINE = LooseVersion(sys.version.split(' ')[0]) >= LooseVersion('3.9.0')
+
 
 class Config(dict):
     """
@@ -530,8 +535,20 @@ class DocTest(object):
                             # a doctest part has `compile_mode=eval` we
                             # exepect it to return an object with a repr that
                             # can compared to a "want" statement.
+                            # print('part.compile_mode = {!r}'.format(part.compile_mode))
                             if part.compile_mode == 'eval':
+                                # print('test_globals = {}'.format(sorted(test_globals.keys())))
                                 got_eval = eval(code, test_globals)
+                                if EVAL_MIGHT_RETURN_COROUTINE:
+                                    import types
+                                    if isinstance(got_eval, types.CoroutineType):
+                                        # In 3.9-rc (2020-mar-31) it looks like
+                                        # eval sometimes returns coroutines. I
+                                        # found no docs on this. Not sure if it
+                                        # will be mainlined, but this seems to
+                                        # fix it.
+                                        import asyncio
+                                        got_eval =  asyncio.run(got_eval)
                             else:
                                 exec(code, test_globals)
 

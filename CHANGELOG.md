@@ -12,6 +12,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ###  Fixed
 * Google docstrings now allow for leading whitespace in the description.
+* Support python `3.9.0a5` when `eval` returns a coroutine (tentative).
 
 
 ### TODO
