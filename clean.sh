@@ -2,7 +2,7 @@
 echo "start clean"
 
 rm -rf _skbuild
-rm -rf *.so
+rm -rf -- *.so
 rm -rf build
 rm -rf xdoctest.egg-info
 rm -rf dist
