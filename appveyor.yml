@@ -9,16 +9,45 @@ environment:
     # http://www.appveyor.com/docs/installed-software#python
     # The list here is complete (excluding Python 2.6, which
     # isn't covered by this document) at the time of writing.
+    
+    - PYTHON: "C:/Python37-x64"
+      ARCH_BITS: "64"
+
+    - PYTHON: "C:/Python36-x64"
+      ARCH_BITS: "64"
+
+    - PYTHON: "C:/Python35-x64"
+      ARCH_BITS: "64"
+    
+    - PYTHON: "C:\\Python34-x64"
+      ARCH_BITS: "64"
+      DISTUTILS_USE_SDK: "1"
+
+    - PYTHON: "C:\\Python27-x64"
+      ARCH_BITS: "64"
 
     - PYTHON: "C:\\Python27"
+      ARCH_BITS: "32"
+
     - PYTHON: "C:\\Python34"
+      ARCH_BITS: "32"
+
     - PYTHON: "C:\\Python35"
-    - PYTHON: "C:\\Python27-x64"
+      ARCH_BITS: "32"
+
+    - PYTHON: "C:\\Python36"
+      ARCH_BITS: "32"
+
+    - PYTHON: "C:\\Python37"
+      ARCH_BITS: "32"
+
+    #- PYTHON: "C:\\Python27"
+    #- PYTHON: "C:\\Python34"
+    #- PYTHON: "C:\\Python35"
+    #- PYTHON: "C:\\Python27-x64"
     #- PYTHON: "C:\\Python33-x64"
     #  DISTUTILS_USE_SDK: "1"
-    - PYTHON: "C:\\Python34-x64"
-      DISTUTILS_USE_SDK: "1"
-    - PYTHON: "C:\\Python35-x64"
+    #- PYTHON: "C:\\Python35-x64"
 
 install:
   # We need wheel installed to build wheels
@@ -44,7 +73,7 @@ test_script:
   # to put the Python version you want to use on PATH.
   - set PYTHONIOENCODING=utf-8
   - "%PYTHON%\\python.exe -m xdoctest xdoctest"
-  - "%PYTHON%\\python.exe -m pytest"
+  - "build.cmd %PYTHON%\\python.exe -m pytest"
 
 after_test:
   # This step builds your wheels.
