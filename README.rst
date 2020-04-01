@@ -14,7 +14,7 @@ encourage the pattern of test driven development.
 
 
 +---------------+-------------------------------------------+
-| Read the docs | http://xdoctest.readthedocs.io/en/latest  |
+| Read the docs | http://xdoctest.readthedocs.io/en/latest/ |
 +---------------+-------------------------------------------+
 | Github        | https://github.com/Erotemic/xdoctest      |
 +---------------+-------------------------------------------+

@@ -1,7 +1,7 @@
 Title 
 =====
 
-Developing With Doctests 
+Developing With Doctests - using Xdoctest as a backend
 
 Description 
 ===========
