@@ -14,7 +14,7 @@ encourage the pattern of test driven development.
 
 
 +---------------+-------------------------------------------+
-| Read the docs | http://xdoctest.readthedocs.io/en/latest/ |
+| Read the docs | https://xdoctest.readthedocs.io           |
 +---------------+-------------------------------------------+
 | Github        | https://github.com/Erotemic/xdoctest      |
 +---------------+-------------------------------------------+
@@ -284,7 +284,7 @@ Google style doctest support
 ----------------------------
 
 Additionally, this module is written using
-`Google-style <https://sphinxcontrib-napoleon.readthedocs.io/en/latest/>`__
+`Google-style <https://sphinxcontrib-napoleon.readthedocs.io>`__
 docstrings, and as such, the module was originally written to directly
 utilize them. However, for backwards compatibility and ease of
 integration into existing software, the pytest plugin defaults to using
@@ -339,4 +339,4 @@ realize your doctests start getting too long.
 .. |Downloads| image:: https://img.shields.io/pypi/dm/xdoctest.svg
    :target: https://pypistats.org/packages/xdoctest
 .. |ReadTheDocs| image:: https://readthedocs.org/projects/xdoctest/badge/?version=latest
-    :target: http://xdoctest.readthedocs.io/en/latest/
+    :target: https://xdoctest.readthedocs.io
