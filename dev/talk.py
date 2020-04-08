@@ -176,7 +176,7 @@ def demo_directive():
         >>> # xdoctest: +SKIP
         >>> print('Skip has been enabled, commands will not run')
         >>> print('This is also not run')
-        >>> print('Block based directives are can be deactivated')
+        >>> print('Block based directives can be deactivated')
         >>> # xdoctest: -SKIP
         >>> print('This will now run')
     """
