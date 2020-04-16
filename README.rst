@@ -13,13 +13,15 @@ goal is to make doctests easier to write, simpler to configure, and
 encourage the pattern of test driven development.
 
 
-+---------------+-------------------------------------------+
-| Read the docs | https://xdoctest.readthedocs.io           |
-+---------------+-------------------------------------------+
-| Github        | https://github.com/Erotemic/xdoctest      |
-+---------------+-------------------------------------------+
-| Pypi          | https://pypi.org/project/xdoctest         |
-+---------------+-------------------------------------------+
++------------------+----------------------------------------------+
+| Read the docs    | https://xdoctest.readthedocs.io              |
++------------------+----------------------------------------------+
+| Github           | https://github.com/Erotemic/xdoctest         |
++------------------+----------------------------------------------+
+| Pypi             | https://pypi.org/project/xdoctest            |
++------------------+----------------------------------------------+
+| PyCon 2020 Talk  | https://www.youtube.com/watch?v=CUjCqOw_oFk  |
++------------------+----------------------------------------------+
 
 
 Quick Start
