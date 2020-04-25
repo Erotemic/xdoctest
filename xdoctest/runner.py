@@ -53,6 +53,7 @@ from xdoctest import doctest_example
 from xdoctest import utils
 from functools import partial
 import time
+import types
 import warnings
 import sys
 
@@ -73,7 +74,8 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
     Main entry point into the testing framework.
 
     Args:
-        modname (str): name of or path to the module.
+        modname (str | ModuleType):
+            name of or path to the module, or the module itself.
 
         command (str):
             determines which doctests to run.
@@ -135,6 +137,10 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
             # Allow the modname to contain the name of the test to be run
             if '::' in modpath_or_name:
                 modpath_or_name, command = modpath_or_name.split('::')
+
+        if isinstance(modpath_or_name, types.ModuleType):
+            modpath_or_name = modpath_or_name.__file__
+
         modpath = core._rectify_to_modpath(modpath_or_name)
 
     if config is None:
@@ -534,7 +540,7 @@ def _update_argparse_cli(add_argument, prefix=None):
 if __name__ == '__main__':
     r"""
     CommandLine:
-        python -m xdoctest.runner
+        python -m xdoctest.runner all
     """
     import xdoctest as xdoc
     xdoc.doctest_module()
