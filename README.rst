@@ -20,8 +20,11 @@ encourage the pattern of test driven development.
 +------------------+----------------------------------------------+
 | Pypi             | https://pypi.org/project/xdoctest            |
 +------------------+----------------------------------------------+
-| PyCon 2020 Talk  | https://www.youtube.com/watch?v=CUjCqOw_oFk  |
+| PyCon 2020       | `Youtube Video`_ and `Google Slides`_        |
 +------------------+----------------------------------------------+
+
+.. _Youtube Video: https://www.youtube.com/watch?v=CUjCqOw_oFk
+.. _Google Slides: https://docs.google.com/presentation/d/1563XL-n7534QmktrkLSjVqX36z5uhjUFrPw8wIO6z1c/edit?usp=sharing
 
 
 Quick Start
