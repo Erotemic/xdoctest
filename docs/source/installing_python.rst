@@ -13,7 +13,7 @@ I typically do this on Linux as follows:
     mkdir -p ~/tmp
     cd ~/tmp
     CONDA_INSTALL_SCRIPT=Miniconda3-latest-Linux-x86_64.sh
-    curl https://repo.continuum.io/miniconda/$CONDA_INSTALL_SCRIPT > $CONDA_INSTALL_SCRIPT
+    curl https://repo.anaconda.com/miniconda/$CONDA_INSTALL_SCRIPT > $CONDA_INSTALL_SCRIPT
     chmod +x $CONDA_INSTALL_SCRIPT
 
     # Install miniconda to user local directory
