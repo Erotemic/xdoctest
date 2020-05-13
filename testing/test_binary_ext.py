@@ -10,8 +10,71 @@ Test this in docker
 # cd ~/code/xdoctest
 
 DOCKER_IMAGE=circleci/python:3.9-rc
+docker pull $DOCKER_IMAGE
 docker run -v $PWD:/io \
     --rm -it $DOCKER_IMAGE bash
+
+docker pull python:3.9.0a5-buster
+docker run -v $PWD:/io \
+    --rm -it python bash
+
+
+print('feature.compiler_flag = {!r:>60}'.format(bin(221184)))
+for key in __future__.all_feature_names:
+    feature = getattr(__future__, key, None)
+    print('feature.compiler_flag = {!r:>60}'.format(key + ' ' +bin(feature.compiler_flag)))
+
+feature.compiler_flag =                                      'nested_scopes 0b10000'
+feature.compiler_flag =                                             'generators 0b0'
+feature.compiler_flag =                          'with_statement 0b1000000000000000'
+feature.compiler_flag =                       'barry_as_FLUFL 0b1000000000000000000'
+feature.compiler_flag =                      'generator_stop 0b10000000000000000000'
+feature.compiler_flag =                        'annotations 0b100000000000000000000'
+feature.compiler_flag =                                       '0b110110000000000000
+
+feature.compiler_flag =                         'print_function 0b10000000000000000'
+feature.compiler_flag =                      'unicode_literals 0b100000000000000000'
+feature.compiler_flag =                                  'division 0b10000000000000'
+feature.compiler_flag =                          'absolute_import 0b100000000000000'
+
+feature.compiler_flag =                     'print_function 0b100000000000000000000'
+
+feature.compiler_flag =                                      'nested_scopes 0b10000'
+feature.compiler_flag =                                             'generators 0b0'
+feature.compiler_flag =                              'division 0b100000000000000000'
+feature.compiler_flag =                      'absolute_import 0b1000000000000000000'
+feature.compiler_flag =                      'with_statement 0b10000000000000000000'
+feature.compiler_flag =                  'unicode_literals 0b1000000000000000000000'
+feature.compiler_flag =                   'barry_as_FLUFL 0b10000000000000000000000'
+feature.compiler_flag =                  'generator_stop 0b100000000000000000000000'
+feature.compiler_flag =                    'annotations 0b1000000000000000000000000'
+
+
+./python -c "import __future__; print(__future__.print_function.compiler_flag | __future__.division.compiler_flag | __future__.unicode_literals.compiler_flag | __future__.absolute_import.compiler_flag)"
+
+__future__.
+
+
+
+print(eval(compile('[i for i in range(3)]', mode='eval', filename='foo', flags=221184)))
+print(eval(compile('[i for i in range(3)]', mode='eval', filename='foo', flags=221184)))
+
+
+./python -c "eval(compile('[i for i in range(3)]', mode='single', filename='fo', flags=0, dont_inherit=True), {})"
+
+
+./python -c "import __future__; print(eval(compile('[i for i in range(3)]', mode='eval', filename='fo', flags=__future__.print_function.compiler_flag | __future__.division.compiler_flag | __future__.unicode_literals.compiler_flag | __future__.absolute_import.compiler_flag)))"
+
+./python -c "print(eval(compile('[i for i in range(3)]', mode='eval', filename='foo', flags=221184, dont_inherit=True), {}))"
+
+python -c "print(eval('[i for i in range(3)]', {}))"
+ipython -c "print(eval('[i for i in range(3)]', {}))"
+ipython -c "print(eval('[i for i in range(3)]'))"
+ipython -c "print(eval('[i for i in range(3)]'))"
+
+
+python -c "eval('print([i for i in range(3)])', {})"
+
 
 # cd /io
 
