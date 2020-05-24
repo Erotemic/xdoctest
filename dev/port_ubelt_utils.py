@@ -7,8 +7,8 @@ def _autogen_xdoctest_utils():
     import ubelt as ub
 
     # Uses netharn closer until it is ported to a standalone module
-    import netharn as nh
-    closer = nh.export.closer.Closer()
+    from liberator import closer
+    closer = closer.Closer()
 
     from ubelt import util_import
     closer.add_dynamic(util_import.split_modpath)
