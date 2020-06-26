@@ -11,6 +11,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * `xdoctest.runner.doctest_module` now accepts the module object itself.
 * zero-args doctests no longer capture stdout (this prevents IPython embedding issues).
 
+###  Fixed
+* Fixed minor bug in zero args runner when captured stdout is None
+
 
 ## [Version 0.12.0] - Released 2020-04-16 
 

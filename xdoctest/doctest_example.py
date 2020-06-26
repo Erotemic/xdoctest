@@ -877,6 +877,8 @@ class DocTest(object):
         # lines += source_text.splitlines()
 
         def r1_strip_nl(text):
+            if text is None:
+                return None
             return text[:-1] if text.endswith('\n') else text
 
         # if self.logged_stdout:
