@@ -128,8 +128,10 @@ after_success:
 
             PERSONAL_GITHUB_PUSH_TOKEN=<token-name>:<secret-value>
 
-            Also go to your github project settings page and add a new secret
-            variable named PERSONAL_GITHUB_PUSH_TOKEN with the secret value.
+            **If you did not add this encrypted variable as a secret**,
+            then also go to your github project settings page and add a
+            new secret variable named PERSONAL_GITHUB_PUSH_TOKEN with the
+            secret value.
 
             <token-name>:<secret-value>
 
