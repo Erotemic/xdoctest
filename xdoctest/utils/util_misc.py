@@ -34,6 +34,11 @@ class TempDoctest(object):
 
 def _run_case(source, style='auto'):
     """
+    Runs all doctests in a source block
+
+    Args:
+        source (str): source code of an entire file
+
     TODO: run case is over-duplicated and should be separated into a test utils directory
     """
     from xdoctest import utils

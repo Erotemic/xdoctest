@@ -10,6 +10,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ###  Changed
 * `xdoctest.runner.doctest_module` now accepts the module object itself.
 * zero-args doctests no longer capture stdout (this prevents IPython embedding issues).
+* The `callname` of setter methods are now suffixed with `.fset`, which allows
+  for doctests to be specified in either the getter and / or setter for properties.
 
 ###  Fixed
 * Fixed minor bug in zero args runner when captured stdout is None

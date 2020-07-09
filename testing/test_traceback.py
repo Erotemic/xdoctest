@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Need to enhance the tracebacks to spit out something more useful
-
-TODO: rename to test traceback
 """
 from xdoctest import utils
 from xdoctest.utils.util_misc import _run_case

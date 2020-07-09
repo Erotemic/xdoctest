@@ -65,23 +65,31 @@ class TopLevelVisitor(ast.NodeVisitor):
         >>> from xdoctest.static_analysis import *  # NOQA
         >>> from xdoctest import utils
         >>> source = utils.codeblock(
-        ...    '''
-        ...    def foo():
-        ...        \"\"\" my docstring \"\"\"
-        ...        def subfunc():
-        ...            pass
-        ...    def bar():
-        ...        pass
-        ...    class Spam(object):
-        ...        def eggs(self):
-        ...            pass
-        ...        @staticmethod
-        ...        def hams():
-        ...            pass
-        ...    ''')
+                '''
+                def foo():
+                    \"\"\" my docstring \"\"\"
+                    def subfunc():
+                        pass
+                def bar():
+                    pass
+                class Spam(object):
+                    def eggs(self):
+                        pass
+                    @staticmethod
+                    def hams():
+                        pass
+                    @property
+                    def jams(self):
+                        return 3
+                    @jams.setter
+                    def jams2(self, x):
+                        print('ignoring')
+                ''')
         >>> self = TopLevelVisitor.parse(source)
         >>> callnames = set(self.calldefs.keys())
-        >>> assert callnames == {'foo', 'bar', 'Spam', 'Spam.eggs', 'Spam.hams'}
+        >>> assert callnames == {
+        >>>     'foo', 'bar', 'Spam', 'Spam.eggs', 'Spam.hams',
+        >>>     'Spam.jams', 'Spam.jams2.fset'}
         >>> assert self.calldefs['foo'].docstr.strip() == 'my docstring'
         >>> assert 'subfunc' not in self.calldefs
     """
@@ -141,6 +149,18 @@ class TopLevelVisitor(ast.NodeVisitor):
             callname = node.name
         else:
             callname = self._current_classname + '.' + node.name
+
+        if node.decorator_list:
+            for decor in node.decorator_list:
+                if isinstance(decor, ast.Name):
+                    if decor.id == 'property':
+                        # likely a getter property
+                        # should we distinguish getters?
+                        # callname = callname + '.fget'
+                        pass
+                if isinstance(decor, ast.Attribute):
+                    if decor.attr == 'setter':
+                        callname = callname + '.fset'
 
         lineno = self._workaround_func_lineno(node)
         docstr, doclineno, doclineno_end = self._get_docstring(node)
