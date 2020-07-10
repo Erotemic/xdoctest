@@ -69,7 +69,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            pip install pytest-cov==2.9.0  # hack to avoid regression
+            pip install pytest-cov==2.8.1  # hack to avoid regression
             python run_tests.py
       - store_artifacts:
           path: test-reports
@@ -106,7 +106,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            pip install pytest-cov==2.9.0  # hack to avoid regression
+            pip install pytest-cov==2.8.1  # hack to avoid regression
             python run_tests.py
       - store_artifacts:
           path: test-reports
@@ -245,7 +245,7 @@ jobs:
         pip install -r requirements/runtime.txt 
         pip install -e .
 
-        pip install pytest-cov==2.9.0  # hack to avoid regression
+        pip install pytest-cov==2.8.1  # hack to avoid regression
         ./run_doctests.sh || echo "pypy failed, but this is allowed"
         ./run_tests.sh || echo "pypy failed, but this is allowed"
         "
