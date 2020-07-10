@@ -25,7 +25,7 @@ OLD_TEXT_ARGS = ['--xdoc-glob=*.txt']
 
 
 def explicit_testdir():
-    """
+    r"""
     Explicitly constructs a testdir for use in IPython development
     Note used by any tests.
 

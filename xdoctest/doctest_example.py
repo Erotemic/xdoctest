@@ -490,8 +490,11 @@ class DocTest(object):
         # if self.is_disabled():
         #     runstate['SKIP'] = True
 
+        # don't capture stdout for zero-arg blocks
+        needs_capture = self.block_type != 'zero-arg'
         # Use the same capture object for all parts in the test
-        cap = utils.CaptureStdout(supress=self._suppressed_stdout)
+        cap = utils.CaptureStdout(supress=self._suppressed_stdout,
+                                  enabled=needs_capture)
         with warnings.catch_warnings(record=True) as self.warn_list:
             for partx, part in enumerate(self._parts):
                 # Extract directives and and update runtime state
@@ -652,7 +655,8 @@ class DocTest(object):
                         raise
                     break
                 finally:
-                    assert cap.text is not None
+                    if cap.enabled:
+                        assert cap.text is not None
                     # Ensure that we logged the output even in failure cases
                     self.logged_evals[partx] = got_eval
                     self.logged_stdout[partx] = cap.text
@@ -873,6 +877,8 @@ class DocTest(object):
         # lines += source_text.splitlines()
 
         def r1_strip_nl(text):
+            if text is None:
+                return None
             return text[:-1] if text.endswith('\n') else text
 
         # if self.logged_stdout:
