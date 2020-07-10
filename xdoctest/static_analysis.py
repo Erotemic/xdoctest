@@ -84,12 +84,15 @@ class TopLevelVisitor(ast.NodeVisitor):
                     @jams.setter
                     def jams2(self, x):
                         print('ignoring')
+                    @jams.deleter
+                    def jams(self, x):
+                        print('ignoring')
                 ''')
         >>> self = TopLevelVisitor.parse(source)
         >>> callnames = set(self.calldefs.keys())
         >>> assert callnames == {
         >>>     'foo', 'bar', 'Spam', 'Spam.eggs', 'Spam.hams',
-        >>>     'Spam.jams', 'Spam.jams2.fset'}
+        >>>     'Spam.jams'}
         >>> assert self.calldefs['foo'].docstr.strip() == 'my docstring'
         >>> assert 'subfunc' not in self.calldefs
     """
@@ -159,8 +162,13 @@ class TopLevelVisitor(ast.NodeVisitor):
                         # callname = callname + '.fget'
                         pass
                 if isinstance(decor, ast.Attribute):
+                    # Don't add setters / deleters to the callnames
+                    if decor.attr == 'deleter':
+                        # callname = callname + '.fdel'
+                        return
                     if decor.attr == 'setter':
-                        callname = callname + '.fset'
+                        # callname = callname + '.fset'
+                        return
 
         lineno = self._workaround_func_lineno(node)
         docstr, doclineno, doclineno_end = self._get_docstring(node)
