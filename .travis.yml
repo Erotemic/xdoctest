@@ -43,7 +43,7 @@ install:
 #pip install pytest-cov==2.10.0
     
 script: 
-  - pip uninstall pytest-cov
+  - pip uninstall pytest-cov -y
   - pip install pytest-cov==2.8.1
   - travis_wait pytest --cov=xdoctest
 
