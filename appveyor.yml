@@ -64,6 +64,7 @@ test_script:
   # the interpreter you're using - Appveyor does not do anything special
   # to put the Python version you want to use on PATH.
   - set PYTHONIOENCODING=utf-8
+  - "%PYTHON%\\python.exe -m pip install pytest-cov==2.9.0"
   - "%PYTHON%\\python.exe -m xdoctest xdoctest"
   - "%PYTHON%\\python.exe -m pytest"
 

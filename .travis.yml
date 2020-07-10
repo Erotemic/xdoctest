@@ -33,9 +33,18 @@ before_install:
 install:
   - travis_retry pip install -e .
 
+
+# Broken on pytest-cov-2.10.0
+# Broken on pytest==5.4.3
+# Broken on pytest==5.3.5
+# Broken on pytest==5.2.4
+#pip install pytest-cov==2.8.1
+#pip install pytest-cov==2.9.0
+#pip install pytest-cov==2.10.0
+    
 script: 
   - pip uninstall pytest-cov
-  - pip install pytest-cov==2.8.1
+  - pip install pytest-cov==2.9.0
   - travis_wait pytest --cov=xdoctest
 
 after_success: 
