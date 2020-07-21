@@ -88,6 +88,7 @@ import os
 import re
 import copy
 import warnings
+import operator
 from xdoctest import static_analysis as static
 from xdoctest import utils
 from collections import OrderedDict
@@ -364,11 +365,17 @@ class Directive(utils.NiceRepr):
                 'got {}'.format(self.name, num, nargs))
         return self.args
 
-    def effect(self, argv=None):
+    def effect(self, argv=None, environ=None):
         """
         Returns how this directive modifies a RuntimeState object
 
         This is used by a RuntimeState object to update itself
+
+        Args:
+            argv (List[str], default=None):
+                if specified, overwrite sys.argv
+            environ (Dict[str, str], default=None):
+                if specified, overwrite os.environ
 
         Returns:
             Effect: named tuple containing:
@@ -404,6 +411,18 @@ class Directive(utils.NiceRepr):
             >>> print('directive.effect() = {}'.format(directive.effect()))
             directive = <Directive(+REQUIRES(module:notamodule))>
             directive.effect() = Effect(action='set.add', key='REQUIRES', value='module:notamodule')
+
+            >>> directive = list(Directive.extract('# xdoctest: requires(env:FOO==1)'))[0]
+            >>> print('directive = {}'.format(directive))
+            >>> print('directive.effect() = {}'.format(directive.effect(environ={})))
+            directive = <Directive(+REQUIRES(env:FOO==1))>
+            directive.effect() = Effect(action='set.add', key='REQUIRES', value='env:FOO==1')
+
+            >>> directive = list(Directive.extract('# xdoctest: requires(env:FOO==1)'))[0]
+            >>> print('directive = {}'.format(directive))
+            >>> print('directive.effect() = {}'.format(directive.effect(environ={'FOO': '1'})))
+            directive = <Directive(+REQUIRES(env:FOO==1))>
+            directive.effect() = Effect(action='noop', key='REQUIRES', value=None)
         """
         key = self.name
         value = None
@@ -413,7 +432,7 @@ class Directive(utils.NiceRepr):
             if argv is None:
                 argv = sys.argv
             arg, = self._unpack_args(1)
-            if _is_requires_satisfied(arg, argv):
+            if _is_requires_satisfied(arg, argv=argv, environ=environ):
                 # If the requirement is met, then do nothing,
                 action = 'noop'
             else:
@@ -437,7 +456,7 @@ class Directive(utils.NiceRepr):
         return Effect(action, key, value)
 
 
-def _is_requires_satisfied(arg, argv):
+def _is_requires_satisfied(arg, argv, environ=None):
     """
     Determines if the argument to a REQUIRES directive is satisfied
 
@@ -455,6 +474,17 @@ def _is_requires_satisfied(arg, argv):
         >>> _is_requires_satisfied('pypy', argv=[])
         >>> _is_requires_satisfied('nt', argv=[])
         >>> _is_requires_satisfied('linux', argv=[])
+
+        >>> _is_requires_satisfied('env:FOO', argv=[], environ={'FOO': '1'})
+        True
+        >>> _is_requires_satisfied('env:FOO==1', argv=[], environ={'FOO': '1'})
+        True
+        >>> _is_requires_satisfied('env:FOO==T', argv=[], environ={'FOO': '1'})
+        False
+        >>> _is_requires_satisfied('env:BAR', argv=[], environ={'FOO': '1'})
+        False
+        >>> _is_requires_satisfied('env:BAR==1', argv=[], environ={'FOO': '1'})
+        False
     """
     # TODO: add python version options
     SYS_PLATFORM_TAGS = ['win32', 'linux', 'darwin', 'cywgin']
@@ -463,27 +493,54 @@ def _is_requires_satisfied(arg, argv):
     # TODO: tox tags: https://tox.readthedocs.io/en/latest/example/basic.html
     PY_VER_TAGS = ['py2', 'py3']
 
+    arg_lower = arg.lower()
+
     if arg.startswith('-'):
         flag = arg in argv
     elif arg.startswith('module:'):
         parts = arg.split(':')
         if len(parts) != 2:
-            raise ValueError('xdoctest REQUIRES directive has too many parts')
+            raise ValueError('xdoctest module REQUIRES directive has too many parts')
         # set flag to False (aka SKIP) if the module does not exist
         modname = parts[1]
         flag = _module_exists(modname)
-    elif arg.lower() in SYS_PLATFORM_TAGS:
-        flag = sys.platform.startswith(arg.lower())
-    elif arg.lower() in OS_NAME_TAGS:
-        flag = os.name.startswith(arg.lower())
-    elif arg.lower() in PY_IMPL_TAGS:
+    elif arg.startswith('env:'):
+        if environ is None:
+            environ = os.environ
+        parts = arg.split(':')
+        if len(parts) != 2:
+            raise ValueError('xdoctest env REQUIRES directive has too many parts')
+        envexpr = parts[1]
+        expr_parts = re.split('(==|!==)', envexpr)
+        if len(expr_parts) == 1:
+            # Test if the environment variable is truthy
+            env_key = expr_parts[0]
+            flag = bool(environ.get(env_key, None))
+        elif len(expr_parts) == 3:
+            # Test if the environment variable is equal to an expression
+            env_key, op_code, value = expr_parts
+            env_val = environ.get(env_key, None)
+            if op_code == '==':
+                op = operator.eq
+            elif op_code == '!=':
+                op = operator.neq
+            else:
+                raise KeyError(op_code)
+            flag = op(env_val, value)
+        else:
+            raise ValueError('Too many expr_parts={}'.format(expr_parts))
+    elif arg_lower in SYS_PLATFORM_TAGS:
+        flag = sys.platform.startswith(arg_lower)
+    elif arg_lower in OS_NAME_TAGS:
+        flag = os.name.startswith(arg_lower)
+    elif arg_lower in PY_IMPL_TAGS:
         import platform
-        flag = platform.python_implementation().startswith(arg.lower())
-    elif arg.lower() in PY_VER_TAGS:
+        flag = platform.python_implementation().startswith(arg_lower)
+    elif arg_lower in PY_VER_TAGS:
         if sys.version_info[0] == 2:  # nocover
-            flag = arg.lower() == 'PY2'
+            flag = arg_lower == 'py2'
         elif sys.version_info[0] == 3:
-            flag = arg.lower() == 'PY3'
+            flag = arg_lower == 'py3'
         else:
             flag = False
     else:
@@ -493,6 +550,7 @@ def _is_requires_satisfied(arg, argv):
             (1) a PLATFORM or OS tag (e.g. win32, darwin, linux),
             (2) a command line flag prefixed with '--', or
             (3) a module prefixed with 'module:'.
+            (4) an environment variable prefixed with 'env:'.
             Got arg={!r}
             ''').replace('\n', ' ').strip().format(arg)
         raise ValueError(msg)

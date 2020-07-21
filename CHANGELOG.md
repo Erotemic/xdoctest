@@ -5,6 +5,11 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Version 0.13.0] - Uneleased 
+
+###  Added
+* The REQUIRES directive can now inspect existence or values of environment variables.
+
 ## [Version 0.13.0] - Released 2020-07-10  
 
 ###  Changed
