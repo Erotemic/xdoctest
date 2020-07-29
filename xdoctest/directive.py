@@ -431,6 +431,8 @@ class Directive(utils.NiceRepr):
             # Special handling of REQUIRES
             if argv is None:
                 argv = sys.argv
+            if environ is None:
+                environ = os.environ
             arg, = self._unpack_args(1)
             if _is_requires_satisfied(arg, argv=argv, environ=environ):
                 # If the requirement is met, then do nothing,
@@ -456,13 +458,14 @@ class Directive(utils.NiceRepr):
         return Effect(action, key, value)
 
 
-def _is_requires_satisfied(arg, argv, environ=None):
+def _is_requires_satisfied(arg, argv, environ):
     """
     Determines if the argument to a REQUIRES directive is satisfied
 
     Args:
         arg (str): condition code
-        argv (List[str]): cmdline if arg is cmd code
+        argv (List[str]): cmdline if arg is cmd code usually `sys.argv`
+        environ (Dict[str, str]): environment variables usually `os.environ`
 
     Returns:
         bool: flag - True if the requirement is met
@@ -485,6 +488,19 @@ def _is_requires_satisfied(arg, argv, environ=None):
         False
         >>> _is_requires_satisfied('env:BAR==1', argv=[], environ={'FOO': '1'})
         False
+        >>> _is_requires_satisfied('env:BAR!=1', argv=[], environ={'FOO': '1'})
+        True
+        >>> _is_requires_satisfied('env:BAR!=1', argv=[], environ={'BAR': '0'})
+        True
+
+        >>> # xdoctest: +REQUIRES(module:pytest)
+        >>> import pytest
+        >>> with pytest.raises(ValueError):
+        >>>     _is_requires_satisfied('badflag:BAR==1', [])
+
+        >>> import pytest
+        >>> with pytest.raises(KeyError):
+        >>>     _is_requires_satisfied('env:BAR>=1', argv=[], environ={'BAR': '0'})
     """
     # TODO: add python version options
     SYS_PLATFORM_TAGS = ['win32', 'linux', 'darwin', 'cywgin']
@@ -505,13 +521,11 @@ def _is_requires_satisfied(arg, argv, environ=None):
         modname = parts[1]
         flag = _module_exists(modname)
     elif arg.startswith('env:'):
-        if environ is None:
-            environ = os.environ
         parts = arg.split(':')
         if len(parts) != 2:
             raise ValueError('xdoctest env REQUIRES directive has too many parts')
         envexpr = parts[1]
-        expr_parts = re.split('(==|!==)', envexpr)
+        expr_parts = re.split('(==|!=|>=)', envexpr)
         if len(expr_parts) == 1:
             # Test if the environment variable is truthy
             env_key = expr_parts[0]
@@ -523,7 +537,7 @@ def _is_requires_satisfied(arg, argv, environ=None):
             if op_code == '==':
                 op = operator.eq
             elif op_code == '!=':
-                op = operator.neq
+                op = operator.ne
             else:
                 raise KeyError(op_code)
             flag = op(env_val, value)
@@ -539,9 +553,9 @@ def _is_requires_satisfied(arg, argv, environ=None):
     elif arg_lower in PY_VER_TAGS:
         if sys.version_info[0] == 2:  # nocover
             flag = arg_lower == 'py2'
-        elif sys.version_info[0] == 3:
+        elif sys.version_info[0] == 3:  # pragma: nobranch
             flag = arg_lower == 'py3'
-        else:
+        else:  # nocover
             flag = False
     else:
         msg = utils.codeblock(
