@@ -490,8 +490,15 @@ class DocTest(object):
         # if self.is_disabled():
         #     runstate['SKIP'] = True
 
+        # - [x] TODO: fix CaptureStdout so it doesn't break embedding shells
         # don't capture stdout for zero-arg blocks
-        needs_capture = self.block_type != 'zero-arg'
+        # needs_capture = self.block_type != 'zero-arg'
+        # I think the bug that broke embedding shells is fixed, so it is now
+        # safe to capture. If not, uncomment above lines. If this works without
+        # issue, then remove these notes in a future version.
+        # needs_capture = False
+        needs_capture = True
+
         # Use the same capture object for all parts in the test
         cap = utils.CaptureStdout(supress=self._suppressed_stdout,
                                   enabled=needs_capture)

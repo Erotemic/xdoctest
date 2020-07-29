@@ -5,10 +5,14 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Version 0.13.0] - Uneleased 
+## [Version 0.14.0] - Uneleased 
 
 ###  Added
 * The REQUIRES directive can now inspect existence or values of environment variables.
+
+###  Fixed
+* `IPython.embed` and `ipdb.launch_ipdb_on_exception` now correctly work from
+  inside doctests.
 
 ## [Version 0.13.0] - Released 2020-07-10  
 

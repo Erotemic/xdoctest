@@ -239,7 +239,7 @@ interface. ``python -m <modname> <command>``
 
 '''
 # mkinit xdoctest --nomods
-__version__ = '0.13.0'
+__version__ = '0.14.0'
 
 
 # TODO:

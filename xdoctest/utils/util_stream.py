@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Utilities for capturing stdout
+Functions for capturing and redirecting IO streams.
+
+The :class:`CaptureStdout` captures all text sent to stdout and optionally
+prevents it from actually reaching stdout.
+
+The :class:`TeeStringIO` does the same thing but for arbitrary streams. It is
+how the former is implemented.
+
 """
 from __future__ import print_function, division, absolute_import, unicode_literals
 import sys
@@ -9,10 +16,29 @@ import io
 
 
 class TeeStringIO(io.StringIO):
-    """ simple class to write to a stdout and a StringIO """
+    """
+    An IO object that writes to itself and another IO stream.
+
+    Attributes:
+        redirect (io.IOBase): The other stream to write to.
+
+    Example:
+        >>> redirect = io.StringIO()
+        >>> self = TeeStringIO(redirect)
+    """
     def __init__(self, redirect=None):
-        self.redirect = redirect
+        self.redirect = redirect  # type: io.IOBase
         super(TeeStringIO, self).__init__()
+
+        # Logic taken from prompt_toolkit/output/vt100.py version 3.0.5 in
+        # flush I don't have a full understanding of what the buffer
+        # attribute is supposed to be capturing here, but this seems to
+        # allow us to embed in IPython while still capturing and Teeing
+        # stdout
+        if hasattr(redirect, 'buffer'):
+            self.buffer = redirect.buffer  # Py3.
+        else:
+            self.buffer = redirect
 
     def isatty(self):  # nocover
         """
@@ -25,14 +51,38 @@ class TeeStringIO(io.StringIO):
         return (self.redirect is not None and
                 hasattr(self.redirect, 'isatty') and self.redirect.isatty())
 
+    def fileno(self):
+        """
+        Returns underlying file descriptor of the redirected IOBase object
+        if one exists.
+        """
+        if self.redirect is not None:
+            return self.redirect.fileno()
+        else:
+            return super(TeeStringIO, self).fileno()
+
     @property
     def encoding(self):
+        """
+        Gets the encoding of the `redirect` IO object
+
+        Example:
+            >>> redirect = io.StringIO()
+            >>> assert TeeStringIO(redirect).encoding is None
+            >>> assert TeeStringIO(None).encoding is None
+            >>> assert TeeStringIO(sys.stdout).encoding is sys.stdout.encoding
+            >>> redirect = io.TextIOWrapper(io.StringIO())
+            >>> assert TeeStringIO(redirect).encoding is redirect.encoding
+        """
         if self.redirect is not None:
             return self.redirect.encoding
         else:
             return super(TeeStringIO, self).encoding
 
     def write(self, msg):
+        """
+        Write to this and the redirected stream
+        """
         if self.redirect is not None:
             self.redirect.write(msg)
         if six.PY2:
@@ -41,6 +91,9 @@ class TeeStringIO(io.StringIO):
         super(TeeStringIO, self).write(msg)
 
     def flush(self):  # nocover
+        """
+        Flush to this and the redirected stream
+        """
         if self.redirect is not None:
             self.redirect.flush()
         super(TeeStringIO, self).flush()
@@ -114,6 +167,11 @@ class CaptureStdout(CaptureStream):
             sys.stdout = self.cap_stdout
 
     def stop(self):
+        """
+        Example:
+            >>> CaptureStdout(enabled=False).stop()
+            >>> CaptureStdout(enabled=True).stop()
+        """
         if self.enabled:
             self.started = False
             sys.stdout = self.orig_stdout
@@ -122,7 +180,7 @@ class CaptureStdout(CaptureStream):
         self.start()
         return self
 
-    def __del__(self):
+    def __del__(self):  # nocover
         if self.started:
             self.stop()
         if self.cap_stdout is not None:
