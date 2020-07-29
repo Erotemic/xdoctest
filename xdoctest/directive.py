@@ -429,10 +429,6 @@ class Directive(utils.NiceRepr):
 
         if self.name == 'REQUIRES':
             # Special handling of REQUIRES
-            if argv is None:
-                argv = sys.argv
-            if environ is None:
-                environ = os.environ
             arg, = self._unpack_args(1)
             if _is_requires_satisfied(arg, argv=argv, environ=environ):
                 # If the requirement is met, then do nothing,
@@ -458,7 +454,7 @@ class Directive(utils.NiceRepr):
         return Effect(action, key, value)
 
 
-def _is_requires_satisfied(arg, argv, environ):
+def _is_requires_satisfied(arg, argv=None, environ=None):
     """
     Determines if the argument to a REQUIRES directive is satisfied
 
@@ -492,6 +488,8 @@ def _is_requires_satisfied(arg, argv, environ):
         True
         >>> _is_requires_satisfied('env:BAR!=1', argv=[], environ={'BAR': '0'})
         True
+        >>> _is_requires_satisfied('env:BAR!=1')
+        ...
 
         >>> # xdoctest: +REQUIRES(module:pytest)
         >>> import pytest
@@ -512,6 +510,8 @@ def _is_requires_satisfied(arg, argv, environ):
     arg_lower = arg.lower()
 
     if arg.startswith('-'):
+        if argv is None:
+            argv = sys.argv
         flag = arg in argv
     elif arg.startswith('module:'):
         parts = arg.split(':')
@@ -521,6 +521,8 @@ def _is_requires_satisfied(arg, argv, environ):
         modname = parts[1]
         flag = _module_exists(modname)
     elif arg.startswith('env:'):
+        if environ is None:
+            environ = os.environ
         parts = arg.split(':')
         if len(parts) != 2:
             raise ValueError('xdoctest env REQUIRES directive has too many parts')
