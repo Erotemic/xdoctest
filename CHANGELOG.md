@@ -9,10 +9,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ###  Added
 * The REQUIRES directive can now inspect existence or values of environment variables.
+* Added top-level `doctest_callable` function, which executes the doctests of a
+  function or class.
 
 ###  Fixed
 * `IPython.embed` and `ipdb.launch_ipdb_on_exception` now correctly work from
   inside doctests.
+* Small incompatibility with `pytest-matrix`. See #82
 
 ## [Version 0.13.0] - Released 2020-07-10  
 

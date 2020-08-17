@@ -66,6 +66,31 @@ def log(msg, verbose):
 DEBUG = '--debug' in sys.argv
 
 
+def doctest_callable(func):
+    """
+    Executes doctests an in-memory function or class.
+
+    Args:
+        func (callable):
+            live method or class for which we will run its doctests.
+
+    Example:
+        >>> def inception():
+        >>>     '''
+        >>>     Example:
+        >>>         >>> print("I heard you liked doctests")
+        >>>     '''
+        >>> func = inception
+        >>> doctest_callable(func)
+    """
+    from xdoctest.core import parse_docstr_examples
+    doctests = list(parse_docstr_examples(
+        func.__doc__, callname=func.__name__))
+    # TODO: can this be hooked up into runner to get nice summaries?
+    for doctest in doctests:
+        doctest.run(verbose=3)
+
+
 def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
                    style='auto', verbose=None, config=None, durations=None,
                    analysis='static'):

@@ -256,10 +256,11 @@ __submodules__ = [
 
 from xdoctest import utils
 from xdoctest import docstr
-from xdoctest.runner import (doctest_module,)
+from xdoctest.runner import (doctest_module, doctest_callable,)
 from xdoctest.exceptions import (DoctestParseError, ExitTestException,
                                  MalformedDocstr,)
 
 
 __all__ = ['DoctestParseError', 'ExitTestException', 'MalformedDocstr',
-           'doctest_module', 'utils', 'docstr', '__version__']
+           'doctest_module', 'doctest_callable', 'utils', 'docstr',
+           '__version__']
