@@ -153,6 +153,7 @@ class ReprFailXDoctest(code.TerminalRepr):
 class XDoctestItem(pytest.Item):
     def __init__(self, name, parent, example=None):
         super(XDoctestItem, self).__init__(name, parent)
+        self.cls = XDoctestItem
         self.example = example
         self.obj = None
         self.fixture_request = None
