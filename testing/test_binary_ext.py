@@ -171,6 +171,10 @@ def test_run_binary_doctests():
 
     CommandLine:
         python ~/code/xdoctest/testing/test_binary_ext.py test_run_binary_doctests
+
+    Notes:
+        xdoctest -m $HOME/code/xdoctest/testing/pybind11_test/install/my_ext.cpython-38-x86_64-linux-gnu.so list --analysis=dynamic
+
     """
     extmod_fpath = build_demo_extmod()
     print('extmod_fpath = {!r}'.format(extmod_fpath))

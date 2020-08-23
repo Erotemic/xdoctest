@@ -70,14 +70,20 @@ class Config(dict):
     def _update_argparse_cli(self, add_argument, prefix=None, defaults={}):
         """
         Updates a pytest or argparse CLI
+
+        Args:
+            add_argument (callable): the parser.add_argument function
         """
+        import argparse
         def str_lower(x):
             # python2 fix
             return str.lower(str(x))
 
         add_argument_kws = [
+            (['--colored'], dict(dest='colored', default=self['colored'],
+                                 help=('Enable or disable ANSI coloration in stdout'))),
             (['--nocolor'], dict(dest='colored', action='store_false',
-                                 default=self['colored'],
+                                 default=argparse.SUPPRESS,
                                  help=('Disable ANSI coloration in stdout'))),
             (['--offset'], dict(dest='offset_linenos', action='store_true',
                                 default=self['offset_linenos'],
@@ -98,8 +104,10 @@ class Config(dict):
                                      help='verbosity level')),
             # (['--verbose'], dict(action='store_true', dest='verbose')),
             (['--quiet'], dict(action='store_true', dest='verbose',
+                                default=argparse.SUPPRESS,
                                 help='sets verbosity to 1')),
             (['--silent'], dict(action='store_false', dest='verbose',
+                                default=argparse.SUPPRESS,
                                 help='sets verbosity to 0')),
         ]
 
