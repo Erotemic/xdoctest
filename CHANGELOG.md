@@ -11,6 +11,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * The REQUIRES directive can now inspect existence or values of environment variables.
 * Added top-level `doctest_callable` function, which executes the doctests of a
   function or class.
+* Support for `NO_COLOR` environment variable.
 
 ###  Fixed
 * `IPython.embed` and `ipdb.launch_ipdb_on_exception` now correctly work from

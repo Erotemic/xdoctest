@@ -1,6 +1,6 @@
 
 
-def convert(path_to_convert):
+def convert_file_docstrings(path_to_convert, dry=True):
     """
     path_to_convert = ub.expandpath('~/code/networkx/networkx/algorithms/isomorphism/_embeddinghelpers/balanced_sequence.py')
     """
@@ -48,18 +48,25 @@ def convert(path_to_convert):
             new_lines = prefix + mid + suffix
 
         new_text = '\n'.join(new_lines)
-        print(new_text)
-        import xdev
-        dry = 0
+        # print(new_text)
         if dry:
+            import xdev
             print(xdev.misc.difftext(old_text, new_text, context_lines=10, colored=True))
+            print('^^^ modpath = {!r}'.format(modpath))
         else:
             ub.writeto(modpath, new_text, verbose=3)
-        print('^^^ modpath = {!r}'.format(modpath))
 
 
 def google_to_numpy_docstr(docstr):
     """
+    Convert a google-style docstring to a numpy-style docstring
+
+    Args:
+        docstr (str): contents of ``func.__doc__`` for some ``func``, assumed
+            to be in google-style.
+
+    Returns:
+        str: numpy style docstring
     """
     import ubelt as ub
     from xdoctest.docstr import docscrape_google
@@ -105,3 +112,24 @@ def google_to_numpy_docstr(docstr):
     new_docstr = '\n'.join(new_parts)
     new_docstr = new_docstr.strip('\n')
     return new_docstr
+
+
+def main():
+    import scriptconfig as scfg
+    class Config(scfg.Config):
+        default = {
+            'src': scfg.Value(None, help='path to file to convert'),
+            'dry': scfg.Value(True, help='set to false to execute'),
+        }
+    config = Config(cmdline=True)
+    path_to_convert = config['src']
+    dry = config['dry']
+    convert_file_docstrings(path_to_convert, dry=dry)
+
+
+if __name__ == '__main__':
+    """
+    CommandLine:
+        python -m xdoctest.docstr.convert_google_to_numpy --src ~/code/networkx/networkx/algorithms/isomorphism/_embeddinghelpers/balanced_sequence.py
+    """
+    main()

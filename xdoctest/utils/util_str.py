@@ -8,7 +8,14 @@ import math
 import textwrap
 # import warnings
 import re
+import os
 import sys
+
+
+# Global state that determines if ANSI-coloring text is allowed
+# (which is mainly to address non-ANSI complient windows consoles)
+# complient with https://no-color.org/
+NO_COLOR = bool(os.environ.get('NO_COLOR'))
 
 
 def strip_ansi(text):
@@ -63,7 +70,7 @@ def color_text(text, color):
         >>>     assert color_text(text, 'red') == 'raw text'
         >>>     assert color_text(text, None) == 'raw text'
     """
-    if color is None:
+    if NO_COLOR or color is None:
         return text
     try:
         import pygments
@@ -170,6 +177,8 @@ def highlight_code(text, lexer_name='python', **kwargs):
         >>> new_text = highlight_code(text)
         >>> print(new_text)
     """
+    if NO_COLOR:
+        return text
     # Resolve extensions to languages
     lexer_name = {
         'py': 'python',
