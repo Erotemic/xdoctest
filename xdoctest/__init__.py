@@ -162,49 +162,46 @@ which produces something similar to the following output:
 .. code:: text
 
     usage: xdoctest [-h] [--version] [-m MODNAME] [-c COMMAND]
-                    [--style {auto,google,freeform}] [--durations DURATIONS]
-                    [--time] [--nocolor] [--offset]
+                    [--style {auto,google,freeform}]
+                    [--analysis {auto,static,dynamic}]
+                    [--durations DURATIONS] [--time] [--nocolor] [--offset]
                     [--report {none,cdiff,ndiff,udiff,only_first_failure}]
                     [--options OPTIONS] [--global-exec GLOBAL_EXEC]
                     [--verbose VERBOSE] [--quiet] [--silent]
                     [arg [arg ...]]
 
-    Xdoctest 0.11.0 - on Python - 3.7.3 (default, Mar 27 2019, 22:11:17) [GCC
-    7.3.0] - discover and run doctests within a python package
+    Xdoctest 0.14.0 - on Python - 3.8.3 (default, Jul 2 2020, 16:21:59) [GCC 7.3.0] - discover and run doctests within a python package
 
     positional arguments:
-      arg                   Ignored if optional arguments are specified,
-                            otherwise: Defaults --modname to arg.pop(0). Defaults
-                            --command to arg.pop(0).
+      arg                   Ignored if optional arguments are specified, otherwise: Defaults --modname to arg.pop(0). Defaults --command
+                            to arg.pop(0).
 
     optional arguments:
       -h, --help            show this help message and exit
       --version             display version info and quit
       -m MODNAME, --modname MODNAME
-                            module name or path. If specified positional modules
-                            are ignored
+                            module name or path. If specified positional modules are ignored
       -c COMMAND, --command COMMAND
-                            a doctest name or a command (list|all|<callname>).
-                            Defaults to all
+                            a doctest name or a command (list|all|<callname>). Defaults to all
       --style {auto,google,freeform}
-                            choose your style
+                            choose the style of doctests that will be parsed
+      --analysis {auto,static,dynamic}
+                            How doctests are collected
       --durations DURATIONS
-                            specify execution times for slowest N tests.N=0 will
-                            show times for all tests
+                            specify execution times for slowest N tests.N=0 will show times for all tests
       --time                Same as if durations=0
       --nocolor             Disable ANSI coloration in stdout
-      --offset              if True formated source linenumbers will agree with
-                            their location in the source file. Otherwise they will
+      --offset              if True formatted source linenumbers will agree with their location in the source file. Otherwise they will
                             be relative to the doctest itself.
       --report {none,cdiff,ndiff,udiff,only_first_failure}
-                            choose another output format for diffs on xdoctest
-                            failure
+                            choose another output format for diffs on xdoctest failure
       --options OPTIONS     default directive flags for doctests
       --global-exec GLOBAL_EXEC
                             exec these lines before every test
       --verbose VERBOSE     verbosity level
       --quiet               sets verbosity to 1
       --silent              sets verbosity to 0
+
 
 
 The xdoctest interface can be run programmatically using
@@ -239,7 +236,7 @@ interface. ``python -m <modname> <command>``
 
 '''
 # mkinit xdoctest --nomods
-__version__ = '0.13.0'
+__version__ = '0.14.0'
 
 
 # TODO:
@@ -259,10 +256,11 @@ __submodules__ = [
 
 from xdoctest import utils
 from xdoctest import docstr
-from xdoctest.runner import (doctest_module,)
+from xdoctest.runner import (doctest_module, doctest_callable,)
 from xdoctest.exceptions import (DoctestParseError, ExitTestException,
                                  MalformedDocstr,)
 
 
 __all__ = ['DoctestParseError', 'ExitTestException', 'MalformedDocstr',
-           'doctest_module', 'utils', 'docstr', '__version__']
+           'doctest_module', 'doctest_callable', 'utils', 'docstr',
+           '__version__']

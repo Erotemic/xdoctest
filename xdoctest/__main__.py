@@ -45,12 +45,19 @@ def main(argv=None):
             print('{} = {}'.format(key, value))
         return 0
 
+    # FIXME: default values are reporting incorrectly or are missformated
+    class RawDescriptionDefaultsHelpFormatter(
+            argparse.RawDescriptionHelpFormatter,
+            argparse.ArgumentDefaultsHelpFormatter):
+        pass
+
     parser = argparse.ArgumentParser(
         prog='xdoctest',
         description=(
             'Xdoctest {xdoc_version} - on Python - {sys_version} - '
             'discover and run doctests within a python package'
-        ).format(**version_info)
+        ).format(**version_info),
+        formatter_class=RawDescriptionDefaultsHelpFormatter,
     )
     parser.add_argument(
         'arg', nargs='*', help=utils.codeblock(

@@ -332,6 +332,84 @@ def test_runner_config():
     assert 'SKIPPED' in cap.text
 
 
+def test_global_exec():
+    """
+    pytest testing/test_runner.py::test_global_exec -s
+    """
+    from xdoctest import runner
+
+    source = utils.codeblock(
+        '''
+        def foo():
+            """
+                Example:
+                    >>> print(a)
+            """
+        ''')
+
+    config = {
+        'global_exec': 'a=1',
+    }
+
+    with utils.TempDir() as temp:
+        dpath = temp.dpath
+        modpath = join(dpath, 'test_example_run.py')
+
+        with open(modpath, 'w') as file:
+            file.write(source)
+
+        with utils.CaptureStdout() as cap:
+            runner.doctest_module(modpath, 'foo', argv=[''], config=config)
+
+    assert '1 passed' in cap.text
+
+
+def test_hack_the_sys_argv():
+    """
+    Tests hacky solution to issue #76
+
+    pytest testing/test_runner.py::test_global_exec -s
+
+    References:
+        https://github.com/Erotemic/xdoctest/issues/76
+    """
+    from xdoctest import runner
+
+    source = utils.codeblock(
+        '''
+        def foo():
+            """
+                Example:
+                    >>> # xdoctest: +REQUIRES(--hackedflag)
+                    >>> print('This will run if global_exec specified')
+            """
+        ''')
+
+    import sys
+    NEEDS_FIX = '--hackedflag' not in sys.argv
+
+    config = {
+        'global_exec': 'import sys; sys.argv.append("--hackedflag")'
+    }
+
+    with utils.TempDir() as temp:
+        dpath = temp.dpath
+        modpath = join(dpath, 'test_example_run.py')
+
+        with open(modpath, 'w') as file:
+            file.write(source)
+
+        with utils.CaptureStdout() as cap:
+            runner.doctest_module(modpath, 'foo', argv=[''], config=config)
+
+    if NEEDS_FIX:
+        # Fix the global state
+        sys.argv.remove('--hackedflag')
+
+    # print(cap.text)
+    assert '1 passed' in cap.text
+
+
 if __name__ == '__main__':
     """
     CommandLine:
