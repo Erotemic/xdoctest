@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Version 0.14.1 - Unreleased
 
+### Fixed
+* Bug in `doctest_callable` where it would not populate globals from the function context.
+
 
 ## [Version 0.14.0] - Released 2020-08-26 
 

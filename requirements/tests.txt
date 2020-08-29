@@ -1,7 +1,18 @@
 pytest >= 3.3.1
 pytest-cov
 codecov >= 2.0.15
+
+# For testing doctests in binary extension modules
 scikit-build
 cmake
 ninja
 pybind11
+
+# for testing doctests in jupyter notebooks
+nbformat
+nbconvert
+jupyter_client
+
+#pip uninstall pytest-ipynb
+#pytest-ipynb >= 1.1.1  
+#pip install pytest-notebook

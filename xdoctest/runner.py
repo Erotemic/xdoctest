@@ -75,11 +75,12 @@ def doctest_callable(func):
             live method or class for which we will run its doctests.
 
     Example:
-        >>> def inception():
+        >>> def inception(text):
         >>>     '''
         >>>     Example:
-        >>>         >>> print("I heard you liked doctests")
+        >>>         >>> inception("I heard you liked doctests")
         >>>     '''
+        >>>     print(text)
         >>> func = inception
         >>> doctest_callable(func)
     """
@@ -88,6 +89,13 @@ def doctest_callable(func):
         func.__doc__, callname=func.__name__))
     # TODO: can this be hooked up into runner to get nice summaries?
     for doctest in doctests:
+
+        # FIXME: each doctest needs a way of getting the globals of the scope
+        # that the parent function was defined in.
+        # HACK: to add module context, this might not be robust.
+        doctest.module = sys.modules[func.__module__]
+        doctest.global_namespace[func.__name__] = func
+
         doctest.run(verbose=3)
 
 
