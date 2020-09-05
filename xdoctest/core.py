@@ -2,6 +2,23 @@
 """
 Core methods used by xdoctest runner and plugin code to statically extract
 doctests from a module or package.
+
+
+The following is a list of terms and jargon used in this repo.
+TODO: ensure the list is complete,
+
+Glossary:
+
+    * callname - the name of a callable function, method, class etc..
+       e.g. ``myfunc``, ``MyClass``, or ``MyClass.some_method``.
+
+    * got / want - a test that produces stdout or a value to check. Whatever is
+        produced is what you "got" and whatever is expected is what you "want".
+
+    * directives - special in-doctest comments that change the behavior
+        of the doctests at runtime.
+
+
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
 import sys
@@ -55,6 +72,7 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         python -m xdoctest.core parse_freeform_docstr_examples
 
     Example:
+        >>> # TODO: move this to unit tests and make the doctest simpler
         >>> from xdoctest import core
         >>> from xdoctest import utils
         >>> docstr = utils.codeblock(
@@ -63,7 +81,7 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         >>>     >>> doctest
         >>>     >>> hasmultilines
         >>>     whoppie
-        >>>     >>> 'butthis is the same doctest'
+        >>>     >>> 'but this is the same doctest'
         >>>
         >>>     >>> secondone
         >>>
@@ -369,7 +387,7 @@ def _rectify_to_modpath(modpath_or_name):
 
 
 def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True,
-                     analysis='static'):
+                     analysis='auto'):
     """
     Statically generates all callable definitions in a module or package
 
@@ -381,11 +399,17 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True,
         ignore_syntax_errors (bool, default=True):
             if False raise an error when syntax errors occur in a doctest
 
-        analysis (str, default='static'):
+        analysis (str, default='auto'):
             if 'static', only static analysis is used to parse call
             definitions. If 'auto', uses dynamic analysis for compiled python
             extensions, but static analysis elsewhere, if 'dynamic', then
             dynamic analysis is used to parse all calldefs.
+
+    Yields:
+        Tuple[Dict[str, CallDefNode], str] -
+            item[0]: the mapping of callnames-to-calldefs
+            item[1]: the path to the file containing the doctest (usually a
+            module)
 
     Example:
         >>> modpath_or_name = 'xdoctest.core'
@@ -418,6 +442,9 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True,
 
         needs_dynamic = modpath.endswith(
             static_analysis._platform_pylib_exts())
+
+        if modpath.endswith('.ipynb'):
+            needs_dynamic = True
 
         if analysis == 'static':
             do_dynamic = False

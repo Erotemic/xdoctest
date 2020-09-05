@@ -642,7 +642,9 @@ def parse_calldefs(source=None, fpath=None):
         fpath (str): filepath to read if source is not specified
 
     Returns:
-        dict(str, CallDefNode): map of callnames to tuples with def info
+        Dict[str, CallDefNode]:
+            maping from callnames to CallDefNodes, which contain
+               info about the item with the doctest.
 
     Example:
         >>> from xdoctest import static_analysis

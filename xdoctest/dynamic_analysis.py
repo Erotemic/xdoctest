@@ -7,14 +7,22 @@ import inspect
 import os
 import types
 import six
+import io
+import sys
 
 
 def parse_dynamic_calldefs(modpath=None):
     """
     Dynamic parsing of module doctestable items.
 
-    While this does execute module code it is needed for testing extension
-    libraries.
+    Unlike static parsing this forces execution of the module code before
+    test-time, however the former is limited to plain-text python files whereas
+    this can discover doctests in binary extension libraries.
+
+    Returns:
+        Dict[str, CallDefNode]:
+            maping from callnames to CallDefNodes, which contain
+               info about the item with the doctest.
 
     CommandLine:
         python -m xdoctest.dynamic_analysis parse_dynamic_calldefs
@@ -33,6 +41,30 @@ def parse_dynamic_calldefs(modpath=None):
     """
     from xdoctest import static_analysis as static
     from xdoctest import utils  # NOQA
+
+    if modpath.endswith('.ipynb'):
+        """
+        modpath = ub.expandpath("~/code/xdoctest/testing/notebook_with_doctests.ipynb")
+        xdoctest ~/code/xdoctest/testing/notebook_with_doctests.ipynb
+        """
+        _ensure_ipynb_hooks()
+
+        import six
+        import nbformat
+        from nbconvert.preprocessors import ExecutePreprocessor
+        from os.path import dirname
+        print('IPYTHON DETECTED modpath = {!r}'.format(modpath))
+        if six.PY2:
+            raise NotImplementedError('cannot doctest notebooks in Python2')
+        testdir = dirname(modpath)
+        ep = ExecutePreprocessor(timeout=600, kernel_name='python3')
+        with open(modpath) as file:
+            nb = nbformat.read(file, as_version=nbformat.NO_CONVERT)
+        ep.preprocess(nb, {'metadata': {'path': testdir}})
+
+        # TODO:
+        # https://jupyter-notebook.readthedocs.io/en/stable/examples/Notebook/Importing%20Notebooks.html
+
     # Possible option for dynamic parsing
     module = utils.import_module_from_path(modpath)
     calldefs = {}
@@ -276,6 +308,112 @@ def is_defined_by_module(item, module):
             except  AttributeError:
                 pass
     return flag
+
+
+HAVE_IPY_HOOKS = False
+
+
+def _ensure_ipynb_hooks():
+    """
+    modpath = ub.expandpath("~/code/xdoctest/testing/notebook_with_doctests.ipynb")
+    import notebook_with_doctests
+    """
+    global HAVE_IPY_HOOKS
+    if not HAVE_IPY_HOOKS:
+        sys.meta_path.append(NotebookFinder())
+        HAVE_IPY_HOOKS = True
+
+
+class NotebookLoader(object):
+    """Module Loader for Jupyter Notebooks"""
+    def __init__(self, path=None):
+        from IPython.core.interactiveshell import InteractiveShell
+        self.shell = InteractiveShell.instance()
+        self.path = path
+
+    def load_module(self, fullname):
+        """import a notebook as a module"""
+        from IPython import get_ipython
+        from nbformat import read
+        path = find_notebook(fullname, self.path)
+        print("importing Jupyter notebook from %s" % path)
+
+        # load the notebook object
+        with io.open(path, 'r', encoding='utf-8') as f:
+            nb = read(f, 4)
+
+        # create the module and add it to sys.modules
+        # if name in sys.modules:
+        #    return sys.modules[name]
+        mod = types.ModuleType(fullname)
+        mod.__name__ = fullname.split('.')[-1]
+        mod.__file__ = path
+        mod.__loader__ = self
+        mod.__dict__['get_ipython'] = get_ipython
+        sys.modules[fullname] = mod
+
+        # extra work to ensure that magics that would affect the user_ns
+        # actually affect the notebook module's ns
+        save_user_ns = self.shell.user_ns
+        self.shell.user_ns = mod.__dict__
+
+        try:
+            for cell in nb.cells:
+                if cell.cell_type == 'code':
+                    # transform the input to executable Python
+                    code = self.shell.input_transformer_manager.transform_cell(cell.source)
+                    # run the code in themodule
+                    exec(code, mod.__dict__)
+        finally:
+            self.shell.user_ns = save_user_ns
+        return mod
+
+
+class NotebookFinder(object):
+    """Module finder that locates Jupyter Notebooks"""
+    def __init__(self):
+        self.loaders = {}
+
+    def find_module(self, fullname, path=None):
+        print('Find fullname = {!r}'.format(fullname))
+        print('in path = {!r}'.format(path))
+        nb_path = find_notebook(fullname, path)
+        if not nb_path:
+            return
+
+        key = path
+        if path:
+            # lists aren't hashable
+            key = os.path.sep.join(path)
+
+        if key not in self.loaders:
+            self.loaders[key] = NotebookLoader(path)
+        return self.loaders[key]
+
+
+def find_notebook(fullname, path=None):
+    """find a notebook, given its fully qualified name and an optional path
+
+    This turns "foo.bar" into "foo/bar.ipynb"
+    and tries turning "Foo_Bar" into "Foo Bar" if Foo_Bar
+    does not exist.
+
+    Ignore:
+        modname = basename(fullname)
+        nb_path = find_notebook(modname, path=fullname)
+
+    """
+    name = fullname.rsplit('.', 1)[-1]
+    if not path:
+        path = ['']
+    for d in path:
+        nb_path = os.path.join(d, name + ".ipynb")
+        if os.path.isfile(nb_path):
+            return nb_path
+        # let import Notebook_Name find "Notebook Name.ipynb"
+        nb_path = nb_path.replace("_", " ")
+        if os.path.isfile(nb_path):
+            return nb_path
 
 
 if __name__ == '__main__':

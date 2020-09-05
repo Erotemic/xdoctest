@@ -1,6 +1,8 @@
 def test_notebook():
     """
     xdoctest ~/code/xdoctest/testing/test_notebook.py test_notebook
+
+    xdoctest notebook_with_doctests.ipynb
     """
     # How to run Jupyter from Python
     # https://nbconvert.readthedocs.io/en/latest/execute_api.html
