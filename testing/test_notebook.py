@@ -3,7 +3,7 @@ import sys
 from os.path import join, exists, dirname
 from distutils.version import LooseVersion
 
-PY_VERSION = LooseVersion('.'.join(list(map(str, sys.version_info[0:2]))))
+PY_VERSION = LooseVersion('{}.{}'.format(*sys.version_info[0:2]))
 IS_MODERN_PYTHON = PY_VERSION > LooseVersion('3.4')
 
 
