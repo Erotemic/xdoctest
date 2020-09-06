@@ -5,7 +5,7 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Version 0.14.1 - Unreleased
+## Version 0.15.0 - Unreleased
 
 ### Fixed
 * Bug in `doctest_callable` where it would not populate globals from the function context.

@@ -434,6 +434,16 @@ def package_calldefs(pkg_identifier, exclude=[], ignore_syntax_errors=True,
             pkgpath, with_pkg=True, with_libs=True))
 
     for module_identifier in identifiers:
+        if isinstance(module_identifier, six.string_types):
+            modpath = module_identifier
+            modname = util_import.modpath_to_modname(modpath)
+            if any(fnmatch(modname, pat) for pat in exclude):
+                continue
+            if not exists(modpath):
+                warnings.warn(
+                    'Module {} does not exist. '
+                    'Is it an old pyc file?'.format(modname))
+                continue
         try:
             calldefs = parse_calldefs(module_identifier)
             if calldefs is not None:
@@ -450,7 +460,22 @@ def package_calldefs(pkg_identifier, exclude=[], ignore_syntax_errors=True,
 
 def parse_calldefs(module_identifier, analysis='auto'):
     """
-    Parse calldefs from a single module
+    Parse calldefs from a single module using either static or dynamic
+    analysis.
+
+    Args:
+        module_identifier (str | Module): path to or name of the module to be
+            tested (or the live module itself, which is not recommended)
+
+        analysis (str, default='auto'):
+            if 'static', only static analysis is used to parse call
+            definitions. If 'auto', uses dynamic analysis for compiled python
+            extensions, but static analysis elsewhere, if 'dynamic', then
+            dynamic analysis is used to parse all calldefs.
+
+    Returns:
+        Dict[str, CallDefNode]: the mapping of callnames-to-calldefs within
+            the module.
     """
     # backwards compatibility hacks
     if '--allow-xdoc-dynamic' in sys.argv:
