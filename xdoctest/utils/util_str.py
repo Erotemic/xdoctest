@@ -57,7 +57,8 @@ def color_text(text, color):
     Example:
         >>> text = 'raw text'
         >>> from xdoctest import utils
-        >>> if utils.modname_to_modpath('pygments'):
+        >>> from xdoctest.utils import util_str
+        >>> if utils.modname_to_modpath('pygments') and not util_str.NO_COLOR:
         >>>     # Colors text only if pygments is installed
         >>>     ansi_text = utils.ensure_unicode(color_text(text, 'red'))
         >>>     prefix = utils.ensure_unicode('\x1b[31')
