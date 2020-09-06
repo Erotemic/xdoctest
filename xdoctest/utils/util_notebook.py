@@ -36,10 +36,7 @@ import os
 import sys
 import types
 import ast
-import nbformat
 from os.path import basename, dirname
-from IPython import get_ipython
-from IPython.core.interactiveshell import InteractiveShell
 
 
 def _find_notebook(fullname, path=None):
@@ -83,12 +80,15 @@ class NotebookLoader(object):
     }
 
     def __init__(self, path=None):
+        from IPython.core.interactiveshell import InteractiveShell
         self.shell = InteractiveShell.instance()
         self.path = path
         self.options = self.default_options.copy()
 
     def load_module(self, fullname=None, fpath=None):
         """import a notebook as a module"""
+        from IPython import get_ipython
+        import nbformat
         if fpath is None:
             fpath = _find_notebook(fullname, self.path)
 
