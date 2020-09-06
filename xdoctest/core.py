@@ -340,7 +340,6 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
             n_parsed += 1
             yield example
     except Exception as ex:
-        raise
         if DEBUG:
             print('Caught an error when parsing')
         msg = ('Cannot scrape callname={} in modpath={} line={}.\n'
@@ -429,12 +428,10 @@ def package_calldefs(pkg_identifier, exclude=[], ignore_syntax_errors=True,
     if isinstance(pkg_identifier, types.ModuleType):
         # Case where we are forced to use a live module
         identifiers = [pkg_identifier]
-        mod_is_live = True
     else:
         pkgpath = _rectify_to_modpath(pkg_identifier)
         identifiers = list(static_analysis.package_modpaths(
             pkgpath, with_pkg=True, with_libs=True))
-        mod_is_live = False
 
     for module_identifier in identifiers:
         try:
@@ -447,7 +444,6 @@ def package_calldefs(pkg_identifier, exclude=[], ignore_syntax_errors=True,
             msg = msg.format(module_identifier, ex)
             if ignore_syntax_errors:
                 warnings.warn(msg)  # real code or docstr contained errors
-                continue
             else:
                 raise SyntaxError(msg)
 
