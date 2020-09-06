@@ -337,6 +337,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
             n_parsed += 1
             yield example
     except Exception as ex:
+        raise
         if DEBUG:
             print('Caught an error when parsing')
         msg = ('Cannot scrape callname={} in modpath={} line={}.\n'
@@ -392,7 +393,8 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True,
     Statically generates all callable definitions in a module or package
 
     Args:
-        modpath_or_name (str): path to or name of the module to be tested
+        modpath_or_name (str | Module): path to or name of the module to be
+            tested (or the live module itself, which is not recommended)
 
         exclude (List[str]): glob-patterns of file names to exclude
 
@@ -419,41 +421,53 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True,
         >>> assert static_analysis.modpath_to_modname(modpath) == modpath_or_name
         >>> assert 'package_calldefs' in calldefs
     """
-    pkgpath = _rectify_to_modpath(modpath_or_name)
+    import types
+    if isinstance(modpath_or_name, types.ModuleType):
+        # Case where we are forced to use a live module
+        modpaths = [modpath_or_name]
+        mod_is_live = True
+    else:
+        pkgpath = _rectify_to_modpath(modpath_or_name)
+        modpaths = static_analysis.package_modpaths(pkgpath, with_pkg=True,
+                                                    with_libs=True)
+        modpaths = list(modpaths)
+        mod_is_live = False
 
-    modpaths = static_analysis.package_modpaths(pkgpath, with_pkg=True,
-                                                with_libs=True)
-    modpaths = list(modpaths)
     for modpath in modpaths:
-        modname = static_analysis.modpath_to_modname(modpath)
-        if any(fnmatch(modname, pat) for pat in exclude):
-            continue
-        if not exists(modpath):
-            warnings.warn(
-                'Module {} does not exist. '
-                'Is it an old pyc file?'.format(modname))
-            continue
-
-        # backwards compatibility hacks
-        if '--allow-xdoc-dynamic' in sys.argv:
-            analysis = 'auto'
-        if '--xdoc-force-dynamic' in sys.argv:
-            analysis = 'dynamic'
-
-        needs_dynamic = modpath.endswith(
-            static_analysis._platform_pylib_exts())
-
-        if modpath.endswith('.ipynb'):
+        if mod_is_live:
             needs_dynamic = True
-
-        if analysis == 'static':
-            do_dynamic = False
-        elif analysis == 'dynamic':
             do_dynamic = True
-        elif analysis == 'auto':
-            do_dynamic = needs_dynamic
+            modname = getattr(modpath, '__name__', None)
         else:
-            raise KeyError(analysis)
+            modname = static_analysis.modpath_to_modname(modpath)
+            if any(fnmatch(modname, pat) for pat in exclude):
+                continue
+            if not exists(modpath):
+                warnings.warn(
+                    'Module {} does not exist. '
+                    'Is it an old pyc file?'.format(modname))
+                continue
+
+            # backwards compatibility hacks
+            if '--allow-xdoc-dynamic' in sys.argv:
+                analysis = 'auto'
+            if '--xdoc-force-dynamic' in sys.argv:
+                analysis = 'dynamic'
+
+            needs_dynamic = modpath.endswith(
+                static_analysis._platform_pylib_exts())
+
+            if modpath.endswith('.ipynb'):
+                needs_dynamic = True
+
+            if analysis == 'static':
+                do_dynamic = False
+            elif analysis == 'dynamic':
+                do_dynamic = True
+            elif analysis == 'auto':
+                do_dynamic = needs_dynamic
+            else:
+                raise KeyError(analysis)
 
         if do_dynamic:
             try:
@@ -497,7 +511,8 @@ def parse_doctestables(modpath_or_name, exclude=[], style='auto',
     example objects.  The style influences which tests are found.
 
     Args:
-        modpath_or_name (str | PathLike): path or name of a module
+        modpath_or_name (str | PathLike | Module): path or name of a module or
+            a module itself (we prefer a path)
 
         exclude (List[str]): glob-patterns of file names to exclude
 
@@ -558,6 +573,7 @@ def parse_doctestables(modpath_or_name, exclude=[], style='auto',
         for callname, calldef in calldefs.items():
             docstr = calldef.docstr
             if calldef.docstr is not None:
+                print('calldef = {!r}'.format(calldef))
                 lineno = calldef.doclineno
                 for example in parse_docstr_examples(docstr, callname=callname,
                                                      modpath=modpath,

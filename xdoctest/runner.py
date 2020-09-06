@@ -164,7 +164,15 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
     # Determine package name via caller if not specified
     if modpath_or_name is None:
         frame_parent = dynamic_analysis.get_parent_frame()
-        modpath = frame_parent.f_globals['__file__']
+        print('frame_parent = {!r}'.format(frame_parent))
+        if '__file__' in frame_parent.f_globals:
+            modpath = frame_parent.f_globals['__file__']
+        else:
+            # Module might not exist as a path on disk, we might be trying to
+            # test an IPython session.
+            modname = frame_parent.f_globals['__name__']
+            modpath = sys.modules[modname]
+            print('modpath = {!r}'.format(modpath))
     else:
         if command is None:
             # Allow the modname to contain the name of the test to be run

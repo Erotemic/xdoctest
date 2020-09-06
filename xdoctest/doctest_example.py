@@ -180,17 +180,24 @@ class DocTest(object):
 
     def __init__(self, docsrc, modpath=None, callname=None, num=0,
                  lineno=1, fpath=None, block_type=None, mode='pytest'):
-
+        import types
         # if we know the google block type it is recorded
         self.block_type = block_type
 
         self.config = Config()
 
+        self.module = None
         self.modpath = modpath
+
         self.fpath = fpath
         if modpath is None:
             self.modname = '<modname?>'
             self.modpath = '<modpath?>'
+        elif isinstance(modpath, types.ModuleType):
+            self.fpath = modpath
+            self.module = modpath
+            self.modname = modpath.__name__
+            self.modpath = getattr(self.module, '__file__', '<modpath?>')
         else:
             if fpath is not None:
                 assert fpath == modpath, (
@@ -219,7 +226,6 @@ class DocTest(object):
 
         self._runstate = None
 
-        self.module = None
         # Maintain global variables that this test will have access to
         self.global_namespace = {}
         # Hint at what is running this doctest

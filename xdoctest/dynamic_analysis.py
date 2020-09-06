@@ -19,6 +19,9 @@ def parse_dynamic_calldefs(modpath=None):
     test-time, however the former is limited to plain-text python files whereas
     this can discover doctests in binary extension libraries.
 
+    Args:
+       modpath (str | Module): path to module or the module itself
+
     Returns:
         Dict[str, CallDefNode]:
             maping from callnames to CallDefNodes, which contain
@@ -42,31 +45,37 @@ def parse_dynamic_calldefs(modpath=None):
     from xdoctest import static_analysis as static
     from xdoctest import utils  # NOQA
 
-    if modpath.endswith('.ipynb'):
-        """
-        modpath = ub.expandpath("~/code/xdoctest/testing/notebook_with_doctests.ipynb")
-        xdoctest ~/code/xdoctest/testing/notebook_with_doctests.ipynb
-        """
-        _ensure_ipynb_hooks()
+    import types
+    if isinstance(modpath, types.ModuleType):
+        module = modpath
+    else:
+        if modpath.endswith('.ipynb'):
+            """
+            modpath = ub.expandpath("~/code/xdoctest/testing/notebook_with_doctests.ipynb")
+            xdoctest ~/code/xdoctest/testing/notebook_with_doctests.ipynb
+            """
+            _ensure_ipynb_hooks()
 
-        import six
-        import nbformat
-        from nbconvert.preprocessors import ExecutePreprocessor
-        from os.path import dirname
-        print('IPYTHON DETECTED modpath = {!r}'.format(modpath))
-        if six.PY2:
-            raise NotImplementedError('cannot doctest notebooks in Python2')
-        testdir = dirname(modpath)
-        ep = ExecutePreprocessor(timeout=600, kernel_name='python3')
-        with open(modpath) as file:
-            nb = nbformat.read(file, as_version=nbformat.NO_CONVERT)
-        ep.preprocess(nb, {'metadata': {'path': testdir}})
+            import six
+            import nbformat
+            from nbconvert.preprocessors import ExecutePreprocessor
+            from os.path import dirname
+            print('IPYTHON DETECTED modpath = {!r}'.format(modpath))
+            if six.PY2:
+                raise NotImplementedError('cannot doctest notebooks in Python2')
+            testdir = dirname(modpath)
+            ep = ExecutePreprocessor(timeout=600, kernel_name='python3')
+            with open(modpath) as file:
+                nb = nbformat.read(file, as_version=nbformat.NO_CONVERT)
+            ep.preprocess(nb, {'metadata': {'path': testdir}})
 
-        # TODO:
-        # https://jupyter-notebook.readthedocs.io/en/stable/examples/Notebook/Importing%20Notebooks.html
+            # TODO:
+            # https://jupyter-notebook.readthedocs.io/en/stable/examples/Notebook/Importing%20Notebooks.html
+            raise NotImplementedError
 
-    # Possible option for dynamic parsing
-    module = utils.import_module_from_path(modpath)
+        # Possible option for dynamic parsing
+        module = utils.import_module_from_path(modpath)
+
     calldefs = {}
 
     if getattr(module, '__doc__'):
