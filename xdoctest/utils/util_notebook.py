@@ -157,7 +157,7 @@ def import_notebook_from_path(ipynb_fpath, only_defs=False):
             statements
 
     Example:
-        >>> # xdoctest: +REQUIRES(module:nbconvert)
+        >>> # xdoctest: +REQUIRES(module:IPython, module:nbconvert)
         >>> from xdoctest import utils
         >>> from os.path import join
         >>> self = utils.TempDir()
@@ -204,7 +204,7 @@ def execute_notebook(ipynb_fpath, timeout=None):
             Additional resources used in the conversion process.
 
     Example:
-        >>> # xdoctest: +REQUIRES(module:nbconvert)
+        >>> # xdoctest: +REQUIRES(module:IPython, module:nbconvert)
         >>> from xdoctest import utils
         >>> from os.path import join
         >>> self = utils.TempDir()
@@ -221,7 +221,8 @@ def execute_notebook(ipynb_fpath, timeout=None):
     import nbformat
     from nbconvert.preprocessors import ExecutePreprocessor
     dpath = dirname(ipynb_fpath)
-    ep = ExecutePreprocessor(timeout=timeout, kernel_name='python3')
+    ep = ExecutePreprocessor(timeout=timeout)
+    # kernel_name='python3')
     with open(ipynb_fpath) as file:
         nb = nbformat.read(file, as_version=nbformat.NO_CONVERT)
     nb, resources = ep.preprocess(nb, {'metadata': {'path': dpath}})
