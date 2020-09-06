@@ -1,7 +1,40 @@
-import six
 import pytest
 import sys
 from os.path import join, exists, dirname
+from distutils.version import LooseVersion
+
+PY_VERSION = LooseVersion('.'.join(list(map(str, sys.version_info[0:2]))))
+IS_MODERN_PYTHON = PY_VERSION > LooseVersion('3.4')
+
+
+def skip_notebook_tests_if_unsupported():
+    if not IS_MODERN_PYTHON:
+        pytest.skip('jupyter support is only for modern python versions')
+
+    try:
+        import IPython  # NOQA
+        import nbconvert  # NOQA
+        import nbformat  # NOQA
+    except Exception:
+        pytest.skip('Missing jupyter')
+
+
+def cmd(command):
+    # simplified version of ub.cmd no fancy tee behavior
+    import subprocess
+    proc = subprocess.Popen(
+        command, shell=True, universal_newlines=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    out, err = proc.communicate()
+    ret = proc.wait()
+    info = {
+        'proc': proc,
+        'out': out,
+        'err': err,
+        'ret': ret,
+    }
+    return info
 
 
 def demodata_notebook_fpath():
@@ -24,8 +57,7 @@ def test_xdoctest_inside_notebook():
     """
     # How to run Jupyter from Python
     # https://nbconvert.readthedocs.io/en/latest/execute_api.html
-    if six.PY2:
-        pytest.skip('cannot test this case in Python2')
+    skip_notebook_tests_if_unsupported()
 
     notebook_fpath = demodata_notebook_fpath()
 
@@ -37,27 +69,13 @@ def test_xdoctest_inside_notebook():
     assert '3 / 3 passed' in text
 
 
-def cmd(command):
-    # simplified version of ub.cmd no fancy tee behavior
-    import subprocess
-    proc = subprocess.Popen(
-        command, shell=True, universal_newlines=True,
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    out, err = proc.communicate()
-    ret = proc.wait()
-    info = {
-        'proc': proc,
-        'out': out,
-        'err': err,
-        'ret': ret,
-    }
-    return info
-
-
 def test_xdoctest_outside_notebook():
+
+    skip_notebook_tests_if_unsupported()
+
     if sys.platform.startswith('win32'):
         pytest.skip()
+
     notebook_fpath = demodata_notebook_fpath()
     info = cmd(sys.executable + ' -m xdoctest ' + notebook_fpath)
     text = info['out']

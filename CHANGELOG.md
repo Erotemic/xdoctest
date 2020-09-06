@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 
 ### Added
+* `pip install xdoctest` can now specify `[colors]` or `[jupyter]`
 * Enhanced REQUIRES directive behavior, multiple comma-separated requirements
   can now be listed in one directive.
 * Xdoctest can now be run inside of Jupyter notebooks / IPython sessions

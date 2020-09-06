@@ -213,6 +213,7 @@ if __name__ == '__main__':
             'all': parse_requirements('requirements.txt'),
             'tests': parse_requirements('requirements/tests.txt'),
             'optional': parse_requirements('requirements/optional.txt'),
+            'colors': parse_requirements('requirements/colors.txt'),
             'jupyter': parse_requirements('requirements/jupyter.txt'),
         },
         long_description=parse_description(),

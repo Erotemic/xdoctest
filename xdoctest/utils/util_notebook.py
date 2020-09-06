@@ -157,7 +157,7 @@ def import_notebook_from_path(ipynb_fpath, only_defs=False):
             statements
 
     Example:
-        >>> # xdoctest: +REQUIRES(module:IPython, module:nbconvert)
+        >>> # xdoctest: +REQUIRES(PY3, module:IPython, module:nbconvert)
         >>> from xdoctest import utils
         >>> from os.path import join
         >>> self = utils.TempDir()
@@ -204,7 +204,7 @@ def execute_notebook(ipynb_fpath, timeout=None):
             Additional resources used in the conversion process.
 
     Example:
-        >>> # xdoctest: +REQUIRES(module:IPython, module:nbconvert)
+        >>> # xdoctest: +REQUIRES(PY3, module:IPython, module:nbconvert)
         >>> from xdoctest import utils
         >>> from os.path import join
         >>> self = utils.TempDir()
