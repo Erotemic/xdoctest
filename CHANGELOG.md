@@ -7,6 +7,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Version 0.15.0 - Unreleased
 
+
+### Added
+* Enhanced REQUIRES directive behavior, multiple comma-separated requirements
+  can now be listed in one directive.
+* Xdoctest can now be run inside of Jupyter notebooks / IPython sessions
+* Xdoctest can now be run on Jupyter notebooks (Note that in general it is
+  better practice to write a module)
+
 ### Fixed
 * Bug in `doctest_callable` where it would not populate globals from the function context.
 

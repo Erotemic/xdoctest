@@ -477,6 +477,10 @@ class DocTest(object):
         """
         Executes the doctest, checks the results, reports the outcome.
 
+        Args:
+            verbose (int): verbosity level
+            on_error (str): can be 'raise' or 'return'
+
         Returns:
             Dict : summary
         """

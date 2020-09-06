@@ -238,38 +238,40 @@ class RuntimeState(utils.NiceRepr):
         Update the runtime state given a set of directives
 
         Args:
-            directives (List[Directive]): list of directives. The `effect`
+            directives (List[Directive]): list of directives. The `effects`
                 method is used to update this object.
         """
         # Clear the previous inline state
         self._inline_state.clear()
         for directive in directives:
+            for effect in directive.effects():
+                action, key, value = effect
+                if action == 'noop':
+                    continue
 
-            action, key, value = directive.effect()
+                if key not in self._global_state:
+                    warnings.warn('Unknown state: {}'.format(key))
 
-            if action == 'noop':
-                continue
+                # Determine if this impacts the local (inline) or global state.
+                if directive.inline:
+                    state = self._inline_state
+                else:
+                    state = self._global_state
 
-            if key not in self._global_state:
-                warnings.warn('Unknown state: {}'.format(key))
-
-            # Determine if this impacts the local (inline) or global state.
-            if directive.inline:
-                state = self._inline_state
-            else:
-                state = self._global_state
-
-            if action == 'set_report_style':
-                # Special handling of report style
-                self.set_report_style(key.replace('REPORT_', ''))
-            elif action == 'assign':
-                state[key] = value
-            elif action == 'set.add':
-                state[key].add(value)
-            elif action == 'set.remove':
-                state[key].remove(value)
-            else:
-                raise KeyError('unknown action {}'.format(action))
+                if action == 'set_report_style':
+                    # Special handling of report style
+                    self.set_report_style(key.replace('REPORT_', ''))
+                elif action == 'assign':
+                    state[key] = value
+                elif action == 'set.add':
+                    state[key].add(value)
+                elif action == 'set.remove':
+                    try:
+                        state[key].remove(value)
+                    except KeyError:
+                        pass
+                else:
+                    raise KeyError('unknown action {}'.format(action))
 
 
 class Directive(utils.NiceRepr):
@@ -323,6 +325,11 @@ class Directive(utils.NiceRepr):
             >>> print(', '.join(list(map(str, Directive.extract(text)))))
             <Directive(+ELLIPSIS)>, <Directive(-NORMALIZE_WHITESPACE)>
 
+            >>> # Make sure commas inside parens are not split
+            >>> text = '# xdoctest: +REQUIRES(module:foo,module:bar)'
+            >>> print(', '.join(list(map(str, Directive.extract(text)))))
+            <Directive(+REQUIRES(module:foo, module:bar))>
+
         Example:
             >>> any(Directive.extract(' # xdoctest: skip'))
             True
@@ -344,7 +351,9 @@ class Directive(utils.NiceRepr):
             if m:
                 for key, optstr in m.groupdict().items():
                     if optstr:
-                        for optpart in optstr.split(','):
+                        optparts = _split_opstr(optstr)
+                        # optparts = optstr.split(',')
+                        for optpart in optparts:
                             directive = parse_directive_optstr(optpart, inline)
                             if directive:
                                 yield directive
@@ -358,6 +367,7 @@ class Directive(utils.NiceRepr):
             return '{}{}'.format(prefix, self.name)
 
     def _unpack_args(self, num):
+        warnings.warning('Deprecated and will be removed', DeprecationWarning)
         nargs = self.args
         if len(nargs) != 1:
             raise TypeError(
@@ -366,10 +376,17 @@ class Directive(utils.NiceRepr):
         return self.args
 
     def effect(self, argv=None, environ=None):
+        warnings.warning('Deprecated use effects', DeprecationWarning)
+        effects = self.effects(argv=argv, environ=environ)
+        if len(effects) > 1:
+            raise Exception('Old method cannot hanldle multiple effects')
+        return effects[0]
+
+    def effects(self, argv=None, environ=None):
         """
         Returns how this directive modifies a RuntimeState object
 
-        This is used by a RuntimeState object to update itself
+        This is called by :func:`RuntimeState.update` to update itself
 
         Args:
             argv (List[str], default=None):
@@ -378,80 +395,126 @@ class Directive(utils.NiceRepr):
                 if specified, overwrite os.environ
 
         Returns:
-            Effect: named tuple containing:
+            List[Effect]: list of named tuples containing:
                 action (str): code indicating how to update
                 key (str): name of runtime state item to modify
                 value (object): value to modify with
 
         CommandLine:
-            xdoctest -m xdoctest.directive Directive.effect
+            xdoctest -m xdoctest.directive Directive.effects
 
         Example:
-            >>> Directive('SKIP').effect()
+            >>> Directive('SKIP').effects()[0]
             Effect(action='assign', key='SKIP', value=True)
-            >>> Directive('SKIP', inline=True).effect()
+            >>> Directive('SKIP', inline=True).effects()[0]
             Effect(action='assign', key='SKIP', value=True)
-            >>> Directive('REQUIRES', args=['-s']).effect(argv=['-s'])
-            Effect(action='noop', key='REQUIRES', value=None)
-            >>> Directive('REQUIRES', args=['-s']).effect(argv=[])
+            >>> Directive('REQUIRES', args=['-s']).effects(argv=['-s'])[0]
+            Effect(action='noop', key='REQUIRES', value='-s')
+            >>> Directive('REQUIRES', args=['-s']).effects(argv=[])[0]
             Effect(action='set.add', key='REQUIRES', value='-s')
-            >>> Directive('ELLIPSIS', args=['-s']).effect(argv=[])
+            >>> Directive('ELLIPSIS', args=['-s']).effects(argv=[])[0]
             Effect(action='assign', key='ELLIPSIS', value=True)
 
         Doctest:
             >>> # requirement directive with module
             >>> directive = list(Directive.extract('# xdoctest: requires(module:xdoctest)'))[0]
             >>> print('directive = {}'.format(directive))
-            >>> print('directive.effect() = {}'.format(directive.effect()))
+            >>> print('directive.effects() = {}'.format(directive.effects()[0]))
             directive = <Directive(+REQUIRES(module:xdoctest))>
-            directive.effect() = Effect(action='noop', key='REQUIRES', value=None)
+            directive.effects() = Effect(action='noop', key='REQUIRES', value='module:xdoctest')
 
             >>> directive = list(Directive.extract('# xdoctest: requires(module:notamodule)'))[0]
             >>> print('directive = {}'.format(directive))
-            >>> print('directive.effect() = {}'.format(directive.effect()))
+            >>> print('directive.effects() = {}'.format(directive.effects()[0]))
             directive = <Directive(+REQUIRES(module:notamodule))>
-            directive.effect() = Effect(action='set.add', key='REQUIRES', value='module:notamodule')
+            directive.effects() = Effect(action='set.add', key='REQUIRES', value='module:notamodule')
 
             >>> directive = list(Directive.extract('# xdoctest: requires(env:FOO==1)'))[0]
             >>> print('directive = {}'.format(directive))
-            >>> print('directive.effect() = {}'.format(directive.effect(environ={})))
+            >>> print('directive.effects() = {}'.format(directive.effects(environ={})[0]))
             directive = <Directive(+REQUIRES(env:FOO==1))>
-            directive.effect() = Effect(action='set.add', key='REQUIRES', value='env:FOO==1')
+            directive.effects() = Effect(action='set.add', key='REQUIRES', value='env:FOO==1')
 
             >>> directive = list(Directive.extract('# xdoctest: requires(env:FOO==1)'))[0]
             >>> print('directive = {}'.format(directive))
-            >>> print('directive.effect() = {}'.format(directive.effect(environ={'FOO': '1'})))
+            >>> print('directive.effects() = {}'.format(directive.effects(environ={'FOO': '1'})[0]))
             directive = <Directive(+REQUIRES(env:FOO==1))>
-            directive.effect() = Effect(action='noop', key='REQUIRES', value=None)
+            directive.effects() = Effect(action='noop', key='REQUIRES', value='env:FOO==1')
+
+            >>> # requirement directive with two args
+            >>> directive = list(Directive.extract('# xdoctest: requires(--show, module:xdoctest)'))[0]
+            >>> print('directive = {}'.format(directive))
+            >>> for effect in directive.effects():
+            >>>     print('effect = {!r}'.format(effect))
+            directive = <Directive(+REQUIRES(--show, module:xdoctest))>
+            effect = Effect(action='set.add', key='REQUIRES', value='--show')
+            effect = Effect(action='noop', key='REQUIRES', value='module:xdoctest')
         """
         key = self.name
         value = None
 
+        effects = []
         if self.name == 'REQUIRES':
             # Special handling of REQUIRES
-            arg, = self._unpack_args(1)
-            if _is_requires_satisfied(arg, argv=argv, environ=environ):
-                # If the requirement is met, then do nothing,
-                action = 'noop'
-            else:
-                # otherwise, add or remove the condtion from REQUIREMENTS,
-                # depending on if the directive is positive or negative.
+            for arg in self.args:
                 value = arg
-                if self.positive:
-                    action = 'set.add'
+                if _is_requires_satisfied(arg, argv=argv, environ=environ):
+                    # If the requirement is met, then do nothing,
+                    action = 'noop'
                 else:
-                    action = 'set.remove'
+                    # otherwise, add or remove the condtion from REQUIREMENTS,
+                    # depending on if the directive is positive or negative.
+                    if self.positive:
+                        action = 'set.add'
+                    else:
+                        action = 'set.remove'
+                effects.append(Effect(action, key, value))
         elif key.startswith('REPORT_'):
             # Special handling of report style
             if self.positive:
                 action = 'noop'
             else:
                 action = 'set_report_style'
+            effects.append(Effect(action, key, value))
         else:
             # The action overwrites state[key] using value
             action = 'assign'
             value = self.positive
-        return Effect(action, key, value)
+            effects.append(Effect(action, key, value))
+        return effects
+
+
+def _split_opstr(optstr):
+    """
+    Simplified balanced paren logic to only split commas outside of parens
+
+    Example:
+        >>> optstr = '+FOO, REQUIRES(foo,bar), +ELLIPSIS'
+        >>> _split_opstr(optstr)
+        ['+FOO', 'REQUIRES(foo,bar)', '+ELLIPSIS']
+    """
+    import re
+    stack = []
+    split_pos = []
+    for match in re.finditer(r',|\(|\)', optstr):
+        token = match.group()
+        if token == ',' and not stack:
+            # Only split when there are no parens
+            split_pos.append(match.start())
+        elif token == '(':
+            stack.append(token)
+        elif token == ')':
+            stack.pop()
+    assert len(stack) == 0, 'parens not balanced'
+
+    parts = []
+    prev = 0
+    for curr in split_pos:
+        parts.append(optstr[prev:curr].strip())
+        prev = curr + 1
+    curr = None
+    parts.append(optstr[prev:curr].strip())
+    return parts
 
 
 def _is_requires_satisfied(arg, argv=None, environ=None):
@@ -622,8 +685,9 @@ def parse_directive_optstr(optpart, inline=None):
     paren_pos = optpart.find('(')
     if paren_pos > -1:
         # handle simple paren case.
-        # TODO expand or remove
-        args = [optpart[paren_pos + 1:optpart.find(')')]]
+        body = optpart[paren_pos + 1:optpart.find(')')]
+        args = [a.strip() for a in body.split(',')]
+        # args = [optpart[paren_pos + 1:optpart.find(')')]]
         optpart = optpart[:paren_pos]
     else:
         args = []

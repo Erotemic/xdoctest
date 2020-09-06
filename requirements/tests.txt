@@ -12,6 +12,7 @@ pybind11
 nbformat
 nbconvert
 jupyter_client
+IPython
 
 #pip uninstall pytest-ipynb
 #pytest-ipynb >= 1.1.1  
