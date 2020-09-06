@@ -37,11 +37,11 @@ def parse_requirements(fname='requirements.txt', with_version=False):
     Returns:
         List[str]: list of requirements items
     """
-    from os.path import exists
+    from os.path import exists, dirname, join
     import re
     require_fpath = fname
 
-    def parse_line(line):
+    def parse_line(line, dpath=''):
         """
         Parse information from a line in a requirements text file
 
@@ -55,7 +55,7 @@ def parse_requirements(fname='requirements.txt', with_version=False):
 
         if line.startswith('-r '):
             # Allow specifying requirements in other files
-            target = line.split(' ')[1]
+            target = join(dpath, line.split(' ')[1])
             for info in parse_require_file(target):
                 yield info
         else:
@@ -88,11 +88,12 @@ def parse_requirements(fname='requirements.txt', with_version=False):
             yield info
 
     def parse_require_file(fpath):
+        dpath = dirname(fpath)
         with open(fpath, 'r') as f:
             for line in f.readlines():
                 line = line.strip()
                 if line and not line.startswith('#'):
-                    for info in parse_line(line):
+                    for info in parse_line(line, dpath=dpath):
                         yield info
 
     def gen_packages_items():
@@ -212,6 +213,7 @@ if __name__ == '__main__':
             'all': parse_requirements('requirements.txt'),
             'tests': parse_requirements('requirements/tests.txt'),
             'optional': parse_requirements('requirements/optional.txt'),
+            'jupyter': parse_requirements('requirements/jupyter.txt'),
         },
         long_description=parse_description(),
         long_description_content_type='text/x-rst',

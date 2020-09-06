@@ -1,6 +1,7 @@
 import six
 import pytest
-from os.path import join, exists
+import sys
+from os.path import join, exists, dirname
 
 
 def demodata_notebook_fpath():
@@ -55,8 +56,6 @@ def cmd(command):
 
 
 def test_xdoctest_outside_notebook():
-    import sys
-    import pytest
     if sys.platform.startswith('win32'):
         pytest.skip()
     notebook_fpath = demodata_notebook_fpath()
