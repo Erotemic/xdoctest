@@ -60,6 +60,7 @@ def color_text(text, color):
         >>> from xdoctest.utils import util_str
         >>> if utils.modname_to_modpath('pygments') and not util_str.NO_COLOR:
         >>>     # Colors text only if pygments is installed
+        >>>     import pygments
         >>>     ansi_text = utils.ensure_unicode(color_text(text, 'red'))
         >>>     prefix = utils.ensure_unicode('\x1b[31')
         >>>     print('prefix = {!r}'.format(prefix))
@@ -95,7 +96,7 @@ def color_text(text, color):
             ansi_text = pygments.console.colorize(color, text)
         except KeyError:
             import warnings
-            warnings.warn('unable to fine color: {!r}'.format(color))
+            warnings.warn('unable to find color: {!r}'.format(color))
             return text
         except Exception as ex:
             import warnings
