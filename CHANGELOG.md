@@ -10,6 +10,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Fixed
 * Bug in `doctest_callable` where it would not populate globals from the function context.
 
+### Changed
+* Renamed `Config` to `DoctestConfig`
+* Renamed `static_analysis.parse_calldefs` to `static_analysis.parse_static_calldefs`. 
+  A temporary function with the old name is exposed for backwards compatibility.
+* Changed argument name from `modpath_or_name` to `module_identifier` in several functions.
+  This is to better indicate its coercible nature as either a module path, a
+  module name. This change impacts `doctest_module`, `parse_doctestables`,
+  `package_calldefs`. 
+
 
 ## [Version 0.14.0] - Released 2020-08-26 
 

@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 This module defines the main class that holds a DocTest example
+
+TODO:
+    - [ ] Rename DocTest to Doctest?
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
 import __future__
@@ -19,24 +22,23 @@ from xdoctest import parser
 from xdoctest import checker
 from xdoctest import exceptions
 
-from distutils.version import LooseVersion
+# I believe the original reason for this hack was fixed in 3.9rc (The CI will
+# tell us otherwise if this is incorrec)
+# from distutils.version import LooseVersion
+# EVAL_MIGHT_RETURN_COROUTINE = LooseVersion(sys.version.split(' ')[0]) >= LooseVersion('3.9.0')
+EVAL_MIGHT_RETURN_COROUTINE = False
 
 
-EVAL_MIGHT_RETURN_COROUTINE = LooseVersion(sys.version.split(' ')[0]) >= LooseVersion('3.9.0')
-
-
-class Config(dict):
+class DoctestConfig(dict):
     """
     Doctest configuration
 
-    TODO:
-        -[ ] rename to DoctestConfig?
-
     Static configuration for collection, execution, and reporting doctests.
-    Note dynamic directives are not managed by Config, they use RuntimeState.
+    Note dynamic directives are not managed by DoctestConfig, they use
+    RuntimeState.
     """
     def __init__(self, *args, **kwargs):
-        super(Config, self).__init__(*args, **kwargs)
+        super(DoctestConfig, self).__init__(*args, **kwargs)
         self.update({
             # main options exposed by command line runner/plugin
             'colored': hasattr(sys.stdout, 'isatty') and sys.stdout.isatty(),
@@ -136,27 +138,35 @@ class DocTest(object):
 
     Attributes:
 
-        docsrc (str): doctest source code
+        docsrc (str):
+            doctest source code
 
-        modpath (PathLike, optional): module the source was read from
+        modpath (str | PathLike, default=None):
+            module the source was read from
 
-        callname (PathLike, optional): name of the function/method/module being tested
+        callname (str, default=None):
+            name of the function/method/class/module being tested
 
-        num (int): the index of the doctest in the docstring. (i.e.
-            this object refers to the num-th doctest within a docstring)
+        num (int, default=0):
+            the index of the doctest in the docstring. (i.e. this object
+            refers to the num-th doctest within a docstring)
 
-        lineno (int): the line (starting from 1) in the file that the doctest
-            begins on. (i.e. if you were to go to this line in the file, the
-            first line of the doctest should be on this line).
+        lineno (int, default=1):
+            The line (starting from 1) in the file that the doctest begins on.
+            (i.e. if you were to go to this line in the file, the first line of
+            the doctest should be on this line).
 
-        fpath (PathLike): typically the same as modpath, only specified for
-            non-python files
+        fpath (PathLike):
+            Typically the same as modpath, only specified for non-python files
+            (e.g. rst files).
 
-        block_type (str): code indicating the type of block. Can be
-            ('Example', 'Doctest', 'Script', 'Benchmark', 'zero-arg', None).
+        block_type (str, default=None):
+            Hint indicating the type of docstring block. Can be ('Example',
+            'Doctest', 'Script', 'Benchmark', 'zero-arg', etc..).
 
-        mode (str, default='pytest'):  hint at what created / is running this
-            doctest.
+        mode (str, default='pytest'):
+            Hint at what created / is running this doctest. This impacts
+            how results are presented and what doctests are skipped.
 
     CommandLine:
         xdoctest -m xdoctest.doctest_example DocTest
@@ -178,34 +188,41 @@ class DocTest(object):
         <DocTest(xdoctest.doctest_example DocTest:0 ln ...)>
     """
 
+    # Constant values for unknown attributes
+    UNKNOWN_MODNAME = '<modname?>'
+    UNKNOWN_MODPATH = '<modpath?>'
+    UNKNOWN_CALLNAME = '<callname?>'
+    UNKNOWN_FPATH = '<fpath?>'
+
     def __init__(self, docsrc, modpath=None, callname=None, num=0,
                  lineno=1, fpath=None, block_type=None, mode='pytest'):
         import types
         # if we know the google block type it is recorded
         self.block_type = block_type
 
-        self.config = Config()
+        self.config = DoctestConfig()
 
         self.module = None
         self.modpath = modpath
 
         self.fpath = fpath
         if modpath is None:
-            self.modname = '<modname?>'
-            self.modpath = '<modpath?>'
+            self.modname = self.UNKNOWN_MODNAME
+            self.modpath = self.UNKNOWN_MODPATH
         elif isinstance(modpath, types.ModuleType):
             self.fpath = modpath
             self.module = modpath
             self.modname = modpath.__name__
-            self.modpath = getattr(self.module, '__file__', '<modpath?>')
+            self.modpath = getattr(self.module, '__file__', self.UNKNOWN_MODPATH)
         else:
             if fpath is not None:
-                assert fpath == modpath, (
-                    'only specify fpath for non-python files')
+                if fpath != modpath:
+                    raise AssertionError(
+                        'only specify fpath for non-python files')
             self.fpath = modpath
             self.modname = static.modpath_to_modname(modpath)
         if callname is None:
-            self.callname = '<callname?>'
+            self.callname = self.UNKNOWN_CALLNAME
         else:
             self.callname = callname
         self.docsrc = docsrc
@@ -884,7 +901,7 @@ class DocTest(object):
 
         colored = self.config['colored']
         if fail_lineno is not None:
-            fpath = '<file?>' if self.fpath is None else self.fpath
+            fpath = self.UNKNOWN_FPATH if self.fpath is None else self.fpath
             lines += ['  File "{}", line {},'.format(fpath, fail_lineno) +
                       self._color(' <- wrt source file', 'red')]
 

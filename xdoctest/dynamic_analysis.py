@@ -11,7 +11,7 @@ import io
 import sys
 
 
-def parse_dynamic_calldefs(modpath=None):
+def parse_dynamic_calldefs(modpath_or_module):
     """
     Dynamic parsing of module doctestable items.
 
@@ -20,7 +20,7 @@ def parse_dynamic_calldefs(modpath=None):
     this can discover doctests in binary extension libraries.
 
     Args:
-       modpath (str | Module): path to module or the module itself
+       modpath_or_module (str | Module): path to module or the module itself
 
     Returns:
         Dict[str, CallDefNode]:
@@ -46,9 +46,10 @@ def parse_dynamic_calldefs(modpath=None):
     from xdoctest import utils  # NOQA
 
     import types
-    if isinstance(modpath, types.ModuleType):
-        module = modpath
+    if isinstance(modpath_or_module, types.ModuleType):
+        module = modpath_or_module
     else:
+        modpath = modpath_or_module
         if modpath.endswith('.ipynb'):
             """
             modpath = ub.expandpath("~/code/xdoctest/testing/notebook_with_doctests.ipynb")

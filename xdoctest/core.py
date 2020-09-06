@@ -26,6 +26,7 @@ import textwrap
 import warnings
 import six
 import itertools as it
+import types
 from os.path import exists
 from fnmatch import fnmatch
 from xdoctest import dynamic_analysis
@@ -35,6 +36,7 @@ from xdoctest import exceptions
 from xdoctest import doctest_example
 from xdoctest import utils
 from xdoctest.docstr import docscrape_google
+from xdoctest.utils import util_import
 
 
 DEBUG = '--debug' in sys.argv
@@ -282,9 +284,10 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
 
         modpath (PathLike): original module the docstring is from
 
-        lineno (int): the line number (starting from 1) of the docstring.
-            i.e. if you were to go to this line number in the source file
-            the starting quotes of the docstr would be on this line.
+        lineno (int, default=1):
+            the line number (starting from 1) of the docstring.  i.e. if you
+            were to go to this line number in the source file the starting
+            quotes of the docstr would be on this line.
 
         style (str): expected doctest style (e.g. google, freeform, auto)
 
@@ -375,7 +378,9 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
 
 def _rectify_to_modpath(modpath_or_name):
     """ if modpath_or_name is a name, statically converts it to a path """
-    modpath = static_analysis.modname_to_modpath(modpath_or_name)
+    if isinstance(modpath_or_name, types.ModuleType):
+        raise TypeError('Expected a static module but got a dynamic one')
+    modpath = util_import.modname_to_modpath(modpath_or_name)
     if modpath is None:
         if six.PY2:
             if modpath_or_name.endswith('.pyc'):
@@ -387,13 +392,13 @@ def _rectify_to_modpath(modpath_or_name):
     return modpath
 
 
-def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True,
+def package_calldefs(pkg_identifier, exclude=[], ignore_syntax_errors=True,
                      analysis='auto'):
     """
     Statically generates all callable definitions in a module or package
 
     Args:
-        modpath_or_name (str | Module): path to or name of the module to be
+        pkg_identifier (str | Module): path to or name of the module to be
             tested (or the live module itself, which is not recommended)
 
         exclude (List[str]): glob-patterns of file names to exclude
@@ -408,102 +413,177 @@ def package_calldefs(modpath_or_name, exclude=[], ignore_syntax_errors=True,
             dynamic analysis is used to parse all calldefs.
 
     Yields:
-        Tuple[Dict[str, CallDefNode], str] -
+        Tuple[Dict[str, CallDefNode], str | Module] -
             item[0]: the mapping of callnames-to-calldefs
-            item[1]: the path to the file containing the doctest (usually a
-            module)
+            item[1]: the path to the file containing the doctest
+                (usually a module) or the module itself
 
     Example:
-        >>> modpath_or_name = 'xdoctest.core'
-        >>> testables = list(package_calldefs(modpath_or_name))
+        >>> pkg_identifier = 'xdoctest.core'
+        >>> testables = list(package_calldefs(pkg_identifier))
         >>> assert len(testables) == 1
         >>> calldefs, modpath = testables[0]
-        >>> assert static_analysis.modpath_to_modname(modpath) == modpath_or_name
+        >>> assert util_import.modpath_to_modname(modpath) == pkg_identifier
         >>> assert 'package_calldefs' in calldefs
     """
-    import types
-    if isinstance(modpath_or_name, types.ModuleType):
+    if isinstance(pkg_identifier, types.ModuleType):
         # Case where we are forced to use a live module
-        modpaths = [modpath_or_name]
+        identifiers = [pkg_identifier]
         mod_is_live = True
     else:
-        pkgpath = _rectify_to_modpath(modpath_or_name)
-        modpaths = static_analysis.package_modpaths(pkgpath, with_pkg=True,
-                                                    with_libs=True)
-        modpaths = list(modpaths)
+        pkgpath = _rectify_to_modpath(pkg_identifier)
+        identifiers = list(static_analysis.package_modpaths(
+            pkgpath, with_pkg=True, with_libs=True))
         mod_is_live = False
 
-    for modpath in modpaths:
-        if mod_is_live:
-            needs_dynamic = True
-            do_dynamic = True
-            modname = getattr(modpath, '__name__', None)
-        else:
-            modname = static_analysis.modpath_to_modname(modpath)
-            if any(fnmatch(modname, pat) for pat in exclude):
+    for module_identifier in identifiers:
+        try:
+            calldefs = parse_calldefs(module_identifier)
+            if calldefs is not None:
+                yield calldefs, module_identifier
+        except SyntaxError as ex:
+            # Handle error due to the actual code containing errors
+            msg = 'Cannot parse module={}.\nCaused by: {}'
+            msg = msg.format(module_identifier, ex)
+            if ignore_syntax_errors:
+                warnings.warn(msg)  # real code or docstr contained errors
                 continue
-            if not exists(modpath):
-                warnings.warn(
-                    'Module {} does not exist. '
-                    'Is it an old pyc file?'.format(modname))
-                continue
-
-            # backwards compatibility hacks
-            if '--allow-xdoc-dynamic' in sys.argv:
-                analysis = 'auto'
-            if '--xdoc-force-dynamic' in sys.argv:
-                analysis = 'dynamic'
-
-            needs_dynamic = modpath.endswith(
-                static_analysis._platform_pylib_exts())
-
-            if modpath.endswith('.ipynb'):
-                needs_dynamic = True
-
-            if analysis == 'static':
-                do_dynamic = False
-            elif analysis == 'dynamic':
-                do_dynamic = True
-            elif analysis == 'auto':
-                do_dynamic = needs_dynamic
             else:
-                raise KeyError(analysis)
+                raise SyntaxError(msg)
 
-        if do_dynamic:
-            try:
-                calldefs = dynamic_analysis.parse_dynamic_calldefs(modpath)
-            except (ImportError, RuntimeError) as ex:
-                # Some modules are just c modules
-                msg = 'Cannot dynamically parse module={} at path={}.\nCaused by: {!r} {}'
-                msg = msg.format(modname, modpath, type(ex), ex)
-                warnings.warn(msg)
-            except Exception as ex:
-                msg = 'Cannot dynamically parse module={} at path={}.\nCaused by: {!r} {}'
-                msg = msg.format(modname, modpath, type(ex), ex)
-                warnings.warn(msg)
-                raise
-            else:
-                yield calldefs, modpath
-        else:
-            if needs_dynamic:
-                # Some modules can only be parsed dynamically
-                continue
-            try:
-                calldefs = static_analysis.parse_calldefs(fpath=modpath)
-            except SyntaxError as ex:
-                # Handle error due to the actual code containing errors
-                msg = 'Cannot parse module={} at path={}.\nCaused by: {}'
-                msg = msg.format(modname, modpath, ex)
-                if ignore_syntax_errors:
-                    warnings.warn(msg)  # real code or docstr contained errors
-                    continue
-                else:
-                    raise SyntaxError(msg)
-            else:
-                yield calldefs, modpath
+        # modpath = module_identifier
+        # if mod_is_live:
+        #     need_dynamic = True
+        #     do_dynamic = True
+        #     modname = getattr(modpath, '__name__', None)
+        # else:
+        #     modname = util_import.modpath_to_modname(modpath)
+        #     if any(fnmatch(modname, pat) for pat in exclude):
+        #         continue
+        #     if not exists(modpath):
+        #         warnings.warn(
+        #             'Module {} does not exist. '
+        #             'Is it an old pyc file?'.format(modname))
+        #         continue
+
+        #     # backwards compatibility hacks
+        #     if '--allow-xdoc-dynamic' in sys.argv:
+        #         analysis = 'auto'
+        #     if '--xdoc-force-dynamic' in sys.argv:
+        #         analysis = 'dynamic'
+
+        #     need_dynamic = modpath.endswith(
+        #         static_analysis._platform_pylib_exts())
+
+        #     if modpath.endswith('.ipynb'):
+        #         need_dynamic = True
+
+        #     if analysis == 'static':
+        #         do_dynamic = False
+        #     elif analysis == 'dynamic':
+        #         do_dynamic = True
+        #     elif analysis == 'auto':
+        #         do_dynamic = need_dynamic
+        #     else:
+        #         raise KeyError(analysis)
+
+        # if do_dynamic:
+        #     try:
+        #         calldefs = dynamic_analysis.parse_dynamic_calldefs(modpath)
+        #     except (ImportError, RuntimeError) as ex:
+        #         # Some modules are just c modules
+        #         msg = 'Cannot dynamically parse module={} at path={}.\nCaused by: {!r} {}'
+        #         msg = msg.format(modname, modpath, type(ex), ex)
+        #         warnings.warn(msg)
+        #     except Exception as ex:
+        #         msg = 'Cannot dynamically parse module={} at path={}.\nCaused by: {!r} {}'
+        #         msg = msg.format(modname, modpath, type(ex), ex)
+        #         warnings.warn(msg)
+        #         raise
+        #     else:
+        #         yield calldefs, modpath
+        # else:
+        #     if need_dynamic:
+        #         # Some modules can only be parsed dynamically
+        #         continue
+        #     try:
+        #         calldefs = static_analysis.parse_static_calldefs(fpath=modpath)
+        #     except SyntaxError as ex:
+        #         # Handle error due to the actual code containing errors
+        #         msg = 'Cannot parse module={} at path={}.\nCaused by: {}'
+        #         msg = msg.format(modname, modpath, ex)
+        #         if ignore_syntax_errors:
+        #             warnings.warn(msg)  # real code or docstr contained errors
+        #             continue
+        #         else:
+        #             raise SyntaxError(msg)
+        #     else:
+        #         yield calldefs, modpath
 
 
-def parse_doctestables(modpath_or_name, exclude=[], style='auto',
+def parse_calldefs(module_identifier, analysis='auto'):
+    """
+    Parse calldefs from a single module
+    """
+    # backwards compatibility hacks
+    if '--allow-xdoc-dynamic' in sys.argv:
+        warnings.warn(
+            '--allow-xdoc-dynamic is deprecated  and will be removed in '
+            'the future use --analysis=auto instead', DeprecationWarning)
+        analysis = 'auto'
+    if '--xdoc-force-dynamic' in sys.argv:
+        warnings.warn(
+            '--xdoc-force-dynamic is deprecated and will be removed in '
+            'the future use --analysis=dynamic instead', DeprecationWarning)
+        analysis = 'dynamic'
+
+    if isinstance(module_identifier, types.ModuleType):
+        # identifier is a live module
+        need_dynamic = True
+    else:
+        # identifier is a path to a module
+        modpath = module_identifier
+        # Certain files (notebooks and c-extensions) require dynamic analysis
+        need_dynamic = modpath.endswith(
+            static_analysis._platform_pylib_exts())
+        if modpath.endswith('.ipynb'):
+            need_dynamic = True
+
+    if analysis == 'static':
+        if need_dynamic:
+            # Some modules can only be parsed dynamically
+            raise Exception((
+                'Static analysis required, but {} requires '
+                'dynamic analysis').format(module_identifier))
+        do_dynamic = False
+    elif analysis == 'dynamic':
+        do_dynamic = True
+    elif analysis == 'auto':
+        do_dynamic = need_dynamic
+    else:
+        raise KeyError(analysis)
+
+    calldefs = None
+    if do_dynamic:
+        try:
+            calldefs = dynamic_analysis.parse_dynamic_calldefs(module_identifier)
+        except (ImportError, RuntimeError) as ex:
+            # Some modules are just c modules
+            msg = 'Cannot dynamically parse module={}.\nCaused by: {!r} {}'
+            msg = msg.format(module_identifier, type(ex), ex)
+            warnings.warn(msg)
+        except Exception as ex:
+            msg = 'Cannot dynamically parse module={}.\nCaused by: {!r} {}'
+            msg = msg.format(module_identifier, type(ex), ex)
+            warnings.warn(msg)
+            raise
+    else:
+        calldefs = static_analysis.parse_static_calldefs(fpath=module_identifier)
+
+    return calldefs
+
+
+def parse_doctestables(module_identifier, exclude=[], style='auto',
                        ignore_syntax_errors=True, parser_kw={},
                        analysis='static'):
     """
@@ -511,8 +591,8 @@ def parse_doctestables(modpath_or_name, exclude=[], style='auto',
     example objects.  The style influences which tests are found.
 
     Args:
-        modpath_or_name (str | PathLike | Module): path or name of a module or
-            a module itself (we prefer a path)
+        module_identifier (str | PathLike | Module):
+            path or name of a module or a module itself (we prefer a path)
 
         exclude (List[str]): glob-patterns of file names to exclude
 
@@ -536,8 +616,8 @@ def parse_doctestables(modpath_or_name, exclude=[], style='auto',
         python -m xdoctest.core parse_doctestables
 
     Example:
-        >>> modpath_or_name = 'xdoctest.core'
-        >>> testables = list(parse_doctestables(modpath_or_name))
+        >>> module_identifier = 'xdoctest.core'
+        >>> testables = list(parse_doctestables(module_identifier))
         >>> this_example = None
         >>> for example in testables:
         >>>     # print(example)
@@ -567,13 +647,12 @@ def parse_doctestables(modpath_or_name, exclude=[], style='auto',
             style, DOCTEST_STYLES))
 
     # Statically parse modules and their doctestable callables in a package
-    for calldefs, modpath in package_calldefs(modpath_or_name, exclude,
+    for calldefs, modpath in package_calldefs(module_identifier, exclude,
                                               ignore_syntax_errors,
                                               analysis=analysis):
         for callname, calldef in calldefs.items():
             docstr = calldef.docstr
             if calldef.docstr is not None:
-                print('calldef = {!r}'.format(calldef))
                 lineno = calldef.doclineno
                 for example in parse_docstr_examples(docstr, callname=callname,
                                                      modpath=modpath,

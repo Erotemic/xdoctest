@@ -95,11 +95,10 @@ def doctest_callable(func):
         # HACK: to add module context, this might not be robust.
         doctest.module = sys.modules[func.__module__]
         doctest.global_namespace[func.__name__] = func
-
         doctest.run(verbose=3)
 
 
-def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
+def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
                    style='auto', verbose=None, config=None, durations=None,
                    analysis='static'):
     """
@@ -107,8 +106,11 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
     Main entry point into the testing framework.
 
     Args:
-        modname (str | ModuleType):
-            name of or path to the module, or the module itself.
+        module_identifier (str | ModuleType | None):
+            The name of / path to the module, or the live module itself.
+            If not specified, dynamic analysis will be used to introspect the
+            module that called this function and that module will be used.
+            This can also contain the callname followed by the `::` token.
 
         command (str):
             determines which doctests to run.
@@ -122,7 +124,7 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
             if specified, command line flags that might influence beharior.
             if None uses sys.argv.
             SeeAlso :func:_update_argparse_cli
-            SeeAlso :func:doctest_example.Config._update_argparse_cli
+            SeeAlso :func:doctest_example.DoctestConfig._update_argparse_cli
 
         verbose (int, default=None):
             Verbosity level.
@@ -147,6 +149,24 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
     Example:
         >>> modname = 'xdoctest.dynamic_analysis'
         >>> result = doctest_module(modname, 'list', argv=[''])
+
+    Example:
+        >>> # xdoctest: +SKIP
+        >>> # Demonstrate different ways "module_identifier" can be specified
+        >>> #
+        >>> # Using a module name
+        >>> result = doctest_module('xdoctest.static_analysis')
+        >>> #
+        >>> # Using a module path
+        >>> result = doctest_module(os.expandpath('~/code/xdoctest/xdoctest/static_analysis.py'))
+        >>> #
+        >>> # Using a module itself
+        >>> from xdoctest import runner
+        >>> result = doctest_module(runner)
+        >>> #
+        >>> # Using a module name and a specific callname
+        >>> from xdoctest import runner
+        >>> result = doctest_module('xdoctest.static_analysis::parse_static_value')
     """
     _log = partial(log, verbose=DEBUG)
     _log('------+ DEBUG +------')
@@ -154,44 +174,59 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
     _log('exclude = {!r}'.format(exclude))
     _log('argv = {!r}'.format(argv))
     _log('command = {!r}'.format(command))
-    _log('modpath_or_name = {!r}'.format(modpath_or_name))
+    _log('module_identifier = {!r}'.format(module_identifier))
     _log('durations = {!r}'.format(durations))
     _log('config = {!r}'.format(config))
     _log('verbose = {!r}'.format(verbose))
     _log('style = {!r}'.format(style))
     _log('------+ /DEBUG +------')
 
-    # Determine package name via caller if not specified
-    if modpath_or_name is None:
+    modinfo = {
+        'modpath': None,
+        'modname': None,
+        'module': None,
+    }
+    if module_identifier is None:
+        # Determine package name via caller if not specified
         frame_parent = dynamic_analysis.get_parent_frame()
-        print('frame_parent = {!r}'.format(frame_parent))
         if '__file__' in frame_parent.f_globals:
-            modpath = frame_parent.f_globals['__file__']
+            modinfo['modpath'] = frame_parent.f_globals['__file__']
         else:
             # Module might not exist as a path on disk, we might be trying to
             # test an IPython session.
-            modname = frame_parent.f_globals['__name__']
-            modpath = sys.modules[modname]
-            print('modpath = {!r}'.format(modpath))
+            modinfo['modname'] = frame_parent.f_globals['__name__']
+            modinfo['module'] = sys.modules[modinfo['modname']]
     else:
-        if command is None:
+        if isinstance(module_identifier, types.ModuleType):
+            modinfo['module'] = module_identifier
+            modinfo['modpath'] = modinfo['module'].__file__
+        else:
             # Allow the modname to contain the name of the test to be run
-            if '::' in modpath_or_name:
-                modpath_or_name, command = modpath_or_name.split('::')
-
-        if isinstance(modpath_or_name, types.ModuleType):
-            modpath_or_name = modpath_or_name.__file__
-
-        modpath = core._rectify_to_modpath(modpath_or_name)
+            if '::' in module_identifier:
+                if command is None:
+                    modpath_or_name, command = module_identifier.split('::')
+                    modinfo['modpath'] = core._rectify_to_modpath(modpath_or_name)
+                else:
+                    raise ValueError('Command must be None if using :: syntax')
+            else:
+                modinfo['modpath'] = core._rectify_to_modpath(module_identifier)
 
     if config is None:
-        config = doctest_example.Config()
+        config = doctest_example.DoctestConfig()
 
     command, style, verbose = _parse_commandline(command, style, verbose, argv)
 
     _log = partial(log, verbose=verbose)
 
-    _log('Start doctest_module({!r})'.format(modpath_or_name))
+    # Usually the "parseable_identifier" (i.e. the object we will extract the
+    # docstrings from) is a path to a module, but sometimes we will only be
+    # given the live module itself, hence the abstraction.
+    if modinfo['modpath'] is None:
+        parsable_identifier = modinfo['module']
+    else:
+        parsable_identifier = modinfo['modpath']
+
+    _log('Start doctest_module({!r})'.format(parsable_identifier))
     _log('Listing tests')
 
     if command is None:
@@ -209,8 +244,9 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
 
     # Parse all valid examples
     with warnings.catch_warnings(record=True) as parse_warnlist:
-        examples = list(core.parse_doctestables(modpath, exclude=exclude,
-                                                style=style, analysis=analysis))
+        examples = list(core.parse_doctestables(
+            parsable_identifier, exclude=exclude, style=style,
+            analysis=analysis))
         # Set each example mode to native to signal that we are using the
         # native xdoctest runner instead of the pytest runner
         for example in examples:
@@ -234,7 +270,7 @@ def doctest_module(modpath_or_name=None, command=None, argv=None, exclude=[],
 
         if len(enabled_examples) == 0:
             # Check for zero-arg funcs
-            for example in _gather_zero_arg_examples(modpath):
+            for example in _gather_zero_arg_examples(parsable_identifier):
                 if command in example.valid_testnames:
                     enabled_examples.append(example)
 
@@ -498,7 +534,7 @@ def _run_examples(enabled_examples, verbose, config=None, _log=None):
 
 def _parse_commandline(command=None, style='auto', verbose=None, argv=None):
     # Determine command via sys.argv if not specified
-    doctest_example.Config()
+    doctest_example.DoctestConfig()
 
     if argv is None:
         argv = sys.argv[1:]

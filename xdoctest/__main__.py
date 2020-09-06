@@ -72,7 +72,7 @@ def main(argv=None):
     from xdoctest import doctest_example
     from xdoctest import runner
     runner._update_argparse_cli(parser.add_argument)
-    doctest_example.Config()._update_argparse_cli(parser.add_argument)
+    doctest_example.DoctestConfig()._update_argparse_cli(parser.add_argument)
 
     args, unknown = parser.parse_known_args(args=argv[1:])
     ns = args.__dict__.copy()
@@ -134,7 +134,7 @@ def main(argv=None):
         ns['options'] = options
 
     from xdoctest import doctest_example
-    config = doctest_example.Config()._populate_from_cli(ns)
+    config = doctest_example.DoctestConfig()._populate_from_cli(ns)
 
     import textwrap
     if config['verbose'] > 2:
