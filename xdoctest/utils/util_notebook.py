@@ -20,15 +20,15 @@ Importing from a notebook is different from a module: because one
 typically keeps many computations and tests besides exportable defs,
 here we only run code which either defines a function or a class, or
 imports code from other modules and notebooks. This behaviour can be
-disabled by setting nbimporter.options['only_defs'] = False.
+disabled by setting NotebookLoader.default_options['only_defs'] = False.
 
 Furthermore, in order to provide per-notebook initialisation, if a
 special function __nbinit__() is defined in the notebook, it will be
 executed the first time an import statement is. This behaviour can be
-disabled by setting nbimporter.options['run_nbinit'] = False.
+disabled by setting NotebookLoader.default_options['run_nbinit'] = False.
 
 Finally, you can set the encoding of the notebooks with
-nbimporter.options['encoding']. The default is 'utf-8'.
+NotebookLoader.default_options['encoding']. The default is 'utf-8'.
 """
 
 import io
@@ -230,7 +230,6 @@ def execute_notebook(ipynb_fpath, timeout=None, verbose=None):
             ep.log.setLevel(logging.DEBUG)
         elif verbose > 0:
             ep.log.setLevel(logging.INFO)
-    # kernel_name='python3')
     with open(ipynb_fpath) as file:
         nb = nbformat.read(file, as_version=nbformat.NO_CONVERT)
     nb, resources = ep.preprocess(nb, {'metadata': {'path': dpath}})
@@ -243,14 +242,18 @@ def _make_test_notebook_fpath(fpath, cell_sources):
     """
     Helper for testing
 
+    Args:
+        fpath (str): file to write notebook to
+        cell_sources (List[str]): list of python code blocks
+
     References:
         https://stackoverflow.com/questions/38193878/create-notebook-from-code
+        https://gist.github.com/fperez/9716279
     """
     import nbformat as nbf
     import json
     import jupyter_client.kernelspec
-    # available = list(kernelspec.find_kernel_specs().keys())
-    # assert len(available) > 0, 'no kernel specs'
+    # TODO: is there an API to generate kernelspec json correctly?
     kernel_name = jupyter_client.kernelspec.NATIVE_KERNEL_NAME
     spec = jupyter_client.kernelspec.get_kernel_spec(kernel_name)
     metadata = {'kernelspec': {
@@ -258,43 +261,10 @@ def _make_test_notebook_fpath(fpath, cell_sources):
         'display_name': spec.display_name,
         'language': spec.language,
     }}
-
+    # Use nbformat API to create notebook structure and cell json
     nb = nbf.v4.new_notebook(metadata=metadata)
-    # nb = {
-    #     "cells": [],
-    #     "metadata": {
-    #         "kernelspec": {
-    #             "display_name": "Python 3",
-    #             "language": "python",
-    #             "name": "python3"
-    #             },
-    #         "language_info": {
-    #             # "codemirror_mode": {
-    #             #     "name": "ipython", "version": 3
-    #             #     },
-    #             "file_extension": ".py",
-    #             "mimetype": "text/x-python",
-    #             "name": "python",
-    #             "nbconvert_exporter": "python",
-    #             # "pygments_lexer": "ipython3",
-    #             # "version": "3.8.3"
-    #             }
-    #         },
-    #     "nbformat": 4,
-    #     "nbformat_minor": 4
-    #     }
-
     for source in cell_sources:
-        nb['cells'].append({
-            "cell_type": "code",
-            "execution_count": None,
-            "metadata": {},
-            "outputs": [],
-            "source": [
-                source
-                ]
-            })
-
+        nb['cells'].append(nbf.v4.new_code_cell(source))
     with open(fpath, 'w') as file:
         json.dump(nb, file)
     return fpath
