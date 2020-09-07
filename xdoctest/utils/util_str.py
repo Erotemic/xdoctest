@@ -61,7 +61,10 @@ def color_text(text, color):
         >>> if utils.modname_to_modpath('pygments') and not util_str.NO_COLOR:
         >>>     # Colors text only if pygments is installed
         >>>     import pygments
-        >>>     ansi_text = utils.ensure_unicode(color_text(text, 'red'))
+        >>>     print('pygments = {!r}'.format(pygments))
+        >>>     ansi_text1 = color_text(text, 'red')
+        >>>     print('ansi_text1 = {!r}'.format(ansi_text1))
+        >>>     ansi_text = utils.ensure_unicode(ansi_text1)
         >>>     prefix = utils.ensure_unicode('\x1b[31')
         >>>     print('prefix = {!r}'.format(prefix))
         >>>     print('ansi_text = {!r}'.format(ansi_text))
@@ -86,11 +89,10 @@ def color_text(text, color):
             except ImportError as ex:
                 import warnings
                 warnings.warn('os is win32 and colorma is not installed {!r}'.format(ex))
-                pass
-            import os
-            if os.environ.get('XDOC_WIN32_COLORS', 'False') == 'False':
-                # hack: dont color on windows by default, but do init colorama
-                return text
+            # import os
+            # if os.environ.get('XDOC_WIN32_COLORS', 'False') == 'False':
+            # hack: dont color on windows by default, but do init colorama
+            return text
 
         try:
             ansi_text = pygments.console.colorize(color, text)

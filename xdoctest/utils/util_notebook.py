@@ -215,6 +215,7 @@ def execute_notebook(ipynb_fpath, timeout=None):
         >>>     print('hello world')
         >>>     ''')])
         >>> nb, resources = execute_notebook(ipynb_fpath)
+        >>> print(nb)
         >>> for cell in nb['cells']:
         >>>     assert len(cell['outputs']) == 1
     """
