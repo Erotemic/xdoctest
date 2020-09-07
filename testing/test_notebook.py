@@ -62,7 +62,7 @@ def test_xdoctest_inside_notebook():
     notebook_fpath = demodata_notebook_fpath()
 
     from xdoctest.utils import util_notebook
-    nb, resources = util_notebook.execute_notebook(notebook_fpath)
+    nb, resources = util_notebook.execute_notebook(notebook_fpath, verbose=3)
 
     last_cell = nb['cells'][-1]
     text = last_cell['outputs'][0]['text']

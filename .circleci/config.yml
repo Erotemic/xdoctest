@@ -49,7 +49,7 @@ jobs:
       # ### INITIALIZE AND CACHE REQUIREMENTS ###
       - restore_cache:
           keys:
-          - v2-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}
+          - v2-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}
       - run:
           name: install dependencies
           command: |
@@ -63,13 +63,13 @@ jobs:
       - save_cache:
           paths:
             - ./venv
-          key: v2-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}
+          key: v2-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}
       # ### RUN TESTS ###
       - run:
           name: run tests
           command: |
             . venv/bin/activate
-            pip install pytest-cov==2.8.1  # hack to avoid regression
+            # pip install pytest-cov==2.8.1  # hack to avoid regression
             python run_tests.py
       - store_artifacts:
           path: test-reports
@@ -106,7 +106,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            pip install pytest-cov==2.8.1  # hack to avoid regression
+            # pip install pytest-cov==2.8.1  # hack to avoid regression
             python run_tests.py
       - store_artifacts:
           path: test-reports
@@ -227,15 +227,8 @@ jobs:
       - PYTHON_EXE: pypy3
     working_directory: ~/repo-full-pypy3
         
-  heredoc:
-    docker:
-      - image: pypy:3
-    working_directory: ~/dev-only-not-a-real-job
-    steps:
-      - | 
-        __heredoc__=" 
-
-
+.__heredoc__: &__heredoc__
+    - | 
         IMAGE_NAME=circleci/python:3.9
         docker pull $IMAGE_NAME
 
@@ -252,42 +245,55 @@ jobs:
         docker run -v $HOME/code/xdoctest:/io -it $IMAGE_NAME bash
 
         cd /io
+        
+        # Logic to print out the commands to reproduce CI steps
+        source $HOME/local/init/utils.sh
+        pyblock "
+            import yaml
+            import ubelt as ub
+            data = yaml.safe_load(open(ub.expandpath('$HOME/code/xdoctest/.circleci/config.yml')))
+            JOB_NAME = 'test-minimal-pypy3'
+            job = data['jobs'][JOB_NAME]
+            IMAGE_NAME = job['docker'][0]['image']
+            print('IMAGE_NAME={}'.format(IMAGE_NAME))
+            print('docker run -v $HOME/code/xdoctest:/io -it {} bash'.format(IMAGE_NAME))
+            print(ub.codeblock(
+            '''
+            ###
+            ###
+            # Clone the mounted repo for a fresh start
+            mkdir -p $HOME/code
+            git clone /io /root/{JOB_NAME}
+            cd /root/{JOB_NAME}
+            ''').format(JOB_NAME=JOB_NAME))
+            for kv in job['environment']:
+                for k, v in kv.items():
+                    print('{}={}'.format(k, v))
+            for step in job['steps']:
+                if 'run' in step:
+                    print(step['run']['command'])
+        "
+
+
+        IMAGE_NAME=pypy:3
+        docker run -v /home/joncrall/code/xdoctest:/io -it pypy:3 bash
+        ###
+        ###
+        # Clone the mounted repo for a fresh start
+        mkdir -p /home/joncrall/code
+        git clone /io /home/joncrall/code/xdoctest
+        cd /home/joncrall/code/xdoctest
         PYTHON_EXE=pypy3
         $PYTHON_EXE -m venv venv || virtualenv -v venv  # first command is python3 || second is python2
         . venv/bin/activate
-        # The "full" dependency install
+        # The "minimal" tests install barebones requirements
         pip install pip -U
-        pip install scikit-build
-        pip install -r requirements.txt
+        pip install -r requirements/tests.txt
+        pip install -r requirements/runtime.txt 
         pip install .
 
         . venv/bin/activate
         pip install pytest-cov==2.8.1  # hack to avoid regression
         python run_tests.py
-        
-        
 
-        #pypy3 -m venv venv 
-        #. venv/bin/activate
-        ## The "minimal" tests install barebones requirements
-        #pip install -r requirements/tests.txt
-        #pip install -r requirements/runtime.txt 
-        #pip install -e .
-
-        #pip install pytest-cov==2.8.1  # hack to avoid regression
-        #./run_doctests.sh || echo "pypy failed, but this is allowed"
-        #./run_tests.sh || echo "pypy failed, but this is allowed"
-        
-        # Logic to print out the commands to reproduce CI steps
-        import yaml
-        import ubelt as ub
-        data = yaml.load(open(ub.expandpath('$HOME/code/xdoctest/.circleci/config.yml')))
-        job = data['jobs']['test-full-pypy3']
-        for kv in job['environment']:
-            for k, v in kv.items():
-                print('{}={}'.format(k, v))
-
-        for step in job['steps']:
-            if 'run' in step:
-                print(step['run']['command'])
-        "
+                            
