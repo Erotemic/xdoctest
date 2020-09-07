@@ -55,6 +55,10 @@ def color_text(text, color):
             If pygments is not installed plain text is returned.
 
     Example:
+        >>> import sys
+        >>> if sys.platform.startswith('win32'):
+        >>>     import pytest
+        >>>     pytest.skip()
         >>> text = 'raw text'
         >>> from xdoctest import utils
         >>> from xdoctest.utils import util_str
@@ -89,11 +93,10 @@ def color_text(text, color):
             except ImportError as ex:
                 import warnings
                 warnings.warn('os is win32 and colorma is not installed {!r}'.format(ex))
-            # import os
-            # if os.environ.get('XDOC_WIN32_COLORS', 'False') == 'False':
-            # hack: dont color on windows by default, but do init colorama
-            return text
-
+            import os
+            if os.environ.get('XDOC_WIN32_COLORS', 'False') == 'False':
+                # hack: dont color on windows by default, but do init colorama
+                return text
         try:
             ansi_text = pygments.console.colorize(color, text)
         except KeyError:
