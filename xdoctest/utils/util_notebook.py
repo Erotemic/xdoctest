@@ -107,9 +107,9 @@ class NotebookLoader(object):
         mod.__dict__['get_ipython'] = get_ipython
 
         # Only do something if it's a python notebook
-        if nb.metadata.kernelspec.language != 'python':
-            print("Ignoring '%s': not a python notebook." % fpath)
-            return mod
+        # if nb.metadata.kernelspec.language != 'python':
+        #     print("Ignoring '%s': not a python notebook." % fpath)
+        #     return mod
 
         # print("Importing Jupyter notebook from %s" % fpath)
         sys.modules[fullname] = mod
@@ -190,7 +190,7 @@ def import_notebook_from_path(ipynb_fpath, only_defs=False):
     return module
 
 
-def execute_notebook(ipynb_fpath, timeout=None):
+def execute_notebook(ipynb_fpath, timeout=None, verbose=None):
     """
     Execute an IPython notebook in a separate kernel
 
@@ -214,8 +214,9 @@ def execute_notebook(ipynb_fpath, timeout=None):
         >>>     '''
         >>>     print('hello world')
         >>>     ''')])
-        >>> nb, resources = execute_notebook(ipynb_fpath)
-        >>> print(nb)
+        >>> nb, resources = execute_notebook(ipynb_fpath, verbose=3)
+        >>> print('resources = {!r}'.format(resources))
+        >>> print('nb = {!r}'.format(nb))
         >>> for cell in nb['cells']:
         >>>     assert len(cell['outputs']) == 1
     """
@@ -223,44 +224,68 @@ def execute_notebook(ipynb_fpath, timeout=None):
     from nbconvert.preprocessors import ExecutePreprocessor
     dpath = dirname(ipynb_fpath)
     ep = ExecutePreprocessor(timeout=timeout)
+    if verbose is not None:
+        import logging
+        if verbose > 1:
+            ep.log.setLevel(logging.DEBUG)
+        elif verbose > 0:
+            ep.log.setLevel(logging.INFO)
     # kernel_name='python3')
     with open(ipynb_fpath) as file:
         nb = nbformat.read(file, as_version=nbformat.NO_CONVERT)
     nb, resources = ep.preprocess(nb, {'metadata': {'path': dpath}})
+    # from nbconvert.preprocessors import executenb
+    # nb, resources = executenb(nb, cwd=dpath)
     return nb, resources
 
 
 def _make_test_notebook_fpath(fpath, cell_sources):
     """
     Helper for testing
+
+    References:
+        https://stackoverflow.com/questions/38193878/create-notebook-from-code
     """
+    import nbformat as nbf
     import json
-    data = {
-        "cells": [],
-        "metadata": {
-            "kernelspec": {
-                "display_name": "Python 3",
-                "language": "python",
-                "name": "python3"
-                },
-            "language_info": {
-                "codemirror_mode": {
-                    "name": "ipython", "version": 3
-                    },
-                "file_extension": ".py",
-                "mimetype": "text/x-python",
-                "name": "python",
-                "nbconvert_exporter": "python",
-                "pygments_lexer": "ipython3",
-                "version": "3.8.3"
-                }
-            },
-        "nbformat": 4,
-        "nbformat_minor": 4
-        }
+    import jupyter_client.kernelspec
+    # available = list(kernelspec.find_kernel_specs().keys())
+    # assert len(available) > 0, 'no kernel specs'
+    kernel_name = jupyter_client.kernelspec.NATIVE_KERNEL_NAME
+    spec = jupyter_client.kernelspec.get_kernel_spec(kernel_name)
+    metadata = {'kernelspec': {
+        'name': kernel_name,
+        'display_name': spec.display_name,
+        'language': spec.language,
+    }}
+
+    nb = nbf.v4.new_notebook(metadata=metadata)
+    # nb = {
+    #     "cells": [],
+    #     "metadata": {
+    #         "kernelspec": {
+    #             "display_name": "Python 3",
+    #             "language": "python",
+    #             "name": "python3"
+    #             },
+    #         "language_info": {
+    #             # "codemirror_mode": {
+    #             #     "name": "ipython", "version": 3
+    #             #     },
+    #             "file_extension": ".py",
+    #             "mimetype": "text/x-python",
+    #             "name": "python",
+    #             "nbconvert_exporter": "python",
+    #             # "pygments_lexer": "ipython3",
+    #             # "version": "3.8.3"
+    #             }
+    #         },
+    #     "nbformat": 4,
+    #     "nbformat_minor": 4
+    #     }
 
     for source in cell_sources:
-        data['cells'].append({
+        nb['cells'].append({
             "cell_type": "code",
             "execution_count": None,
             "metadata": {},
@@ -271,5 +296,14 @@ def _make_test_notebook_fpath(fpath, cell_sources):
             })
 
     with open(fpath, 'w') as file:
-        json.dump(data, file)
+        json.dump(nb, file)
     return fpath
+
+
+if __name__ == '__main__':
+    """
+    CommandLine:
+        python ~/code/xdoctest/xdoctest/utils/util_notebook.py all
+    """
+    import xdoctest
+    xdoctest.doctest_module(__file__)
