@@ -194,6 +194,10 @@ def highlight_code(text, lexer_name='python', **kwargs):
         'cxx': 'cpp',
         'c': 'cpp',
     }.get(lexer_name.replace('.', ''), lexer_name)
+    import os
+    if os.environ.get('XDOC_WIN32_COLORS', 'False') == 'False':
+        # hack: dont color on windows by default, but do init colorama
+        return text
     try:
         import pygments
         import pygments.lexers
