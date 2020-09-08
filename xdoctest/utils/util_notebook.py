@@ -224,15 +224,24 @@ def execute_notebook(ipynb_fpath, timeout=None, verbose=None):
     from nbconvert.preprocessors import ExecutePreprocessor
     dpath = dirname(ipynb_fpath)
     ep = ExecutePreprocessor(timeout=timeout)
-    if verbose is not None:
-        import logging
-        if verbose > 1:
-            ep.log.setLevel(logging.DEBUG)
-        elif verbose > 0:
-            ep.log.setLevel(logging.INFO)
-    with open(ipynb_fpath) as file:
+    if verbose is None:
+        verbose = 0
+
+    import logging
+    if verbose > 1:
+        print('nbformat = {!r}'.format(nbformat))
+        print('ExecutePreprocessor = {!r}'.format(ExecutePreprocessor))
+        print('executing notebook')
+        print('dpath = {!r}'.format(dpath))
+        print('ep = {!r}'.format(ep))
+        ep.log.setLevel(logging.DEBUG)
+    elif verbose > 0:
+        ep.log.setLevel(logging.INFO)
+
+    with open(ipynb_fpath, 'r') as file:
         nb = nbformat.read(file, as_version=nbformat.NO_CONVERT)
-    nb, resources = ep.preprocess(nb, {'metadata': {'path': dpath}})
+    # nb, resources = ep.preprocess(nb, {'metadata': {'path': dpath}})
+    nb, resources = ep.preprocess(nb)
     # from nbconvert.preprocessors import executenb
     # nb, resources = executenb(nb, cwd=dpath)
     return nb, resources

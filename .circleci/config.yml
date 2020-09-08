@@ -49,7 +49,7 @@ jobs:
       # ### INITIALIZE AND CACHE REQUIREMENTS ###
       - restore_cache:
           keys:
-          - v2-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}
+          - v3-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}
       - run:
           name: install dependencies
           command: |
@@ -63,7 +63,7 @@ jobs:
       - save_cache:
           paths:
             - ./venv
-          key: v2-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}
+          key: v3-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}
       # ### RUN TESTS ###
       - run:
           name: run tests
@@ -86,7 +86,7 @@ jobs:
       # ### INITIALIZE AND CACHE REQUIREMENTS ###
       - restore_cache:
           keys:
-          - v2-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ checksum "requirements/colors.txt" }}
+          - v3-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ checksum "requirements/colors.txt" }}
       - run:
           name: install dependencies
           command: |
@@ -100,7 +100,7 @@ jobs:
       - save_cache:
           paths:
             - ./venv
-          key: v2-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ checksum "requirements/colors.txt" }}
+          key: v3-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ checksum "requirements/colors.txt" }}
       # ### RUN TESTS ###
       - run:
           name: run tests
@@ -281,8 +281,8 @@ jobs:
         ###
         # Clone the mounted repo for a fresh start
         mkdir -p /home/joncrall/code
-        git clone /io /home/joncrall/code/xdoctest
-        cd /home/joncrall/code/xdoctest
+        git clone /io /root/test-minimal-pypy3
+        cd /root/test-minimal-pypy3
         PYTHON_EXE=pypy3
         $PYTHON_EXE -m venv venv || virtualenv -v venv  # first command is python3 || second is python2
         . venv/bin/activate
@@ -293,7 +293,16 @@ jobs:
         pip install .
 
         . venv/bin/activate
-        pip install pytest-cov==2.8.1  # hack to avoid regression
+        # pip install pytest-cov==2.8.1  # hack to avoid regression
         python run_tests.py
 
-                            
+
+        # TO RUN A JOB ON YOUR LOCAL MACHINE
+        # INSTALL CIRCLE CI
+        curl -fLSs https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/master/install.sh | DESTDIR=$HOME/.local/bin bash
+
+        JOB_NAME=test-minimal-pypy3
+        circleci local execute --job $JOB_NAME
+
+        JOB_NAME=test-minimal-pypy3
+        circleci local execute --job $JOB_NAME
