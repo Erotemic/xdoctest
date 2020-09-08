@@ -70,7 +70,8 @@ jobs:
           command: |
             . venv/bin/activate
             # pip install pytest-cov==2.8.1  # hack to avoid regression
-            python run_tests.py
+            #python run_tests.py
+            python -m pytest --cov=xdoctest --cov-config .coveragerc --cov-report term -s
       - store_artifacts:
           path: test-reports
           destination: test-reports
@@ -107,7 +108,8 @@ jobs:
           command: |
             . venv/bin/activate
             # pip install pytest-cov==2.8.1  # hack to avoid regression
-            python run_tests.py
+            #python run_tests.py
+            python -m pytest --cov=xdoctest --cov-config .coveragerc --cov-report term -s
       - store_artifacts:
           path: test-reports
           destination: test-reports
@@ -293,8 +295,9 @@ jobs:
         pip install .
 
         . venv/bin/activate
+        python -m pytest --cov=xdoctest --cov-config .coveragerc --cov-report term -s
         # pip install pytest-cov==2.8.1  # hack to avoid regression
-        python run_tests.py
+        #python run_tests.py
 
 
         # TO RUN A JOB ON YOUR LOCAL MACHINE
@@ -304,5 +307,5 @@ jobs:
         JOB_NAME=test-minimal-pypy3
         circleci local execute --job $JOB_NAME
 
-        JOB_NAME=test-minimal-pypy3
+        JOB_NAME=test-full-pypy3
         circleci local execute --job $JOB_NAME
