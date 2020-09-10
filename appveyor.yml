@@ -66,7 +66,7 @@ test_script:
   - set PYTHONIOENCODING=utf-8
   - "%PYTHON%\\python.exe -m pip install pytest-cov==2.8.1"
   - "%PYTHON%\\python.exe -m xdoctest xdoctest"
-  - "%PYTHON%\\python.exe -m pytest"
+  - "%PYTHON%\\python.exe -m pytest -s --xdoctest-verbose=3"
 
 after_test:
   # This step builds your wheels.
@@ -77,7 +77,7 @@ after_test:
 
 artifacts:
   # bdist_wheel puts your built wheel in the dist directory
-  - path: dist\*
+  #- path: dist\*
 
 #on_success:
 #  You can use this step to upload your artifacts to a public website.
