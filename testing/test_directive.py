@@ -35,6 +35,43 @@ def test_block_skip_directive():
     assert result['passed']
 
 
+def test_multi_requires_directive():
+    """
+    Test semi-complex case with multiple requirements in a single line
+
+    xdoctest ~/code/xdoctest/testing/test_directive.py test_multi_requires_directive
+    """
+    string = utils.codeblock(
+        '''
+        >>> x = 0
+        >>> print('not-skipped')
+        >>> # doctest: +REQUIRES(env:NOT_EXIST, --show, module:xdoctest)
+        >>> print('is-skipped')
+        >>> assert False, 'should be skipped'
+        >>> # doctest: -REQUIRES(env:NOT_EXIST, module:xdoctest)
+        >>> print('is-skipped')
+        >>> assert False, 'should be skipped'
+        >>> # doctest: +REQUIRES(env:NOT_EXIST, --show, module:xdoctest)
+        >>> print('is-skipped')
+        >>> assert False, 'should be skipped'
+        >>> # doctest: -REQUIRES(env:NOT_EXIST)
+        >>> print('is-skipped')
+        >>> assert False, 'should be skipped'
+        >>> # doctest: -REQUIRES(--show)
+        >>> print('not-skipped')
+        >>> x = 'this will not be skipped'
+        >>> # doctest: -REQUIRES(env:NOT_EXIST, --show, module:xdoctest)
+        >>> print('not-skipped')
+        >>> assert x == 'this will not be skipped'
+        ''')
+    self = doctest_example.DocTest(docsrc=string)
+    result = self.run(on_error='raise')
+    stdout = ''.join(list(self.logged_stdout.values()))
+    assert result['passed']
+    assert stdout.count('not-skipped') == 3
+    assert stdout.count('is-skipped') == 0
+
+
 if __name__ == '__main__':
     """
     CommandLine:

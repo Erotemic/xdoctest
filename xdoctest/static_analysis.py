@@ -31,6 +31,7 @@ HAS_UPDATED_LINENOS = sys.version_info[0] >= 3 and sys.version_info[1] >= 8
 class CallDefNode(object):
     """
     Attributes:
+        callname (str): the name of the "calldef"
         doclineno (int): the line number (1 based) the docstring begins on
         doclineno_end (int): the line number (1 based) the docstring ends on
     """
@@ -44,10 +45,10 @@ class CallDefNode(object):
         self.lineno_end = None
         self.args = args
 
-    # def __str__(self):
-    #     return '{}[{}:{}][{}]'.format(
-    #         self.callname, self.lineno, self.lineno_end,
-    #         self.doclineno)
+    def __str__(self):
+        return '{}[{}:{}][{}]'.format(
+            self.callname, self.lineno, self.lineno_end,
+            self.doclineno)
 
 
 class TopLevelVisitor(ast.NodeVisitor):
@@ -633,7 +634,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         return lineno
 
 
-def parse_calldefs(source=None, fpath=None):
+def parse_static_calldefs(source=None, fpath=None):
     """
     Statically finds top-level callable functions and methods in python source
 
@@ -642,13 +643,15 @@ def parse_calldefs(source=None, fpath=None):
         fpath (str): filepath to read if source is not specified
 
     Returns:
-        dict(str, CallDefNode): map of callnames to tuples with def info
+        Dict[str, CallDefNode]:
+            maping from callnames to CallDefNodes, which contain
+               info about the item with the doctest.
 
     Example:
         >>> from xdoctest import static_analysis
         >>> fpath = static_analysis.__file__.replace('.pyc', '.py')
-        >>> calldefs = parse_calldefs(fpath=fpath)
-        >>> assert 'parse_calldefs' in calldefs
+        >>> calldefs = parse_static_calldefs(fpath=fpath)
+        >>> assert 'parse_static_calldefs' in calldefs
     """
     if six.PY2:
         fpath = fpath.replace('.pyc', '.py')
@@ -673,6 +676,14 @@ def parse_calldefs(source=None, fpath=None):
         else:
             print('Failed to parse docstring')
         raise
+
+
+def parse_calldefs(source=None, fpath=None):
+    import warnings
+    warnings.warn((
+        'parse_calldefs is deprecated '
+        'use parse_static_calldefs instead'), DeprecationWarning)
+    return parse_static_calldefs(source=source, fpath=fpath)
 
 
 def _parse_static_node_value(node):

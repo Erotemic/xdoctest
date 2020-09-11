@@ -24,7 +24,7 @@ python:
   - "3.4"
   - "3.5"
   - "3.6"
-  - "nightly"
+  #- "nightly"  # remove nightly for now
 
 before_install:
   - pip install pip -U

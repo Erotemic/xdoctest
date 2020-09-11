@@ -9,9 +9,7 @@ ninja
 pybind11
 
 # for testing doctests in jupyter notebooks
-nbformat
-nbconvert
-jupyter_client
+-r jupyter.txt
 
 #pip uninstall pytest-ipynb
 #pytest-ipynb >= 1.1.1  

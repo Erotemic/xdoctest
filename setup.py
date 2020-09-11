@@ -25,70 +25,92 @@ def parse_version(fpath='xdoctest/__init__.py'):
     return visitor.version
 
 
-def parse_requirements(fname='requirements.txt'):
+def parse_requirements(fname='requirements.txt', with_version=False):
     """
     Parse the package dependencies listed in a requirements file but strips
     specific versioning information.
 
-    CommandLine:
-        python -c "import setup; print(setup.parse_requirements())"
+    Args:
+        fname (str): path to requirements file
+        with_version (bool, default=False): if true include version specs
+
+    Returns:
+        List[str]: list of requirements items
     """
-    from os.path import exists
+    from os.path import exists, dirname, join
     import re
     require_fpath = fname
 
-    def parse_line(line):
+    def parse_line(line, dpath=''):
         """
         Parse information from a line in a requirements text file
+
+        line = 'git+https://a.com/somedep@sometag#egg=SomeDep'
+        line = '-e git+https://a.com/somedep@sometag#egg=SomeDep'
         """
+        # Remove inline comments
+        comment_pos = line.find(' #')
+        if comment_pos > -1:
+            line = line[:comment_pos]
+
         if line.startswith('-r '):
             # Allow specifying requirements in other files
-            target = line.split(' ')[1]
+            target = join(dpath, line.split(' ')[1])
             for info in parse_require_file(target):
                 yield info
-        elif line.startswith('-e '):
-            info = {}
-            info['package'] = line.split('#egg=')[1]
-            yield info
         else:
-            # Remove versioning from the package
-            pat = '(' + '|'.join(['>=', '==', '>']) + ')'
-            parts = re.split(pat, line, maxsplit=1)
-            parts = [p.strip() for p in parts]
-
-            info = {}
-            info['package'] = parts[0]
-            if len(parts) > 1:
-                op, rest = parts[1:]
-                if ';' in rest:
+            # See: https://www.python.org/dev/peps/pep-0508/
+            info = {'line': line}
+            if line.startswith('-e '):
+                info['package'] = line.split('#egg=')[1]
+            else:
+                if ';' in line:
+                    pkgpart, platpart = line.split(';')
                     # Handle platform specific dependencies
-                    # http://setuptools.readthedocs.io/en/latest/setuptools.html#declaring-platform-specific-dependencies
-                    version, platform_deps = map(str.strip, rest.split(';'))
-                    info['platform_deps'] = platform_deps
+                    # setuptools.readthedocs.io/en/latest/setuptools.html
+                    # #declaring-platform-specific-dependencies
+                    plat_deps = platpart.strip()
+                    info['platform_deps'] = plat_deps
                 else:
+                    pkgpart = line
+                    platpart = None
+
+                # Remove versioning from the package
+                pat = '(' + '|'.join(['>=', '==', '>']) + ')'
+                parts = re.split(pat, pkgpart, maxsplit=1)
+                parts = [p.strip() for p in parts]
+
+                info['package'] = parts[0]
+                if len(parts) > 1:
+                    op, rest = parts[1:]
                     version = rest  # NOQA
-                info['version'] = (op, version)
+                    info['version'] = (op, version)
             yield info
 
     def parse_require_file(fpath):
+        dpath = dirname(fpath)
         with open(fpath, 'r') as f:
             for line in f.readlines():
                 line = line.strip()
                 if line and not line.startswith('#'):
-                    for info in parse_line(line):
+                    for info in parse_line(line, dpath=dpath):
                         yield info
 
-    # This breaks on pip install, so check that it exists.
-    packages = []
-    if exists(require_fpath):
-        for info in parse_require_file(require_fpath):
-            package = info['package']
-            if not sys.version.startswith('3.4'):
-                # apparently package_deps are broken in 3.4
-                platform_deps = info.get('platform_deps')
-                if platform_deps is not None:
-                    package += ';' + platform_deps
-            packages.append(package)
+    def gen_packages_items():
+        if exists(require_fpath):
+            for info in parse_require_file(require_fpath):
+                parts = [info['package']]
+                if with_version and 'version' in info:
+                    parts.extend(info['version'])
+                if not sys.version.startswith('3.4'):
+                    # apparently package_deps are broken in 3.4
+                    plat_deps = info.get('platform_deps')
+                    if plat_deps is not None:
+                        parts.append(';' + plat_deps)
+                item = ''.join(parts)
+                yield item
+
+    packages = list(gen_packages_items())
     return packages
 
 
@@ -182,6 +204,7 @@ setupkw = dict(
 )
 
 
+print(parse_requirements('requirements/tests.txt'))
 if __name__ == '__main__':
     setupkw.update(dict(
         description='A rewrite of the builtin doctest module',
@@ -190,6 +213,8 @@ if __name__ == '__main__':
             'all': parse_requirements('requirements.txt'),
             'tests': parse_requirements('requirements/tests.txt'),
             'optional': parse_requirements('requirements/optional.txt'),
+            'colors': parse_requirements('requirements/colors.txt'),
+            'jupyter': parse_requirements('requirements/jupyter.txt'),
         },
         long_description=parse_description(),
         long_description_content_type='text/x-rst',
