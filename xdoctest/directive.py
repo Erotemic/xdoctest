@@ -20,8 +20,8 @@ Advanced Directives
 
 Advanced directives may take arguments, be conditional, or modify the runtime
 state in complex ways.  For instance, whereas most directives modify a boolean
-value in the runtime state, the advanced `REQUIRES` directive either adds or
-removes a value from a `set` of unmet requirements. Doctests will only run if
+value in the runtime state, the advanced ``REQUIRES`` directive either adds or
+removes a value from a ``set`` of unmet requirements. Doctests will only run if
 there are no unmet requirements.
 
 
@@ -30,7 +30,7 @@ CommandLine:
 
 
 Example:
-    The following example shows how the `+SKIP` directives may be used to
+    The following example shows how the ``+SKIP`` directives may be used to
     bypass certain places in the code.
 
     >>> # An inline directive appears on the same line as a command and
@@ -57,7 +57,7 @@ Example:
     >>> print('This line will print: (F)')
 
 Example:
-    This next examples illustrates how to use the advanced `+REQURIES()`
+    This next examples illustrates how to use the advanced ``+REQURIES()``
     directive. Note, the REQUIRES and SKIP states are independent.
 
     >>> import sys
@@ -144,7 +144,7 @@ Effect = namedtuple('Effect', ('action', 'key', 'value'))
 
 class RuntimeState(utils.NiceRepr):
     """
-    Maintains the runtime state for a single `run()` of an example
+    Maintains the runtime state for a single ``run()`` of an example
 
     Inline directives are pushed and popped after the line is run.
     Otherwise directives persist until another directive disables it.
@@ -238,7 +238,7 @@ class RuntimeState(utils.NiceRepr):
         Update the runtime state given a set of directives
 
         Args:
-            directives (List[Directive]): list of directives. The `effects`
+            directives (List[Directive]): list of directives. The ``effects``
                 method is used to update this object.
         """
         # Clear the previous inline state
@@ -297,8 +297,8 @@ class Directive(utils.NiceRepr):
             Directive: directive: the parsed directives
 
         Notes:
-            The original `doctest` module sometimes yeilded false positives for a
-            directive pattern. Because `xdoctest` is parsing the text, this issue
+            The original ``doctest`` module sometimes yeilded false positives for a
+            directive pattern. Because ``xdoctest`` is parsing the text, this issue
             does not occur.
 
         Example:
@@ -523,8 +523,8 @@ def _is_requires_satisfied(arg, argv=None, environ=None):
 
     Args:
         arg (str): condition code
-        argv (List[str]): cmdline if arg is cmd code usually `sys.argv`
-        environ (Dict[str, str]): environment variables usually `os.environ`
+        argv (List[str]): cmdline if arg is cmd code usually ``sys.argv``
+        environ (Dict[str, str]): environment variables usually ``os.environ``
 
     Returns:
         bool: flag - True if the requirement is met
@@ -666,7 +666,7 @@ def parse_directive_optstr(optpart, inline=None):
     Parses the information in the directive from the "optpart"
 
     optstrs are:
-        optionally prefixed with `+` (default) or `-`
+        optionally prefixed with ``+`` (default) or ``-``
         comma separated
         may contain one paren enclosed argument (experimental)
         all spaces are ignored

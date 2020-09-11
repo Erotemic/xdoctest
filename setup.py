@@ -204,7 +204,6 @@ setupkw = dict(
 )
 
 
-print(parse_requirements('requirements/tests.txt'))
 if __name__ == '__main__':
     setupkw.update(dict(
         description='A rewrite of the builtin doctest module',
