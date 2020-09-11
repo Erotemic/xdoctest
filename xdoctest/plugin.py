@@ -11,8 +11,8 @@ When xdoctest is enabled, pytest will discover and run doctests in modules and
 test files using xdoctest's improved parser and runtime environment.
 
 To ensure maximum backwards compatibility with the original doctest module,
-this code is heavilly based on `pytest/_pytest/doctest.py` plugin file:
-    https://github.com/pytest-dev/pytest
+this code is heavilly based on ``pytest/_pytest/doctest.py`` plugin file in
+https://github.com/pytest-dev/pytest
 
 """
 from __future__ import absolute_import, division, print_function
@@ -34,7 +34,7 @@ from _pytest import fixtures
 def monkey_patch_disable_normal_doctest():
     """
     The doctest plugin captures tests even if it is disabled. This causes
-    conflicts with this package. Thus, we monkey-patch `_pytest.doctest` to
+    conflicts with this package. Thus, we monkey-patch ``_pytest.doctest`` to
     prevent it from collecting anything. Perhaps there is a less terrible way
     to do this.
     """

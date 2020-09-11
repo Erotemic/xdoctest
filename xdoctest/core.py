@@ -4,20 +4,22 @@ Core methods used by xdoctest runner and plugin code to statically extract
 doctests from a module or package.
 
 
-The following is a list of terms and jargon used in this repo.
-TODO: ensure the list is complete,
+The following is a glossary of terms and jargon used in this repo.
 
-Glossary:
+* callname - the name of a callable function, method, class etc... e.g.
+  ``myfunc``, ``MyClass``, or ``MyClass.some_method``.
 
-    * callname - the name of a callable function, method, class etc..
-       e.g. ``myfunc``, ``MyClass``, or ``MyClass.some_method``.
+* got / want - a test that produces stdout or a value to check. Whatever is
+  produced is what you "got" and whatever is expected is what you "want".
+  See :mod:`xdoctest.checker` for more details.
 
-    * got / want - a test that produces stdout or a value to check. Whatever is
-        produced is what you "got" and whatever is expected is what you "want".
+* directives - special in-doctest comments that change the behavior of the
+  doctests at runtime. See :mod:`xdoctest.directive` for more details.
 
-    * directives - special in-doctest comments that change the behavior
-        of the doctests at runtime.
+* the three cheverons (``>>> ``) - this is the standard prefix for a doctest,
+  also referred to as a PS1 line in the parser.
 
+* TODO - complete this list.
 
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
@@ -60,12 +62,30 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
     doctests or scripts.
 
     Args:
-        asone (bool): if False doctests are broken into multiple examples
-           based on spacing. (default True)
+        docstr (str): an extracted docstring
 
-        lineno (int): the line number (starting from 1) of the docstring.
-            i.e. if you were to go to this line number in the source file
-            the starting quotes of the docstr would be on this line.
+        callname (str, default=None):
+            the name of the callable (e.g. function, class, or method)
+            that this docstring belongs to.
+
+        modpath (str | PathLike, default=None):
+            original module the docstring is from
+
+        lineno (int, default=1):
+            the line number (starting from 1) of the docstring.  i.e. if you
+            were to go to this line number in the source file the starting
+            quotes of the docstr would be on this line.
+
+        fpath (str | PathLike, default=None):
+            the file that the docstring is from (if the file was not a module,
+            needed for backwards compatibility)
+
+        asone (bool, default=True):
+            if False doctests are broken into multiple examples based on
+            spacing, otherwise they are executed as a single unit.
+
+    Yields:
+        xdoctest.doctest_example.DocTest : doctest object
 
     Raises:
         xdoctest.exceptions.DoctestParseError: if an error occurs in parsing
@@ -212,9 +232,30 @@ def parse_google_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
     Parses Google-style doctests from a docstr and generates example objects
 
     Args:
-        lineno (int): the line number (starting from 1) of the docstring.
-            i.e. if you were to go to this line number in the source file
-            the starting quotes of the docstr would be on this line.
+        docstr (str): an extracted docstring
+
+        callname (str, default=None):
+            the name of the callable (e.g. function, class, or method)
+            that this docstring belongs to.
+
+        modpath (str | PathLike, default=None):
+            original module the docstring is from
+
+        lineno (int, default=1):
+            the line number (starting from 1) of the docstring.  i.e. if you
+            were to go to this line number in the source file the starting
+            quotes of the docstr would be on this line.
+
+        fpath (str | PathLike, default=None):
+            the file that the docstring is from (if the file was not a module,
+            needed for backwards compatibility)
+
+        eager_parse (bool, default=True):
+            if True eagerly evaluate the parser inside the google example
+            blocks
+
+    Yields:
+        xdoctest.doctest_example.DocTest : doctest object
 
     Raises:
         xdoctest.exceptions.MalformedDocstr: if an error occurs in finding google blocks
@@ -280,21 +321,29 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
     Args:
         docstr (str): a previously extracted docstring
 
-        callname (str): function or class name or class and method name
+        callname (str, default=None):
+            the name of the callable (e.g. function, class, or method)
+            that this docstring belongs to.
 
-        modpath (PathLike): original module the docstring is from
+        modpath (str | PathLike, default=None):
+            original module the docstring is from
 
         lineno (int, default=1):
             the line number (starting from 1) of the docstring.  i.e. if you
             were to go to this line number in the source file the starting
             quotes of the docstr would be on this line.
 
-        style (str): expected doctest style (e.g. google, freeform, auto)
+        style (str, default='auto'): expected doctest style, which can
+            be "google", "freeform", or "auto".
 
-        fpath (PathLike): the file that the docstring is from
-            (if the file was not a module, needed for backwards compatibility)
+        fpath (str | PathLike, default=None):
+            the file that the docstring is from (if the file was not a module,
+            needed for backwards compatibility)
 
-        parser_kw (dict): passed to the parser
+        parser_kw (dict, default={}): passed to the parser
+
+    Yields:
+        xdoctest.doctest_example.DocTest : parsed example
 
     CommandLine:
         python -m xdoctest.core parse_docstr_examples
@@ -413,9 +462,9 @@ def package_calldefs(pkg_identifier, exclude=[], ignore_syntax_errors=True,
 
     Yields:
         Tuple[Dict[str, CallDefNode], str | Module] -
-            item[0]: the mapping of callnames-to-calldefs
-            item[1]: the path to the file containing the doctest
-                (usually a module) or the module itself
+            * item[0]: the mapping of callnames-to-calldefs
+            * item[1]: the path to the file containing the doctest
+              (usually a module) or the module itself
 
     Example:
         >>> pkg_identifier = 'xdoctest.core'
@@ -475,7 +524,7 @@ def parse_calldefs(module_identifier, analysis='auto'):
 
     Returns:
         Dict[str, CallDefNode]: the mapping of callnames-to-calldefs within
-            the module.
+          the module.
     """
     # backwards compatibility hacks
     if '--allow-xdoc-dynamic' in sys.argv:

@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 This module defines the main class that holds a DocTest example
-
-TODO:
-    - [ ] Rename DocTest to Doctest?
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
 import __future__
@@ -23,10 +20,15 @@ from xdoctest import checker
 from xdoctest import exceptions
 
 # I believe the original reason for this hack was fixed in 3.9rc (The CI will
-# tell us otherwise if this is incorrec)
+# tell us otherwise if this is incorrect)
 # from distutils.version import LooseVersion
 # EVAL_MIGHT_RETURN_COROUTINE = LooseVersion(sys.version.split(' ')[0]) >= LooseVersion('3.9.0')
-EVAL_MIGHT_RETURN_COROUTINE = False
+# EVAL_MIGHT_RETURN_COROUTINE = False
+
+__devnotes__ = """
+TODO:
+    - [ ] Rename DocTest to Doctest?
+"""
 
 
 class DoctestConfig(dict):
@@ -584,16 +586,16 @@ class DocTest(object):
                             if part.compile_mode == 'eval':
                                 # print('test_globals = {}'.format(sorted(test_globals.keys())))
                                 got_eval = eval(code, test_globals)
-                                if EVAL_MIGHT_RETURN_COROUTINE:
-                                    import types
-                                    if isinstance(got_eval, types.CoroutineType):
-                                        # In 3.9-rc (2020-mar-31) it looks like
-                                        # eval sometimes returns coroutines. I
-                                        # found no docs on this. Not sure if it
-                                        # will be mainlined, but this seems to
-                                        # fix it.
-                                        import asyncio
-                                        got_eval =  asyncio.run(got_eval)
+                                # if EVAL_MIGHT_RETURN_COROUTINE:
+                                #     import types
+                                #     if isinstance(got_eval, types.CoroutineType):
+                                #         # In 3.9-rc (2020-mar-31) it looks like
+                                #         # eval sometimes returns coroutines. I
+                                #         # found no docs on this. Not sure if it
+                                #         # will be mainlined, but this seems to
+                                #         # fix it.
+                                #         import asyncio
+                                #         got_eval =  asyncio.run(got_eval)
                             else:
                                 exec(code, test_globals)
 

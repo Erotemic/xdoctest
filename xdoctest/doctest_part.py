@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Simple storage container used to store a single executable part of a doctest
-example. Multiple parts are kept by a `xdoctest.doctest_example.Doctest`, which
-manages execution of each part.
-
-TODO:
-    perhaps rename doctest part to DoctestCell, because there is a striking
-    similarity between Jupyter notebook cells and doctest parts.
+example. Multiple parts are typically stored in a
+:class:`xdoctest.doctest_example.Doctest`, which manages execution of each
+part.
 """
 from __future__ import print_function, division, absolute_import, unicode_literals
 import math
@@ -14,6 +11,13 @@ from xdoctest import utils
 from xdoctest import checker
 from xdoctest import directive
 from xdoctest import constants
+
+
+__devnotes__ = """
+TODO:
+    perhaps rename doctest part to DoctestCell, because there is a striking
+    similarity between Jupyter notebook cells and doctest parts.
+"""
 
 
 class DoctestPart(object):
@@ -267,7 +271,7 @@ class DoctestPart(object):
 
 
 if __name__ == '__main__':
-    r"""
+    """
     CommandLine:
         python -m xdoctest.doctest_part
     """

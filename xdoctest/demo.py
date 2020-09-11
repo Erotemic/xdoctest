@@ -1,4 +1,5 @@
 """
+This file contains quick demonstrations of how to use xdoctest
 
 CommandLine:
     xdoctest -m xdoctest.demo
