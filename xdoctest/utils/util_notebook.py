@@ -218,7 +218,11 @@ def execute_notebook(ipynb_fpath, timeout=None, verbose=None):
         >>> print('resources = {!r}'.format(resources))
         >>> print('nb = {!r}'.format(nb))
         >>> for cell in nb['cells']:
-        >>>     assert len(cell['outputs']) == 1
+        >>>     if len(cell['outputs']) != 1:
+        >>>         import warnings
+        >>>         warnings.warn('expected an output, is this the issue '
+        >>>                       'described [here](https://github.com/nteract/papermill/issues/426)?')
+
     """
     import nbformat
     import logging
@@ -230,35 +234,17 @@ def execute_notebook(ipynb_fpath, timeout=None, verbose=None):
         verbose = 0
 
     if verbose > 1:
-        # print('nbformat = {!r}'.format(nbformat))
-        # print('ExecutePreprocessor = {!r}'.format(ExecutePreprocessor))
-        # print('ep = {!r}'.format(ep))
-        print('dpath = {!r}'.format(dpath))
-        print('executing notebook')
-        print('setting log-level to {}'.format(logging.DEBUG))
+        print('executing notebook in dpath = {!r}'.format(dpath))
         ep.log.setLevel(logging.DEBUG)
-        _add_debug_stream_handler(ep.log)
     elif verbose > 0:
         ep.log.setLevel(logging.INFO)
 
     with open(ipynb_fpath, 'r+') as file:
         nb = nbformat.read(file, as_version=nbformat.NO_CONVERT)
     nb, resources = ep.preprocess(nb, {'metadata': {'path': dpath}})
-    # nb, resources = ep.preprocess(nb)
     # from nbconvert.preprocessors import executenb
     # nb, resources = executenb(nb, cwd=dpath)
     return nb, resources
-
-
-def _add_debug_stream_handler(logger):
-    import logging
-    s_formatter = logging.Formatter('%(levelname)s: %(message)s')
-    # Add a stdout handler:
-    # this allows us to print logging calls to the terminal
-    stdout_handler = logging.StreamHandler(sys.stdout)
-    stdout_handler.setFormatter(s_formatter)
-    stdout_handler.setLevel(logging.DEBUG)
-    logger.addHandler(stdout_handler)
 
 
 def _make_test_notebook_fpath(fpath, cell_sources):
