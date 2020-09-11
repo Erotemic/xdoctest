@@ -55,11 +55,20 @@ def color_text(text, color):
             If pygments is not installed plain text is returned.
 
     Example:
+        >>> import sys
+        >>> if sys.platform.startswith('win32'):
+        >>>     import pytest
+        >>>     pytest.skip()
         >>> text = 'raw text'
         >>> from xdoctest import utils
-        >>> if utils.modname_to_modpath('pygments'):
+        >>> from xdoctest.utils import util_str
+        >>> if utils.modname_to_modpath('pygments') and not util_str.NO_COLOR:
         >>>     # Colors text only if pygments is installed
-        >>>     ansi_text = utils.ensure_unicode(color_text(text, 'red'))
+        >>>     import pygments
+        >>>     print('pygments = {!r}'.format(pygments))
+        >>>     ansi_text1 = color_text(text, 'red')
+        >>>     print('ansi_text1 = {!r}'.format(ansi_text1))
+        >>>     ansi_text = utils.ensure_unicode(ansi_text1)
         >>>     prefix = utils.ensure_unicode('\x1b[31')
         >>>     print('prefix = {!r}'.format(prefix))
         >>>     print('ansi_text = {!r}'.format(ansi_text))
@@ -84,17 +93,15 @@ def color_text(text, color):
             except ImportError as ex:
                 import warnings
                 warnings.warn('os is win32 and colorma is not installed {!r}'.format(ex))
-                pass
             import os
             if os.environ.get('XDOC_WIN32_COLORS', 'False') == 'False':
                 # hack: dont color on windows by default, but do init colorama
                 return text
-
         try:
             ansi_text = pygments.console.colorize(color, text)
         except KeyError:
             import warnings
-            warnings.warn('unable to fine color: {!r}'.format(color))
+            warnings.warn('unable to find color: {!r}'.format(color))
             return text
         except Exception as ex:
             import warnings
@@ -187,6 +194,14 @@ def highlight_code(text, lexer_name='python', **kwargs):
         'cxx': 'cpp',
         'c': 'cpp',
     }.get(lexer_name.replace('.', ''), lexer_name)
+
+    if sys.platform.startswith('win32'):  # nocover
+        # Hack on win32 to support colored output
+        import os
+        if os.environ.get('XDOC_WIN32_COLORS', 'False') == 'False':
+            # hack: dont color on windows by default, but do init colorama
+            return text
+
     try:
         import pygments
         import pygments.lexers

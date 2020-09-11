@@ -9,12 +9,21 @@ import types
 import six
 
 
-def parse_dynamic_calldefs(modpath=None):
+def parse_dynamic_calldefs(modpath_or_module):
     """
     Dynamic parsing of module doctestable items.
 
-    While this does execute module code it is needed for testing extension
-    libraries.
+    Unlike static parsing this forces execution of the module code before
+    test-time, however the former is limited to plain-text python files whereas
+    this can discover doctests in binary extension libraries.
+
+    Args:
+       modpath_or_module (str | Module): path to module or the module itself
+
+    Returns:
+        Dict[str, CallDefNode]:
+            maping from callnames to CallDefNodes, which contain
+               info about the item with the doctest.
 
     CommandLine:
         python -m xdoctest.dynamic_analysis parse_dynamic_calldefs
@@ -32,9 +41,24 @@ def parse_dynamic_calldefs(modpath=None):
         ...         print(' * len(calldef.docstr) = {}'.format(len(calldef.docstr)))
     """
     from xdoctest import static_analysis as static
-    from xdoctest import utils  # NOQA
-    # Possible option for dynamic parsing
-    module = utils.import_module_from_path(modpath)
+
+    import types
+    if isinstance(modpath_or_module, types.ModuleType):
+        module = modpath_or_module
+    else:
+        modpath = modpath_or_module
+        if modpath.endswith('.ipynb'):
+            """
+            modpath = ub.expandpath("~/code/xdoctest/testing/notebook_with_doctests.ipynb")
+            xdoctest ~/code/xdoctest/testing/notebook_with_doctests.ipynb
+            """
+            from xdoctest.utils import util_notebook
+            module = util_notebook.import_notebook_from_path(modpath)
+        else:
+            # Possible option for dynamic parsing
+            from xdoctest.utils import util_import
+            module = util_import.import_module_from_path(modpath)
+
     calldefs = {}
 
     if getattr(module, '__doc__'):

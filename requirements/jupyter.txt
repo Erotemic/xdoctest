@@ -1,0 +1,6 @@
+nbformat;python_version>'3.4'
+nbconvert; python_version>'3.4'
+jupyter_client; python_version>'3.4'
+IPython; python_version>'3.4' 
+ipykernel; python_version>'3.4'
+

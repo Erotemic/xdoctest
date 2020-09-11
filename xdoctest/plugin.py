@@ -104,7 +104,7 @@ def pytest_addoption(parser):
                     dest='xdoctest_analysis')
 
     from xdoctest import doctest_example
-    doctest_example.Config()._update_argparse_cli(
+    doctest_example.DoctestConfig()._update_argparse_cli(
         group.addoption, prefix=['xdoctest', 'xdoc'],
         defaults=dict(verbose=0)
     )
@@ -206,7 +206,7 @@ class _XDoctestBase(pytest.Module):
         ns = NamespaceLike(self.config)
 
         from xdoctest import doctest_example
-        self._examp_conf = doctest_example.Config()._populate_from_cli(ns)
+        self._examp_conf = doctest_example.DoctestConfig()._populate_from_cli(ns)
 
 
 class XDoctestTextfile(_XDoctestBase):

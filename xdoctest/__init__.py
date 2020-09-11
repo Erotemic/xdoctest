@@ -161,44 +161,43 @@ which produces something similar to the following output:
 
 .. code:: text
 
-    usage: xdoctest [-h] [--version] [-m MODNAME] [-c COMMAND]
-                    [--style {auto,google,freeform}]
-                    [--analysis {auto,static,dynamic}]
-                    [--durations DURATIONS] [--time] [--nocolor] [--offset]
-                    [--report {none,cdiff,ndiff,udiff,only_first_failure}]
-                    [--options OPTIONS] [--global-exec GLOBAL_EXEC]
+    usage: xdoctest [-h] [--version] [-m MODNAME] [-c COMMAND] [--style {auto,google,freeform}] [--analysis {auto,static,dynamic}]
+                    [--durations DURATIONS] [--time] [--colored COLORED] [--nocolor] [--offset]
+                    [--report {none,cdiff,ndiff,udiff,only_first_failure}] [--options OPTIONS] [--global-exec GLOBAL_EXEC]
                     [--verbose VERBOSE] [--quiet] [--silent]
                     [arg [arg ...]]
 
-    Xdoctest 0.14.0 - on Python - 3.8.3 (default, Jul 2 2020, 16:21:59) [GCC 7.3.0] - discover and run doctests within a python package
+    Xdoctest 0.15.0 - on Python - 3.8.3 (default, Jul  2 2020, 16:21:59)
+    [GCC 7.3.0] - discover and run doctests within a python package
 
     positional arguments:
       arg                   Ignored if optional arguments are specified, otherwise: Defaults --modname to arg.pop(0). Defaults --command
-                            to arg.pop(0).
+                            to arg.pop(0). (default: None)
 
     optional arguments:
       -h, --help            show this help message and exit
-      --version             display version info and quit
+      --version             display version info and quit (default: False)
       -m MODNAME, --modname MODNAME
-                            module name or path. If specified positional modules are ignored
+                            module name or path. If specified positional modules are ignored (default: None)
       -c COMMAND, --command COMMAND
-                            a doctest name or a command (list|all|<callname>). Defaults to all
+                            a doctest name or a command (list|all|<callname>). Defaults to all (default: None)
       --style {auto,google,freeform}
-                            choose the style of doctests that will be parsed
+                            choose the style of doctests that will be parsed (default: auto)
       --analysis {auto,static,dynamic}
-                            How doctests are collected
+                            How doctests are collected (default: static)
       --durations DURATIONS
-                            specify execution times for slowest N tests.N=0 will show times for all tests
-      --time                Same as if durations=0
+                            specify execution times for slowest N tests.N=0 will show times for all tests (default: None)
+      --time                Same as if durations=0 (default: False)
+      --colored COLORED     Enable or disable ANSI coloration in stdout (default: True)
       --nocolor             Disable ANSI coloration in stdout
       --offset              if True formatted source linenumbers will agree with their location in the source file. Otherwise they will
-                            be relative to the doctest itself.
+                            be relative to the doctest itself. (default: False)
       --report {none,cdiff,ndiff,udiff,only_first_failure}
-                            choose another output format for diffs on xdoctest failure
-      --options OPTIONS     default directive flags for doctests
+                            choose another output format for diffs on xdoctest failure (default: udiff)
+      --options OPTIONS     default directive flags for doctests (default: None)
       --global-exec GLOBAL_EXEC
-                            exec these lines before every test
-      --verbose VERBOSE     verbosity level
+                            exec these lines before every test (default: None)
+      --verbose VERBOSE     verbosity level (default: 3)
       --quiet               sets verbosity to 1
       --silent              sets verbosity to 0
 
@@ -231,20 +230,14 @@ interface. ``python -m <modname> <command>``
    ``python -m <modname> <callname>``. Note: you can execute disabled
    doctests or functions without any arguments (zero-args) this way.
 
-
-
-
 '''
-# mkinit xdoctest --nomods
-__version__ = '0.14.0'
 
 
-# TODO:
-# Perhaps we can write a helper to parse the changelog for the version
-# We can statically modify this to a constant value when we deploy
-# def _parse_changelog(fpath):
-#
-#     pass
+__autogen__ = '''
+mkinit xdoctest --nomods
+'''
+
+__version__ = '0.15.0'
 
 
 # Expose only select submodules
@@ -260,6 +253,48 @@ from xdoctest.runner import (doctest_module, doctest_callable,)
 from xdoctest.exceptions import (DoctestParseError, ExitTestException,
                                  MalformedDocstr,)
 
+
+def _parse_changelog(fpath):
+    """
+    Helper to parse the changelog for the version to verify versions agree.
+
+    CommandLine:
+        xdoctest ~/code/xdoctest/xdoctest/__init__.py _parse_changelog --dev
+
+    Example:
+        >>> # xdoctest: +REQUIRES(--dev)
+        >>> fpath = 'CHANGELOG.md'
+        >>> _parse_changelog(fpath)
+    """
+    from distutils.version import LooseVersion
+    import re
+    pat = re.compile(r'#.*Version ([0-9]+\.[0-9]+\.[0-9]+)')
+    # We can statically modify this to a constant value when we deploy
+    versions = []
+    with open(fpath, 'r') as file:
+        for line in file.readlines():
+            line = line.rstrip()
+            if line:
+                parsed = pat.search(line)
+                if parsed:
+                    print('parsed = {!r}'.format(parsed))
+                    try:
+                        version_text = parsed.groups()[0]
+                        version = LooseVersion(version_text)
+                        versions.append(version)
+                    except Exception:
+                        print('Failed to parse = {!r}'.format(line))
+
+    import pprint
+    print('versions = {}'.format(pprint.pformat(versions)))
+    assert sorted(versions)[::-1] == versions
+
+    import xdoctest
+    changelog_version = versions[0]
+    module_version = LooseVersion(xdoctest.__version__)
+    print('changelog_version = {!r}'.format(changelog_version))
+    print('module_version = {!r}'.format(module_version))
+    assert changelog_version == module_version
 
 __all__ = ['DoctestParseError', 'ExitTestException', 'MalformedDocstr',
            'doctest_module', 'doctest_callable', 'utils', 'docstr',
