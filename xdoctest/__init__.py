@@ -230,6 +230,9 @@ interface. ``python -m <modname> <command>``
    ``python -m <modname> <callname>``. Note: you can execute disabled
    doctests or functions without any arguments (zero-args) this way.
 
+
+You can also run doctests
+:doc:`inside Jupyter Notebooks <../xdoc_with_jupyter>`.
 '''
 
 
