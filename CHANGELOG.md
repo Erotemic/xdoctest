@@ -8,6 +8,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## Version 0.15.1 - Unreleased
 
 
+### Added
+* Documentation improvements
+* Minor text fixes
+
+
 ## Version 0.15.0 - Released 2020-09-11
 
 
