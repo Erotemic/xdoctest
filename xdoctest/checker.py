@@ -1,6 +1,35 @@
 # -*- coding: utf-8 -*-
 """
 Checks for got-vs-want statments
+
+A "got-string" is data produced by a doctest that we want to check matches som
+eexpected value.
+
+A "want-string" is a representation of the output we expect, if the
+"got-string" is different than the "want-string" the doctest will fail with a
+:class:`GotWantException`. A want string should come directly after a doctest
+and should not be prefixed by the three cheverons (``>>> ``).
+
+There are two types of data that a doctest could "get" as a "got-string",
+either the contents of standard out the value of an expression itself.
+
+A doctest that uses stdout might look like this
+
+>>> print('We expect this exact string')
+We expect this exact string
+
+A doctest that uses a raw expresion might look like this
+
+>>> def foo():
+>>>     return 3
+>>> foo()
+3
+
+In most cases it is best to use stdout to write your got-want tests because it
+is easier to control strings sent to stdout than it is to control the
+representation of expression-based "got-strings".
+
+
 """
 from __future__ import print_function, division, absolute_import, unicode_literals
 import re

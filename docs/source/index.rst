@@ -19,6 +19,6 @@
 
 .. toctree::
    :maxdepth: 8
-   :caption: API
+   :caption: XDoctest 
 
-   xdoctest
+    xdoctest

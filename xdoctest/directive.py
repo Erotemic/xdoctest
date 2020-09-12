@@ -1,4 +1,5 @@
 """
+Directives special comments that influence the runtime behavior of doctests.
 There are two types of directives: block and inline
 
 Block directives are specified on their own line and influence the behavior

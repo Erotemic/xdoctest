@@ -10,7 +10,7 @@ If you are a Python beginner, then I would recommend setting up a
 On Linux, I typically use this end-to-end script for installing conda,
 creating, and activating a virtual environment.
 
-.. code:: bash
+.. code-block:: bash
 
     # Download the conda install script into a temporary directory
     mkdir -p ~/tmp
@@ -38,7 +38,7 @@ Once you have created this conda environment, I recommend adding the following
 lines to your ``.bashrc``. This way you will automatically activate your
 virtual environment whenever you start a new bash shell.
 
-.. code:: bash
+.. code-block:: bash
 
     # Enables the conda command
     _CONDA_ROOT=$HOME/.local/conda

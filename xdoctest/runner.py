@@ -7,7 +7,8 @@ This file defines the native xdoctest interface to the collecting, executing,
 and summarizing the results of running doctests. This is an alternative to
 running through pytest.
 
-##  Using the XDoctest Runner via the Terminal.
+Using the XDoctest Runner via the Terminal
+------------------------------------------
 
 This interface is exposed via the ``xdoctest.__main__`` script and can be
 invoked on any module via: ``python -m xdoctest <modname>``, where
@@ -24,7 +25,8 @@ For more details see:
 
     python -m xdoctest --help
 
-##  Using the XDoctest Runner Programatically
+Using the XDoctest Runner Programatically
+-----------------------------------------
 
 This interface may also be run programmatically using
 ``xdoctest.doctest_module(path)``, which can be placed in the

@@ -91,11 +91,11 @@ module path.
 
 
 Interestingly because this documentation is written in the
-``xdoctest/__init__.py`` file, that means we can write doctests init.
-If you have xdoctest installed, you can use the xdoctest cli to execute the
-following code:  ``xdoctest -m xdoctest/__init__.py __doc__:0``. Also notice
-that the previous code prefixed with `>>> ` is skipped due to the xdoctest
-directive.
+``xdoctest/__init__.py`` file, which is a Python file, that means we can write
+doctests in it.  If you have xdoctest installed, you can use the xdoctest cli
+to execute the following code:  ``xdoctest -m xdoctest.__init__ __doc__:0``.
+Also notice that the previous code prefixed with ``>>> `` is skipped due to the
+xdoctest ``SKIP`` :ref:`directive<directive>`.
 
 
 .. code:: python
@@ -152,14 +152,14 @@ contains a native command line interface (CLI). The CLI is generated using
 
 For help you can run
 
-.. code:: bash
+.. code-block:: bash
 
     xdoctest --help
 
 
 which produces something similar to the following output:
 
-.. code:: text
+.. code-block:: text
 
     usage: xdoctest [-h] [--version] [-m MODNAME] [-c COMMAND] [--style {auto,google,freeform}] [--analysis {auto,static,dynamic}]
                     [--durations DURATIONS] [--time] [--colored COLORED] [--nocolor] [--offset]
@@ -207,14 +207,18 @@ The xdoctest interface can be run programmatically using
 ``xdoctest.doctest_module(path)``, which can be placed in the ``__main__``
 section of any module as such:
 
-.. code:: python
+.. code-block:: python
 
     if __name__ == '__main__':
-        import xdoctest as xdoc
-        xdoc.doctest_module(__file__)
+        import xdoctest
+        xdoctest.doctest_module(__file__)
 
-This sets up the ability to invoke the ``xdoctest`` command line
-interface. ``python -m <modname> <command>``
+This sets up the ability to invoke the ``xdoctest`` command line interface by
+invoking your module as a
+`main script <https://docs.python.org/3/using/cmdline.html#cmdoption-m>`_:
+``python -m <modname> <command>``, where ``<modname>`` is the name of your
+module (e.g. `foo.bar`) and command follows the following rules:
+
 
 -  If ``<command>`` is ``all``, then each enabled doctest in the module
    is executed: ``python -m <modname> all``
@@ -225,11 +229,14 @@ interface. ``python -m <modname> <command>``
 -  If ``<command>`` is ``dump``, then all doctests are converted into a format
    suitable for unit testing, and dumped to stdout (new in 0.4.0).
 
--  If ``<command>`` is a ``callname`` (name of a function or a class and
+-  If ``<command>`` is a "callname" (name of a function or a class and
    method), then that specific doctest is executed:
    ``python -m <modname> <callname>``. Note: you can execute disabled
    doctests or functions without any arguments (zero-args) this way.
 
+
+You can also run doctests
+:doc:`inside Jupyter Notebooks <../xdoc_with_jupyter>`.
 '''
 
 
@@ -237,7 +244,7 @@ __autogen__ = '''
 mkinit xdoctest --nomods
 '''
 
-__version__ = '0.15.0'
+__version__ = '0.15.1'
 
 
 # Expose only select submodules
