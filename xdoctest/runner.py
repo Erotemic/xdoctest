@@ -407,7 +407,7 @@ def _print_summary_report(run_summary, parse_warnlist, n_seconds,
     # color text based on worst type of error
     if n_failed > 0:
         cprint(summary_line, 'red')
-    elif n_warnings > 0:
+    elif n_warnings > 0 or (n_passed == 0 and n_skipped > 0):
         cprint(summary_line, 'yellow')
     else:
         cprint(summary_line, 'green')
