@@ -9,3 +9,5 @@ six
 Pygments
 
 ubelt
+
+sphinx-reredirects

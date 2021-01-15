@@ -109,8 +109,15 @@ extensions = [
     'sphinx.ext.autosummary',
 
     'sphinx.ext.githubpages',
-
+    # 'sphinxcontrib.redirects',
+    'sphinx_reredirects',
 ]
+
+
+redirects = {
+    "index": "autoapi/xdoctest/index.html",
+}
+
 
 autoapi_modules = {
     modname: {
@@ -283,9 +290,9 @@ Test if it worked:
 
 intersphinx_mapping = {
     'pytest': ('https://docs.pytest.org/en/latest/', None),
-    'pytest._pytest.doctest': ('https://docs.pytest.org/en/latest/_modules/_pytest/doctest.html', None),
-    'pygments': ('https://pygments-doc.readthedocs.io/en/latest/', None),
-    'colorama': ('https://pypi.org/project/colorama/', None),
+    # 'pytest._pytest.doctest': ('https://docs.pytest.org/en/latest/_modules/_pytest/doctest.html', None),
+    # 'pygments': ('https://pygments-doc.readthedocs.io/en/latest/', None),
+    # 'colorama': ('https://pypi.org/project/colorama/', None),
     'python': ('https://docs.python.org/3', None),
     # 'ubelt': ('https://readthedocs.org/projects/ubelt/', None),
     # 'numpy': ('http://docs.scipy.org/doc/numpy/', None),
