@@ -229,7 +229,7 @@ jobs:
       - PYTHON_EXE: pypy3
     working_directory: ~/repo-full-pypy3
         
-.__heredoc__: &__heredoc__
+.__doc__: &__doc__
     - | 
         IMAGE_NAME=circleci/python:3.9
         docker pull $IMAGE_NAME

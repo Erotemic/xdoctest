@@ -20,6 +20,16 @@ Notes:
     make html
     sphinx-apidoc -f -o ~/code/xdoctest/docs/source ~/code/xdoctest/xdoctest --separate
     make html
+
+    Also:
+        To turn on PR checks
+
+        https://docs.readthedocs.io/en/stable/guides/autobuild-docs-for-pull-requests.html
+
+        https://readthedocs.org/dashboard/xdoctest/advanced/
+
+        ensure your github account is connected to readthedocs
+        https://readthedocs.org/accounts/social/connections/
 """
 #
 # Configuration file for the Sphinx documentation builder.
