@@ -13,7 +13,7 @@ workflows:
   version: 2
   test:
     jobs:
-      - test-full-3.9-rc
+      - test-full-3.9
       - test-full-3.8
       - test-full-3.7
       - test-full-3.6
@@ -21,7 +21,7 @@ workflows:
       - test-full-3.4
       - test-full-2.7
 
-      - test-minimal-3.9-rc
+      - test-minimal-3.9
       - test-minimal-3.8
       - test-minimal-3.7
       - test-minimal-3.6
@@ -125,11 +125,11 @@ jobs:
   # All we need to do is change the base docker image so python is the
   # version we want we can reuse everything else from the template
   
-  test-full-3.9-rc:
+  test-full-3.9:
     <<: *test-full-template
     docker:
-      - image: circleci/python:3.9-rc
-    working_directory: ~/repo-full-39-rc
+      - image: circleci/python:3.9
+    working_directory: ~/repo-full-39
   
   test-full-3.8:
     <<: *test-full-template
@@ -169,11 +169,11 @@ jobs:
 
   # ------------
   
-  test-minimal-3.9-rc:
+  test-minimal-3.9:
     <<: *test-minimal-template
     docker:
-      - image: circleci/python:3.9-rc
-    working_directory: ~/repo-minimal-39-rc
+      - image: circleci/python:3.9
+    working_directory: ~/repo-minimal-39
   
   test-minimal-3.8:
     <<: *test-minimal-template
@@ -309,3 +309,15 @@ jobs:
 
         JOB_NAME=test-full-pypy3
         circleci local execute --job $JOB_NAME
+
+        # Run circleci scripts on a local machine
+        mkdir -p $HOME/Downloads
+        curl -fLSs https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/master/install.sh | DESTDIR=$HOME/Downloads bash
+
+        $HOME/.local/bin/circleci update
+        $HOME/.local/bin/circleci switch
+
+        $HOME/.local/bin/circleci config validate
+        $HOME/.local/bin/circleci local execute --job test_minimal_3.9
+        $HOME/.local/bin/circleci local execute --config .circleci/config.yml --job test_full/cp38-38-linux
+        $HOME/.local/bin/circleci local execute --config .circleci/config.yml 
