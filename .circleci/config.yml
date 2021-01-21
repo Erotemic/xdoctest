@@ -318,6 +318,7 @@ jobs:
         $HOME/.local/bin/circleci switch
 
         $HOME/.local/bin/circleci config validate
-        $HOME/.local/bin/circleci local execute --job test_minimal_3.9
+        $HOME/.local/bin/circleci local execute --job test-minimal-3.9
+        $HOME/.local/bin/circleci local execute --job test-minimal-3.5
         $HOME/.local/bin/circleci local execute --config .circleci/config.yml --job test_full/cp38-38-linux
         $HOME/.local/bin/circleci local execute --config .circleci/config.yml 

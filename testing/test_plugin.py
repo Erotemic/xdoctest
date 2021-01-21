@@ -9,6 +9,7 @@ import _pytest._code
 from xdoctest.plugin import XDoctestItem, XDoctestModule, XDoctestTextfile
 from xdoctest import utils
 import pytest
+from distutils.version import LooseVersion
 
 PY36 = sys.version_info[:2] >= (3, 6)
 MODULE_NOT_FOUND_ERROR = 'ModuleNotFoundError' if PY36 else 'ImportError'
@@ -215,7 +216,7 @@ class TestXDoctest(object):
             '*1 passed*',
         ])
 
-    if False:
+    if LooseVersion(pytest.__version__) < LooseVersion('6.2.1'):
         @pytest.mark.parametrize(
             '   test_string,    encoding',
             [
@@ -239,21 +240,13 @@ class TestXDoctest(object):
                 {1}
             """.format(test_string, repr(test_string))
 
-            if hasattr(testdir, '_makefile'):
-                testdir._makefile(".txt", [xdoctest], {}, encoding=encoding)
+            testdir._makefile(".txt", [xdoctest], {}, encoding=encoding)
 
-                result = testdir.runpytest(*(EXTRA_ARGS + OLD_TEXT_ARGS))
+            result = testdir.runpytest(*(EXTRA_ARGS + OLD_TEXT_ARGS))
 
-                result.stdout.fnmatch_lines([
-                    '*1 passed*',
-                ])
-            else:
-                # Version >6
-                pytester = testdir
-                fn = pytester.path / "test_encoding.txt"
-                fn.write_text(xdoctest, encoding=encoding)
-                result = pytester.runpytest()
-                result.stdout.fnmatch_lines(["*1 passed*"])
+            result.stdout.fnmatch_lines([
+                '*1 passed*',
+            ])
     else:
         @pytest.mark.parametrize(
             "   test_string,    encoding",
