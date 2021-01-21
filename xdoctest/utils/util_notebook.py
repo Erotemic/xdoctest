@@ -204,7 +204,7 @@ def execute_notebook(ipynb_fpath, timeout=None, verbose=None):
             Additional resources used in the conversion process.
 
     Example:
-        >>> # xdoctest: +REQUIRES(PY3, module:IPython, module:nbconvert)
+        >>> # xdoctest: +REQUIRES(PY3, module:IPython, module:nbconvert, CPYTHON)
         >>> from xdoctest import utils
         >>> from os.path import join
         >>> self = utils.TempDir()

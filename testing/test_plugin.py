@@ -6,10 +6,14 @@ Adapted from the original `pytest/testing/test_doctest.py` module at:
 from __future__ import print_function, division, absolute_import, unicode_literals
 import sys
 import _pytest._code
-from _pytest.compat import MODULE_NOT_FOUND_ERROR
 from xdoctest.plugin import XDoctestItem, XDoctestModule, XDoctestTextfile
 from xdoctest import utils
 import pytest
+from distutils.version import LooseVersion
+
+PY36 = sys.version_info[:2] >= (3, 6)
+MODULE_NOT_FOUND_ERROR = 'ModuleNotFoundError' if PY36 else 'ImportError'
+
 
 EXTRA_ARGS = ['-p', 'pytester', '-p', 'no:doctest', '--xdoctest-nocolor']
 
@@ -212,35 +216,64 @@ class TestXDoctest(object):
             '*1 passed*',
         ])
 
-    @pytest.mark.parametrize(
-        '   test_string,    encoding',
-        [
-            (u'foo', 'ascii'),
-            (u'öäü', 'latin1'),
-            (u'öäü', 'utf-8')
-        ]
-    )
-    def test_encoding(self, testdir, test_string, encoding):
-        """Test support for xdoctest_encoding ini option.
+    if LooseVersion(pytest.__version__) < LooseVersion('6.2.1'):
+        @pytest.mark.parametrize(
+            '   test_string,    encoding',
+            [
+                (u'foo', 'ascii'),
+                (u'öäü', 'latin1'),
+                (u'öäü', 'utf-8')
+            ]
+        )
+        def test_encoding(self, testdir, test_string, encoding):
+            """Test support for xdoctest_encoding ini option.
 
-        CommandLine:
-            pytest testing/test_plugin.py::TestXDoctest::test_encoding
-        """
-        testdir.makeini("""
-            [pytest]
-            xdoctest_encoding={0}
-        """.format(encoding))
-        xdoctest = u"""
-            >>> u"{0}"
-            {1}
-        """.format(test_string, repr(test_string))
-        testdir._makefile(".txt", [xdoctest], {}, encoding=encoding)
+            CommandLine:
+                pytest testing/test_plugin.py::TestXDoctest::test_encoding
+            """
+            testdir.makeini("""
+                [pytest]
+                xdoctest_encoding={0}
+            """.format(encoding))
+            xdoctest = u"""
+                >>> u"{0}"
+                {1}
+            """.format(test_string, repr(test_string))
 
-        result = testdir.runpytest(*(EXTRA_ARGS + OLD_TEXT_ARGS))
+            testdir._makefile(".txt", [xdoctest], {}, encoding=encoding)
 
-        result.stdout.fnmatch_lines([
-            '*1 passed*',
-        ])
+            result = testdir.runpytest(*(EXTRA_ARGS + OLD_TEXT_ARGS))
+
+            result.stdout.fnmatch_lines([
+                '*1 passed*',
+            ])
+    else:
+        @pytest.mark.parametrize(
+            "   test_string,    encoding",
+            [("foo", "ascii"), ("öäü", "latin1"), ("öäü", "utf-8")],
+        )
+        def test_encoding(self, pytester, test_string, encoding):
+            """Test support for doctest_encoding ini option."""
+            pytester.makeini(
+                """
+                [pytest]
+                doctest_encoding={}
+            """.format(
+                    encoding
+                )
+            )
+            doctest = """
+                >>> "{}"
+                {}
+            """.format(
+                test_string, repr(test_string)
+            )
+            fn = pytester.path / "test_encoding.txt"
+            fn.write_text(doctest, encoding=encoding)
+
+            result = pytester.runpytest()
+
+            result.stdout.fnmatch_lines(["*1 passed*"])
 
     def test_xdoctest_options(self, testdir):
         """Test support for xdoctest_encoding ini option.

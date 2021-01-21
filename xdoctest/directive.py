@@ -15,6 +15,34 @@ Basic directives correspond directly to an xdoctest runtime state attribute.
 These can be modified by directly using the xdoctest directive syntax.
 The following documents all supported basic directives.
 
+The basic directives and their defaults are as follows:
+
+    * ``DONT_ACCEPT_BLANKLINE``: False,
+
+    * ``ELLIPSIS``: True,
+
+    * ``IGNORE_WHITESPACE``: False,
+
+    * ``IGNORE_EXCEPTION_DETAIL``: False,
+
+    * ``NORMALIZE_WHITESPACE``: True,
+
+    * ``IGNORE_WANT``: False,
+
+    * ``NORMALIZE_REPR``: True,
+
+    * ``REPORT_CDIFF``: False,
+
+    * ``REPORT_NDIFF``: False,
+
+    * ``REPORT_UDIFF``: True,
+
+    * ``SKIP``: False
+
+Use ``-`` to disable a directive that is enabled by default, e.g.
+``# xdoctest: -ELLIPSIS``, or use ``+`` to enable a directive that is disabled by
+default, e.g. ``# xdoctest +SKIP``.
+
 
 Advanced Directives
 -------------------
@@ -24,6 +52,19 @@ state in complex ways.  For instance, whereas most directives modify a boolean
 value in the runtime state, the advanced ``REQUIRES`` directive either adds or
 removes a value from a ``set`` of unmet requirements. Doctests will only run if
 there are no unmet requirements.
+
+Currently the only advanced directive is ``REQUIRES(.)``. Multiple arguments
+may be specified, by separating them with commas. The currently available
+arguments allow you to condition on:
+
+
+    * Speical operating system / python implementation / python version tags, via: ``WIN32``, ``LINUX``, ``DARWIN``, ``POSIX``, ``NT``, ``JAVA``, ``CPYTHON``, ``IRONPYTHON``, ``JYTHON``, ``PYPY``, ``PY2``, ``PY3``. (e.g. ``# xdoctest +REQUIRES(WIN32)``)
+
+    * Command line flags, via: ``--<someflag>``, (e.g. ``# xdoctest +REQUIRES(--verbose)``)
+
+    * If a python module is installed, via: ``module:<modname>``, (e.g. ``# xdoctest +REQUIRES(module:numpy)``)
+
+    * Environment variables, via: ``env:<varname>==<val>``, (e.g. ``# xdoctest +REQUIRES(env:MYENVIRON==1)``)
 
 
 CommandLine:

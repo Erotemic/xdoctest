@@ -715,6 +715,10 @@ class DocTest(object):
                 pytest.skip()
 
         summary = self._post_run(verbose)
+
+        # Clear the global namespace so doctests don't leak memory
+        self.global_namespace.clear()
+
         return summary
 
     @property
