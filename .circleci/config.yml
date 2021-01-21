@@ -278,7 +278,7 @@ jobs:
 
 
         IMAGE_NAME=pypy:3
-        docker run -v /home/joncrall/code/xdoctest:/io -it pypy:3 bash
+        docker run -v $HOME/code/xdoctest:/io -it pypy:3 bash
         ###
         ###
         # Clone the mounted repo for a fresh start
@@ -320,5 +320,6 @@ jobs:
         $HOME/.local/bin/circleci config validate
         $HOME/.local/bin/circleci local execute --job test-minimal-3.9
         $HOME/.local/bin/circleci local execute --job test-minimal-3.5
+        $HOME/.local/bin/circleci local execute --job test-full-2.7
         $HOME/.local/bin/circleci local execute --config .circleci/config.yml --job test_full/cp38-38-linux
         $HOME/.local/bin/circleci local execute --config .circleci/config.yml 
