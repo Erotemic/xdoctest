@@ -18,6 +18,11 @@ the pattern of test driven development.
 +---------------+-------------------------------------------+
 | Pypi          | https://pypi.org/project/xdoctest         |
 +---------------+-------------------------------------------+
+| PyCon 2020    | `Youtube Video`_ and `Google Slides`_     |
++---------------+-------------------------------------------+
+
+.. _Youtube Video: https://www.youtube.com/watch?v=CUjCqOw_oFk
+.. _Google Slides: https://docs.google.com/presentation/d/1563XL-n7534QmktrkLSjVqX36z5uhjUFrPw8wIO6z1c
 
 
 Getting Started 0:  Installation
@@ -95,7 +100,9 @@ Interestingly because this documentation is written in the
 doctests in it.  If you have xdoctest installed, you can use the xdoctest cli
 to execute the following code:  ``xdoctest -m xdoctest.__init__ __doc__:0``.
 Also notice that the previous code prefixed with ``>>> `` is skipped due to the
-xdoctest ``SKIP`` :ref:`directive<directive>`.
+xdoctest ``SKIP`` :doc:`directive<xdoctest.directive>`. For more information on
+directives see :doc:`the docs for the xdoctest directive
+module<xdoctest.directive>`.
 
 
 .. code:: python
