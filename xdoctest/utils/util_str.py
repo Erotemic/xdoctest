@@ -89,7 +89,9 @@ def color_text(text, color):
             # Hack on win32 to support colored output
             try:
                 import colorama
-                colorama.init()
+                if colorama.initialise.atexit_done is None:
+                    # Only init if it hasn't been done
+                    colorama.init()
             except ImportError as ex:
                 import warnings
                 warnings.warn('os is win32 and colorma is not installed {!r}'.format(ex))
@@ -195,21 +197,33 @@ def highlight_code(text, lexer_name='python', **kwargs):
         'c': 'cpp',
     }.get(lexer_name.replace('.', ''), lexer_name)
 
-    if sys.platform.startswith('win32'):  # nocover
-        # Hack on win32 to support colored output
-        import os
-        if os.environ.get('XDOC_WIN32_COLORS', 'False') == 'False':
-            # hack: dont color on windows by default, but do init colorama
-            return text
+    # if sys.platform.startswith('win32'):  # nocover
+    #     # Hack on win32 to support colored output
+    #     import os
+    #     if os.environ.get('XDOC_WIN32_COLORS', 'False') == 'False':
+    #         # hack: dont color on windows by default, but do init colorama
+    #         return text
 
     try:
         import pygments
         import pygments.lexers
         import pygments.formatters
         import pygments.formatters.terminal
+
+        if sys.platform.startswith('win32'):  # nocover
+            # Hack on win32 to support colored output
+            import colorama
+            if colorama.initialise.atexit_done is None:
+                # Only init if it hasn't been done
+                colorama.init()
+
+        # formater = pygments.formatters.terminal.TerminalFormatter(bg='dark')
+        # lexer = pygments.lexers.get_lexer_by_name(lexer_name, ensurenl=False, **kwargs)
+        # new_text = pygments.highlight(text, lexer, formater)
         formater = pygments.formatters.terminal.TerminalFormatter(bg='dark')
-        lexer = pygments.lexers.get_lexer_by_name(lexer_name, ensurenl=False, **kwargs)
+        lexer = pygments.lexers.get_lexer_by_name(lexer_name, **kwargs)
         new_text = pygments.highlight(text, lexer, formater)
+
     except ImportError:  # nocover
         # warnings.warn('pygments is not installed')
         new_text = text
