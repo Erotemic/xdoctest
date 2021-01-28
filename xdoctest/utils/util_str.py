@@ -216,12 +216,12 @@ def highlight_code(text, lexer_name='python', **kwargs):
         import pygments.formatters
         import pygments.formatters.terminal
 
-        # formater = pygments.formatters.terminal.TerminalFormatter(bg='dark')
-        # lexer = pygments.lexers.get_lexer_by_name(lexer_name, ensurenl=False, **kwargs)
-        # new_text = pygments.highlight(text, lexer, formater)
         formater = pygments.formatters.terminal.TerminalFormatter(bg='dark')
-        lexer = pygments.lexers.get_lexer_by_name(lexer_name, **kwargs)
+        lexer = pygments.lexers.get_lexer_by_name(lexer_name, ensurenl=False, **kwargs)
         new_text = pygments.highlight(text, lexer, formater)
+        # formater = pygments.formatters.terminal.TerminalFormatter(bg='dark')
+        # lexer = pygments.lexers.get_lexer_by_name(lexer_name, **kwargs)
+        # new_text = pygments.highlight(text, lexer, formater)
 
     except ImportError:  # nocover
         warnings.warn('pygments is not installed, code will not be highlighted')

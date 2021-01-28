@@ -57,7 +57,6 @@ def test_continue_ambiguity():
     assert result['passed']
 
 
-
 def test_failed_assign_want():
     """
     pytest testing/test_doctest_example.py::test_exit_test_exception
