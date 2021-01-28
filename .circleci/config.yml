@@ -230,12 +230,15 @@ workflows:
       - test_minimal/pypy3
       - test_full/pypy3
 
-      - gpgsign/cp38-cp38-linux:
-          filters:
-            branches:
-              only: 
-                 - master
-                 - release
+      - test_full/pypy3
+      - gpgsign/cp38-38-linux
+
+      #- gpgsign/cp38-cp38-linux:
+      #    filters:
+      #      branches:
+      #        only: 
+      #           - master
+      #           - release
 
       - deploy/cp38-cp38-linux:
           filters:
@@ -419,7 +422,7 @@ jobs:
   # All we need to do is change the base docker image so python is the
   # version we want we can reuse everything else from the template
   
-  test_full/cp39-cp39-linux:
+  test_full/cp39-39-linux:
     <<: *test_full_template
     docker:
       - image: circleci/python:3.9
@@ -510,13 +513,13 @@ jobs:
  
   # -- gpgsign + deploy
   
-  gpgsign/cp38-cp38-linux:
+  gpgsign/cp38-38-linux:
     <<: *gpgsign_template
     docker:
       - image: circleci/python:3.8
 
 
-  deploy/cp38-cp38-linux:
+  deploy/cp38-38-linux:
     <<: *deploy_template
     docker:
       - image: circleci/python:3.8
