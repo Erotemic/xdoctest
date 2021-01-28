@@ -843,16 +843,19 @@ def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True,
 
 def is_balanced_statement(lines, only_tokens=False):
     r"""
-    Checks if the lines have balanced parens, brakets, curlies and strings
+    Checks if the lines have balanced braces and quotes.
 
     Args:
-        lines (list): list of strings
+        lines (List[str]): list of strings, one for each line
 
     Returns:
-        bool: False if the statement is not balanced
+        bool: True if the statement is balanced, otherwise False
 
     CommandLine:
         xdoctest -m xdoctest.static_analysis is_balanced_statement
+
+    References:
+        https://stackoverflow.com/questions/46061949/parse-until-complete
 
     Doctest:
         >>> assert is_balanced_statement(['print(foobar)'])

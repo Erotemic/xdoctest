@@ -5,7 +5,7 @@ import sys
 from os.path import exists
 
 
-def parse_version(fpath='xdoctest/__init__.py'):
+def parse_version(fpath):
     """
     Statically parse the version number from a python file
     """
