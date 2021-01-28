@@ -400,15 +400,15 @@ jobs:
             URL_HOST=$(git remote get-url origin | sed -e 's|https\?://.*@||g' | sed -e 's|https\?://||g')
             echo "URL_HOST = $URL_HOST"
             # A git config user name and email is required. Set if needed.
-            if [[ "$(git config user.email)" == "" ]; then
+            if [[ "$(git config user.email)" == "" ]]; then
                 git config user.email "ci@circleci.com"
                 git config user.name "CircleCI"
             fi
             if [ $(git tag -l "$VERSION") ]; then
+                echo "Tag already exists"
+            else
                 git tag $VERSION -m "tarball tag $VERSION"
                 git push --tags "https://${GIT_PUSH_TOKEN}@${URL_HOST}"
-            else
-                echo "Tag already exists"
             fi
 
 
