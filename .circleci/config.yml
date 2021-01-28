@@ -75,7 +75,7 @@ __doc__: &__doc__
         Instructions:
 
             Browse to: 
-                https://app.circleci.com/settings/project/github/GITHUB_USER/PYPKG/environment-variables
+                https://app.circleci.com/settings/project/github/Erotemic/xdoctest/environment-variables
 
             Do whatever you need to locally access the values of these variables
 
@@ -260,6 +260,7 @@ jobs:
       - image: circleci/python
     steps:
       - checkout
+    working_directory: ~/{{ .Environment.CIRCLE_JOB }}
 
   .test_minimal_template: &test_minimal_template  
     <<: 
