@@ -233,14 +233,14 @@ workflows:
       - test_full/pypy3
       - gpgsign/cp38-38-linux
 
-      #- gpgsign/cp38-cp38-linux:
+      #- gpgsign/cp38-38-linux:
       #    filters:
       #      branches:
       #        only: 
       #           - master
       #           - release
 
-      - deploy/cp38-cp38-linux:
+      - deploy/cp38-38-linux:
           filters:
             branches:
               only: 
@@ -459,7 +459,7 @@ jobs:
 
   # ------------
   
-  test_minimal/cp39-cp39-linux:
+  test_minimal/cp39-39-linux:
     <<: *test_full_template
     docker:
       - image: circleci/python:3.9
@@ -533,7 +533,7 @@ jobs:
         load_secrets
         circleci local execute \
             -e CIRCLE_CI_SECRET=$CIRCLE_CI_SECRET \
-            --job gpgsign/cp38-cp38-linux
+            --job gpgsign/cp38-38-linux
 
 
         IMAGE_NAME=circleci/python:3.9
@@ -612,7 +612,7 @@ jobs:
         JOB_NAME=test_minimal/pypy3
         circleci local execute --job $JOB_NAME
 
-        circleci local execute --job gpgsign/cp38-cp38-linux
+        circleci local execute --job gpgsign/cp38-38-linux
 
         JOB_NAME=test_full/pypy3
         circleci local execute --job $JOB_NAME
