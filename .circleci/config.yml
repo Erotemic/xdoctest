@@ -293,6 +293,8 @@ jobs:
           command: |
             . venv/bin/activate
             python run_tests.py
+            # Upload to codecov.io (requires a CODECOV_TOKEN environ or github+circleci integration)
+            codecov
       - store_artifacts:
           path: test-reports
           destination: test-reports
@@ -330,6 +332,8 @@ jobs:
           command: |
             . venv/bin/activate
             python run_tests.py
+            # Upload to codecov.io (requires a CODECOV_TOKEN environ or github+circleci integration)
+            codecov
       - store_artifacts:
           path: test-reports
           destination: test-reports
