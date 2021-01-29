@@ -11,3 +11,4 @@ recursive-include docs *.txt
 recursive-include docs Makefile
 recursive-include requirements *.txt
 recursive-include testing *.py
+recursive-include testing *.ipynb
