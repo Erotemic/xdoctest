@@ -292,12 +292,13 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            # pip install pytest-cov==2.8.1  # hack to avoid regression
-            #python run_tests.py
-            python -m pytest --cov=xdoctest --cov-config .coveragerc --cov-report term -s
+            python run_tests.py
       - store_artifacts:
           path: test-reports
           destination: test-reports
+      - store_artifacts:
+          path: .coverage
+          destination: .coverage
 
 
   .test_full_template: &test_full_template  
@@ -328,12 +329,13 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            # pip install pytest-cov==2.8.1  # hack to avoid regression
-            #python run_tests.py
-            python -m pytest --cov=xdoctest --cov-config .coveragerc --cov-report term -s
+            python run_tests.py
       - store_artifacts:
           path: test-reports
           destination: test-reports
+      - store_artifacts:
+          path: .coverage
+          destination: .coverage
 
   .gpgsign_template: &gpgsign_template  
     <<: 

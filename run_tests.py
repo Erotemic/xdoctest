@@ -1,14 +1,18 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 if __name__ == '__main__':
     import pytest
     import sys
-    # NOTE: it is important to return the correct error code
-    sys.exit(pytest.main([
+    package_name = 'xdoctest'
+    pytest_args = [
         '-p', 'pytester',
         '-p', 'no:doctest',
-        '--cov=xdoctest',
         '--cov-config', '.coveragerc',
         '--cov-report', 'html',
         '--cov-report', 'term',
         '--xdoctest',
-    ] + sys.argv[1:]))
+        '--cov=' + package_name,
+        package_name, 'testing'
+    ]
+    pytest_args = pytest_args + sys.argv[1:]
+    sys.exit(pytest.main(pytest_args))
