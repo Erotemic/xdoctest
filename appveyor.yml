@@ -1,3 +1,7 @@
+# Notes: Rolling Builds AKA Autocancel redundant builds
+# https://www.appveyor.com/docs/build-configuration/#rolling-builds
+# https://ci.appveyor.com/project/Erotemic/xdoctest/settings
+
 image: 
 - Visual Studio 2015
 

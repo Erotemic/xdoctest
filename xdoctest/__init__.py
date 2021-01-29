@@ -45,7 +45,7 @@ the pattern of test driven development.
 Getting Started 0:  Installation
 --------------------------------
 
-First ensure that you have :doc:`Python installed <../installing_python>` and
+First ensure that you have :doc:`Python installed <../../installing_python>` and
 ideally are in a virtual environment. Install xdoctest using the pip.
 
 .. code:: bash
@@ -282,7 +282,7 @@ __autogen__ = '''
 mkinit xdoctest --nomods
 '''
 
-__version__ = '0.15.3'
+__version__ = '0.15.4'
 
 
 # Expose only select submodules

@@ -5,7 +5,13 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Version 0.15.3 - Unreleased
+## Version 0.15.4 - Unreleased
+
+### Fixed
+* Minor issues with release tarballs. 
+
+
+## Version 0.15.3 - Released 2021-01-28
 
 ### Fixed
 * Color issues on win32
@@ -15,13 +21,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Moved to CircleCI deploy scripts
 
 
-## Version 0.15.2 - Unreleased
+## Version 0.15.2 - Released 2021-01-28
 
 ### Fixed
 * Bug where references to doctest variables were never released
 
 
-## Version 0.15.1 - Unreleased
+## Version 0.15.1 - Released 2021-01-28
 
 ### Added
 * Documentation improvements
