@@ -1,10 +1,62 @@
+def argsort(indexable, key=None, reverse=False):
+    """
+    Returns the indices that would sort a indexable object.
+
+    This is similar to :func:`numpy.argsort`, but it is written in pure python
+    and works on both lists and dictionaries.
+
+    Args:
+        indexable (Iterable[B] | Mapping[A, B]): indexable to sort by
+
+        key (Callable[[A], B], default=None):
+            customizes the ordering of the indexable
+
+        reverse (bool, default=False): if True returns in descending order
+
+    Returns:
+        List[int]: indices - list of indices such that sorts the indexable
+
+    Example:
+        >>> # argsort works on dicts by returning keys
+        >>> dict_ = {'a': 3, 'b': 2, 'c': 100}
+        >>> indices = argsort(dict_)
+        >>> # argsort works on lists by returning indices
+        >>> indexable = [100, 2, 432, 10]
+        >>> indices = argsort(indexable)
+        >>> # Can use iterators, but be careful. It exhausts them.
+        >>> indexable = reversed(range(100))
+        >>> indices = argsort(indexable)
+        >>> assert indices[0] == 99
+        >>> # Can use key just like sorted
+        >>> indexable = [[0, 1, 2], [3, 4], [5]]
+        >>> indices = argsort(indexable, key=len)
+        >>> # Can use reverse just like sorted
+        >>> indexable = [0, 2, 1]
+        >>> indices = argsort(indexable, reverse=True)
+    """
+    try:
+        from collections import abc as collections_abc
+    except Exception:  # nocover
+        import collections as collections_abc
+    # Create an iterator of value/key pairs
+    if isinstance(indexable, collections_abc.Mapping):
+        vk_iter = ((v, k) for k, v in indexable.items())
+    else:
+        vk_iter = ((v, k) for k, v in enumerate(indexable))
+    # Sort by values and extract the indices
+    if key is None:
+        indices = [k for v, k in sorted(vk_iter, reverse=reverse)]
+    else:
+        # If key is provided, call it using the value as input
+        indices = [k for v, k in sorted(vk_iter, key=lambda vk: key(vk[0]),
+                                        reverse=reverse)]
+    return indices
 
 
 def convert_file_docstrings(path_to_convert, dry=True):
     """
     path_to_convert = ub.expandpath('~/code/networkx/networkx/algorithms/isomorphism/_embeddinghelpers/balanced_sequence.py')
     """
-    import ubelt as ub
     from xdoctest.core import package_calldefs
     pkg_calldefs = list(package_calldefs(path_to_convert))
     def recnone(val, default):
@@ -12,9 +64,10 @@ def convert_file_docstrings(path_to_convert, dry=True):
 
     for calldefs, modpath in pkg_calldefs:
         to_insert = []
-        old_text = ub.readfrom(modpath)
+        with open(modpath, 'r') as file:
+            old_text = file.read()
         old_lines = old_text.split('\n')
-        sortnames = ub.argsort(calldefs, key=lambda node: recnone(node.doclineno, -1))
+        sortnames = argsort(calldefs, key=lambda node: recnone(node.doclineno, -1))
         for name in sortnames:
             node = calldefs[name]
             if node.docstr is not None:
@@ -30,7 +83,7 @@ def convert_file_docstrings(path_to_convert, dry=True):
         new_lines = old_lines.copy()
         for start, stop, body_lines in to_insert:
             old_middle = old_lines[start - 1:stop]
-            print('old_middle = {}'.format(ub.repr2(old_middle, nl=1)))
+            print('old_middle = {}'.format(old_middle))
             print('start = {!r}'.format(start))
             startline = new_lines[start - 1]
             print('startline = {!r}'.format(startline))
@@ -54,7 +107,8 @@ def convert_file_docstrings(path_to_convert, dry=True):
             print(xdev.misc.difftext(old_text, new_text, context_lines=10, colored=True))
             print('^^^ modpath = {!r}'.format(modpath))
         else:
-            ub.writeto(modpath, new_text, verbose=3)
+            with open(modpath, 'w') as file:
+                file.write(new_text)
 
 
 def google_to_numpy_docstr(docstr):
@@ -68,7 +122,7 @@ def google_to_numpy_docstr(docstr):
     Returns:
         str: numpy style docstring
     """
-    import ubelt as ub
+    from xdoctest.utils.util_str import indent as indent_fn
     from xdoctest.docstr import docscrape_google
     docblocks = docscrape_google.split_google_docblocks(docstr)
     new_parts = []
@@ -86,7 +140,7 @@ def google_to_numpy_docstr(docstr):
                 docscrape_google.parse_google_argblock(old_body))
             parts = []
             for info in arginfos:
-                info['desc'] = ub.indent(info['desc'])
+                info['desc'] = indent_fn(info['desc'])
                 p = '{name}: {type}\n{desc}'.format(**info)
                 parts.append(p)
                 parts.append('')
@@ -96,7 +150,7 @@ def google_to_numpy_docstr(docstr):
                 docscrape_google.parse_google_retblock(old_body))
             parts = []
             for info in retinfos:
-                info['desc'] = ub.indent(info['desc'])
+                info['desc'] = indent_fn(info['desc'])
                 info['name'] = info.get('name', '')
                 parts.append('{name}: {type}\n{desc}'.format(**info))
                 parts.append('')
