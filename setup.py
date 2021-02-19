@@ -170,6 +170,7 @@ def native_mb_python_tag(plat_impl=None, version_info=None):
             else:
                 abi = 'm'
         else:
+            import sys
             if sys.version_info[:2] >= (3, 8):
                 # bpo-36707: 3.8 dropped the m flag
                 abi = ''
