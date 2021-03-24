@@ -15,9 +15,19 @@ creating, and activating a virtual environment.
     # Download the conda install script into a temporary directory
     mkdir -p ~/tmp
     cd ~/tmp
-    CONDA_INSTALL_SCRIPT=Miniconda3-latest-Linux-x86_64.sh
+
+    # To update to a newer version see:
+    # https://docs.conda.io/en/latest/miniconda_hashes.html for updating
+    CONDA_INSTALL_SCRIPT=Miniconda3-py38_4.9.2-Linux-x86_64.sh
+    CONDA_EXPECTED_SHA256=1314b90489f154602fd794accfc90446111514a5a72fe1f71ab83e07de9504a7
     curl https://repo.anaconda.com/miniconda/$CONDA_INSTALL_SCRIPT > $CONDA_INSTALL_SCRIPT
-    chmod +x $CONDA_INSTALL_SCRIPT
+    CONDA_GOT_SHA256=$(sha256sum $CONDA_INSTALL_SCRIPT | cut -d' ' -f1)
+    # For security, it is important to verify the hash
+    if [[ "$CONDA_GOT_SHA256" != "$CONDA_EXPECTED_SHA256_HASH" ]]; then
+        echo "Downloaded file does not match hash! DO NOT CONTINUE!"
+        exit 1;
+    fi
+    chmod +x $CONDA_INSTALL_SCRIPT 
 
     # Install miniconda to user local directory
     _CONDA_ROOT=$HOME/.local/conda
@@ -29,8 +39,7 @@ creating, and activating a virtual environment.
     conda create --name py38 python=3.8 --yes 
 
     # Activate your vitualenv
-    # I recommend adding the following steps to your ~/.bashrc
-    _CONDA_ROOT=$HOME/.local/conda
+    # I recommend doing something similar in your ~/.bashrc
     source $_CONDA_ROOT/etc/profile.d/conda.sh
     conda activate py38
 
@@ -53,6 +62,5 @@ virtual environment whenever you start a new bash shell.
 For other operating systems, see the official documentation to install conda 
 `on Windows <https://docs.conda.io/projects/conda/en/latest/user-guide/install/windows.html>`_ or 
 `on MacOS <https://docs.conda.io/projects/conda/en/latest/user-guide/install/macos.html>`_.
-
 
 Once conda is installed the commands for `managing conda virtual environments <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#>`_ are roughly the same across platforms. 
