@@ -278,7 +278,11 @@ def _setup_fixtures(xdoctest_item):
     fm = xdoctest_item.session._fixturemanager
     xdoctest_item._fixtureinfo = fm.getfixtureinfo(
         node=xdoctest_item, func=func, cls=None, funcargs=False)
-    fixture_request = fixtures.FixtureRequest(xdoctest_item)
+    # Note: FixtureRequest may change in the future, we are using
+    # private functionality. Hopefully it wont break, but we should
+    # check to see if there is a better way to do this
+    # https://github.com/pytest-dev/pytest/discussions/8512#discussioncomment-563347
+    fixture_request = fixtures.FixtureRequest(xdoctest_item, _ispytest=True)
     fixture_request._fillfixtures()
     return fixture_request
 

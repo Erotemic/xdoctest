@@ -386,7 +386,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: build_gpg_deps
+          name: gpg_sign_dist
           command: |
             $PYTHON_EXE -m venv venv || virtualenv -v venv  # first command is python3 || second is python2
             . venv/bin/activate
