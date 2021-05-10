@@ -149,7 +149,7 @@ def build_demo_extmod():
         else:
             try:
                 from pip.__main__ import _main as pip_main
-            except AttributeError:
+            except (AttributeError, ImportError):
                 from pip._internal import main as pip_main
 
             if callable(pip_main):
