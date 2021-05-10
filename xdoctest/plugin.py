@@ -19,6 +19,7 @@ from __future__ import absolute_import, division, print_function
 import pytest
 from _pytest._code import code
 from _pytest import fixtures
+from distutils.version import LooseVersion
 # import traceback
 
 
@@ -267,6 +268,9 @@ class XDoctestModule(_XDoctestBase):
                 yield XDoctestItem(name, self, example)
 
 
+_PYTEST_IS_GE_361 = LooseVersion(pytest.__version__) >= LooseVersion('3.6.1')
+
+
 def _setup_fixtures(xdoctest_item):
     """
     Used by XDoctestTextfile and XDoctestItem to setup fixture information.
@@ -282,7 +286,11 @@ def _setup_fixtures(xdoctest_item):
     # private functionality. Hopefully it wont break, but we should
     # check to see if there is a better way to do this
     # https://github.com/pytest-dev/pytest/discussions/8512#discussioncomment-563347
-    fixture_request = fixtures.FixtureRequest(xdoctest_item, _ispytest=True)
+    if _PYTEST_IS_GE_361:
+        # The "_ispytest" arg was added in 3.6.1
+        fixture_request = fixtures.FixtureRequest(xdoctest_item, _ispytest=True)
+    else:
+        fixture_request = fixtures.FixtureRequest(xdoctest_item)
     fixture_request._fillfixtures()
     return fixture_request
 
