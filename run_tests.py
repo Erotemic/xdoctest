@@ -7,12 +7,16 @@ if __name__ == '__main__':
     pytest_args = [
         '-p', 'pytester',
         '-p', 'no:doctest',
+        '--xdoctest',
         '--cov-config', '.coveragerc',
         '--cov-report', 'html',
         '--cov-report', 'term',
-        '--xdoctest',
         '--cov=' + package_name,
         package_name, 'testing'
     ]
     pytest_args = pytest_args + sys.argv[1:]
-    sys.exit(pytest.main(pytest_args))
+    print('pytest.__version__ = {!r}'.format(pytest.__version__))
+    print('pytest_args = {!r}'.format(pytest_args))
+    ret = pytest.main(pytest_args)
+    print('ret = {!r}'.format(ret))
+    sys.exit(ret)
