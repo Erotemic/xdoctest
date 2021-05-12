@@ -268,9 +268,8 @@ class XDoctestModule(_XDoctestBase):
                 yield XDoctestItem(name, self, example)
 
 
-# _PYTEST_IS_GE_361 = LooseVersion(pytest.__version__) >= LooseVersion('3.6.1')
+_PYTEST_IS_GE_361 = LooseVersion(pytest.__version__) >= LooseVersion('3.6.1')
 _PYTEST_IS_GE_361 = 0
-# LooseVersion(pytest.__version__) >= LooseVersion('3.6.1')
 
 
 def _setup_fixtures(xdoctest_item):
