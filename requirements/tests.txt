@@ -2,15 +2,19 @@
 # 5.4.3
 
 # Pin maximum pytest versions for older python versions
+# TODO: determine what the actual minimum and maximum acceptable versions of
+# pytest (that are also compatible with xdoctest) are for each legacy python
+# major.minor version.
+
 pytest >= 3.3.1           ;                              python_version >= '3.7.0'
 pytest >= 4.6.0, <= 6.2.0 ; python_version < '3.7.0' and python_version >= '3.6.0'
 pytest >= 4.6.0, <= 5.0.0 ; python_version < '3.6.0' and python_version >= '3.5.0'
 pytest >= 3.3.1, <  4.7.0 ; python_version < '3.5.0'
 
 ##
-pytest-cov > 2.6.0          ;                              python_version >= '3.7.0'
-pytest-cov > 2.6.0, <=2.8.1 ; python_version < '3.7.0' and python_version >= '3.6.0'
-pytest-cov > 2.0.0, < 2.6.0 ; python_version < '3.5.0'
+pytest-cov > 2.6.0           ;                              python_version >= '3.7.0'
+pytest-cov > 2.6.0, <= 2.8.1 ; python_version < '3.7.0' and python_version >= '3.6.0'
+pytest-cov > 2.0.0, <  2.6.0 ; python_version < '3.6.0'
 
 codecov >= 2.0.15
 
