@@ -1,15 +1,19 @@
 # Tested with pytest versions:
 # 5.4.3
+# 6.2.2
+
+# TODO: 
+# Should run dashboards that test strict and loose versions of the requirements 
 
 # Pin maximum pytest versions for older python versions
 # TODO: determine what the actual minimum and maximum acceptable versions of
 # pytest (that are also compatible with xdoctest) are for each legacy python
 # major.minor version.
-
-pytest >= 3.3.1           ;                              python_version >= '3.7.0'
-pytest >= 4.6.0, <= 6.2.0 ; python_version < '3.7.0' and python_version >= '3.6.0'
-pytest >= 4.6.0, <= 5.0.0 ; python_version < '3.6.0' and python_version >= '3.5.0'
-pytest >= 3.3.1, <  4.7.0 ; python_version < '3.5.0'
+pytest >= 4.6.0            ;                              python_version >= '3.7.0'   # Python 3.7+
+pytest >= 4.6.0            ; python_version < '3.7.0' and python_version >= '3.6.0'   # Python 3.6
+pytest >= 4.6.0, <= 6.1.2  ; python_version < '3.6.0' and python_version >= '3.5.0'   # Python 3.5
+pytest >= 3.3.1, <= 4.6.11 ; python_version < '3.5.0' and python_version >= '3.4.0'   # Python 3.4
+pytest >= 3.3.1, <= 4.6.11 ; python_version < '2.8.0' and python_version >= '2.7.0'   # Python 2.7
 
 ##
 pytest-cov > 2.6.0           ;                              python_version >= '3.7.0'
