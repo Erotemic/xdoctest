@@ -268,8 +268,8 @@ class XDoctestModule(_XDoctestBase):
                 yield XDoctestItem(name, self, example)
 
 
-_PYTEST_IS_GE_361 = LooseVersion(pytest.__version__) >= LooseVersion('3.6.1')
-# _PYTEST_IS_GE_361 = 0
+_PYTEST_IS_GE_620 = LooseVersion(pytest.__version__) >= LooseVersion('6.2.0')
+# _PYTEST_IS_GE_620 = 0
 
 
 def _setup_fixtures(xdoctest_item):
@@ -287,7 +287,7 @@ def _setup_fixtures(xdoctest_item):
     # private functionality. Hopefully it wont break, but we should
     # check to see if there is a better way to do this
     # https://github.com/pytest-dev/pytest/discussions/8512#discussioncomment-563347
-    if _PYTEST_IS_GE_361:
+    if _PYTEST_IS_GE_620:
         # The "_ispytest" arg was added in 3.6.1
         fixture_request = fixtures.FixtureRequest(xdoctest_item, _ispytest=True)
     else:
