@@ -32,12 +32,12 @@ def main(argv=None):
         argv = sys.argv
 
     version_info = {
-        'xdoc_version': xdoctest.__version__,
+        'version': xdoctest.__version__,
         'sys_version': sys.version,
     }
 
     if '--version' in argv:
-        print(version_info['xdoc_version'])
+        print(version_info['version'])
         return 0
 
     if '--version-info' in argv:
@@ -54,7 +54,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(
         prog='xdoctest',
         description=(
-            'Xdoctest {xdoc_version} - on Python - {sys_version} - '
+            'Xdoctest {version} - on Python - {sys_version} - '
             'discover and run doctests within a python package'
         ).format(**version_info),
         formatter_class=RawDescriptionDefaultsHelpFormatter,

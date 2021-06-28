@@ -637,9 +637,9 @@ class DocTest(object):
                 except KeyboardInterrupt:  # nocover
                     raise
                 except (exceptions.ExitTestException,
-                        exceptions._pytest.outcomes.Skipped):
+                        exceptions._pytest.outcomes.Skipped) as ex:
                     if verbose > 0:
-                        print('Test gracefully exists')
+                        print('Test gracefully exists on: ex={}'.format(ex))
                     break
                 except checker.GotWantException:
                     # When the "got", does't match the "want"

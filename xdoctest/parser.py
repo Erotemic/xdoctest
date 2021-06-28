@@ -143,7 +143,7 @@ class DoctestParser(object):
         # If all lines begin with the same indentation, then strip it.
         min_indent = _min_indentation(string)
         if min_indent > 0:
-            string = '\n'.join([l[min_indent:] for l in string.splitlines()])
+            string = '\n'.join([ln[min_indent:] for ln in string.splitlines()])
 
         labeled_lines = None
         grouped_lines = None
