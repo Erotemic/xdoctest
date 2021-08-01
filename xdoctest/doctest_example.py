@@ -527,13 +527,6 @@ class DocTest(object):
         # if self.is_disabled():
         #     runstate['SKIP'] = True
 
-        # - [x] TODO: fix CaptureStdout so it doesn't break embedding shells
-        # don't capture stdout for zero-arg blocks
-        # needs_capture = self.block_type != 'zero-arg'
-        # I think the bug that broke embedding shells is fixed, so it is now
-        # safe to capture. If not, uncomment above lines. If this works without
-        # issue, then remove these notes in a future version.
-        # needs_capture = False
         needs_capture = True
 
         # Use the same capture object for all parts in the test
@@ -541,17 +534,34 @@ class DocTest(object):
                                   enabled=needs_capture)
         with warnings.catch_warnings(record=True) as self.warn_list:
             for partx, part in enumerate(self._parts):
+
+                # Prepare to capture stdout and evaluated values
+                self.failed_part = part  # Assume part will fail (it may not)
+                got_eval = constants.NOT_EVALED
+
                 # Extract directives and and update runtime state
-                runstate.update(part.directives)
+                part_directive = part.directives
+                try:
+                    try:
+                        runstate.update(part_directive)
+                    except Exception as ex:
+                        msg = (
+                            'Failed to parse directive: {} in {} at line {}. Caused by {}'.format(
+                                part_directive, self.fpath, self.lineno +
+                                part.line_offset, repr(ex)))
+                        raise Exception(msg)
+                except Exception:
+                    self.exc_info = sys.exc_info()
+                    self.failed_tb_lineno = 1  # is this the directive line?
+                    if on_error == 'raise':
+                        raise
+                    break
 
                 # Handle runtime actions
                 if runstate['SKIP'] or len(runstate['REQUIRES']) > 0:
                     self._skipped_parts.append(part)
                     continue
 
-                # Prepare to capture stdout and evaluated values
-                self.failed_part = part
-                got_eval = constants.NOT_EVALED
                 try:
                     # Compile code, handle syntax errors
                     #   part.compile_mode can be single, exec, or eval.
