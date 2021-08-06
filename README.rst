@@ -6,6 +6,47 @@
    :height: 100px
    :align: left
 
+
+XDoctest - Execute Doctests. A Python library for executing tests in your docstrings!
+
+What is a `doctest <https://en.wikipedia.org/wiki/Doctest>`__? 
+It is example code you write in a docstring!
+What is a `docstring <https://en.wikipedia.org/wiki/Docstring>`__? 
+Its a string you use as a comment! They get attached to Python functions and
+classes as metadata. They are often usesed to auto-generate documentation.
+Why is it cool?
+Because you can write tests while you code! 
+
+Tests are good. Documentation is good. Examples are good.
+Doctests have low boilerplate, you write them in the same file you write your
+code. It often can help you write the function. Create demo inputs so you can
+play with the implementation. Just write down how you do it in your function.
+
+.. code:: python
+
+
+    def an_algorithm(data, config):
+        """
+        Example:
+            >>> data = '([()[]])[{}([[]])]'
+            >>> config = {'outer': sum, 'inner': ord}
+            >>> an_algorithm(data, config)
+            1411
+        """
+        # I wrote this function by first finding some interesting demodata
+        # then I wrote the body in IPython and copied it back in. 
+        # Now I can re-use this test code I wrote in development as a test!
+        # Covered Code is much easier to debug (we have a MWE)!
+        result = config['outer'](map(config['inner'], data))
+        return result
+
+
+XDoctest finds and executes your doctests for you.
+Just run ``xdoctest <path-to-my-module>``.
+It plugs into pytest to make it easy to run on a CI. Install and run 
+``pytest --xdoctest``.
+
+
 The ``xdoctest`` package is a re-write of Python's builtin ``doctest``
 module. It replaces the old regex-based parser with a new
 abstract-syntax-tree based parser (using Python's ``ast`` module). The
@@ -179,7 +220,7 @@ modules belonging to the package.
 Zero-args runner
 ^^^^^^^^^^^^^^^^
 
-A benefit of using the native interface is the "zero-args" mode in the
+The native interface has a "zero-args" mode in the
 ``xdoctest`` runner. This allows you to run functions in your modules
 via the command line as long as they take no arguments. The purpose is
 to create a quick entry point to functions in your code (because
@@ -203,6 +244,9 @@ command ``python -m mymod myfunc``.
 Note, even though "zero-arg" functions can be run via this interface
 they are not run by ``python -m mymod all``, nor are they listed by
 ``python -m mymod list``.
+
+However, if you are doing this often, you may be better served by `fire
+<https://github.com/google/python-fire>`__.
 
 Enhancements
 ------------
