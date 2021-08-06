@@ -17,10 +17,15 @@ classes as metadata. They are often usesed to auto-generate documentation.
 Why is it cool?
 Because you can write tests while you code! 
 
-Tests are good. Documentation is good. Examples are good.
-Doctests have low boilerplate, you write them in the same file you write your
-code. It often can help you write the function. Create demo inputs so you can
-play with the implementation. Just write down how you do it in your function.
+Tests are good. Documentation is good. Examples are good.  Doctests have low
+boilerplate, you write them in the same file you write your code. It often can
+help you write the function. Write down how to construct minimal demo inputs
+(it helps to have tools to create these) in your file.  Copy that code into
+IPython/Jupyter, and play with your implementation.  Copy your finished code
+into the body. Write down how to call the function with the demo inputs. If you
+feel inclined, check that the result matches an expected result (while asserts
+and checks are nice, a test that just shows how to run the code is better than
+no test at all).
 
 .. code:: python
 
@@ -39,6 +44,9 @@ play with the implementation. Just write down how you do it in your function.
         # Covered Code is much easier to debug (we have a MWE)!
         result = config['outer'](map(config['inner'], data))
         return result
+
+
+The problem? How do you run the code in your doctest?
 
 
 XDoctest finds and executes your doctests for you.
