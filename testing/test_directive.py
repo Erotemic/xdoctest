@@ -72,6 +72,24 @@ def test_multi_requires_directive():
     assert stdout.count('is-skipped') == 0
 
 
+def test_directive_syntax_error():
+    string = utils.codeblock(
+        '''
+        >>> x = 0
+        >>> # doctest: +REQUIRES(module:xdoctest)
+        >>> print('not-skipped')
+        >>> # doctest: +REQUIRES(badsyntax)
+        >>> print('is-skipped')
+        ''')
+    self = doctest_example.DocTest(docsrc=string)
+    result = self.run(on_error='return')
+    assert not result['passed']
+    assert 'Failed to parse' in result['exc_info'][1].args[0]
+    assert 'line 4' in result['exc_info'][1].args[0]
+    stdout = ''.join(list(self.logged_stdout.values()))
+    assert stdout.count('not-skipped') == 1
+
+
 if __name__ == '__main__':
     """
     CommandLine:
