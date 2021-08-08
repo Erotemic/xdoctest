@@ -15,6 +15,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Directive syntax errors are now handled as doctest runtime errors and return
   better debugging information.
 
+* README and docs were improved
+
 
 ## Version 0.15.5 - Released 2021-06-27
 
