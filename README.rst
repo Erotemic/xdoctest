@@ -6,6 +6,56 @@
    :height: 100px
    :align: left
 
+
+Xdoctest - Execute Doctests. A Python package for executing tests in
+documentation strings!
+
+What is a `doctest <https://en.wikipedia.org/wiki/Doctest>`__? 
+It is example code you write in a docstring!
+What is a `docstring <https://en.wikipedia.org/wiki/Docstring>`__? 
+Its a string you use as a comment! They get attached to Python functions and
+classes as metadata. They are often used to auto-generate documentation.
+Why is it cool?
+Because you can write tests while you code! 
+
+Tests are good. Documentation is good. Examples are good.  Doctests have low
+boilerplate, you write them in the same file you write your code. It often can
+help you write the function. Write down how to construct minimal demo inputs
+(it helps to have tools to create these) in your file.  Copy that code into
+IPython/Jupyter, and play with your implementation.  Copy your finished code
+into the body. Write down how to call the function with the demo inputs. If you
+feel inclined, check that the result matches an expected result (while asserts
+and checks are nice, a test that just shows how to run the code is better than
+no test at all).
+
+.. code:: python
+
+
+    def an_algorithm(data, config):
+        """
+        Example:
+            >>> data = '([()[]])[{}([[]])]'
+            >>> config = {'outer': sum, 'inner': ord}
+            >>> an_algorithm(data, config)
+            1411
+        """
+        # I wrote this function by first finding some interesting demodata
+        # then I wrote the body in IPython and copied it back in. 
+        # Now I can re-use this test code I wrote in development as a test!
+        # Covered Code is much easier to debug (we have a MWE)!
+        result = config['outer'](map(config['inner'], data))
+        return result
+
+
+The problem? How do you run the code in your doctest?
+
+
+Xdoctest finds and executes your doctests for you.
+Just run ``xdoctest <path-to-my-module>``.
+It plugs into pytest to make it easy to run on a CI. Install and run 
+``pytest --xdoctest``.
+
+
 The ``xdoctest`` package is a re-write of Python's builtin ``doctest``
 module. It replaces the old regex-based parser with a new
 abstract-syntax-tree based parser (using Python's ``ast`` module). The
@@ -112,16 +162,15 @@ method might look like this: ``mymod.py::ClassName::method:0``
 Using the native interface.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ``xdoctest`` module contains a ``pytest`` plugin, but also contains
-a native interface. This interface is run programmatically using
-``xdoctest.doctest_module(path)``, which can be placed in the
-``__main__`` section of any module as such:
+In addition to the ``pytest`` plugin, xdoctest has a native doctest runner.
+This interface is run programmatically using ``xdoctest.doctest_module(path)``,
+which can be placed in the ``__main__`` section of any module as such:
 
 .. code:: python
 
     if __name__ == '__main__':
-        import xdoctest as xdoc
-        xdoc.doctest_module(__file__)
+        import xdoctest 
+        xdoctest.doctest_module(__file__)
 
 This sets up the ability to invoke the ``xdoctest`` command line
 interface. ``python -m <modname> <command>``
@@ -162,8 +211,8 @@ code:
         return a + 1
 
     if __name__ == '__main__':
-        import xdoctest as xdoc
-        xdoc.doctest_module(__file__)
+        import xdoctest 
+        xdoctest.doctest_module(__file__)
 
 You could 
 
@@ -172,14 +221,14 @@ You could
 * Use the command ``python -m mymod func1`` to run only func1's doctest
 * Use the command ``python -m mymod func2`` to run only func2's doctest
 
-Lastly, by running the command ``xdoc.doctest_module(<pkgname>)``,
+Lastly, by running the command ``xdoctest.doctest_module(<pkgname>)``,
 ``xdoctest`` will recursively find and execute all doctests within the
 modules belonging to the package.
 
 Zero-args runner
 ^^^^^^^^^^^^^^^^
 
-A benefit of using the native interface is the "zero-args" mode in the
+The native interface has a "zero-args" mode in the
 ``xdoctest`` runner. This allows you to run functions in your modules
 via the command line as long as they take no arguments. The purpose is
 to create a quick entry point to functions in your code (because
@@ -194,8 +243,8 @@ code:
         print('hello world')
 
     if __name__ == '__main__':
-        import xdoctest as xdoc
-        xdoc.doctest_module(__file__)
+        import xdoctest
+        xdoctest.doctest_module(__file__)
 
 Even though ``myfunc`` has no doctest it can still be run using the
 command ``python -m mymod myfunc``.
@@ -203,6 +252,9 @@ command ``python -m mymod myfunc``.
 Note, even though "zero-arg" functions can be run via this interface
 they are not run by ``python -m mymod all``, nor are they listed by
 ``python -m mymod list``.
+
+However, if you are doing this often, you may be better served by `fire
+<https://github.com/google/python-fire>`__.
 
 Enhancements
 ------------
@@ -285,21 +337,32 @@ backwards-compatible) syntax:
 
         """
 
-Google style doctest support
-----------------------------
+Xdoctest parsing style 
+----------------------
 
-Additionally, this module is written using
-`Google-style <https://sphinxcontrib-napoleon.readthedocs.io>`__
-docstrings, and as such, the module was originally written to directly
-utilize them. However, for backwards compatibility and ease of
-integration into existing software, the pytest plugin defaults to using
-the more normal "freestyle" doctests that can be found anywhere in the
-code.
+There are currently two main doctest parsing styles: ``google`` and
+``freeform``, as well as a third style: ``auto``, which is a hybrid.
 
-To make use of Google-style docstrings, pytest can be run with the
-option ``--xdoctest-style=google``, which causes xdoctest to only look
-for doctests in Google "docblocks" with an ``Example:`` or ``Doctest:``
-tag.
+The parsing style can be set via the ``--style`` command line argument in the
+Xdoctest CLI, or via the ``--xdoctest-style`` if using pytest.
+
+
+Setting ``--style=google`` (or ``--xdoctest-style=google`` in pytest) enables
+google-style parsing.
+A `Google-style <https://sphinxcontrib-napoleon.readthedocs.io>`__ doctest is
+expected to exist in  Google "docblock" with an ``Example:`` or ``Doctest:``
+tag. All code in this block is parsed out as a single doctest.
+
+Setting ``--style=freeform`` (or ``--xdoctest-style=freeform`` in pytest) enables
+freeform-style parsing.
+A freeform style doctest is any contiguous block of lines prefixed by ``>>>``.
+This is the original parsing style of the builtin doctest module. Each block is
+listed as its own test. 
+
+By default Xdoctest sets ``--style=auto`` (or ``--xdoctest-style=auto`` in
+pytest) which will pull all google-style blocks out as single doctests, while
+still all other ``>>>`` prefixed code out as a freeform doctest. 
+
 
 Notes on Got/Want tests
 -----------------------
@@ -318,17 +381,20 @@ just be better to use an ``assert`` statement.
 
 Backwards Compatibility
 -----------------------
-We (I) have removed all known backwards syntax incompatibilities. This is based
-on running doctests on real life examples: ``boltons``, ``ubelt``, ``networkx``,
-``pytorch`` (pending their acceptance of a pull-request), and on a set of
-extensive self-testing. Please raise an issue or submit a merge/pull request.
+There are no known syntax incompatibilities with original doctests. This is
+based on running doctests on real life examples in ``boltons``, ``ubelt``,
+``networkx``, ``pytorch``, and on a set of extensive testing suite. Please
+raise an issue or submit a merge/pull request if you find any incompatibility.
 
-Despite full syntax backwards compatibility, there are directive
-incompatibilities by design. The directives we expose are more consise and
-expressive. Our "got"/"want" checker is also much more permissive. We recommend
-that you rely on coded ``assert``-statements for system-critical code. This also
-makes it much easier to transform your ``xdoctest`` into a ``unittest`` when you
-realize your doctests start getting too long.
+Despite full syntax backwards compatibility, there some runtime
+incompatibilities by design. Specifically, Xdoctest enables a different set of
+default directives, such that the "got"/"want" checker is more permissive.
+Thus, a test that fails in ``doctest`` based on a "got"/"want" check, may pass
+in ``xdoctest``. For this reason it is recommended that you rely on coded
+``assert``-statements for system-critical code. This also makes it much easier
+to transform your ``xdoctest`` into a ``unittest`` when you realize your
+doctests start getting too long.
+
 
 
 .. |CircleCI| image:: https://circleci.com/gh/Erotemic/xdoctest.svg?style=svg
