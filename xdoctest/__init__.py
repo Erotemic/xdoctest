@@ -30,37 +30,6 @@ classes as metadata. They are often used to auto-generate documentation.
 Why is it cool?
 Because you can write tests while you code!
 
-Tests are good. Documentation is good. Examples are good.  Doctests have low
-boilerplate, you write them in the same file you write your code. It often can
-help you write the function. Write down how to construct minimal demo inputs
-(it helps to have tools to create these) in your file.  Copy that code into
-IPython/Jupyter, and play with your implementation.  Copy your finished code
-into the body. Write down how to call the function with the demo inputs. If you
-feel inclined, check that the result matches an expected result (while asserts
-and checks are nice, a test that just shows how to run the code is better than
-no test at all).
-
-.. code:: python
-
-
-    def an_algorithm(data, config):
-        """
-        Example:
-            >>> data = '([()[]])[{}([[]])]'
-            >>> config = {'outer': sum, 'inner': ord}
-            >>> an_algorithm(data, config)
-            1411
-        """
-        # I wrote this function by first finding some interesting demodata
-        # then I wrote the body in IPython and copied it back in.
-        # Now I can re-use this test code I wrote in development as a test!
-        # Covered Code is much easier to debug (we have a MWE)!
-        result = config['outer'](map(config['inner'], data))
-        return result
-
-
-The problem? How do you run the code in your doctest?
-
 
 Xdoctest finds and executes your doctests for you.
 Just run ``xdoctest <path-to-my-module>``.
