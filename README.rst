@@ -7,7 +7,8 @@
    :align: left
 
 
-Xdoctest - Execute Doctests. A Python library for executing tests in your docstrings!
+Xdoctest - Execute Doctests. A Python package for executing tests in
+documentation strings!
 
 What is a `doctest <https://en.wikipedia.org/wiki/Doctest>`__? 
 It is example code you write in a docstring!
