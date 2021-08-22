@@ -344,6 +344,12 @@ class Directive(utils.NiceRepr):
             does not occur.
 
         Example:
+            >>> from xdoctest.directive import Directive, RuntimeState
+            >>> state = RuntimeState()
+            >>> state.update(Directive.extract('# xdoctest: +REQUIRES(CPYTHON)'))
+            >>> list([0].effects()[0]
+
+        Example:
             >>> from xdoctest.directive import Directive
             >>> text = '# xdoc: + SKIP'
             >>> print(', '.join(list(map(str, Directive.extract(text)))))
@@ -409,7 +415,7 @@ class Directive(utils.NiceRepr):
             return '{}{}'.format(prefix, self.name)
 
     def _unpack_args(self, num):
-        warnings.warning('Deprecated and will be removed', DeprecationWarning)
+        warnings.warn('Deprecated and will be removed', DeprecationWarning)
         nargs = self.args
         if len(nargs) != 1:
             raise TypeError(
@@ -418,7 +424,7 @@ class Directive(utils.NiceRepr):
         return self.args
 
     def effect(self, argv=None, environ=None):
-        warnings.warning('Deprecated use effects', DeprecationWarning)
+        warnings.warn('Deprecated use effects', DeprecationWarning)
         effects = self.effects(argv=argv, environ=environ)
         if len(effects) > 1:
             raise Exception('Old method cannot hanldle multiple effects')
@@ -572,6 +578,7 @@ def _is_requires_satisfied(arg, argv=None, environ=None):
         bool: flag - True if the requirement is met
 
     Example:
+        >>> from xdoctest.directive import *  # NOQA
         >>> _is_requires_satisfied('PY2', argv=[])
         >>> _is_requires_satisfied('PY3', argv=[])
         >>> _is_requires_satisfied('cpython', argv=[])
@@ -651,12 +658,12 @@ def _is_requires_satisfied(arg, argv=None, environ=None):
         else:
             raise ValueError('Too many expr_parts={}'.format(expr_parts))
     elif arg_lower in SYS_PLATFORM_TAGS:
-        flag = sys.platform.startswith(arg_lower)
+        flag = sys.platform.lower().startswith(arg_lower)
     elif arg_lower in OS_NAME_TAGS:
         flag = os.name.startswith(arg_lower)
     elif arg_lower in PY_IMPL_TAGS:
         import platform
-        flag = platform.python_implementation().startswith(arg_lower)
+        flag = platform.python_implementation().lower().startswith(arg_lower)
     elif arg_lower in PY_VER_TAGS:
         if sys.version_info[0] == 2:  # nocover
             flag = arg_lower == 'py2'

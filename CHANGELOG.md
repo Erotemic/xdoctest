@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Version 0.15.7 - Unreleased
 
+### Fixed
+* Bug in REQUIRES state did not respect `python_implementation` arguments
 
 ## Version 0.15.6 - Released 2021-08-08
 
