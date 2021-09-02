@@ -91,22 +91,27 @@ class DoctestConfig(dict):
                                  help=('Disable ANSI coloration in stdout'))),
             (['--offset'], dict(dest='offset_linenos', action='store_true',
                                 default=self['offset_linenos'],
-                                help=('if True formatted source linenumbers will agree with '
+                                help=('If True formatted source linenumbers will agree with '
                                       'their location in the source file. Otherwise they '
                                       'will be relative to the doctest itself.'))),
             (['--report'], dict(dest='reportchoice',
                                 type=str_lower,
                                 choices=('none', 'cdiff', 'ndiff', 'udiff', 'only_first_failure',),
                                 default=self['reportchoice'],
-                                help=('choose another output format for diffs on xdoctest failure'))),
+                                help=('Choose another output format for diffs on xdoctest failure'))),
             # used to build default_runtime_state
             (['--options'], dict(type=str_lower, default=None, dest='options',
-                                 help='default directive flags for doctests')),
+                                 help='Default directive flags for doctests')),
             (['--global-exec'], dict(type=str, default=None, dest='global_exec',
-                                     help='exec these lines before every test')),
-            (['--verbose'], dict(type=int, default=defaults.get('verbose', 3), dest='verbose',
-                                     help='verbosity level')),
-            # (['--verbose'], dict(action='store_true', dest='verbose')),
+                                     help='Custom Python code to execute before every test')),
+            (['--verbose'], dict(
+                type=int, default=defaults.get('verbose', 3), dest='verbose',
+                help=(
+                    'Verbosity level. '
+                    '0 is silent, '
+                    '1 prints out test names, '
+                    '2 additionally prints test stdout, '
+                    '3 additionally prints test source'))),
             (['--quiet'], dict(action='store_true', dest='verbose',
                                 default=argparse.SUPPRESS,
                                 help='sets verbosity to 1')),
@@ -303,7 +308,7 @@ class DocTest(object):
     @property
     def unique_callname(self):
         """
-        A key that references this doctest within xdoctest given its module
+        A key that references this doctest given its module
         """
         return self.callname + ':' + str(self.num)
 

@@ -66,7 +66,7 @@ def main(argv=None):
             Defaults --modname to arg.pop(0).
             Defaults --command to arg.pop(0).
             '''))
-    parser.add_argument('--version', action='store_true', help='display version info and quit')
+    parser.add_argument('--version', action='store_true', help='Display version info and quit')
 
     # The bulk of the argparse CLI is defined in the doctest example
     from xdoctest import doctest_example

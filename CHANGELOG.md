@@ -11,6 +11,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Removed the distracting and very long internal traceback that occurred in
   pytest when a module errors while it is being imported before the doctest is
   run.
+* Pytest now defaults to `--xdoctest-verbose=2` by default (note this does
+  nothing unless `-s` is also given so pytest does not supress output)
 
 
 ### Fixed
