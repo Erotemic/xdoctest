@@ -412,7 +412,7 @@ class GotWantException(AssertionError):
         for a given example (`example`) and the actual output (`got`).
         The `runstate` contains option flags used to compare `want` and `got`.
 
-        Notes:
+        Note:
             This does not check if got matches want, it only outputs the raw
             differences. Got/Want normalization may make the differences appear
             more exagerated than they are.

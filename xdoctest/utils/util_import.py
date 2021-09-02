@@ -212,7 +212,7 @@ def import_module_from_path(modpath, index=-1):
     References:
         https://stackoverflow.com/questions/67631/import-module-given-path
 
-    Notes:
+    Note:
         If the module is part of a package, the package will be imported first.
         These modules may cause problems when reloading via IPython magic
 
@@ -231,6 +231,9 @@ def import_module_from_path(modpath, index=-1):
 
         For example if you try to import '/foo/bar/pkg/mod.py' from the folder
         structure:
+
+        .. code::
+
           - foo/
             +- bar/
                +- pkg/
@@ -408,7 +411,7 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
             list of directory paths. if specified prevents these directories
             from being searched.
 
-    Notes:
+    Note:
         This is much slower than the pkgutil mechanisms.
 
     Example:
@@ -565,7 +568,7 @@ def normalize_modpath(modpath, hide_init=True, hide_main=False):
     Returns:
         PathLike: a normalized path to the module
 
-    Notes:
+    Note:
         Adds __init__ if reasonable, but only removes __main__ by default
 
     Example:

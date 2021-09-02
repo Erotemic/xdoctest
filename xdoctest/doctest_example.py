@@ -272,14 +272,16 @@ class DocTest(object):
         """
         Checks for comment directives on the first line of the doctest
 
-        A doctest is disabled if it starts with any of the following patterns:
-            # DISABLE_DOCTEST
-            # SCRIPT
-            # UNSTABLE
-            # FAILING
+        A doctest is disabled if it starts with any of the following patterns
+
+        * ``>>> # DISABLE_DOCTEST``
+        * ``>>> # SCRIPT``
+        * ``>>> # UNSTABLE``
+        * ``>>> # FAILING``
 
         And if running in pytest, you can also use
-            # pytest.skip
+
+        * ``>>> import pytest; pytest.skip()``
         """
         disable_patterns = [
             r'>>>\s*#\s*DISABLE',
@@ -300,15 +302,23 @@ class DocTest(object):
 
     @property
     def unique_callname(self):
+        """
+        A key that references this doctest within xdoctest given its module
+        """
         return self.callname + ':' + str(self.num)
 
     @property
     def node(self):
-        """ this pytest node """
+        """
+        A key that references this doctest within pytest
+        """
         return self.modpath + '::' + self.callname + ':' + str(self.num)
 
     @property
     def valid_testnames(self):
+        """
+        A set of callname and unique_callname
+        """
         return {
             self.callname,
             self.unique_callname,
@@ -325,7 +335,9 @@ class DocTest(object):
 
     def format_parts(self, linenos=True, colored=None, want=True,
                      offset_linenos=None, prefix=True):
-        """ used by format_src """
+        """
+        Used by :func:`format_src`
+        """
         self._parse()
         colored = self.config.getvalue('colored', colored)
         partnos = self.config.getvalue('partnos')

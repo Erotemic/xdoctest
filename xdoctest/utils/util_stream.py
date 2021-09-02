@@ -44,7 +44,7 @@ class TeeStringIO(io.StringIO):
         """
         Returns true of the redirect is a terminal.
 
-        Notes:
+        Note:
             Needed for IPython.embed to work properly when this class is used
             to override stdout / stderr.
         """

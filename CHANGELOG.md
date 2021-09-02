@@ -7,8 +7,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Version 0.15.7 - Unreleased
 
+### Changed
+* Removed the distracting and very long internal traceback that occurred in
+  pytest when a module errors while it is being imported before the doctest is
+  run.
+
+
 ### Fixed
 * Bug in REQUIRES state did not respect `python_implementation` arguments
+* Ported sphinx fixes from ubelt 
 
 ## Version 0.15.6 - Released 2021-08-08
 
