@@ -7,6 +7,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## Version 0.15.8 - Unreleased
 
 
+### Fixed
+
+* Hotfix - removed debug print statements
+
+
 ## Version 0.15.7 - Released 2021-09-02
 
 ### Changed
