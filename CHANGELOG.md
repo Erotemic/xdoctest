@@ -5,12 +5,28 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Version 0.15.6 - Unreleased
+## Version 0.15.7 - Unreleased
+
+### Changed
+* Removed the distracting and very long internal traceback that occurred in
+  pytest when a module errors while it is being imported before the doctest is
+  run.
+* Pytest now defaults to `--xdoctest-verbose=2` by default (note this does
+  nothing unless `-s` is also given so pytest does not supress output)
+
+
+### Fixed
+* Bug in REQUIRES state did not respect `python_implementation` arguments
+* Ported sphinx fixes from ubelt 
+
+## Version 0.15.6 - Released 2021-08-08
 
 
 ### Changed
 * Directive syntax errors are now handled as doctest runtime errors and return
   better debugging information.
+
+* README and docs were improved
 
 
 ## Version 0.15.5 - Released 2021-06-27

@@ -571,16 +571,16 @@ def _update_argparse_cli(add_argument, prefix=None):
         return str.lower(str(x))
 
     add_argument(*('-m', '--modname'), type=str,
-                 help='module name or path. If specified positional modules are ignored',
+                 help='Module name or path. If specified positional modules are ignored',
                  default=None)
 
     add_argument(*('-c', '--command'), type=str,
-                 help='a doctest name or a command (list|all|<callname>). '
+                 help='A doctest name or a command (list|all|<callname>). '
                  'Defaults to all',
                  default=None)
 
     add_argument(*('--style',), type=str,
-                 help='choose the style of doctests that will be parsed',
+                 help='Choose the style of doctests that will be parsed',
                  choices=['auto', 'google', 'freeform'], default='auto')
 
     add_argument(*('--analysis',), type=str,
@@ -588,7 +588,7 @@ def _update_argparse_cli(add_argument, prefix=None):
                  choices=['auto', 'static', 'dynamic'], default='static')
 
     add_argument(*('--durations',), type=int,
-                 help=('specify execution times for slowest N tests.'
+                 help=('Specify execution times for slowest N tests.'
                        'N=0 will show times for all tests'),
                  default=None)
 

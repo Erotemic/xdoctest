@@ -75,12 +75,12 @@ def pytest_addoption(parser):
     #               type="args", default=["+ELLIPSIS"])
     group.addoption('--xdoctest-modules', '--xdoctest', '--xdoc',
                     action='store_true', default=False,
-                    help='run doctests in all .py modules using new style parsing',
+                    help='Run doctests in all .py modules using new style parsing',
                     dest='xdoctestmodules')
     group.addoption('--xdoctest-glob', '--xdoc-glob',
                     action='append', default=[], metavar='pat',
                     help=(
-                        'text files matching this pattern will be checked '
+                        'Text files matching this pattern will be checked '
                         'for doctests. This option may be specified multiple '
                         'times. XDoctest does not check any text files by '
                         'default. For compatibility with doctest set this to '
@@ -88,12 +88,12 @@ def pytest_addoption(parser):
                     dest='xdoctestglob')
     group.addoption('--xdoctest-ignore-syntax-errors',
                     action='store_true', default=False,
-                    help='ignore xdoctest SyntaxErrors',
+                    help='Ignore xdoctest SyntaxErrors',
                     dest='xdoctest_ignore_syntax_errors')
 
     group.addoption('--xdoctest-style', '--xdoc-style',
                     type=str_lower, default='freeform',
-                    help='basic style used to write doctests',
+                    help='Basic style used to write doctests',
                     choices=core.DOCTEST_STYLES,
                     dest='xdoctest_style')
 
@@ -107,7 +107,7 @@ def pytest_addoption(parser):
     from xdoctest import doctest_example
     doctest_example.DoctestConfig()._update_argparse_cli(
         group.addoption, prefix=['xdoctest', 'xdoc'],
-        defaults=dict(verbose=0)
+        defaults=dict(verbose=2)
     )
 
 
@@ -207,7 +207,9 @@ class _XDoctestBase(pytest.Module):
         ns = NamespaceLike(self.config)
 
         from xdoctest import doctest_example
+        print('ns = {!r}'.format(ns.__dict__['config'].__dict__))
         self._examp_conf = doctest_example.DoctestConfig()._populate_from_cli(ns)
+        print('self._examp_conf = {!r}'.format(self._examp_conf))
 
 
 class XDoctestTextfile(_XDoctestBase):

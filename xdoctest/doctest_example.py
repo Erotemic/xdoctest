@@ -91,22 +91,27 @@ class DoctestConfig(dict):
                                  help=('Disable ANSI coloration in stdout'))),
             (['--offset'], dict(dest='offset_linenos', action='store_true',
                                 default=self['offset_linenos'],
-                                help=('if True formatted source linenumbers will agree with '
+                                help=('If True formatted source linenumbers will agree with '
                                       'their location in the source file. Otherwise they '
                                       'will be relative to the doctest itself.'))),
             (['--report'], dict(dest='reportchoice',
                                 type=str_lower,
                                 choices=('none', 'cdiff', 'ndiff', 'udiff', 'only_first_failure',),
                                 default=self['reportchoice'],
-                                help=('choose another output format for diffs on xdoctest failure'))),
+                                help=('Choose another output format for diffs on xdoctest failure'))),
             # used to build default_runtime_state
             (['--options'], dict(type=str_lower, default=None, dest='options',
-                                 help='default directive flags for doctests')),
+                                 help='Default directive flags for doctests')),
             (['--global-exec'], dict(type=str, default=None, dest='global_exec',
-                                     help='exec these lines before every test')),
-            (['--verbose'], dict(type=int, default=defaults.get('verbose', 3), dest='verbose',
-                                     help='verbosity level')),
-            # (['--verbose'], dict(action='store_true', dest='verbose')),
+                                     help='Custom Python code to execute before every test')),
+            (['--verbose'], dict(
+                type=int, default=defaults.get('verbose', 3), dest='verbose',
+                help=(
+                    'Verbosity level. '
+                    '0 is silent, '
+                    '1 prints out test names, '
+                    '2 additionally prints test stdout, '
+                    '3 additionally prints test source'))),
             (['--quiet'], dict(action='store_true', dest='verbose',
                                 default=argparse.SUPPRESS,
                                 help='sets verbosity to 1')),
@@ -272,14 +277,16 @@ class DocTest(object):
         """
         Checks for comment directives on the first line of the doctest
 
-        A doctest is disabled if it starts with any of the following patterns:
-            # DISABLE_DOCTEST
-            # SCRIPT
-            # UNSTABLE
-            # FAILING
+        A doctest is disabled if it starts with any of the following patterns
+
+        * ``>>> # DISABLE_DOCTEST``
+        * ``>>> # SCRIPT``
+        * ``>>> # UNSTABLE``
+        * ``>>> # FAILING``
 
         And if running in pytest, you can also use
-            # pytest.skip
+
+        * ``>>> import pytest; pytest.skip()``
         """
         disable_patterns = [
             r'>>>\s*#\s*DISABLE',
@@ -300,15 +307,23 @@ class DocTest(object):
 
     @property
     def unique_callname(self):
+        """
+        A key that references this doctest given its module
+        """
         return self.callname + ':' + str(self.num)
 
     @property
     def node(self):
-        """ this pytest node """
+        """
+        A key that references this doctest within pytest
+        """
         return self.modpath + '::' + self.callname + ':' + str(self.num)
 
     @property
     def valid_testnames(self):
+        """
+        A set of callname and unique_callname
+        """
         return {
             self.callname,
             self.unique_callname,
@@ -325,7 +340,9 @@ class DocTest(object):
 
     def format_parts(self, linenos=True, colored=None, want=True,
                      offset_linenos=None, prefix=True):
-        """ used by format_src """
+        """
+        Used by :func:`format_src`
+        """
         self._parse()
         colored = self.config.getvalue('colored', colored)
         partnos = self.config.getvalue('partnos')
@@ -444,7 +461,22 @@ class DocTest(object):
         if self.module is None:
             if not self.modname.startswith('<'):
                 # self.module = utils.import_module_from_path(self.modpath, index=0)
-                self.module = utils.import_module_from_path(self.modpath, index=-1)
+                try:
+                    self.module = utils.import_module_from_path(self.modpath, index=-1)
+                except RuntimeError as ex:
+                    msg_parts = [
+                        ('XDoctest failed to pre-import the module '
+                         'containing the doctest.')
+                    ]
+                    msg_parts.append(str(ex))
+                    new_exc = RuntimeError('\n'.join(msg_parts))
+                    # new_exc = ex
+                    # Remove traceback before this line
+                    new_exc.__traceback__ = None
+                    # Backwards syntax compatible raise exc from None
+                    # https://www.python.org/dev/peps/pep-3134/#explicit-exception-chaining
+                    new_exc.__cause__ = None
+                    raise new_exc
 
     @staticmethod
     def _extract_future_flags(namespace):
@@ -493,11 +525,8 @@ class DocTest(object):
 
         self._parse()  # parse out parts if we have not already done so
         self._pre_run(verbose)
-        self._import_module()
 
         # Prepare for actual test run
-        test_globals, compileflags = self._test_globals()
-
         self.logged_evals.clear()
         self.logged_stdout.clear()
         self._unmatched_stdout = []
@@ -512,6 +541,19 @@ class DocTest(object):
         # setup reporting choice
         runstate.set_report_style(self.config['reportchoice'].lower())
 
+        try:
+            self._import_module()
+        except Exception:
+            self.failed_part = '<IMPORT>'
+            self._partfilename = '<doctest:' + self.node + ':pre_import>'
+            self.exc_info = sys.exc_info()
+            if on_error == 'raise':
+                raise
+            else:
+                summary = self._post_run(verbose)
+                return summary
+
+        test_globals, compileflags = self._test_globals()
         global_exec = self.config.getvalue('global_exec')
         if global_exec:
             # Hack to make it easier to specify multi-line input on the CLI
@@ -785,6 +827,8 @@ class DocTest(object):
         if self.exc_info is None:
             return None
         else:
+            if self.failed_part == '<IMPORT>':
+                return 0
             ex_type, ex_value, tb = self.exc_info
             offset = self.failed_part.line_offset
             if isinstance(ex_value, checker.ExtractGotReprException):
@@ -1021,12 +1065,21 @@ class DocTest(object):
                     new_tblines = []
                     for i, line in enumerate(tblines):
 
-                        if 'xdoctest/xdoctest/doctest_example' in line:
-                            # hack, remove ourselves from the tracback
-                            continue
-                            # new_tblines.append('!!!!!')
-                            # raise Exception('foo')
-                            # continue
+                        # if '<frozen importlib._bootstrap' in line:
+                        #     # not sure if this should be removed or not
+                        #     continue
+
+                        # if 'xdoctest/utils/util_import' in line:
+                        #     # hack, remove ourselves from the tracback
+                        #     continue
+
+                        if 1:
+                            if 'xdoctest/xdoctest/doctest_example' in line:
+                                # hack, remove ourselves from the tracback
+                                continue
+                                # new_tblines.append('!!!!!')
+                                # raise Exception('foo')
+                                # continue
 
                         if self._partfilename in line:
                             # Intercept the line corresponding to the doctest
@@ -1052,6 +1105,7 @@ class DocTest(object):
                     return new_tblines
 
                 new_tblines = _alter_traceback_linenos(self, tblines)
+                # new_tblines = tblines
 
                 if colored:
                     tbtext = '\n'.join(new_tblines)

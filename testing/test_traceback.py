@@ -7,19 +7,22 @@ from xdoctest.utils.util_misc import _run_case
 
 
 def test_fail_call_onefunc():
-    text = _run_case(utils.codeblock(
-        '''
-        def func(a):
-            """
-            Example:
-                >>> a = 1
-                >>> func(a)
-            """
-            a = []()
-            return a
-        '''))
-    assert '>>> func(a)' in text
-    assert 'rel: 2, abs: 5' in text
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        text = _run_case(utils.codeblock(
+            '''
+            def func(a):
+                """
+                Example:
+                    >>> a = 1
+                    >>> func(a)
+                """
+                a = []()
+                return a
+            '''))
+        assert '>>> func(a)' in text
+        assert 'rel: 2, abs: 5' in text
 
 
 def test_fail_call_twofunc():
@@ -27,27 +30,30 @@ def test_fail_call_twofunc():
         python ~/code/xdoctest/testing/test_traceback.py test_fail_call_twofunc
 
     """
-    text = _run_case(utils.codeblock(
-        '''
-        def func(a):
-            """
-            Example:
-                >>> a = 1
-                >>> func(a)
-            """
-            a = []()
-            return a
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        text = _run_case(utils.codeblock(
+            '''
+            def func(a):
+                """
+                Example:
+                    >>> a = 1
+                    >>> func(a)
+                """
+                a = []()
+                return a
 
-        def func2(a):
-            """
-            Example:
-                >>> pass
-            """
-            pass
-        '''))
-    assert text
-    assert '>>> func(a)' in text
-    assert 'rel: 2, abs: 5,' in text
+            def func2(a):
+                """
+                Example:
+                    >>> pass
+                """
+                pass
+            '''))
+        assert text
+        assert '>>> func(a)' in text
+        assert 'rel: 2, abs: 5,' in text
 
 
 def test_fail_inside_twofunc():
@@ -55,30 +61,33 @@ def test_fail_inside_twofunc():
         python ~/code/xdoctest/testing/test_traceback.py test_fail_inside_twofunc
 
     """
-    text = _run_case(utils.codeblock(
-        '''
-        def func(a):
-            """
-            Example:
-                >>> print('not failed')
-                >>> # just a comment
-                >>> print(("foo"
-                ...        "bar"))
-                >>> a = []()
-                >>> func(a)
-            """
-            return a
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        text = _run_case(utils.codeblock(
+            '''
+            def func(a):
+                """
+                Example:
+                    >>> print('not failed')
+                    >>> # just a comment
+                    >>> print(("foo"
+                    ...        "bar"))
+                    >>> a = []()
+                    >>> func(a)
+                """
+                return a
 
-        def func2(a):
-            """
-            Example:
-                >>> pass
-            """
-            pass
-        '''))
-    assert text
-    assert '>>> a = []()' in text
-    assert 'rel: 5, abs: 8' in text
+            def func2(a):
+                """
+                Example:
+                    >>> pass
+                """
+                pass
+            '''))
+        assert text
+        assert '>>> a = []()' in text
+        assert 'rel: 5, abs: 8' in text
 
 
 def test_fail_inside_onefunc():

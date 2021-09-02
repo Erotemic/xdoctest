@@ -7,24 +7,28 @@ have been extracted from the source code by either static or dynamic means.
 
 Terms and definitions:
 
-    logical block: a snippet of code that can be executed by itself if given
-        the correct global / local variable context.
+    logical block:
+        a snippet of code that can be executed by itself if given the correct
+        global / local variable context.
 
-    PS1 : The original meaning is "Prompt String 1". In the context of
-        xdoctest, instead of referring to the prompt prefix, we use PS1 to refer
-        to a line that starts a "logical block" of code. In the original
-        doctest module these all had to be prefixed with ">>>". In xdoctest the
-        prefix is used to simply denote the code is part of a doctest. It does
-        not necessarilly mean a new "logical block" is starting.
+    PS1:
+        The original meaning is "Prompt String 1". In the context of xdoctest,
+        instead of referring to the prompt prefix, we use PS1 to refer to a
+        line that starts a "logical block" of code. In the original doctest
+        module these all had to be prefixed with ">>>". In xdoctest the prefix
+        is used to simply denote the code is part of a doctest. It does not
+        necessarilly mean a new "logical block" is starting.
 
-    PS2 : The original meaning is "Prompt String 2". In the context of
-        xdoctest, instead of referring to the prompt prefix, we use PS2 to refer
-        to a line that continues a "logical block" of code. In the original
-        doctest module these all had to be prefixed with "...". However,
-        xdoctest uses parsing to automatically determine this.
+    PS2:
+        The original meaning is "Prompt String 2". In the context of xdoctest,
+        instead of referring to the prompt prefix, we use PS2 to refer to a
+        line that continues a "logical block" of code. In the original doctest
+        module these all had to be prefixed with "...". However, xdoctest uses
+        parsing to automatically determine this.
 
-    want statement: Lines directly after a logical block of code in a doctest
-        indicating the desired result of executing the previous block.
+    want statement:
+        Lines directly after a logical block of code in a doctest indicating
+        the desired result of executing the previous block.
 
 While I do believe this AST-based code is a significant improvement over the
 RE-based builtin doctest parser, I acknowledge that I'm not an AST expert and
@@ -216,7 +220,8 @@ class DoctestParser(object):
         own part.  Otherwise, statements are grouped by the closest `want`
         statement.
 
-        TODO: EXCEPT IN CASES OF EXPLICIT CONTINUATION
+        TODO:
+            - [ ] EXCEPT IN CASES OF EXPLICIT CONTINUATION
 
         Example:
             >>> from xdoctest.parser import *
@@ -429,9 +434,10 @@ class DoctestParser(object):
                 these will be unindented, prefixed, and without any want.
 
         Returns:
-            Tuple[List[int], bool]: a list of indices indicating which lines
-                are considered "PS1" and a flag indicating if the final line
-                should be considered for a got/want assertion.
+            Tuple[List[int], bool]:
+                a list of indices indicating which lines are considered "PS1"
+                and a flag indicating if the final line should be considered
+                for a got/want assertion.
 
         Example:
             >>> self = DoctestParser()
@@ -557,14 +563,15 @@ class DoctestParser(object):
             exec_source_lines (List[str]): code referenced by ps1_linenos
 
         Returns:
-            List[int]: new_ps1_lines: Fixed `ps1_linenos` where multiline
-                strings now point to the line where they begin.
+            List[int]: new_ps1_lines
+                Fixed `ps1_linenos` where multiline strings now point to the
+                line where they begin.
 
-        Notes:
+        Note:
             A patch for this issue exists
-            `https://github.com/python/cpython/pull/1800`. This workaround is a
-            idempotent (i.e. a no-op) when line numbers are correct, so nothing
-            should break when this bug is fixed.
+            `<https://github.com/python/cpython/pull/1800>`_. This workaround
+            is a idempotent (i.e. a no-op) when line numbers are correct, so
+            nothing should break when this bug is fixed.
 
             Starting from the end look at consecutive pairs of indices to
             inspect the statement it corresponds to.  (the first statement goes
@@ -604,6 +611,9 @@ class DoctestParser(object):
             List[Tuple[str, str]]: labeled_lines - the above source broken
                 up by lines, each with a label indicating its type for later
                 use in parsing.
+
+        TODO:
+            - [ ] Sphinx does not parse this doctest properly
 
         Example:
             >>> from xdoctest.parser import *
