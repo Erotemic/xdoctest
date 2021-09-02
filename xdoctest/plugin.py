@@ -207,9 +207,7 @@ class _XDoctestBase(pytest.Module):
         ns = NamespaceLike(self.config)
 
         from xdoctest import doctest_example
-        print('ns = {!r}'.format(ns.__dict__['config'].__dict__))
         self._examp_conf = doctest_example.DoctestConfig()._populate_from_cli(ns)
-        print('self._examp_conf = {!r}'.format(self._examp_conf))
 
 
 class XDoctestTextfile(_XDoctestBase):
