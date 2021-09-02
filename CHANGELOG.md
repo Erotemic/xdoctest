@@ -10,19 +10,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## Version 0.15.8 - Released 2021-09-02
 
 
-### Fixed
-
-* Hotfix - removed debug print statements
-
-
-## Version 0.15.7 - Released 2021-09-02
-
 ### Changed
 * Removed the distracting and very long internal traceback that occurred in
   pytest when a module errors while it is being imported before the doctest is
   run.
 * Pytest now defaults to `--xdoctest-verbose=2` by default (note this does
   nothing unless `-s` is also given so pytest does not supress output)
+
+
+## Version 0.15.7 - Yanked 
 
 
 ### Fixed
