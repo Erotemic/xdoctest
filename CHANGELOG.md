@@ -9,7 +9,6 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Version 0.15.8 - Released 2021-09-02
 
-
 ### Changed
 * Removed the distracting and very long internal traceback that occurred in
   pytest when a module errors while it is being imported before the doctest is
@@ -20,13 +19,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Version 0.15.7 - Yanked 
 
-
 ### Fixed
 * Bug in REQUIRES state did not respect `python_implementation` arguments
 * Ported sphinx fixes from ubelt 
 
 ## Version 0.15.6 - Released 2021-08-08
-
 
 ### Changed
 * Directive syntax errors are now handled as doctest runtime errors and return
