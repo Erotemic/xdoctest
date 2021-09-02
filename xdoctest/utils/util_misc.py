@@ -32,6 +32,30 @@ class TempDoctest(object):
             file.write("'''\n%s'''" % self.docstr)
 
 
+class TempModule(object):
+    """
+    Creates a temporary directory with a python module.
+
+    Example:
+        >>> from xdoctest import core
+        >>> self = TempDoctest('>>> a = 1')
+        >>> doctests = list(core.parse_doctestables(self.modpath))
+        >>> assert len(doctests) == 1
+    """
+    def __init__(self, module_text, modname=None):
+        if modname is None:
+            # make a random temporary module name
+            alphabet = list(map(chr, range(97, 97 + 26)))
+            modname = ''.join([random.choice(alphabet) for _ in range(8)])
+        self.modname = modname
+        self.module_text = module_text
+        self.temp = TempDir()
+        self.dpath = self.temp.ensure()
+        self.modpath = join(self.dpath, self.modname + '.py')
+        with open(self.modpath, 'w') as file:
+            file.write(module_text)
+
+
 def _run_case(source, style='auto'):
     """
     Runs all doctests in a source block

@@ -70,11 +70,10 @@ arguments allow you to condition on:
 CommandLine:
     python -m xdoctest.directive __doc__
 
+The following example shows how the ``+SKIP`` directives may be used to
+bypass certain places in the code.
 
 Example:
-    The following example shows how the ``+SKIP`` directives may be used to
-    bypass certain places in the code.
-
     >>> # An inline directive appears on the same line as a command and
     >>> # only applies to the current line.
     >>> raise AssertionError('this will not be run (a)')  # xdoctest: +SKIP
@@ -98,10 +97,10 @@ Example:
     >>> # xdoctest: -SKIP
     >>> print('This line will print: (F)')
 
-Example:
-    This next examples illustrates how to use the advanced ``+REQURIES()``
-    directive. Note, the REQUIRES and SKIP states are independent.
+This next examples illustrates how to use the advanced ``+REQURIES()``
+directive. Note, the REQUIRES and SKIP states are independent.
 
+Example:
     >>> import sys
     >>> count = 0
     >>> # xdoctest: +REQUIRES(WIN32)
@@ -338,7 +337,7 @@ class Directive(utils.NiceRepr):
         Yeilds:
             Directive: directive: the parsed directives
 
-        Notes:
+        Note:
             The original ``doctest`` module sometimes yeilded false positives for a
             directive pattern. Because ``xdoctest`` is parsing the text, this issue
             does not occur.
@@ -346,8 +345,23 @@ class Directive(utils.NiceRepr):
         Example:
             >>> from xdoctest.directive import Directive, RuntimeState
             >>> state = RuntimeState()
-            >>> state.update(Directive.extract('# xdoctest: +REQUIRES(CPYTHON)'))
-            >>> list([0].effects()[0]
+            >>> assert len(state['REQUIRES']) == 0
+            >>> extracted1 = list(Directive.extract('# xdoctest: +REQUIRES(CPYTHON)'))
+            >>> extracted2 = list(Directive.extract('# xdoctest: +REQUIRES(PYPY)'))
+            >>> print('extracted1 = {!r}'.format(extracted1))
+            >>> print('extracted2 = {!r}'.format(extracted2))
+            >>> effect1 = extracted1[0].effects()[0]
+            >>> effect2 = extracted2[0].effects()[0]
+            >>> print('effect1 = {!r}'.format(effect1))
+            >>> print('effect2 = {!r}'.format(effect2))
+            >>> assert effect1.value == 'CPYTHON'
+            >>> assert effect2.value == 'PYPY'
+            >>> # At least one of these will not be satisfied
+            >>> assert effect1.action == 'set.add' or effect2.action == 'set.add'
+            >>> state.update(extracted1)
+            >>> state.update(extracted2)
+            >>> print('state = {!r}'.format(state))
+            >>> assert len(state['REQUIRES']) > 0
 
         Example:
             >>> from xdoctest.directive import Directive
@@ -379,6 +393,7 @@ class Directive(utils.NiceRepr):
             <Directive(+REQUIRES(module:foo, module:bar))>
 
         Example:
+            >>> from xdoctest.directive import Directive, RuntimeState
             >>> any(Directive.extract(' # xdoctest: skip'))
             True
             >>> any(Directive.extract(' # badprefix: not-a-directive'))

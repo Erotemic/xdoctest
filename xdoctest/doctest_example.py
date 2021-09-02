@@ -444,7 +444,22 @@ class DocTest(object):
         if self.module is None:
             if not self.modname.startswith('<'):
                 # self.module = utils.import_module_from_path(self.modpath, index=0)
-                self.module = utils.import_module_from_path(self.modpath, index=-1)
+                try:
+                    self.module = utils.import_module_from_path(self.modpath, index=-1)
+                except RuntimeError as ex:
+                    msg_parts = [
+                        ('XDoctest failed to pre-import the module '
+                         'containing the doctest.')
+                    ]
+                    msg_parts.append(str(ex))
+                    new_exc = RuntimeError('\n'.join(msg_parts))
+                    # new_exc = ex
+                    # Remove traceback before this line
+                    new_exc.__traceback__ = None
+                    # Backwards syntax compatible raise exc from None
+                    # https://www.python.org/dev/peps/pep-3134/#explicit-exception-chaining
+                    new_exc.__cause__ = None
+                    raise new_exc
 
     @staticmethod
     def _extract_future_flags(namespace):
@@ -493,11 +508,8 @@ class DocTest(object):
 
         self._parse()  # parse out parts if we have not already done so
         self._pre_run(verbose)
-        self._import_module()
 
         # Prepare for actual test run
-        test_globals, compileflags = self._test_globals()
-
         self.logged_evals.clear()
         self.logged_stdout.clear()
         self._unmatched_stdout = []
@@ -512,6 +524,19 @@ class DocTest(object):
         # setup reporting choice
         runstate.set_report_style(self.config['reportchoice'].lower())
 
+        try:
+            self._import_module()
+        except Exception:
+            self.failed_part = '<IMPORT>'
+            self._partfilename = '<doctest:' + self.node + ':pre_import>'
+            self.exc_info = sys.exc_info()
+            if on_error == 'raise':
+                raise
+            else:
+                summary = self._post_run(verbose)
+                return summary
+
+        test_globals, compileflags = self._test_globals()
         global_exec = self.config.getvalue('global_exec')
         if global_exec:
             # Hack to make it easier to specify multi-line input on the CLI
@@ -785,6 +810,8 @@ class DocTest(object):
         if self.exc_info is None:
             return None
         else:
+            if self.failed_part == '<IMPORT>':
+                return 0
             ex_type, ex_value, tb = self.exc_info
             offset = self.failed_part.line_offset
             if isinstance(ex_value, checker.ExtractGotReprException):
@@ -1021,12 +1048,21 @@ class DocTest(object):
                     new_tblines = []
                     for i, line in enumerate(tblines):
 
-                        if 'xdoctest/xdoctest/doctest_example' in line:
-                            # hack, remove ourselves from the tracback
-                            continue
-                            # new_tblines.append('!!!!!')
-                            # raise Exception('foo')
-                            # continue
+                        # if '<frozen importlib._bootstrap' in line:
+                        #     # not sure if this should be removed or not
+                        #     continue
+
+                        # if 'xdoctest/utils/util_import' in line:
+                        #     # hack, remove ourselves from the tracback
+                        #     continue
+
+                        if 1:
+                            if 'xdoctest/xdoctest/doctest_example' in line:
+                                # hack, remove ourselves from the tracback
+                                continue
+                                # new_tblines.append('!!!!!')
+                                # raise Exception('foo')
+                                # continue
 
                         if self._partfilename in line:
                             # Intercept the line corresponding to the doctest
@@ -1052,6 +1088,7 @@ class DocTest(object):
                     return new_tblines
 
                 new_tblines = _alter_traceback_linenos(self, tblines)
+                # new_tblines = tblines
 
                 if colored:
                     tbtext = '\n'.join(new_tblines)
