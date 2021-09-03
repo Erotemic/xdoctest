@@ -67,7 +67,7 @@ def test_simple_pytest_import_error_cli():
             """
         ''')
     temp_module = util_misc.TempModule(module_text, modname='imperr_test_mod')
-    command = sys.executable + ' -m pytest -v -s --xdoctest-verbose=3 --xdoctest ' + temp_module.dpath
+    command = sys.executable + ' -m pytest -p no:flaky -v -s --xdoctest-verbose=3 --xdoctest ' + temp_module.dpath
     print(command)
     info = cmd(command)
     print(info['out'])
