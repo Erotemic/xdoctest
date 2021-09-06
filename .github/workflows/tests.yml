@@ -9,6 +9,7 @@ on:
     branches: [ master ]
 
 jobs:
+
   lint:
     runs-on: ubuntu-latest
 
@@ -32,7 +33,7 @@ jobs:
   build_and_test_sdist:
     name: Test sdist Python 3.8
     runs-on: ubuntu-latest
-    needs: [lint]
+    #needs: [lint]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.8
@@ -49,22 +50,30 @@ jobs:
         python setup.py sdist
     - name: Install sdist
       run: |
-        cd dist
-        ls -al
-        pip install xdoctest*.tar.gz -v
-        # Ensure the source doesn't conflict with the test
-        rm -rf xdoctest
+        ls -al ./dist
+        pip install dist/xdoctest*.tar.gz -v
+        mv xdoctest ignore_src_xdoctest
     - name: Test minimal sdist
       run: |
         pwd
         ls -al
-        python run_tests.py
+        # Run the tests
+        # Get path to installed package
+        XDOCTEST_DPATH=$(python -c "import xdoctest, os; print(os.path.dirname(xdoctest.__file__))")
+        echo "XDOCTEST_DPATH = $XDOCTEST_DPATH"
+        python -m pytest -p pytester -p no:doctest --xdoctest --cov=xdoctest $XDOCTEST_DPATH ./testing
+
     - name: Test full sdist
       run: |
         pwd
         ls -al
         python -m pip install -r requirements/optional.txt
-        python run_tests.py
+        # Run the tests
+        # Get path to installed package
+        XDOCTEST_DPATH=$(python -c "import xdoctest, os; print(os.path.dirname(xdoctest.__file__))")
+        echo "XDOCTEST_DPATH = $XDOCTEST_DPATH"
+        python -m pytest -p pytester -p no:doctest --xdoctest $XDOCTEST_DPATH ./testing
+
 
     - name: Upload sdist artifact
       uses: actions/upload-artifact@v2
@@ -73,36 +82,42 @@ jobs:
         path: ./dist/*.tar.gz
 
   build_and_test_wheels:
-    name: ${{ matrix.cibw_build }} on ${{ matrix.os }}, arch=${{ matrix.arch }}
+    # TODO: handle different python versions: https://github.com/actions/setup-python
+    name: ${{ matrix.python-version }} on ${{ matrix.os }}, arch=${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
-    needs: [lint]
+    #needs: [lint]
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
+        python-version: 
+          - '3.5'
+          - '3.6'
+          - '3.7'
+          - '3.8'
         arch: [auto]
-        cibw_build: [cp3*-*]
-        cibw_skip: ["*-win32"]
+        #cibw_build: [cp3*-*]
+        #cibw_skip: ["*-win32"]
         # Add additional workers to reduce overall build time
-        include:
-          - os: windows-latest
-            cibw_build: cp3*-win32
-            arch: auto
-            cibw_skip: ""
-          - os: ubuntu-latest
-            arch: aarch64
-            cibw_build: cp35-*
-          - os: ubuntu-latest
-            arch: aarch64
-            cibw_build: cp36-*
-          - os: ubuntu-latest
-            arch: aarch64
-            cibw_build: cp37-*
-          - os: ubuntu-latest
-            arch: aarch64
-            cibw_build: cp38-*
-          - os: ubuntu-latest
-            arch: aarch64
-            cibw_build: cp39-*
+        #include:
+        #  - os: windows-latest
+        #    cibw_build: cp3*-win32
+        #    arch: auto
+        #    cibw_skip: ""
+        #  - os: ubuntu-latest
+        #    arch: aarch64
+        #    cibw_build: cp35-*
+        #  - os: ubuntu-latest
+        #    arch: aarch64
+        #    cibw_build: cp36-*
+        #  - os: ubuntu-latest
+        #    arch: aarch64
+        #    cibw_build: cp37-*
+        #  - os: ubuntu-latest
+        #    arch: aarch64
+        #    cibw_build: cp38-*
+        #  - os: ubuntu-latest
+        #    arch: aarch64
+        #    cibw_build: cp39-*
 
 
     steps:
@@ -128,6 +143,7 @@ jobs:
       with:
         platforms: all
 
+
     # See: https://github.com/pypa/cibuildwheel/blob/main/action.yml
     #- name: Build wheels
     #  uses: pypa/cibuildwheel@v1.11.0
@@ -142,6 +158,11 @@ jobs:
     #    # configure cibuildwheel to build native archs ('auto'), or emulated ones
     #    CIBW_ARCHS_LINUX: ${{ matrix.arch }}
     
+    # Setup Python environemtn for a pure wheel
+    - uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    
     - name: Build pure wheel
       shell: bash
       run: |
@@ -150,16 +171,28 @@ jobs:
 
     - name: Test pure wheel
       shell: bash
+      env:
+        CI_PYTHON_VERSION: py${{ matrix.python-version }}
+        #OS_NAME: ${{ matrix.os }}
       run: | 
-        # Remove source directory
-        rm -rf xdoctest
+        # Remove source directory (ensure it doesn't conflict)
+        mv xdoctest ignore_src_xdoctest
+        rm pytest.ini
         # Install the wheel
         python -m pip install wheelhouse/xdoctest*.whl
+        python -m pip install -r requirements/tests.txt
+        # Run in a sandboxed directory
+        WORKSPACE_DNAME="testdir_${CI_PYTHON_VERSION}_${GITHUB_RUN_ID}_${RUNNER_OS}"
+        mkdir -p $WORKSPACE_DNAME
+        cd $WORKSPACE_DNAME
+        # Run the tests
         # Get path to installed package
         XDOCTEST_DPATH=$(python -c "import xdoctest, os; print(os.path.dirname(xdoctest.__file__))")
-        python -m pip install -r requirements/tests.txt
-        # Run the tests
-        python -m pytest -p pytester -p no:doctest --xdoctest --cov-config .coveragerc --cov-report html --cov-report term --cov=xdoctest $XDOCTEST_DPATH ./testing
+        echo "XDOCTEST_DPATH = $XDOCTEST_DPATH"
+        python -m pytest -p pytester -p no:doctest --xdoctest --cov-config ../.coveragerc --cov-report term --cov=xdoctest $XDOCTEST_DPATH ../testing
+        mv .coverage "../.coverage.$WORKSPACE_DNAME"
+        cd ..
+        # Move coverage file to a new name
 
     - name: Show built files
       shell: bash
@@ -176,9 +209,10 @@ jobs:
       run: |
         echo '############ PWD'
         pwd
+        ls -al
         python -m pip install coverage[toml]
         echo '############ combine'
-        coverage combine ./wheelhouse
+        coverage combine .
         echo '############ XML'
         coverage xml -o ./tests/coverage.xml
         echo '############ FIND'

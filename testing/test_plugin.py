@@ -235,12 +235,13 @@ class TestXDoctest(object):
                 [pytest]
                 xdoctest_encoding={0}
             """.format(encoding))
-            xdoctest = u"""
+            doctest = u"""
                 >>> u"{0}"
                 {1}
             """.format(test_string, repr(test_string))
 
-            testdir._makefile(".txt", [xdoctest], {}, encoding=encoding)
+            print(doctest)
+            testdir._makefile(".txt", [doctest], {}, encoding=encoding)
 
             result = testdir.runpytest(*(EXTRA_ARGS + OLD_TEXT_ARGS))
 
@@ -257,7 +258,7 @@ class TestXDoctest(object):
             pytester.makeini(
                 """
                 [pytest]
-                doctest_encoding={}
+                xdoctest_encoding={}
             """.format(
                     encoding
                 )
@@ -271,7 +272,7 @@ class TestXDoctest(object):
             fn = pytester.path / "test_encoding.txt"
             fn.write_text(doctest, encoding=encoding)
 
-            result = pytester.runpytest()
+            result = pytester.runpytest(*OLD_TEXT_ARGS)
 
             result.stdout.fnmatch_lines(["*1 passed*"])
 
