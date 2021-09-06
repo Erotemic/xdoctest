@@ -6,6 +6,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Version 0.15.9 - Unreleased
 
+### Changed
+
+* Added GitHub actions to the CI
+
+
+### Fixed
+
+* Fixed minor test failures
+
 
 ## Version 0.15.8 - Released 2021-09-02
 
