@@ -268,8 +268,9 @@ The main enhancements ``xdoctest`` offers over ``doctest`` are:
 2. Additionally, the multi-line strings don't require any prefix (but
    its ok if they do have either prefix).
 3. Tests are executed in blocks, rather than line-by-line, thus
-   comment-based directives (e.g. ``# doctest: +SKIP``) are now applied
-   to an entire block, rather than just a single line.
+   comment-based directives (e.g. ``# doctest: +SKIP``) can now applied
+   to an entire block (by placing it one the line above), in addition to having
+   it just apply to a single line (by placing it in-line at the end).
 4. Tests without a "want" statement will ignore any stdout / final
    evaluated value. This makes it easy to use simple assert statements
    to perform checks in code that might write to stdout.
@@ -278,11 +279,10 @@ The main enhancements ``xdoctest`` offers over ``doctest`` are:
 6. Ouptut from multiple sequential print statements can now be checked by
    a single "got" statement. (new in 0.4.0).
 
-See code in ``_compare/compare.py`` and ``_compare/base_diff.py`` for a demo
-that illustrates several of these enhancements. This demo mostly shows cases
-where ``xdoctest`` works but ``doctest`` fails, but it does show **the only
-corner case I can find** where ``doctest`` works but ``xdoctest`` does not.
-Feel free to submit more in an issue if you can find any other backwards
+See code in ``dev/_compare/demo_enhancements.py`` for a demo that illustrates
+several of these enhancements. This demo shows cases where ``xdoctest`` works
+but ``doctest`` fails. As of version 0.9.1, there are no known syntax backwards
+incompatability. Please submit an issue if you can find any backwards
 incompatible cases.
 
 

@@ -173,7 +173,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 * `PythonPathContext` now works in more corner cases, although some rarer
   corner cases will now break. This trade-off should be a net positive. 
-* Releases are handled by TravisCI and will be signed with the GPG key 98007794ED130347559354B1109AC852D297D757 (note we will rotate this key in 1 year).
+* Releases are handled by TravisCI and will be signed with the GPG key 98007794ED130347559354B1109AC852D297D757 (note we will rotate this key in 1 year). <- (2021-09-06) lol that did not happen, dsomeday I'll get around to setting up rotating GPG keys. 
 
 
 ## [Version 0.10.0] - Released 2019-08-15
@@ -185,8 +185,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Add `--version` option to CLI interface
 
 ### Changed 
-* Improved backwards compatibility. Explicit continuations now work more similarly to the original doctest. 
-* You no longer need a comment to denote that a `...` is a continuation and not a ellipsis.
+* You no longer need a comment to denote that a `...` is a continuation and not
+  a ellipsis. (i.e. you don't need to write `... #`)
 * Want statements will check against return values in nested continuations
 * Cleaned up internal code, private APIs may break.
 * Failed doctests will now print their original line prefixes (either `>>> ` or `... ` when possible)
