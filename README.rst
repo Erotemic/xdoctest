@@ -393,7 +393,7 @@ Thus, a test that fails in ``doctest`` based on a "got"/"want" check, may pass
 in ``xdoctest``. For this reason it is recommended that you rely on coded
 ``assert``-statements for system-critical code. This also makes it much easier
 to transform your ``xdoctest`` into a ``unittest`` when you realize your
-doctests start getting too long.
+doctests are getting too long.
 
 
 

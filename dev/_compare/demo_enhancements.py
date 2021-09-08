@@ -76,3 +76,20 @@ def multiple_eval_for_loops_v2():
     0
     1
     """
+
+
+def compact_style_code():
+    """
+    This compact style is a bit ugly, but it should still be valid python
+
+    Exception:
+        >>> try: raise Exception  # doctest: +ELLIPSIS
+        ... except Exception: raise
+        Traceback (most recent call last):
+        ...
+        Exception
+        ...
+
+    """
+    try: raise Exception  # NOQA
+    except Exception: pass  # NOQA
