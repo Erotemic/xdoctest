@@ -9,11 +9,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 
 * Added GitHub actions to the CI
+* Disabled workaround 16806 in Python 3.7+
 
 
 ### Fixed
 
 * Fixed minor test failures
+* Fixed #106 - an issue to do with compiling multiline-single statements
 
 
 ## Version 0.15.8 - Released 2021-09-02
