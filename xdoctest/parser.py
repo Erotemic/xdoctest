@@ -52,7 +52,8 @@ INDENT_RE = re.compile(r'^([ ]*)(?=\S)', re.MULTILINE)
 
 
 # This issue was resolved in 3.7
-NEED_16806_WORKAROUND = sys.version_info[0:2] < (3, 7)
+# NEED_16806_WORKAROUND = sys.version_info[0:2] < (3, 7)
+NEED_16806_WORKAROUND = sys.version_info[0:2] < (3, 8)
 
 
 class DoctestParser(object):
