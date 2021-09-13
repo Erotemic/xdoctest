@@ -48,8 +48,14 @@ from xdoctest import static_analysis as static
 
 DEBUG = '--debug' in sys.argv
 
+DEBUG = 10
+
 
 INDENT_RE = re.compile(r'^([ ]*)(?=\S)', re.MULTILINE)
+
+
+# This issue was resolved in 3.7
+NEED_16806_WORKAROUND = sys.version_info[0:2] < (3, 7)
 
 
 class DoctestParser(object):
@@ -57,6 +63,7 @@ class DoctestParser(object):
     Breaks docstrings into parts using the `parse` method.
 
     Example:
+        >>> from xdoctest.parser import *  # NOQA
         >>> parser = DoctestParser()
         >>> doctest_parts = parser.parse(
         >>>     '''
@@ -176,9 +183,9 @@ class DoctestParser(object):
                 tb_text = ub.indent(tb_text)
                 print(tb_text)
 
-                print('Failed to parse string = <{[<{[<{[')
+                print('Failed to parse string = <{[<{[<{[  # xdoc debug')
                 print(string)
-                print(']}>a]}>]}>  # end string')
+                print(']}>]}>]}>  # xdoc debug end string')
 
                 print('info = {}'.format(ub.repr2(info)))
                 print('-----')
@@ -435,9 +442,10 @@ class DoctestParser(object):
 
         Returns:
             Tuple[List[int], bool]:
-                a list of indices indicating which lines are considered "PS1"
-                and a flag indicating if the final line should be considered
-                for a got/want assertion.
+                linenos is the first value a list of indices indicating which
+                lines are considered "PS1" and
+                eval_final, the second value, is a flag indicating if the final
+                line should be considered for a got/want assertion.
 
         Example:
             >>> self = DoctestParser()
@@ -452,6 +460,19 @@ class DoctestParser(object):
             >>> linenos, eval_final = self._locate_ps1_linenos(source_lines)
             >>> assert linenos == [0, 2]
             >>> assert eval_final is True
+
+        Example:
+            >>> from xdoctest.parser import *  # NOQA
+            >>> self = DoctestParser()
+            >>> source_lines = [
+            >>>    '>>> x = 1',
+            >>>    '>>> try: raise Exception',
+            >>>    '>>> except Exception: pass',
+            >>>    '...',
+            >>> ]
+            >>> linenos, eval_final = self._locate_ps1_linenos(source_lines)
+            >>> assert linenos == [0, 1]
+            >>> assert not eval_final
         """
         # Strip indentation (and PS1 / PS2 from source)
         exec_source_lines = [p[4:] for p in source_lines]
@@ -513,7 +534,7 @@ class DoctestParser(object):
 
         statement_nodes = pt.body
         ps1_linenos = [node.lineno - 1 for node in statement_nodes]
-        NEED_16806_WORKAROUND = True
+        # NEED_16806_WORKAROUND = 1
         if NEED_16806_WORKAROUND:  # pragma: nobranch
             ps1_linenos = self._workaround_16806(
                 ps1_linenos, exec_source_lines)
@@ -664,6 +685,12 @@ class DoctestParser(object):
         for line_idx, line in line_iter:
             match = INDENT_RE.search(line)
             line_indent = 0 if match is None else (match.end() - match.start())
+            if DEBUG:  # nocover
+                print('Next line {}: {}'.format(line_idx, line), 'green')
+                print('state_indent = {!r}'.format(state_indent))
+                print('match = {!r}'.format(match))
+                print('line_indent = {!r}'.format(line_indent))
+
             norm_line = line[state_indent:]  # Normalize line indentation
             strip_line = line.strip()
 
@@ -731,6 +758,7 @@ class DoctestParser(object):
                         print('completing source')
                     for part, norm_line in _complete_source(line, state_indent, line_iter):
                         if DEBUG > 4:  # nocover
+                            print('Append Completion Line:')
                             print('part = {!r}'.format(part))
                             print('norm_line = {!r}'.format(norm_line))
                             print('curr_state = {!r}'.format(curr_state))
@@ -783,11 +811,25 @@ def _complete_source(line, state_indent, line_iter):
     """
     helper
     remove lines from the iterator if they are needed to complete source
+
+    This uses :func:`static.is_balanced_statement` to do the heavy lifting
+
+    Example:
+        >>> from xdoctest.parser import *  # NOQA
+        >>> from xdoctest.parser import _complete_source
+        >>> state_indent = 0
+        >>> line = '>>> x = { # The line is not finished'
+        >>> remain_lines = ['>>> 1:2,', '>>> 3:4,', '>>> 5:6}', '>>> y = 7']
+        >>> line_iter = enumerate(remain_lines, start=1)
+        >>> finished = list(_complete_source(line, state_indent, line_iter))
+        >>> final = chr(10).join([t[1] for t in finished])
+        >>> print(final)
     """
     norm_line = line[state_indent:]  # Normalize line indentation
     prefix = norm_line[:4]
     suffix = norm_line[4:]
-    assert prefix.strip() in {'>>>', '...'}, '{}'.format(prefix)
+    assert prefix.strip() in {'>>>', '...'}, (
+        'unexpected prefix: {!r}'.format(prefix))
     yield line, norm_line
 
     source_parts = [suffix]

@@ -499,6 +499,36 @@ def test_backwards_compat_indent_value():
     assert status['passed']
 
 
+def test_concise_exceptions():
+    """
+    CommandLine:
+        xdoctest -m ~/code/xdoctest/testing/test_core.py test_concise_exceptions
+    """
+    from xdoctest.doctest_example import DocTest
+    example = DocTest(
+        utils.codeblock(r"""
+        >>> # xdoctest: +IGNORE_WANT
+        >>> try: raise Exception
+        ... except Exception: print(lambda *a, **b: sys.stdout.write(str(a) + "\n" + str(b)))
+        a bad want string
+        ...
+        """))
+    status = example.run(verbose=0)
+    assert status['passed']
+
+    from xdoctest.doctest_example import DocTest
+    example = DocTest(
+        utils.codeblock(r"""
+        >>> # xdoctest: +IGNORE_WANT
+        >>> try: raise Exception
+        >>> except Exception: print(lambda *a, **b: sys.stdout.write(str(a) + "\n" + str(b)))
+        a bad want string
+        ...
+        """))
+    status = example.run(verbose=0)
+    assert status['passed']
+
+
 if __name__ == '__main__':
     """
     CommandLine:

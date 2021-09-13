@@ -63,6 +63,15 @@ class DoctestPart(object):
     def source(self):
         return '\n'.join(self.exec_lines)
 
+    def compilable_source(self):
+        """
+        Use this to build the string for compile. Takes care of a corner case.
+        """
+        if self.compile_mode == 'single':
+            return '\n'.join(self.exec_lines + [''])
+        else:
+            return '\n'.join(self.exec_lines)
+
     @property
     def directives(self):
         """
