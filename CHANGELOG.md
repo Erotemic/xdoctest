@@ -9,7 +9,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 
 * Added GitHub actions to the CI
-* Disabled workaround 16806 in Python 3.7+
+* Disabled workaround 16806 in Python 3.8+
 
 
 ### Fixed
