@@ -51,6 +51,16 @@ def logTracebackThisDoesnt(logFunction):
     pass
 
 
+def slurpFile(path, mode, maxbytes, **kwds):
+    """
+    >>> import os; slurpFile(os.path.abspath(__file__), mode = 'rb')[:9]
+    b'# coding='
+    >>> import os; slurpFile(os.path.abspath(__file__), encoding='utf-8')[:9]
+    '# coding='
+    """
+    pass
+
+
 # def logTracebackThisWorks(logFunction):
 #     r""" Logs the exception traceback to the specified log function.
 

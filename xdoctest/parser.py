@@ -684,7 +684,7 @@ class DoctestParser(object):
             match = INDENT_RE.search(line)
             line_indent = 0 if match is None else (match.end() - match.start())
             if DEBUG:  # nocover
-                print('Next line {}: {}'.format(line_idx, line), 'green')
+                print('Next line {}: {}'.format(line_idx, line))
                 print('state_indent = {!r}'.format(state_indent))
                 print('match = {!r}'.format(match))
                 print('line_indent = {!r}'.format(line_indent))
