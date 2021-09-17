@@ -139,6 +139,7 @@ class DoctestParser(object):
             >>> doctest_parts = self.parse(string)
             >>> # each part with a want-string needs to be broken in two
             >>> assert len(doctest_parts) == 6
+            >>> len(doctest_parts)
         """
         if DEBUG > 1:
             print('\n===== PARSE ====')
@@ -256,9 +257,9 @@ class DoctestParser(object):
         if DEBUG > 1:
             print(' * locate ps1 lines')
         # Find the line number of each standalone statement
-        ps1_linenos, eval_final = self._locate_ps1_linenos(source_lines)
+        ps1_linenos, mode_hint = self._locate_ps1_linenos(source_lines)
         if DEBUG > 1:
-            print('eval_final = {!r}'.format(eval_final))
+            print('mode_hint = {!r}'.format(mode_hint))
             print(' * located ps1 lines')
 
         # Find all directives here:
@@ -308,7 +309,7 @@ class DoctestParser(object):
                     example = slice_example(s1, s2)
                     yield example
                 s1 = s2
-            if want_lines and eval_final:
+            if want_lines and mode_hint in {'eval', 'single'}:
                 # Whenever the evaluation of the final line needs to be tested
                 # against want, that line must be separated into its own part.
                 # We break the last line off so we can eval its value, but keep
@@ -321,17 +322,17 @@ class DoctestParser(object):
         s2 = None
 
         example = slice_example(s1, s2, want_lines)
+
+        # if mode_hint is False:
+        #     mode_hint = 'exec'
+        # if mode_hint is True:
+        #     mode_hint = 'eval'
+
         if not bool(want_lines):
             example.compile_mode = 'exec'
         else:
-            if eval_final is True:
-                example.compile_mode = 'eval'
-            elif eval_final is False:
-                example.compile_mode = 'exec'
-            elif eval_final == 'single':
-                example.compile_mode = 'single'
-            else:
-                raise KeyError(eval_final)
+            assert mode_hint in {'eval', 'exec', 'single'}
+            example.compile_mode = mode_hint
 
         if DEBUG > 1:
             print('example.compile_mode = {!r}'.format(example.compile_mode))
@@ -442,22 +443,22 @@ class DoctestParser(object):
             Tuple[List[int], bool]:
                 linenos is the first value a list of indices indicating which
                 lines are considered "PS1" and
-                eval_final, the second value, is a flag indicating if the final
+                mode_hint, the second value, is a flag indicating if the final
                 line should be considered for a got/want assertion.
 
         Example:
             >>> self = DoctestParser()
             >>> source_lines = ['>>> def foo():', '>>>     return 0', '>>> 3']
-            >>> linenos, eval_final = self._locate_ps1_linenos(source_lines)
+            >>> linenos, mode_hint = self._locate_ps1_linenos(source_lines)
             >>> assert linenos == [0, 2]
-            >>> assert eval_final is True
+            >>> assert mode_hint == 'eval'
 
         Example:
             >>> self = DoctestParser()
             >>> source_lines = ['>>> x = [1, 2, ', '>>> 3, 4]', '>>> print(len(x))']
-            >>> linenos, eval_final = self._locate_ps1_linenos(source_lines)
+            >>> linenos, mode_hint = self._locate_ps1_linenos(source_lines)
             >>> assert linenos == [0, 2]
-            >>> assert eval_final is True
+            >>> assert mode_hint == 'eval'
 
         Example:
             >>> from xdoctest.parser import *  # NOQA
@@ -468,9 +469,20 @@ class DoctestParser(object):
             >>>    '>>> except Exception: pass',
             >>>    '...',
             >>> ]
-            >>> linenos, eval_final = self._locate_ps1_linenos(source_lines)
+            >>> linenos, mode_hint = self._locate_ps1_linenos(source_lines)
             >>> assert linenos == [0, 1]
-            >>> assert not eval_final
+            >>> assert mode_hint == 'exec'
+
+        Example:
+            >>> from xdoctest.parser import *  # NOQA
+            >>> self = DoctestParser()
+            >>> source_lines = [
+            >>>    '>>> import os; print(os)',
+            >>>    '...',
+            >>> ]
+            >>> linenos, mode_hint = self._locate_ps1_linenos(source_lines)
+            >>> assert linenos == [0]
+            >>> assert mode_hint == 'single'
         """
         # Strip indentation (and PS1 / PS2 from source)
         exec_source_lines = [p[4:] for p in source_lines]
@@ -530,6 +542,9 @@ class DoctestParser(object):
                     syn_ex.text = line  + '\n'
             raise syn_ex
 
+        # print(ast.dump(pt))
+        # print('pt = {!r}'.format(pt))
+
         statement_nodes = pt.body
         ps1_linenos = [node.lineno - 1 for node in statement_nodes]
         # NEED_16806_WORKAROUND = 1
@@ -543,17 +558,25 @@ class DoctestParser(object):
         }
         ps1_linenos = sorted(set(ps1_linenos).difference(ps2_linenos))
 
+        # There are 3 ways to compile python code
+        # exec, eval, and single.
+
+        # We almost always want to exec, but if we want to match the return
+        # value of the function, we will need to run it in eval or single mode.
+        mode_hint = 'exec'
         if len(statement_nodes) == 0:
-            eval_final = False
+            mode_hint = 'exec'
         else:
             # Is the last statement evaluate-able?
             if sys.version_info.major == 2:  # nocover
-                eval_final = isinstance(statement_nodes[-1], (
-                    ast.Expr, ast.Print))
+                # Python 2 overhead
+                if isinstance(statement_nodes[-1], (ast.Expr, ast.Print)):
+                    mode_hint = 'eval'
             else:
-                # This should just be an Expr in python3
-                # (todo: ensure this is true)
-                eval_final = isinstance(statement_nodes[-1], ast.Expr)
+                if isinstance(statement_nodes[-1], ast.Expr):
+                    # This should just be an Expr in python3
+                    # (todo: ensure this is true)
+                    mode_hint = 'eval'
 
         # WORKON_BACKWARDS_COMPAT_CONTINUE_EVAL:
         # Force doctests parts to evaluate in backwards compatible "single"
@@ -561,9 +584,24 @@ class DoctestParser(object):
         if len(source_lines) > 1:
             if source_lines[0].startswith('>>> '):
                 if all(_hasprefix(s, ('...',)) for s in source_lines[1:]):
-                    eval_final = 'single'
+                    mode_hint = 'single'
 
-        return ps1_linenos, eval_final
+        if mode_hint == 'eval':
+            # Also check the tokens in the source lines to look for semicolons
+            # to fix #108
+            # Only iterate through non-empty lines otherwise tokenize will stop short
+            # TODO: we probably could just save the tokens if we got them earlier?
+            import tokenize
+            iterable = (line for line in exec_source_lines if line)
+            def _readline():
+                return next(iterable)
+            # We cannot eval a statement with a semicolon in it
+            # Single should work.
+            if any(t.type == tokenize.OP and t.string == ';'
+                   for t in tokenize.generate_tokens(_readline)):
+                mode_hint = 'single'
+
+        return ps1_linenos, mode_hint
 
     @staticmethod
     def _workaround_16806(ps1_linenos, exec_source_lines):
