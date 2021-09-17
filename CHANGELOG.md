@@ -15,7 +15,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Fixed
 
 * Fixed minor test failures
-* Fixed #106 - an issue to do with compiling multiline-single statements
+* Fixed #106 - an issue to do with compiling multiline statements in single mode.
+* Fixed #108 - an issue to do with compiling semicolon token in eval mode.
 
 
 ## Version 0.15.8 - Released 2021-09-02
