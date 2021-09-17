@@ -841,7 +841,7 @@ def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True,
                 break
 
 
-def is_balanced_statement(lines, only_tokens=False):
+def is_balanced_statement(lines, only_tokens=False, reraise=0):
     r"""
     Checks if the lines have balanced braces and quotes.
 
@@ -900,6 +900,13 @@ def is_balanced_statement(lines, only_tokens=False):
         >>> ]
         >>> print('\n'.join(source_parts))
         >>> assert is_balanced_statement(source_parts)
+
+    Doctest:
+        >>> lines = ['try: raise Exception']
+        >>> is_balanced_statement(lines, only_tokens=1)
+        True
+        >>> is_balanced_statement(lines, only_tokens=0)
+        False
     """
     # Only iterate through non-empty lines otherwise tokenize will stop short
     lines = list(lines)
@@ -912,11 +919,15 @@ def is_balanced_statement(lines, only_tokens=False):
     except tokenize.TokenError as ex:
         message = ex.args[0]
         if message.startswith('EOF in multi-line'):
+            if reraise:
+                raise
             return False
         raise
     except IndentationError as ex:
         message = ex.args[0]
         if message.startswith('unindent does not match any outer indentation'):
+            if reraise:
+                raise
             return False
         raise
     else:
@@ -932,8 +943,9 @@ def is_balanced_statement(lines, only_tokens=False):
                 # text = dedent(text)
                 six_axt_parse(text)
             except SyntaxError:
+                if reraise:
+                    raise
                 return False
-
         return True
 
 

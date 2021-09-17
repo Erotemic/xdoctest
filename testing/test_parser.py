@@ -166,7 +166,7 @@ def test_label_indented_lines():
     ]
     if labeled != expected:
         try:
-            import ubelt as ub
+            # import ubelt as ub  # NOQA
             import itertools as it
             for got, want in it.zip_longest(labeled, expected):
                 if got != want:
@@ -191,8 +191,8 @@ def test_ps1_linenos_1():
         1
         ''').split('\n')[:-1]
     self = parser.DoctestParser()
-    linenos, eval_final = self._locate_ps1_linenos(source_lines)
-    assert eval_final
+    linenos, mode_hint = self._locate_ps1_linenos(source_lines)
+    assert mode_hint == 'eval'
     assert linenos == [0, 1]
 
 
@@ -206,8 +206,8 @@ def test_ps1_linenos_2():
         x = 21
         ''').split('\n')[:-1]
     self = parser.DoctestParser()
-    linenos, eval_final = self._locate_ps1_linenos(source_lines)
-    assert eval_final
+    linenos, mode_hint = self._locate_ps1_linenos(source_lines)
+    assert mode_hint == 'eval'
     assert linenos == [0, 3]
 
 
@@ -221,8 +221,8 @@ def test_ps1_linenos_3():
         'x = 21'
         ''').split('\n')[:-1]
     self = parser.DoctestParser()
-    linenos, eval_final = self._locate_ps1_linenos(source_lines)
-    assert not eval_final
+    linenos, mode_hint = self._locate_ps1_linenos(source_lines)
+    assert mode_hint == 'exec'
     assert linenos == [0, 3]
 
 
@@ -253,8 +253,8 @@ def test_ps1_linenos_4():
         59
         ''').split('\n')[:-1]
     self = parser.DoctestParser()
-    linenos, eval_final = self._locate_ps1_linenos(source_lines)
-    assert eval_final
+    linenos, mode_hint = self._locate_ps1_linenos(source_lines)
+    assert mode_hint == 'eval'
     assert linenos == [0, 3, 5, 9, 13, 16, 17, 20]
 
 
@@ -269,8 +269,8 @@ def test_retain_source():
         ''')
     source_lines = source.split('\n')[:-1]
     self = parser.DoctestParser()
-    linenos, eval_final = self._locate_ps1_linenos(source_lines)
-    assert eval_final
+    linenos, mode_hint = self._locate_ps1_linenos(source_lines)
+    assert mode_hint == 'eval'
     assert linenos == [0, 1]
     p1, p2 = self.parse(source)
     assert p1.source == 'x = 2'
@@ -333,9 +333,9 @@ def test_parse_eval_nowant():
     self = parser.DoctestParser()
     parts = self.parse(string)
     raw_source_lines = string.split('\n')[:]
-    ps1_linenos, eval_final = self._locate_ps1_linenos(raw_source_lines)
+    ps1_linenos, mode_hint = self._locate_ps1_linenos(raw_source_lines)
     assert ps1_linenos == [0, 1]
-    assert eval_final
+    assert mode_hint == 'eval'
     # Only one part because there is no want
     assert len(parts) == 1
 
@@ -350,9 +350,9 @@ def test_parse_eval_single_want():
     self = parser.DoctestParser()
     parts = self.parse(string)
     raw_source_lines = string.split('\n')[:-1]
-    ps1_linenos, eval_final = self._locate_ps1_linenos(raw_source_lines)
+    ps1_linenos, mode_hint = self._locate_ps1_linenos(raw_source_lines)
     assert ps1_linenos == [0, 1]
-    assert eval_final
+    assert mode_hint == 'eval'
     # Only one part because there is no want
     assert len(parts) == 2
 
@@ -366,7 +366,7 @@ def test_parse_comment():
     labeled = self._label_docsrc_lines(string)
     assert labeled == [('dsrc', '>>> # nothing')]
     source_lines = string.split('\n')[:]
-    linenos, eval_final = self._locate_ps1_linenos(source_lines)
+    linenos, mode_hint = self._locate_ps1_linenos(source_lines)
     parts = self.parse(string)
     assert parts[0].source.strip().startswith('#')
 
@@ -489,7 +489,7 @@ def test_repl_twoline():
 def test_repl_comment_in_string():
     source_lines = ['>>> x = """', '    # comment in a string', '    """']
     self = parser.DoctestParser()
-    assert self._locate_ps1_linenos(source_lines) == ([0], False)
+    assert self._locate_ps1_linenos(source_lines) == ([0], 'exec')
 
     source_lines = [
         '>>> x = """',
@@ -500,7 +500,7 @@ def test_repl_comment_in_string():
         '    """',
     ]
     self = parser.DoctestParser()
-    assert self._locate_ps1_linenos(source_lines) == ([0, 3], False)
+    assert self._locate_ps1_linenos(source_lines) == ([0, 3], 'exec')
 
 
 def test_inline_directive():
@@ -534,8 +534,6 @@ def test_inline_directive():
         ''')
     # source_lines = string.splitlines()
     self = parser.DoctestParser()
-    # ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
-    # print(ps1_linenos)
     # [0, 1, 3, 4, 7, 8, 10, 11, 12]
     # assert ps1_linenos == [0, 2, 5, 6, 8, 9, 10]
     parts = self.parse(string)
@@ -563,7 +561,6 @@ def test_block_directive_nowant1():
         ''')
     # source_lines = string.splitlines()
     self = parser.DoctestParser()
-    # ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
     parts = self.parse(string)
     print('----')
     for part in parts:
@@ -591,7 +588,6 @@ def test_block_directive_nowant2():
         ''')
     # source_lines = string.splitlines()
     self = parser.DoctestParser()
-    # ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
     parts = self.parse(string)
     # TODO: finsh me
     assert len(parts) == 2
@@ -608,9 +604,7 @@ def test_block_directive_want1_assign():
         >>> _ = func2()  # assign this line so we dont break it off for eval
         want
         ''')
-    # source_lines = string.splitlines()
     self = parser.DoctestParser()
-    # ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
     parts = self.parse(string)
     print('----')
     for part in parts:
@@ -634,9 +628,7 @@ def test_block_directive_want1_eval():
         >>> func2()  # eval this line so it is broken off
         want
         ''')
-    source_lines = string.splitlines()
     self = parser.DoctestParser()
-    ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
     parts = self.parse(string)
     assert len(parts) == 2
 
@@ -653,9 +645,7 @@ def test_block_directive_want2_assign():
         >>> _ = func3()
         want
         ''')
-    source_lines = string.splitlines()
     self = parser.DoctestParser()
-    ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
     parts = self.parse(string)
     assert len(parts) == 2
 
@@ -672,9 +662,7 @@ def test_block_directive_want2_eval():
         >>> func3()
         want
         ''')
-    source_lines = string.splitlines()
     self = parser.DoctestParser()
-    ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
     parts = self.parse(string)
     print('----')
     for part in parts:
@@ -705,9 +693,7 @@ def test_block_directive_want2_eval2():
         >>> func4()
         want
         ''')
-    source_lines = string.splitlines()
     self = parser.DoctestParser()
-    ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
     parts = self.parse(string)
     assert len(parts) == 4
 

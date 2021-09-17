@@ -9,11 +9,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 
 * Added GitHub actions to the CI
+* Disabled workaround 16806 in Python 3.8+
 
 
 ### Fixed
 
 * Fixed minor test failures
+* Fixed #106 - an issue to do with compiling multiline statements in single mode.
+* Fixed #108 - an issue to do with compiling semicolon token in eval mode.
 
 
 ## Version 0.15.8 - Released 2021-09-02

@@ -609,8 +609,9 @@ class DocTest(object):
                     #   part.compile_mode can be single, exec, or eval.
                     #   Typically single is used instead of eval
                     self._partfilename = '<doctest:' + self.node + '>'
+                    source_text = part.compilable_source()
                     code = compile(
-                        part.source, mode=part.compile_mode,
+                        source_text, mode=part.compile_mode,
                         filename=self._partfilename,
                         flags=compileflags, dont_inherit=True
                     )
@@ -930,7 +931,7 @@ class DocTest(object):
         #     lines += ['{}'.format(list(failed_part.directives))]
 
         #     lines += ['Failed part source:']
-        #     lines += failed_part.source.splitlines()
+        #     lines += failed_part.exec_lines
         #     lines += ['Failed part want:']
         #     if failed_part.want_lines:
         #         lines += failed_part.want_lines

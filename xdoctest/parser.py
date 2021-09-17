@@ -39,6 +39,7 @@ import six
 import ast
 import sys
 import re
+import tokenize
 from xdoctest import utils
 from xdoctest import directive
 from xdoctest import exceptions
@@ -48,8 +49,12 @@ from xdoctest import static_analysis as static
 
 DEBUG = '--debug' in sys.argv
 
-
 INDENT_RE = re.compile(r'^([ ]*)(?=\S)', re.MULTILINE)
+
+
+# This issue was resolved in 3.8
+NEED_16806_WORKAROUND = sys.version_info[0:2] < (3, 8)
+PY2 = (sys.version_info.major == 2)
 
 
 class DoctestParser(object):
@@ -57,6 +62,7 @@ class DoctestParser(object):
     Breaks docstrings into parts using the `parse` method.
 
     Example:
+        >>> from xdoctest.parser import *  # NOQA
         >>> parser = DoctestParser()
         >>> doctest_parts = parser.parse(
         >>>     '''
@@ -122,6 +128,7 @@ class DoctestParser(object):
             <BLANKLINE> directive is still in effect.
 
         Example:
+            >>> from xdoctest.parser import *  # NOQA
             >>> from xdoctest import parser
             >>> from xdoctest.docstr import docscrape_google
             >>> from xdoctest import core
@@ -134,6 +141,7 @@ class DoctestParser(object):
             >>> doctest_parts = self.parse(string)
             >>> # each part with a want-string needs to be broken in two
             >>> assert len(doctest_parts) == 6
+            >>> len(doctest_parts)
         """
         if DEBUG > 1:
             print('\n===== PARSE ====')
@@ -176,9 +184,9 @@ class DoctestParser(object):
                 tb_text = ub.indent(tb_text)
                 print(tb_text)
 
-                print('Failed to parse string = <{[<{[<{[')
+                print('Failed to parse string = <{[<{[<{[  # xdoc debug')
                 print(string)
-                print(']}>a]}>]}>  # end string')
+                print(']}>]}>]}>  # xdoc debug end string')
 
                 print('info = {}'.format(ub.repr2(info)))
                 print('-----')
@@ -251,9 +259,9 @@ class DoctestParser(object):
         if DEBUG > 1:
             print(' * locate ps1 lines')
         # Find the line number of each standalone statement
-        ps1_linenos, eval_final = self._locate_ps1_linenos(source_lines)
+        ps1_linenos, mode_hint = self._locate_ps1_linenos(source_lines)
         if DEBUG > 1:
-            print('eval_final = {!r}'.format(eval_final))
+            print('mode_hint = {!r}'.format(mode_hint))
             print(' * located ps1 lines')
 
         # Find all directives here:
@@ -303,7 +311,7 @@ class DoctestParser(object):
                     example = slice_example(s1, s2)
                     yield example
                 s1 = s2
-            if want_lines and eval_final:
+            if want_lines and mode_hint in {'eval', 'single'}:
                 # Whenever the evaluation of the final line needs to be tested
                 # against want, that line must be separated into its own part.
                 # We break the last line off so we can eval its value, but keep
@@ -316,17 +324,17 @@ class DoctestParser(object):
         s2 = None
 
         example = slice_example(s1, s2, want_lines)
+
+        # if mode_hint is False:
+        #     mode_hint = 'exec'
+        # if mode_hint is True:
+        #     mode_hint = 'eval'
+
         if not bool(want_lines):
             example.compile_mode = 'exec'
         else:
-            if eval_final is True:
-                example.compile_mode = 'eval'
-            elif eval_final is False:
-                example.compile_mode = 'exec'
-            elif eval_final == 'single':
-                example.compile_mode = 'single'
-            else:
-                raise KeyError(eval_final)
+            assert mode_hint in {'eval', 'exec', 'single'}
+            example.compile_mode = mode_hint
 
         if DEBUG > 1:
             print('example.compile_mode = {!r}'.format(example.compile_mode))
@@ -435,23 +443,48 @@ class DoctestParser(object):
 
         Returns:
             Tuple[List[int], bool]:
-                a list of indices indicating which lines are considered "PS1"
-                and a flag indicating if the final line should be considered
-                for a got/want assertion.
+                linenos is the first value a list of indices indicating which
+                lines are considered "PS1" and
+                mode_hint, the second value, is a flag indicating if the final
+                line should be considered for a got/want assertion.
 
         Example:
             >>> self = DoctestParser()
             >>> source_lines = ['>>> def foo():', '>>>     return 0', '>>> 3']
-            >>> linenos, eval_final = self._locate_ps1_linenos(source_lines)
+            >>> linenos, mode_hint = self._locate_ps1_linenos(source_lines)
             >>> assert linenos == [0, 2]
-            >>> assert eval_final is True
+            >>> assert mode_hint == 'eval'
 
         Example:
             >>> self = DoctestParser()
             >>> source_lines = ['>>> x = [1, 2, ', '>>> 3, 4]', '>>> print(len(x))']
-            >>> linenos, eval_final = self._locate_ps1_linenos(source_lines)
+            >>> linenos, mode_hint = self._locate_ps1_linenos(source_lines)
             >>> assert linenos == [0, 2]
-            >>> assert eval_final is True
+            >>> assert mode_hint == 'eval'
+
+        Example:
+            >>> from xdoctest.parser import *  # NOQA
+            >>> self = DoctestParser()
+            >>> source_lines = [
+            >>>    '>>> x = 1',
+            >>>    '>>> try: raise Exception',
+            >>>    '>>> except Exception: pass',
+            >>>    '...',
+            >>> ]
+            >>> linenos, mode_hint = self._locate_ps1_linenos(source_lines)
+            >>> assert linenos == [0, 1]
+            >>> assert mode_hint == 'exec'
+
+        Example:
+            >>> from xdoctest.parser import *  # NOQA
+            >>> self = DoctestParser()
+            >>> source_lines = [
+            >>>    '>>> import os; print(os)',
+            >>>    '...',
+            >>> ]
+            >>> linenos, mode_hint = self._locate_ps1_linenos(source_lines)
+            >>> assert linenos == [0]
+            >>> assert mode_hint == 'single'
         """
         # Strip indentation (and PS1 / PS2 from source)
         exec_source_lines = [p[4:] for p in source_lines]
@@ -511,9 +544,12 @@ class DoctestParser(object):
                     syn_ex.text = line  + '\n'
             raise syn_ex
 
+        # print(ast.dump(pt))
+        # print('pt = {!r}'.format(pt))
+
         statement_nodes = pt.body
         ps1_linenos = [node.lineno - 1 for node in statement_nodes]
-        NEED_16806_WORKAROUND = True
+        # NEED_16806_WORKAROUND = 1
         if NEED_16806_WORKAROUND:  # pragma: nobranch
             ps1_linenos = self._workaround_16806(
                 ps1_linenos, exec_source_lines)
@@ -524,17 +560,25 @@ class DoctestParser(object):
         }
         ps1_linenos = sorted(set(ps1_linenos).difference(ps2_linenos))
 
+        # There are 3 ways to compile python code
+        # exec, eval, and single.
+
+        # We almost always want to exec, but if we want to match the return
+        # value of the function, we will need to run it in eval or single mode.
+        mode_hint = 'exec'
         if len(statement_nodes) == 0:
-            eval_final = False
+            mode_hint = 'exec'
         else:
             # Is the last statement evaluate-able?
-            if sys.version_info.major == 2:  # nocover
-                eval_final = isinstance(statement_nodes[-1], (
-                    ast.Expr, ast.Print))
+            if PY2:  # nocover
+                # Python 2 overhead
+                if isinstance(statement_nodes[-1], (ast.Expr, ast.Print)):
+                    mode_hint = 'eval'
             else:
-                # This should just be an Expr in python3
-                # (todo: ensure this is true)
-                eval_final = isinstance(statement_nodes[-1], ast.Expr)
+                if isinstance(statement_nodes[-1], ast.Expr):
+                    # This should just be an Expr in python3
+                    # (todo: ensure this is true)
+                    mode_hint = 'eval'
 
         # WORKON_BACKWARDS_COMPAT_CONTINUE_EVAL:
         # Force doctests parts to evaluate in backwards compatible "single"
@@ -542,9 +586,28 @@ class DoctestParser(object):
         if len(source_lines) > 1:
             if source_lines[0].startswith('>>> '):
                 if all(_hasprefix(s, ('...',)) for s in source_lines[1:]):
-                    eval_final = 'single'
+                    mode_hint = 'single'
 
-        return ps1_linenos, eval_final
+        if mode_hint == 'eval':
+            # Also check the tokens in the source lines to look for semicolons
+            # to fix #108
+            # Only iterate through non-empty lines otherwise tokenize will stop short
+            # TODO: we probably could just save the tokens if we got them earlier?
+            iterable = (line for line in exec_source_lines if line)
+            def _readline():
+                return next(iterable)
+            # We cannot eval a statement with a semicolon in it
+            # Single should work.
+            if PY2:
+                if any(t[0] == tokenize.OP and t[1] == ';'
+                       for t in tokenize.generate_tokens(_readline)):
+                    mode_hint = 'single'
+            else:
+                if any(t.type == tokenize.OP and t.string == ';'
+                       for t in tokenize.generate_tokens(_readline)):
+                    mode_hint = 'single'
+
+        return ps1_linenos, mode_hint
 
     @staticmethod
     def _workaround_16806(ps1_linenos, exec_source_lines):
@@ -664,6 +727,12 @@ class DoctestParser(object):
         for line_idx, line in line_iter:
             match = INDENT_RE.search(line)
             line_indent = 0 if match is None else (match.end() - match.start())
+            if DEBUG:  # nocover
+                print('Next line {}: {}'.format(line_idx, line))
+                print('state_indent = {!r}'.format(state_indent))
+                print('match = {!r}'.format(match))
+                print('line_indent = {!r}'.format(line_indent))
+
             norm_line = line[state_indent:]  # Normalize line indentation
             strip_line = line.strip()
 
@@ -731,6 +800,7 @@ class DoctestParser(object):
                         print('completing source')
                     for part, norm_line in _complete_source(line, state_indent, line_iter):
                         if DEBUG > 4:  # nocover
+                            print('Append Completion Line:')
                             print('part = {!r}'.format(part))
                             print('norm_line = {!r}'.format(norm_line))
                             print('curr_state = {!r}'.format(curr_state))
@@ -783,11 +853,25 @@ def _complete_source(line, state_indent, line_iter):
     """
     helper
     remove lines from the iterator if they are needed to complete source
+
+    This uses :func:`static.is_balanced_statement` to do the heavy lifting
+
+    Example:
+        >>> from xdoctest.parser import *  # NOQA
+        >>> from xdoctest.parser import _complete_source
+        >>> state_indent = 0
+        >>> line = '>>> x = { # The line is not finished'
+        >>> remain_lines = ['>>> 1:2,', '>>> 3:4,', '>>> 5:6}', '>>> y = 7']
+        >>> line_iter = enumerate(remain_lines, start=1)
+        >>> finished = list(_complete_source(line, state_indent, line_iter))
+        >>> final = chr(10).join([t[1] for t in finished])
+        >>> print(final)
     """
     norm_line = line[state_indent:]  # Normalize line indentation
     prefix = norm_line[:4]
     suffix = norm_line[4:]
-    assert prefix.strip() in {'>>>', '...'}, '{}'.format(prefix)
+    assert prefix.strip() in {'>>>', '...'}, (
+        'unexpected prefix: {!r}'.format(prefix))
     yield line, norm_line
 
     source_parts = [suffix]
