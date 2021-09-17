@@ -39,6 +39,7 @@ import six
 import ast
 import sys
 import re
+import tokenize
 from xdoctest import utils
 from xdoctest import directive
 from xdoctest import exceptions
@@ -51,9 +52,9 @@ DEBUG = '--debug' in sys.argv
 INDENT_RE = re.compile(r'^([ ]*)(?=\S)', re.MULTILINE)
 
 
-# This issue was resolved in 3.7
-# NEED_16806_WORKAROUND = sys.version_info[0:2] < (3, 7)
+# This issue was resolved in 3.8
 NEED_16806_WORKAROUND = sys.version_info[0:2] < (3, 8)
+PY2 = (sys.version_info.major == 2)
 
 
 class DoctestParser(object):
@@ -127,6 +128,7 @@ class DoctestParser(object):
             <BLANKLINE> directive is still in effect.
 
         Example:
+            >>> from xdoctest.parser import *  # NOQA
             >>> from xdoctest import parser
             >>> from xdoctest.docstr import docscrape_google
             >>> from xdoctest import core
@@ -568,7 +570,7 @@ class DoctestParser(object):
             mode_hint = 'exec'
         else:
             # Is the last statement evaluate-able?
-            if sys.version_info.major == 2:  # nocover
+            if PY2:  # nocover
                 # Python 2 overhead
                 if isinstance(statement_nodes[-1], (ast.Expr, ast.Print)):
                     mode_hint = 'eval'
@@ -591,15 +593,19 @@ class DoctestParser(object):
             # to fix #108
             # Only iterate through non-empty lines otherwise tokenize will stop short
             # TODO: we probably could just save the tokens if we got them earlier?
-            import tokenize
             iterable = (line for line in exec_source_lines if line)
             def _readline():
                 return next(iterable)
             # We cannot eval a statement with a semicolon in it
             # Single should work.
-            if any(t.type == tokenize.OP and t.string == ';'
-                   for t in tokenize.generate_tokens(_readline)):
-                mode_hint = 'single'
+            if PY2:
+                if any(t[0] == tokenize.OP and t[1] == ';'
+                       for t in tokenize.generate_tokens(_readline)):
+                    mode_hint = 'single'
+            else:
+                if any(t.type == tokenize.OP and t.string == ';'
+                       for t in tokenize.generate_tokens(_readline)):
+                    mode_hint = 'single'
 
         return ps1_linenos, mode_hint
 
