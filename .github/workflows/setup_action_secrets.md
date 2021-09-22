@@ -113,7 +113,7 @@ and then a secret file that looks like this
     export PERSONAL_GITHUB_PUSH_TOKEN="git-push-token:<token-password>"
 ```
 
-You should also make a `secret_unloader.sh` that points to a script that
+You might also want to make a `secret_unloader.sh` that points to a script that
 unloads these secret variables from the environment.
 
 Given this file-structure setup, you can then run the following
@@ -135,19 +135,19 @@ echo $TWINE_USERNAME
 # See previous CIRCLE_CI section for more details
 
 # HOW TO ENCRYPT YOUR SECRET GPG KEY
-IDENTIFIER="travis-ci-Erotemic"
-GPG_KEYID=$(gpg --list-keys --keyid-format LONG "$IDENTIFIER" | head -n 2 | tail -n 1 | awk '{print $1}' | tail -c 9)
+IDENTIFIER="Erotemic-CI <erotemic@gmail.com>"
+GPG_KEYID=$(gpg --list-keys --keyid-format LONG "$IDENTIFIER" | head -n 2 | tail -n 1 | awk '{print $1}')
 echo "GPG_KEYID = $GPG_KEYID"
 
 # Export plaintext gpg public keys, private keys, and trust info
 mkdir -p dev
-gpg --armor --export-secret-keys $GPG_KEYID > dev/ci_secret_gpg_key.pgp
+gpg --armor --export-secret-subkeys $GPG_KEYID > dev/ci_secret_gpg_subkeys.pgp
 gpg --armor --export $GPG_KEYID > dev/ci_public_gpg_key.pgp
 gpg --export-ownertrust > dev/gpg_owner_trust
 
 # Encrypt gpg keys and trust with CI secret
 GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/ci_public_gpg_key.pgp > dev/ci_public_gpg_key.pgp.enc
-GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/ci_secret_gpg_key.pgp > dev/ci_secret_gpg_key.pgp.enc
+GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/ci_secret_gpg_subkeys.pgp > dev/ci_secret_gpg_subkeys.pgp.enc
 GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/gpg_owner_trust > dev/gpg_owner_trust.enc
 echo $GPG_KEYID > dev/public_gpg_key
 
@@ -155,7 +155,7 @@ echo $GPG_KEYID > dev/public_gpg_key
 cat dev/public_gpg_key
 GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc 
 GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc 
-GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_key.pgp.enc 
+GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc 
 
 source $(secret_unloader.sh)
 
