@@ -231,6 +231,7 @@ jobs:
         path: ./wheelhouse/xdoctest*.whl
 
   deploy:
+    # Publish on the real PyPI
     name: Uploading to PyPi
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
@@ -243,22 +244,77 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: wheels
-          path: wheelhouse
+          path: dist
 
       - name: Show files to upload
         shell: bash
-        run: ls -la wheelhouse
+        run: ls -la dist
+
+      # Note:
+      # See ../../dev/setup_secrets.sh for details on how secrets are deployed securely
       - name: Sign and Publish
         env:
-          # Secrets should be uploaded here: 
-          # https://github.com/Erotemic/xdoctest/settings/secrets/actions
-          # Toggle comments to publish to the test pypi instead of the real one
-          #TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
-          #EROTEMIC_TWINE_USERNAME: ${{ secrets.EROTEMIC_TWINE_USERNAME }}
-          #EROTEMIC_TWINE_PASSWORD: ${{ secrets.EROTEMIC_TWINE_PASSWORD }}
+          TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
+          TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+          EROTEMIC_CI_SECRET: ${{ secrets.EROTEMIC_CI_SECRET }}
+        run: |
+          ls -al
+          GPG_EXECUTABLE=gpg
+          $GPG_EXECUTABLE --version
+          openssl version
+          $GPG_EXECUTABLE --list-keys
+          GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+          GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import-ownertrust
+          GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import 
+          $GPG_EXECUTABLE --list-keys  || echo "first invocation of gpg creates directories and returns 1"
+          $GPG_EXECUTABLE --list-keys  
+          MB_PYTHON_TAG=$(python -c "import setup; print(setup.MB_PYTHON_TAG)")
+          VERSION=$(python -c "import setup; print(setup.VERSION)") 
+          pip install twine
+          pip install six pyopenssl ndg-httpsclient pyasn1 -U --user
+          pip install requests[security] twine --user
+          GPG_KEYID=$(cat dev/public_gpg_key)
+          echo "GPG_KEYID = '$GPG_KEYID'"
+          MB_PYTHON_TAG=$MB_PYTHON_TAG \
+              DO_GPG=True GPG_KEYID=$GPG_KEYID \
+              TWINE_REPOSITORY_URL=${TWINE_REPOSITORY_URL} \
+              TWINE_PASSWORD=$TWINE_PASSWORD \
+              TWINE_USERNAME=$TWINE_USERNAME \
+              GPG_EXECUTABLE=$GPG_EXECUTABLE \
+              DO_UPLOAD=True \
+              DO_TAG=False ./publish.sh 
+
+  test_deploy:
+    # Publish on the test PyPI
+    name: Uploading to Test PyPi
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (startsWith(github.event.ref, 'refs/heads/main') || startsWith(github.event.ref, 'refs/heads/master'))
+    needs: [build_and_test_wheels, build_and_test_sdist]
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v2
+
+      - name: Download wheels and sdist
+        uses: actions/download-artifact@v2
+        with:
+          name: wheels
+          path: dist
+
+      - name: Show files to upload
+        shell: bash
+        run: ls -la dist
+      - name: Sign and Publish
+        env:
           TEST_TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
-          EROTEMIC_TEST_TWINE_USERNAME: ${{ secrets.EROTEMIC_TEST_TWINE_USERNAME }}
-          EROTEMIC_TEST_TWINE_PASSWORD: ${{ secrets.EROTEMIC_TEST_TWINE_PASSWORD }}
+          #TEST_TWINE_USERNAME: ${{ secrets.TEST_TWINE_USERNAME }}
+          #TEST_TWINE_PASSWORD: ${{ secrets.TEST_TWINE_PASSWORD }}
+          #export TEST_TWINE_USERNAME=${{ secrets.EROTEMIC_TEST_TWINE_USERNAME }}
+          #export TEST_TWINE_PASSWORD=${{ secrets.EROTEMIC_TEST_TWINE_PASSWORD }}
+          #PYUTILS_CI_SECRET: ${{ secrets.PYUTILS_CI_SECRET }}
+          TEST_TWINE_USERNAME: ${{ secrets.TEST_TWINE_USERNAME }}
+          TEST_TWINE_PASSWORD: ${{ secrets.TEST_TWINE_PASSWORD }}
+          EROTEMIC_CI_SECRET: ${{ secrets.EROTEMIC_CI_SECRET }}
         run: |
           ls -al
           GPG_EXECUTABLE=gpg
@@ -268,8 +324,8 @@ jobs:
           export EROTEMIC_CI_SECRET=${{ secrets.EROTEMIC_CI_SECRET }}
           GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
           GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
-          GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
-          $GPG_EXECUTABLE --list-keys  || echo "first one fails for some reason"
+          GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import 
+          $GPG_EXECUTABLE --list-keys  || echo "first invocation of gpg creates directories and returns 1"
           $GPG_EXECUTABLE --list-keys  
           MB_PYTHON_TAG=$(python -c "import setup; print(setup.MB_PYTHON_TAG)")
           VERSION=$(python -c "import setup; print(setup.VERSION)") 
@@ -278,30 +334,15 @@ jobs:
           pip install requests[security] twine --user
           GPG_KEYID=$(cat dev/public_gpg_key)
           echo "GPG_KEYID = '$GPG_KEYID'"
-          #
-          #export TWINE_REPOSITORY_URL=https://test.pypi.org/legacy/
-          #export TEST_TWINE_USERNAME=${{ secrets.EROTEMIC_TEST_TWINE_USERNAME }}
-          #export TEST_TWINE_PASSWORD=${{ secrets.EROTEMIC_TEST_TWINE_PASSWORD }}
-          #MB_PYTHON_TAG=$MB_PYTHON_TAG \
-          #    DO_GPG=True GPG_KEYID=$GPG_KEYID \
-          #    TWINE_REPOSITORY_URL=${TWINE_REPOSITORY_URL} \
-          #    TWINE_USERNAME=$TEST_TWINE_USERNAME \
-          #    TWINE_PASSWORD=$TEST_TWINE_PASSWORD \
-          #    GPG_EXECUTABLE=$GPG_EXECUTABLE \
-          #    DO_UPLOAD=True \
-          #    DO_TAG=False ./publish.sh
-          #
-          export TWINE_REPOSITORY_URL=https://upload.pypi.org/legacy/
-          export TWINE_USERNAME=${{ secrets.EROTEMIC_TWINE_USERNAME }}
-          export TWINE_PASSWORD=${{ secrets.EROTEMIC_TWINE_PASSWORD }}
-          MB_PYTHON_TAG="*" \
+          MB_PYTHON_TAG=$MB_PYTHON_TAG \
               DO_GPG=True GPG_KEYID=$GPG_KEYID \
-              TWINE_REPOSITORY_URL=${TWINE_REPOSITORY_URL} \
-              TWINE_USERNAME=$TWINE_USERNAME \
-              TWINE_PASSWORD=$TWINE_PASSWORD \
+              TWINE_REPOSITORY_URL=${TEST_TWINE_REPOSITORY_URL} \
+              TWINE_USERNAME=${TEST_TWINE_USERNAME} \
+              TWINE_PASSWORD=${TEST_TWINE_PASSWORD} \
               GPG_EXECUTABLE=$GPG_EXECUTABLE \
-              DO_UPLOAD=False \
-              DO_TAG=False ./publish.sh 
+              DO_UPLOAD=True \
+              DO_TAG=False ./publish.sh
+
        
 ###
 # Unfortunately we cant (yet) use the yaml docstring trick here
