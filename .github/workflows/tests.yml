@@ -302,7 +302,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Download wheels and sdist
-        uses: actions/download-artifact@v2
+        usesGPG_KEYID: actions/download-artifact@v2
         with:
           name: wheels
           path: dist
@@ -313,11 +313,6 @@ jobs:
       - name: Sign and Publish
         env:
           TEST_TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
-          #TEST_TWINE_USERNAME: ${{ secrets.TEST_TWINE_USERNAME }}
-          #TEST_TWINE_PASSWORD: ${{ secrets.TEST_TWINE_PASSWORD }}
-          #export TEST_TWINE_USERNAME=${{ secrets.EROTEMIC_TEST_TWINE_USERNAME }}
-          #export TEST_TWINE_PASSWORD=${{ secrets.EROTEMIC_TEST_TWINE_PASSWORD }}
-          #PYUTILS_CI_SECRET: ${{ secrets.PYUTILS_CI_SECRET }}
           TEST_TWINE_USERNAME: ${{ secrets.TEST_TWINE_USERNAME }}
           TEST_TWINE_PASSWORD: ${{ secrets.TEST_TWINE_PASSWORD }}
           EROTEMIC_CI_SECRET: ${{ secrets.EROTEMIC_CI_SECRET }}
