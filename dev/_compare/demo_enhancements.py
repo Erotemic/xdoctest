@@ -1,8 +1,12 @@
 """
-TODO:
-    Anything that works in both should be moved into a different files to show
-    commonalities, and anything that only works in one should be in another
-    file to show differences.
+This file contains doctests that work in xdoctest but fail in doctest
+
+Use the following command lines to run the doctest and xdoctest version to see
+the difference:
+
+CommandLine:
+    python -m xdoctest demo_enhancements.py
+    python -m doctest demo_enhancements.py
 """
 
 
@@ -29,8 +33,6 @@ def embeded_triple_quotes():
     """
     pass
 
-# TODO: fix the higlighting of the "got" string when dumping test results
-
 
 def sequential_print_statements():
     """
@@ -54,7 +56,7 @@ def repl_print_statements():
 
 def multiple_eval_for_loops_v1():
     """
-    This is one corner case, where doctest can do something xdoctest cannot.
+    Previously this failed in xdoctest, but now it works as of 0.9.1
 
     >>> for i in range(2):
     ...     '%s' % i
@@ -74,3 +76,20 @@ def multiple_eval_for_loops_v2():
     0
     1
     """
+
+
+def compact_style_code():
+    """
+    This compact style is a bit ugly, but it should still be valid python
+
+    Exception:
+        >>> try: raise Exception  # doctest: +ELLIPSIS
+        ... except Exception: raise
+        Traceback (most recent call last):
+        ...
+        Exception
+        ...
+
+    """
+    try: raise Exception  # NOQA
+    except Exception: pass  # NOQA

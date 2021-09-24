@@ -499,6 +499,106 @@ def test_backwards_compat_indent_value():
     assert status['passed']
 
 
+def test_concise_try_except():
+    """
+    CommandLine:
+        xdoctest -m ~/code/xdoctest/testing/test_core.py test_concise_try_except
+    """
+    from xdoctest.doctest_example import DocTest
+    example = DocTest(
+        utils.codeblock(r"""
+        >>> # xdoctest: +IGNORE_WANT
+        >>> try: raise Exception
+        ... except Exception: print(lambda *a, **b: sys.stdout.write(str(a) + "\n" + str(b)))
+        a bad want string
+        ...
+        """))
+    status = example.run(verbose=0)
+    assert status['passed']
+
+    from xdoctest.doctest_example import DocTest
+    example = DocTest(
+        utils.codeblock(r"""
+        >>> # xdoctest: +IGNORE_WANT
+        >>> try: raise Exception
+        >>> except Exception: print(lambda *a, **b: sys.stdout.write(str(a) + "\n" + str(b)))
+        a bad want string
+        ...
+        """))
+    status = example.run(verbose=0)
+    assert status['passed']
+
+
+def test_semicolon_line():
+    r"""
+    Test for https://github.com/Erotemic/xdoctest/issues/108
+
+    Note:
+        Notes on the issue:
+
+        .. code:: python
+            # This works
+            compile("import os; print(os)", filename="", mode='exec')
+            compile("import os; print(os)", filename="", mode='single')
+
+            compile("1; 2", filename="", mode='exec')
+            compile("1; 2", filename="", mode='single')
+
+            compile("print();print()", filename="", mode='single')
+            compile("print();print()", filename="", mode='exec')
+
+            compile("print()", filename="", mode='eval')
+            compile("print()", filename="", mode='exec')
+            compile("print()", filename="", mode='single')
+
+            # This breaks:
+            compile("import os; print(os)", filename="", mode='eval')
+
+            # I suppose we can't have imports in an eval?
+            compile("import os\n", filename="", mode='eval')
+
+            # Or multiple lines?
+            compile("print();print()", filename="", mode='eval')
+
+            # No imports, no assignments, no semicolons
+            compile("1; 2", filename="", mode='eval')
+
+
+    CommandLine:
+        xdoctest -m ~/code/xdoctest/testing/test_core.py test_concise_exceptions
+    """
+    from xdoctest.doctest_example import DocTest
+    example = DocTest(
+        utils.codeblock(r"""
+        >>> import os; print(os.path.abspath('.'))
+        """))
+    status = example.run(verbose=0)
+    assert status['passed']
+
+    # The problem case was when it was compiled with a "want" statement
+    #
+    from xdoctest.doctest_example import DocTest
+    example = DocTest(
+        utils.codeblock(r"""
+        >>> import os; print(os.path.abspath('.'))
+        ...
+        """))
+    status = example.run(verbose=0)
+    assert status['passed']
+
+    # Test single import
+    # import xdoctest
+    # xdoctest.parser.DEBUG = 100
+    from xdoctest.doctest_example import DocTest
+    example = DocTest(
+        utils.codeblock(r"""
+        >>> import os
+        ...
+        """))
+    status = example.run(verbose=0)
+    assert status['passed']
+
+
 if __name__ == '__main__':
     """
     CommandLine:

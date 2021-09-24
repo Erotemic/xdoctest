@@ -4,15 +4,24 @@ We are currently working on porting this changelog to the specifications in
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Version 0.15.8 - Unreleased
+## Version 0.15.9 - Unreleased
+
+### Changed
+
+* Added GitHub actions to the CI
+* Disabled workaround 16806 in Python 3.8+
+* New CI GPG Keys: Erotemic-CI: 70858F4D01314BF21427676F3D568E6559A34380 for
+  reference the old signing key was 98007794ED130347559354B1109AC852D297D757.
 
 
 ### Fixed
 
-* Hotfix - removed debug print statements
+* Fixed minor test failures
+* Fixed #106 - an issue to do with compiling multiline statements in single mode.
+* Fixed #108 - an issue to do with compiling semicolon token in eval mode.
 
 
-## Version 0.15.7 - Released 2021-09-02
+## Version 0.15.8 - Released 2021-09-02
 
 ### Changed
 * Removed the distracting and very long internal traceback that occurred in
@@ -22,12 +31,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   nothing unless `-s` is also given so pytest does not supress output)
 
 
+## Version 0.15.7 - Yanked 
+
 ### Fixed
 * Bug in REQUIRES state did not respect `python_implementation` arguments
 * Ported sphinx fixes from ubelt 
 
 ## Version 0.15.6 - Released 2021-08-08
-
 
 ### Changed
 * Directive syntax errors are now handled as doctest runtime errors and return
@@ -168,7 +178,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 * `PythonPathContext` now works in more corner cases, although some rarer
   corner cases will now break. This trade-off should be a net positive. 
-* Releases are handled by TravisCI and will be signed with the GPG key 98007794ED130347559354B1109AC852D297D757 (note we will rotate this key in 1 year).
+* Releases are handled by TravisCI and will be signed with the GPG key 98007794ED130347559354B1109AC852D297D757 (note we will rotate this key in 1 year). <- (2021-09-06) lol that did not happen, dsomeday I'll get around to setting up rotating GPG keys. 
 
 
 ## [Version 0.10.0] - Released 2019-08-15
@@ -180,8 +190,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Add `--version` option to CLI interface
 
 ### Changed 
-* Improved backwards compatibility. Explicit continuations now work more similarly to the original doctest. 
-* You no longer need a comment to denote that a `...` is a continuation and not a ellipsis.
+* You no longer need a comment to denote that a `...` is a continuation and not
+  a ellipsis. (i.e. you don't need to write `... #`)
 * Want statements will check against return values in nested continuations
 * Cleaned up internal code, private APIs may break.
 * Failed doctests will now print their original line prefixes (either `>>> ` or `... ` when possible)
