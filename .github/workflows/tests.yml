@@ -88,11 +88,12 @@ jobs:
     #needs: [lint]
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        #os: [ubuntu-latest, windows-latest, macOS-latest]
+        os: [ubuntu-latest]
         python-version: 
-          - '3.5'
-          - '3.6'
-          - '3.7'
+          #- '3.5'
+          #- '3.6'
+          #- '3.7'
           - '3.8'
         arch: [auto]
         #cibw_build: [cp3*-*]
@@ -264,9 +265,14 @@ jobs:
           $GPG_EXECUTABLE --version
           openssl version
           $GPG_EXECUTABLE --list-keys
+          echo "Decrypting Keys"
           GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+          $GPG_EXECUTABLE --list-keys || true
           GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import-ownertrust
+          $GPG_EXECUTABLE --list-keys || true
           GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import 
+          $GPG_EXECUTABLE --list-keys || true
+          echo "Finish Decrypt Keys"
           $GPG_EXECUTABLE --list-keys  || echo "first invocation of gpg creates directories and returns 1"
           $GPG_EXECUTABLE --list-keys  
           MB_PYTHON_TAG=$(python -c "import setup; print(setup.MB_PYTHON_TAG)")
@@ -289,7 +295,7 @@ jobs:
     # Publish on the test PyPI
     name: Uploading to Test PyPi
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (startsWith(github.event.ref, 'refs/heads/main') || startsWith(github.event.ref, 'refs/heads/master'))
+    #if: github.event_name == 'push' && (startsWith(github.event.ref, 'refs/heads/main') || startsWith(github.event.ref, 'refs/heads/master'))
     needs: [build_and_test_wheels, build_and_test_sdist]
     steps:
       - name: Checkout source
@@ -320,11 +326,15 @@ jobs:
           GPG_EXECUTABLE=gpg
           $GPG_EXECUTABLE --version
           openssl version
-          $GPG_EXECUTABLE --list-keys
-          export EROTEMIC_CI_SECRET=${{ secrets.EROTEMIC_CI_SECRET }}
+          $GPG_EXECUTABLE --list-keys || true
+          echo "Decrypting Keys"
           GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+          $GPG_EXECUTABLE --list-keys || true
           GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
+          $GPG_EXECUTABLE --list-keys || true
           GLKWS=$EROTEMIC_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import 
+          $GPG_EXECUTABLE --list-keys || true
+          echo "Finish Decrypt Keys"
           $GPG_EXECUTABLE --list-keys  || echo "first invocation of gpg creates directories and returns 1"
           $GPG_EXECUTABLE --list-keys  
           MB_PYTHON_TAG=$(python -c "import setup; print(setup.MB_PYTHON_TAG)")
