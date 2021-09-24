@@ -88,12 +88,11 @@ jobs:
     #needs: [lint]
     strategy:
       matrix:
-        #os: [ubuntu-latest, windows-latest, macOS-latest]
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
         python-version: 
-          #- '3.5'
-          #- '3.6'
-          #- '3.7'
+          - '3.5'
+          - '3.6'
+          - '3.7'
           - '3.8'
         arch: [auto]
         #cibw_build: [cp3*-*]
