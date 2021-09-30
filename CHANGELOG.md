@@ -4,6 +4,13 @@ We are currently working on porting this changelog to the specifications in
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 0.15.10 - Unreleased
+
+### Fixed
+
+* Fix issue #112 `--analysis=dynamic` argument is now respected
+
+
 ## Version 0.15.9 - Released 2021-09-24
 
 ### Changed

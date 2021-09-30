@@ -474,6 +474,9 @@ def package_calldefs(pkg_identifier, exclude=[], ignore_syntax_errors=True,
         >>> assert util_import.modpath_to_modname(modpath) == pkg_identifier
         >>> assert 'package_calldefs' in calldefs
     """
+    if DEBUG:
+        print('Find package calldefs: pkg_identifier = {!r}'.format(pkg_identifier))
+
     if isinstance(pkg_identifier, types.ModuleType):
         # Case where we are forced to use a live module
         identifiers = [pkg_identifier]
@@ -494,7 +497,7 @@ def package_calldefs(pkg_identifier, exclude=[], ignore_syntax_errors=True,
                     'Is it an old pyc file?'.format(modname))
                 continue
         try:
-            calldefs = parse_calldefs(module_identifier)
+            calldefs = parse_calldefs(module_identifier, analysis=analysis)
             if calldefs is not None:
                 yield calldefs, module_identifier
         except SyntaxError as ex:
@@ -563,6 +566,9 @@ def parse_calldefs(module_identifier, analysis='auto'):
         do_dynamic = need_dynamic
     else:
         raise KeyError(analysis)
+
+    if DEBUG:
+        print('About to parse calldefs with do_dynamic={}'.format(do_dynamic))
 
     calldefs = None
     if do_dynamic:
