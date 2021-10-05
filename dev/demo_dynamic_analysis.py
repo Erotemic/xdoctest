@@ -1,6 +1,10 @@
 """
 CommandLine:
-    xdoctest = ~/code/xdoctest/dev/demo_dynamic_analysis.py
+    xdoctest ~/code/xdoctest/dev/demo_dynamic_analysis.py --analysis=auto
+
+    xdoctest ~/code/xdoctest/dev/demo_dynamic_analysis.py --analysis=dynamic
+
+    xdoctest ~/code/xdoctest/dev/demo_dynamic_analysis.py --xdoc-force-dynamic
 """
 
 

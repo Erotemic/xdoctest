@@ -1,4 +1,4 @@
-|CircleCI| |Travis| |Appveyor| |Codecov| |Pypi| |Downloads| |ReadTheDocs|
+|GithubActions| |CircleCI| |Appveyor| |Codecov| |Pypi| |Downloads| |ReadTheDocs|
 
 
 .. The large version wont work because github strips rst image rescaling. 
@@ -399,15 +399,17 @@ doctests are getting too long.
 
 .. |CircleCI| image:: https://circleci.com/gh/Erotemic/xdoctest.svg?style=svg
     :target: https://circleci.com/gh/Erotemic/xdoctest
-.. |Travis| image:: https://img.shields.io/travis/Erotemic/xdoctest/master.svg?label=Travis%20CI
+.. |Travis| image:: https://img.shields.io/travis/Erotemic/xdoctest/main.svg?label=Travis%20CI
    :target: https://travis-ci.org/Erotemic/xdoctest
-.. |Appveyor| image:: https://ci.appveyor.com/api/projects/status/github/Erotemic/xdoctest?branch=master&svg=True
-   :target: https://ci.appveyor.com/project/Erotemic/xdoctest/branch/master
-.. |Codecov| image:: https://codecov.io/github/Erotemic/xdoctest/badge.svg?branch=master&service=github
-   :target: https://codecov.io/github/Erotemic/xdoctest?branch=master
+.. |Appveyor| image:: https://ci.appveyor.com/api/projects/status/github/Erotemic/xdoctest?branch=main&svg=True
+   :target: https://ci.appveyor.com/project/Erotemic/xdoctest/branch/main
+.. |Codecov| image:: https://codecov.io/github/Erotemic/xdoctest/badge.svg?branch=main&service=github
+   :target: https://codecov.io/github/Erotemic/xdoctest?branch=main
 .. |Pypi| image:: https://img.shields.io/pypi/v/xdoctest.svg
    :target: https://pypi.python.org/pypi/xdoctest
 .. |Downloads| image:: https://img.shields.io/pypi/dm/xdoctest.svg
    :target: https://pypistats.org/packages/xdoctest
 .. |ReadTheDocs| image:: https://readthedocs.org/projects/xdoctest/badge/?version=latest
     :target: https://xdoctest.readthedocs.io
+.. |GithubActions| image:: https://github.com/Erotemic/xdoctest/actions/workflows/tests.yml/badge.svg?branch=main
+    :target: https://github.com/Erotemic/xdoctest/actions?query=branch%3Amain
