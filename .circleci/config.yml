@@ -98,7 +98,7 @@ jobs:
       # Setting the python executable environ allows template reuse for pypy
       - PYTHON_EXE: python
     docker:
-      - image: circleci/python
+      - image: cimg/python
     # We shouldnt need a lot of resources to run
     resource_class: small 
     steps:
@@ -196,83 +196,83 @@ jobs:
   test_full/cp3_10-3_10-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.10
+      - image: cimg/python:3.10.0
   
   test_full/cp39-39-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.9
+      - image: cimg/python:3.9
   
   test_full/cp38-38-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.8
+      - image: cimg/python:3.8
   
   test_full/cp37-37m-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
 
   test_full/cp36-36m-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.6
+      - image: cimg/python:3.6
 
   test_full/cp35-35m-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.5
+      - image: cimg/python:3.5
 
   test_full/cp34-34m-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.4
+      - image: cimg/python:3.4
 
   test_full/cp27-27mu-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:2.7
+      - image: cimg/python:2.7
 
   # ------------
   test_minimal/cp3_10-3_10-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.10
+      - image: cimg/python:3.10
   
   test_minimal/cp39-39-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.9
+      - image: cimg/python:3.9
   
   test_minimal/cp38-38-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.8
+      - image: cimg/python:3.8
 
   test_minimal/cp37-37m-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
 
   test_minimal/cp36-36m-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.6
+      - image: cimg/python:3.6
 
   test_minimal/cp35-35m-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.5
+      - image: cimg/python:3.5
 
   test_minimal/cp34-34m-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.4
+      - image: cimg/python:3.4
 
   test_minimal/cp27-27mu-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:2.7
+      - image: cimg/python:2.7
 
   # --- pypy ----
 
@@ -294,14 +294,14 @@ jobs:
 .__doc__: &__doc__
     - | 
 
-        IMAGE_NAME=circleci/python:3.9
+        IMAGE_NAME=cimg/python:3.9
         docker pull $IMAGE_NAME
 
         IMAGE_NAME=pypy:3
         docker pull $IMAGE_NAME
         docker run -v $HOME/code/xdoctest:/io -it $IMAGE_NAME bash
 
-        IMAGE_NAME=circleci/python:3.10
+        IMAGE_NAME=cimg/python:3.10
         docker pull $IMAGE_NAME
 
         
