@@ -280,7 +280,7 @@ __autogen__ = '''
 mkinit xdoctest --nomods
 '''
 
-__version__ = '0.15.10'
+__version__ = '0.15.11'
 
 
 # Expose only select submodules
