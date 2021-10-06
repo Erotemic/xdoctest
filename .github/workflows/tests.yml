@@ -97,6 +97,7 @@ jobs:
           - '3.8'
           - '3.9'
           - '3.10'
+        # TODO: It is probably safe to not run the "strict" variant on all of the other matrix params. 
         arch: [auto]
         #cibw_build: [cp3*-*]
         #cibw_skip: ["*-win32"]
@@ -184,8 +185,9 @@ jobs:
         # Get the most recent wheel that matches the pattern
         pwd
         ls -al
-        ls -al wheelhouse
-        WHEEL_FPATH=$(ls wheelhouse/xdoctest*.whl -t| head -n1)
+        ls -altr wheelhouse
+        WHEEL_FPATH=$(ls -t wheelhouse/xdoctest*.whl| head -n1)
+        echo "WHEEL_FPATH = $WHEEL_FPATH"
         if [[ "${REQUIREMENT_MODE}" == "strict" ]]; then 
           # Install the wheel with strict requirements
           source dev/make_strict_req.sh
