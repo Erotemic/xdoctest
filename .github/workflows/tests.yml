@@ -182,7 +182,10 @@ jobs:
         mv xdoctest ignore_src_xdoctest
         rm pytest.ini
         # Get the most recent wheel that matches the pattern
-        WHEEL_FPATH=$(ls wheelhouse/* -t| head -n1)
+        pwd
+        ls -al
+        ls -al wheelhouse
+        WHEEL_FPATH=$(ls wheelhouse/xdoctest*.whl -t| head -n1)
         if [[ "${REQUIREMENT_MODE}" == "strict" ]]; then 
           # Install the wheel with strict requirements
           source dev/make_strict_req.sh
