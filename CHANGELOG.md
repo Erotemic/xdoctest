@@ -6,6 +6,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Version 0.15.10 - Unreleased
 
+### Added
+
+* Support for Python 3.10
+
+
+## Version 0.15.10 - Released 2021-10-08
+
 
 ### Changed
 

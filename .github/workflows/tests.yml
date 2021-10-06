@@ -94,6 +94,8 @@ jobs:
           - '3.6'
           - '3.7'
           - '3.8'
+          - '3.9'
+          - '3.10'
         arch: [auto]
         #cibw_build: [cp3*-*]
         #cibw_skip: ["*-win32"]

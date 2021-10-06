@@ -196,7 +196,7 @@ jobs:
   test_full/cp3_10-3_10-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.10-rc
+      - image: circleci/python:3.10
   
   test_full/cp39-39-linux:
     <<: *test_full_template
@@ -237,7 +237,7 @@ jobs:
   test_minimal/cp3_10-3_10-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.10-rc
+      - image: circleci/python:3.10
   
   test_minimal/cp39-39-linux:
     <<: *test_minimal_template
@@ -301,7 +301,7 @@ jobs:
         docker pull $IMAGE_NAME
         docker run -v $HOME/code/xdoctest:/io -it $IMAGE_NAME bash
 
-        IMAGE_NAME=circleci/python:3.10-rc
+        IMAGE_NAME=circleci/python:3.10
         docker pull $IMAGE_NAME
 
         
