@@ -117,6 +117,8 @@ jobs:
       - run:
           name: install dependencies
           command: |
+            pwd
+            ls -al
             $PYTHON_EXE -m venv venv || virtualenv -v venv  # first command is python3 || second is python2
             . venv/bin/activate
             # The "minimal" tests install barebones requirements
@@ -156,6 +158,8 @@ jobs:
       - run:
           name: install dependencies
           command: |
+            pwd
+            ls -al
             $PYTHON_EXE -m venv venv || virtualenv -v venv  # first command is python3 || second is python2
             . venv/bin/activate
             # The "full" dependency install
