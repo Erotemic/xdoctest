@@ -111,9 +111,9 @@ jobs:
     steps:
       - checkout
       # ### INITIALIZE AND CACHE REQUIREMENTS ###
-      - restore_cache:
-          keys:
-          - v3-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ .Environment.CIRCLE_JOB }}
+      #- restore_cache:
+      #    keys:
+      #    - v3-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ .Environment.CIRCLE_JOB }}
       - run:
           name: install dependencies
           command: |
@@ -126,10 +126,10 @@ jobs:
             pip install -r requirements/tests.txt
             pip install -r requirements/runtime.txt 
             pip install .
-      - save_cache:
-          paths:
-            - ./venv
-          key: v3-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ .Environment.CIRCLE_JOB }}
+      #- save_cache:
+      #    paths:
+      #      - ./venv
+      #    key: v3-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ .Environment.CIRCLE_JOB }}
       # ### RUN TESTS ###
       - run:
           name: run tests
@@ -152,9 +152,9 @@ jobs:
     steps:
       - checkout
       # ### INITIALIZE AND CACHE REQUIREMENTS ###
-      - restore_cache:
-          keys:
-          - v3-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ checksum "requirements/colors.txt" }}-{{ .Environment.CIRCLE_JOB }}
+      #- restore_cache:
+      #    keys:
+      #    - v3-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ checksum "requirements/colors.txt" }}-{{ .Environment.CIRCLE_JOB }}
       - run:
           name: install dependencies
           command: |
@@ -167,10 +167,10 @@ jobs:
             pip install scikit-build
             pip install -r requirements.txt
             pip install .
-      - save_cache:
-          paths:
-            - ./venv
-          key: v3-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ checksum "requirements/colors.txt" }}-{{ .Environment.CIRCLE_JOB }}
+      #- save_cache:
+      #    paths:
+      #      - ./venv
+      #    key: v3-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ checksum "requirements/colors.txt" }}-{{ .Environment.CIRCLE_JOB }}
       # ### RUN TESTS ###
       - run:
           name: run tests
