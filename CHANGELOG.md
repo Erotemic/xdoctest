@@ -6,6 +6,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Version 0.15.10 - Unreleased
 
+
+### Changed
+
+* The xdoctest "analysis" option now defaults to "auto" everywhere.
+
 ### Fixed
 
 * Fix issue #112 `--analysis=dynamic` argument is now respected

@@ -102,7 +102,7 @@ def doctest_callable(func):
 
 def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
                    style='auto', verbose=None, config=None, durations=None,
-                   analysis='static'):
+                   analysis='auto'):
     """
     Executes requestsed google-style doctests in a package or module.
     Main entry point into the testing framework.
@@ -585,7 +585,7 @@ def _update_argparse_cli(add_argument, prefix=None):
 
     add_argument(*('--analysis',), type=str,
                  help='How doctests are collected',
-                 choices=['auto', 'static', 'dynamic'], default='static')
+                 choices=['auto', 'static', 'dynamic'], default='auto')
 
     add_argument(*('--durations',), type=int,
                  help=('Specify execution times for slowest N tests.'

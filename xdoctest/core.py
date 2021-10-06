@@ -592,7 +592,7 @@ def parse_calldefs(module_identifier, analysis='auto'):
 
 def parse_doctestables(module_identifier, exclude=[], style='auto',
                        ignore_syntax_errors=True, parser_kw={},
-                       analysis='static'):
+                       analysis='auto'):
     """
     Parses all doctests within top-level callables of a module and generates
     example objects.  The style influences which tests are found.
@@ -610,7 +610,7 @@ def parse_doctestables(module_identifier, exclude=[], style='auto',
 
         parser_kw: extra args passed to the parser
 
-        analysis (str, default='static'):
+        analysis (str, default='auto'):
             if 'static', only static analysis is used to parse call
             definitions. If 'auto', uses dynamic analysis for compiled python
             extensions, but static analysis elsewhere, if 'dynamic', then
