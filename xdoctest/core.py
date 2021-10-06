@@ -474,6 +474,9 @@ def package_calldefs(pkg_identifier, exclude=[], ignore_syntax_errors=True,
         >>> assert util_import.modpath_to_modname(modpath) == pkg_identifier
         >>> assert 'package_calldefs' in calldefs
     """
+    if DEBUG:
+        print('Find package calldefs: pkg_identifier = {!r}'.format(pkg_identifier))
+
     if isinstance(pkg_identifier, types.ModuleType):
         # Case where we are forced to use a live module
         identifiers = [pkg_identifier]
@@ -494,7 +497,7 @@ def package_calldefs(pkg_identifier, exclude=[], ignore_syntax_errors=True,
                     'Is it an old pyc file?'.format(modname))
                 continue
         try:
-            calldefs = parse_calldefs(module_identifier)
+            calldefs = parse_calldefs(module_identifier, analysis=analysis)
             if calldefs is not None:
                 yield calldefs, module_identifier
         except SyntaxError as ex:
@@ -564,6 +567,9 @@ def parse_calldefs(module_identifier, analysis='auto'):
     else:
         raise KeyError(analysis)
 
+    if DEBUG:
+        print('About to parse calldefs with do_dynamic={}'.format(do_dynamic))
+
     calldefs = None
     if do_dynamic:
         try:
@@ -586,7 +592,7 @@ def parse_calldefs(module_identifier, analysis='auto'):
 
 def parse_doctestables(module_identifier, exclude=[], style='auto',
                        ignore_syntax_errors=True, parser_kw={},
-                       analysis='static'):
+                       analysis='auto'):
     """
     Parses all doctests within top-level callables of a module and generates
     example objects.  The style influences which tests are found.
@@ -604,7 +610,7 @@ def parse_doctestables(module_identifier, exclude=[], style='auto',
 
         parser_kw: extra args passed to the parser
 
-        analysis (str, default='static'):
+        analysis (str, default='auto'):
             if 'static', only static analysis is used to parse call
             definitions. If 'auto', uses dynamic analysis for compiled python
             extensions, but static analysis elsewhere, if 'dynamic', then

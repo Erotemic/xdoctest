@@ -199,6 +199,53 @@ def test_defined_by_module():
         assert not flag, '{} should be not defined by {}'.format(item, module)
 
 
+def test_programatically_generated_docstrings():
+    """
+    Test that the "dynamic" analysis mode works on dynamically generated
+    docstrings.
+
+    """
+    from xdoctest import utils
+    from xdoctest.utils.util_misc import TempModule
+    temp = TempModule(utils.codeblock(
+        '''
+        code = ">>> print('hello world')"
+
+        def func1():
+            """
+            Example:
+                {}
+            """
+
+        func1.__doc__ = func1.__doc__.format(code)
+
+        '''))
+
+    import xdoctest
+    # auto wont pick up dynamic doctests by default
+    # Although in the future it would be cool if it did
+    result = xdoctest.doctest_module(temp.modpath, analysis='auto', command='all')
+    assert result['n_total'] == 1
+    assert result['n_failed'] == 0
+
+    # but an explicit dynamic should pick these up
+    result = xdoctest.doctest_module(temp.modpath, analysis='dynamic', command='all')
+    assert result['n_passed'] == 1
+    assert result['n_failed'] == 0
+
+    # module = ub.import_module_from_path(temp.modpath)
+    # assert module.func1.__doc__ is not None
+    # list(xdoctest.core.parse_doctestables(temp.modpath, analysis='dynamic'))
+    # xdoctest.core.DEBUG = 1
+    # calldefs = list(xdoctest.core.package_calldefs(temp.modpath, analysis='dynamic'))
+    # calldefs = list(xdoctest.core.parse_calldefs(temp.modpath, analysis='dynamic'))
+    # from xdoctest import dynamic_analysis
+    # from xdoctest import static_analysis
+    # static_analysis.parse_static_calldefs(fpath=temp.modpath)
+    # node = dynamic_analysis.parse_dynamic_calldefs(temp.modpath)['func1']
+    # node = dynamic_analysis.parse_dynamic_calldefs(temp.modpath)['func2']
+
+
 if __name__ == '__main__':
     """
     CommandLine:
