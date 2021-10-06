@@ -313,7 +313,11 @@ jobs:
         
         docker run -v $HOME/code/xdoctest:/io -it pypy:3 bash
 
+        IMAGE_NAME=cimg/python:3.10
         docker run -v $HOME/code/xdoctest:/io -it $IMAGE_NAME bash
+
+        python -m pip wheel --no-deps --wheel-dir wheelhouse /io 
+        python -m pip wheel --wheel-dir wheelhouse /io 
 
         cd /io
         
