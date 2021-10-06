@@ -9,7 +9,7 @@ jupyter_client>=7.0.0     ;                              python_version >= '3.6.
 jupyter_client>=6.1.5     ; python_version < '3.6.1' and python_version >= '3.5'    # Python 3.5
 
 
-IPython>=7.17.0    ;                            python_version >= '3.7'    # Python 3.7+
+IPython>=7.23.1    ;                            python_version >= '3.7'    # Python 3.7+
 IPython>=7.10.0    ; python_version < '3.7' and python_version >= '3.6'    # Python 3.6
 IPython>=7.0.0     ; python_version < '3.6' and python_version >= '3.5'    # Python 3.5
 

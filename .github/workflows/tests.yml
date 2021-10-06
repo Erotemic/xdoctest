@@ -89,7 +89,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
-        requirement_mode: [strict, loose]
+        #requirement_mode: [strict, loose]
+        requirement_mode: [strict]
         python-version: 
           - '3.5'
           - '3.6'
