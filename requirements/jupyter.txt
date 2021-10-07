@@ -34,4 +34,4 @@ jupyter_core >= 4.6.0  ; python_version >= '3.6'    # Python 3.6+
 
 
 # For jupyter-core
-pywin32>=1.0; sys_platform == "win32" and python_version >= '3.6' and platform_python_implementation != "PyPy"
+pywin32>=1.0; platform_system == "windows" and python_version >= '3.6' and platform_python_implementation != "PyPy"
