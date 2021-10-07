@@ -1,6 +1,9 @@
 # See ~/local/tools/supported_python_versions_pip.py for helper script
 
 
+jinja2>=3.0.0   ;                            python_version >= '3.6'    # Python 3.6+
+
+
 nbconvert>=6.0.0;                              python_version >= '3.6.0'   # Python 3.6+
 nbconvert>=5.6.1; python_version < '3.6.0' and python_version >= '3.5.0'   # Python 3.5
 
