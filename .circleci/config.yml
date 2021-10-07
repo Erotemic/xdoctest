@@ -317,7 +317,7 @@ jobs:
         docker run -v $HOME/code/xdoctest:/io -it $IMAGE_NAME bash
 
 
-        IMAGE_NAME=cimg/python:3.4
+        IMAGE_NAME=cimg/python:2.7
         docker run -v $HOME/code/xdoctest:/io -it $IMAGE_NAME bash
 
 
@@ -327,6 +327,9 @@ jobs:
         cd $HOME/xdoctest_repo
         source dev/make_strict_req.sh
         pip install -r requirements-strict.txt --user
+        PATH=/home/circleci/.local/bin:$PAT:$PATH
+        pip install -e . --user
+        python -m pytest 
         
 
 
