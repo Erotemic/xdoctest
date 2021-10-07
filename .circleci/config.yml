@@ -316,7 +316,19 @@ jobs:
         IMAGE_NAME=cimg/python:3.10
         docker run -v $HOME/code/xdoctest:/io -it $IMAGE_NAME bash
 
+
+        IMAGE_NAME=circleci/python:3.4
+        docker run -v $HOME/code/xdoctest:/io -it $IMAGE_NAME bash
+        git clone /io $HOME/xdoctest_repo
+        cd $HOME/xdoctest_repo
+        source dev/make_strict_req.sh
+        
+
+
         python -m pip wheel --no-deps --wheel-dir wheelhouse /io 
+        WHEEL_FPATH=$(ls wheelhouse/* -t| head -n1)
+        echo $WHEEL_FPATH
+
         python -m pip wheel --wheel-dir wheelhouse /io 
 
         cd /io
