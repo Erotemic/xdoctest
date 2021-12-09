@@ -34,7 +34,7 @@ ninja>=1.10.2
 pybind11>=2.7.1
 
 # for testing doctests in jupyter notebooks
--r jupyter.txt
+# -r jupyter.txt
 
 #pip uninstall pytest-ipynb
 #pytest-ipynb >= 1.1.1  
