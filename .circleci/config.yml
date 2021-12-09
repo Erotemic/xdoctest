@@ -323,8 +323,8 @@ jobs:
 
         IMAGE_NAME=circleci/python:3.4
         docker run -v $HOME/code/xdoctest:/io -it $IMAGE_NAME bash
-        git clone /io $HOME/xdoctest_repo
-        cd $HOME/xdoctest_repo
+        git clone /io $HOME/repo
+        cd $HOME/repo
         source dev/make_strict_req.sh
         pip install -r requirements-strict.txt --user
         PATH=/home/circleci/.local/bin:$PAT:$PATH
