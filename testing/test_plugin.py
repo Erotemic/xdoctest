@@ -547,7 +547,7 @@ class TestXDoctest(object):
     def test_doctest_unex_importerror_with_module(self, testdir):
         """
         CHANGES:
-            No longer fails durring collection because we're doing
+            No longer fails during collection because we're doing
             static-parsing baby!
 
         CommandLine:
@@ -1000,7 +1000,7 @@ class TestXDoctestModuleLevel(object):
             '# Empty'
             def my_func():
                 ">>> magic = 42 "
-            def unuseful():
+            def not_useful():
                 '''
                 # This is a function
                 # >>> # it doesn't have any xdoctest
@@ -1595,7 +1595,7 @@ class Disabled(object):
                 >>> magic - 42
                 0
                 '''
-            def unuseful():
+            def not_useful():
                 pass
             def another():
                 '''
