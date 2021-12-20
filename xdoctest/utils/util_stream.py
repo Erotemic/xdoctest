@@ -142,7 +142,7 @@ class CaptureStdout(CaptureStream):
         if _misspelled_varname in kwargs:  # nocover
             import warnings
             warnings.warn(
-                'Argument of CaptureStdout supress is misspelled and deprecated. Use suppress instead', DeprecationWarning)
+                'Argument of CaptureStdout {} is misspelled and deprecated. Use suppress instead'.format(_misspelled_varname), DeprecationWarning)
             suppress = kwargs.pop(_misspelled_varname)
             if len(kwargs) > 0:
                 raise ValueError('unexpected args: {}'.format(kwargs))

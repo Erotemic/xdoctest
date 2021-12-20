@@ -695,7 +695,7 @@ class DocTest(object):
                         print('Test gracefully exists on: ex={}'.format(ex))
                     break
                 except checker.GotWantException:
-                    # When the "got", does't match the "want"
+                    # When the "got", doesn't match the "want"
                     self.exc_info = sys.exc_info()
                     if on_error == 'raise':
                         raise

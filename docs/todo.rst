@@ -42,7 +42,7 @@ Running:
 -  [x] Defaults to static parsing doctests
 -  [x] Ability to dynamically parse doctests
 -  [x] Can run tests in extension modules
--  [ ] Add dynamic parsing to pytest plugin
+-  [x] Add dynamic parsing to pytest plugin
 
 Directives
 ~~~~~~~~~~
@@ -63,7 +63,7 @@ Testing:
 -  [x] CI-via Travis
 -  [x] CI-via AppVeyor
 -  [x] Coverage
--  [ ] Add a small pybind11 extension module that demonstrates how tests
+-  [x] Add a small pybind11 extension module that demonstrates how tests
    can be defined and run in extension modules
 -  [ ] 95% or better coverage (note reported coverage is artificially
    small due to issues with coverage of pytest plugins)
@@ -86,6 +86,6 @@ Uncategorized:
    and then fallback to freeform mode if no doctests are found or if an
    error occurs. (new in 0.4.0)
 - [x] multi-part got / want "delayed" matching (new in 0.4.0). 
-- [x] fix the higlighting of the "got" string when dumping test results (new in 0.4.0)
+- [x] fix the highlighting of the "got" string when dumping test results (new in 0.4.0)
 - [ ] Write a plugin to sphinx so it uses xdoctest instead of doctest?
 - [ ] Attempt to get pytorch branch merged: https://github.com/pytorch/pytorch/pull/15648

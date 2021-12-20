@@ -75,7 +75,7 @@ def parse_google_retblock(lines, return_annot=None):
         lines (str): unindented lines from a Returns or Yields section
         return_annot (str): the return type annotation (if one exists)
 
-    Yeilds:
+    Yields:
         Dict[str, str]: each dict specifies the return type and its description
 
     Example:
