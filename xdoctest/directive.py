@@ -58,7 +58,7 @@ may be specified, by separating them with commas. The currently available
 arguments allow you to condition on:
 
 
-    * Speical operating system / python implementation / python version tags, via: ``WIN32``, ``LINUX``, ``DARWIN``, ``POSIX``, ``NT``, ``JAVA``, ``CPYTHON``, ``IRONPYTHON``, ``JYTHON``, ``PYPY``, ``PY2``, ``PY3``. (e.g. ``# xdoctest +REQUIRES(WIN32)``)
+    * Special operating system / python implementation / python version tags, via: ``WIN32``, ``LINUX``, ``DARWIN``, ``POSIX``, ``NT``, ``JAVA``, ``CPYTHON``, ``IRONPYTHON``, ``JYTHON``, ``PYPY``, ``PY2``, ``PY3``. (e.g. ``# xdoctest +REQUIRES(WIN32)``)
 
     * Command line flags, via: ``--<someflag>``, (e.g. ``# xdoctest +REQUIRES(--verbose)``)
 
@@ -97,7 +97,7 @@ Example:
     >>> # xdoctest: -SKIP
     >>> print('This line will print: (F)')
 
-This next examples illustrates how to use the advanced ``+REQURIES()``
+This next examples illustrates how to use the advanced ``+REQUIRES()``
 directive. Note, the REQUIRES and SKIP states are independent.
 
 Example:
@@ -334,11 +334,11 @@ class Directive(utils.NiceRepr):
             text (str): must correspond to exactly one PS1 line and its PS2
                 followups.
 
-        Yeilds:
+        Yields:
             Directive: directive: the parsed directives
 
         Note:
-            The original ``doctest`` module sometimes yeilded false positives for a
+            The original ``doctest`` module sometimes yielded false positives for a
             directive pattern. Because ``xdoctest`` is parsing the text, this issue
             does not occur.
 
@@ -442,7 +442,7 @@ class Directive(utils.NiceRepr):
         warnings.warn('Deprecated use effects', DeprecationWarning)
         effects = self.effects(argv=argv, environ=environ)
         if len(effects) > 1:
-            raise Exception('Old method cannot hanldle multiple effects')
+            raise Exception('Old method cannot handle multiple effects')
         return effects[0]
 
     def effects(self, argv=None, environ=None):
@@ -525,7 +525,7 @@ class Directive(utils.NiceRepr):
                     # If the requirement is met, then do nothing,
                     action = 'noop'
                 else:
-                    # otherwise, add or remove the condtion from REQUIREMENTS,
+                    # otherwise, add or remove the condition from REQUIREMENTS,
                     # depending on if the directive is positive or negative.
                     if self.positive:
                         action = 'set.add'

@@ -22,7 +22,7 @@ def parse_dynamic_calldefs(modpath_or_module):
 
     Returns:
         Dict[str, CallDefNode]:
-            maping from callnames to CallDefNodes, which contain
+            mapping from callnames to CallDefNodes, which contain
                info about the item with the doctest.
 
     CommandLine:
@@ -151,12 +151,12 @@ def get_parent_frame(n=0):
 
 def iter_module_doctestables(module):
     r"""
-    Yeilds doctestable objects that belong to a live python module
+    Yields doctestable objects that belong to a live python module
 
     Args:
         module (module): live python module
 
-    Yeilds:
+    Yields:
         tuple (str, callable): (funcname, func) doctestable
 
     CommandLine:

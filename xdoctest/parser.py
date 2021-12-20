@@ -17,7 +17,7 @@ Terms and definitions:
         line that starts a "logical block" of code. In the original doctest
         module these all had to be prefixed with ">>>". In xdoctest the prefix
         is used to simply denote the code is part of a doctest. It does not
-        necessarilly mean a new "logical block" is starting.
+        necessarily mean a new "logical block" is starting.
 
     PS2:
         The original meaning is "Prompt String 2". In the context of xdoctest,
@@ -876,7 +876,7 @@ def _complete_source(line, state_indent, line_iter):
 
     source_parts = [suffix]
 
-    # These hacks actually modify the input doctest slighly
+    # These hacks actually modify the input doctest slightly
     HACK_TRIPLE_QUOTE_FIX = True
 
     try:

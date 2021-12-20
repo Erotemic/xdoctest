@@ -403,7 +403,7 @@ class TopLevelVisitor(ast.NodeVisitor):
             sourcelines (list): a list of all lines in the file. We assume
                 the docstring exists as a pure string literal in the source.
                 In other words, no postprocessing via split, format, or any
-                other dynamic programatic modification should be made to the
+                other dynamic programmatic modification should be made to the
                 docstrings. Python's docstring extractor assumes this as well.
 
             endpos (int): line position (starting at 0) the docstring ends on.
@@ -644,7 +644,7 @@ def parse_static_calldefs(source=None, fpath=None):
 
     Returns:
         Dict[str, CallDefNode]:
-            maping from callnames to CallDefNodes, which contain
+            mapping from callnames to CallDefNodes, which contain
                info about the item with the doctest.
 
     Example:
@@ -763,11 +763,11 @@ def parse_static_value(key, source=None, fpath=None):
                 if target_id == key:
                     self.value = _parse_static_node_value(node.value)
 
-    sentinal = object()
+    sentinel = object()
     visitor = AssignentVisitor()
-    visitor.value = sentinal
+    visitor.value = sentinel
     visitor.visit(pt)
-    if visitor.value is sentinal:
+    if visitor.value is sentinel:
         raise NameError('No static variable named {!r}'.format(key))
     return visitor.value
 

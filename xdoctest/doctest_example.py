@@ -572,7 +572,7 @@ class DocTest(object):
         needs_capture = True
 
         # Use the same capture object for all parts in the test
-        cap = utils.CaptureStdout(supress=self._suppressed_stdout,
+        cap = utils.CaptureStdout(suppress=self._suppressed_stdout,
                                   enabled=needs_capture)
         with warnings.catch_warnings(record=True) as self.warn_list:
             for partx, part in enumerate(self._parts):
@@ -633,7 +633,7 @@ class DocTest(object):
                         with cap:
                             # We can execute each part using exec or eval.  If
                             # a doctest part has `compile_mode=eval` we
-                            # exepect it to return an object with a repr that
+                            # expect it to return an object with a repr that
                             # can compared to a "want" statement.
                             # print('part.compile_mode = {!r}'.format(part.compile_mode))
                             if part.compile_mode == 'eval':
@@ -1185,7 +1185,7 @@ class DocTest(object):
 
 def _traverse_traceback(tb):
     # Lives down here to avoid issue calling exec in a function that contains a
-    # nested function with free variable.  Not sure how necesary this is
+    # nested function with free variable.  Not sure how necessary this is
     # because this doesn't have free variables.
     sub_tb = tb
     yield sub_tb
