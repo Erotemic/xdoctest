@@ -111,29 +111,50 @@ def pytest_addoption(parser):
     )
 
 
-def pytest_collect_file(file_path, parent):
+if pytest.__version__ < '7.':
+    def pytest_collect_file(path, parent):
+        return _pytest_collect_file(path, parent, fspath=path)
+
+    def _suffix(path):
+        return path.ext
+
+    def _match(path, glob):
+        return path.check(fnmatch=glob)
+
+else:
+    def pytest_collect_file(file_path, parent):
+        return _pytest_collect_file(file_path, parent, path=file_path)
+
+    def _suffix(path):
+        return path.suffix
+
+    def _match(path, glob):
+        return path.match(glob)
+
+
+def _pytest_collect_file(file_path, parent, **path_args):
     config = parent.config
-    if file_path.suffix == ".py":
+    if _suffix(file_path) == ".py":
         if config.option.xdoctestmodules:
             if hasattr(XDoctestModule, 'from_parent'):
-                return XDoctestModule.from_parent(parent, path=file_path)
+                return XDoctestModule.from_parent(parent, **path_args)
             else:
                 return XDoctestModule(file_path, parent)
     elif _is_xdoctest(config, file_path, parent):
         if hasattr(XDoctestTextfile, 'from_parent'):
-            return XDoctestTextfile.from_parent(parent, path=file_path)
+            return XDoctestTextfile.from_parent(parent, **path_args)
         else:
             return XDoctestTextfile(file_path, parent)
 
 
 def _is_xdoctest(config, path, parent):
     matched = False
-    if path.suffix in ('.txt', '.rst') and parent.session.isinitpath(path):
+    if _suffix(path) in ('.txt', '.rst') and parent.session.isinitpath(path):
         matched = True
     else:
         globs = config.getoption("xdoctestglob")
         for glob in globs:
-            if path.match(glob):
+            if _match(path, glob):
                 matched = True
                 break
     return matched
