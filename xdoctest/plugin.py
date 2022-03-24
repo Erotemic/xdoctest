@@ -111,29 +111,29 @@ def pytest_addoption(parser):
     )
 
 
-def pytest_collect_file(path, parent):
+def pytest_collect_file(file_path, parent):
     config = parent.config
-    if path.ext == ".py":
+    if file_path.suffix == ".py":
         if config.option.xdoctestmodules:
             if hasattr(XDoctestModule, 'from_parent'):
-                return XDoctestModule.from_parent(parent, fspath=path)
+                return XDoctestModule.from_parent(parent, path=file_path)
             else:
-                return XDoctestModule(path, parent)
-    elif _is_xdoctest(config, path, parent):
+                return XDoctestModule(file_path, parent)
+    elif _is_xdoctest(config, file_path, parent):
         if hasattr(XDoctestTextfile, 'from_parent'):
-            return XDoctestTextfile.from_parent(parent, fspath=path)
+            return XDoctestTextfile.from_parent(parent, path=file_path)
         else:
-            return XDoctestTextfile(path, parent)
+            return XDoctestTextfile(file_path, parent)
 
 
 def _is_xdoctest(config, path, parent):
     matched = False
-    if path.ext in ('.txt', '.rst') and parent.session.isinitpath(path):
+    if path.suffix in ('.txt', '.rst') and parent.session.isinitpath(path):
         matched = True
     else:
         globs = config.getoption("xdoctestglob")
         for glob in globs:
-            if path.check(fnmatch=glob):
+            if path.match(glob):
                 matched = True
                 break
     return matched
