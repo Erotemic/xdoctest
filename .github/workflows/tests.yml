@@ -83,17 +83,24 @@ jobs:
 
   build_and_test_wheels:
     # TODO: handle different python versions: https://github.com/actions/setup-python
-    name: ${{ matrix.python-version }} on ${{ matrix.os }}, arch=${{ matrix.arch }}
+    name: ${{ matrix.python-version }} ${{ matrix.requirement_mode }} on ${{ matrix.os }}, arch=${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     #needs: [lint]
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
+        requirement_mode: [strict, loose]
+        #requirement_mode: [strict]
         python-version: 
+          - '2.7'
+          #- '3.4'  # 
           - '3.5'
           - '3.6'
           - '3.7'
           - '3.8'
+          - '3.9'
+          - '3.10'
+        # TODO: It is probably safe to not run the "strict" variant on all of the other matrix params. 
         arch: [auto]
         #cibw_build: [cp3*-*]
         #cibw_skip: ["*-win32"]
@@ -166,20 +173,38 @@ jobs:
       shell: bash
       run: |
         python -m pip install setuptools>=0.8 wheel
-        python -m pip wheel --wheel-dir wheelhouse .
+        python -m pip wheel --no-deps --wheel-dir wheelhouse .
 
     - name: Test pure wheel
       shell: bash
       env:
         CI_PYTHON_VERSION: py${{ matrix.python-version }}
+        REQUIREMENT_MODE: ${{ matrix.requirement_mode }}
         #OS_NAME: ${{ matrix.os }}
       run: | 
         # Remove source directory (ensure it doesn't conflict)
         mv xdoctest ignore_src_xdoctest
         rm pytest.ini
-        # Install the wheel
-        python -m pip install wheelhouse/xdoctest*.whl
-        python -m pip install -r requirements/tests.txt
+        # Get the most recent wheel that matches the pattern
+        pwd
+        ls -al
+        ls -altr wheelhouse
+        WHEEL_FPATH=$(ls -t wheelhouse/xdoctest*.whl| head -n1)
+        echo "WHEEL_FPATH = $WHEEL_FPATH"
+        if [[ "${REQUIREMENT_MODE}" == "strict" ]]; then 
+          # Install the wheel with strict requirements
+          source dev/make_strict_req.sh
+          pip install -r requirements-strict/runtime.txt
+          pip install -r requirements-strict/tests.txt
+          python -m pip install ${WHEEL_FPATH}
+        elif [[ "${REQUIREMENT_MODE}" == "loose" ]]; then 
+          # Install the wheel with loose requirements
+          python -m pip install ${WHEEL_FPATH}[tests]
+          #python -m pip install -r requirements/tests.txt
+        else
+          echo "UNKNOWN REQUIREMENT MODE"
+          false
+        fi
         # Run in a sandboxed directory
         WORKSPACE_DNAME="testdir_${CI_PYTHON_VERSION}_${GITHUB_RUN_ID}_${RUNNER_OS}"
         mkdir -p $WORKSPACE_DNAME

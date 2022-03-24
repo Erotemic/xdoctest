@@ -97,8 +97,9 @@ jobs:
     environment:
       # Setting the python executable environ allows template reuse for pypy
       - PYTHON_EXE: python
+      - PIP_DOWNLOAD_CACHE=./pipcache
     docker:
-      - image: circleci/python
+      - image: cimg/python
     # We shouldnt need a lot of resources to run
     resource_class: small 
     steps:
@@ -110,13 +111,15 @@ jobs:
         - *common_template
     steps:
       - checkout
-      # ### INITIALIZE AND CACHE REQUIREMENTS ###
+       ### INITIALIZE AND CACHE REQUIREMENTS ###
       - restore_cache:
           keys:
-          - v3-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ .Environment.CIRCLE_JOB }}
+          - v4-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ .Environment.CIRCLE_JOB }}
       - run:
           name: install dependencies
           command: |
+            pwd
+            ls -al
             $PYTHON_EXE -m venv venv || virtualenv -v venv  # first command is python3 || second is python2
             . venv/bin/activate
             # The "minimal" tests install barebones requirements
@@ -126,8 +129,8 @@ jobs:
             pip install .
       - save_cache:
           paths:
-            - ./venv
-          key: v3-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ .Environment.CIRCLE_JOB }}
+            - ./pipcache
+          key: v4-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ .Environment.CIRCLE_JOB }}
       # ### RUN TESTS ###
       - run:
           name: run tests
@@ -149,13 +152,15 @@ jobs:
         - *common_template
     steps:
       - checkout
-      # ### INITIALIZE AND CACHE REQUIREMENTS ###
+       ### INITIALIZE AND CACHE REQUIREMENTS ###
       - restore_cache:
           keys:
-          - v3-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ checksum "requirements/colors.txt" }}-{{ .Environment.CIRCLE_JOB }}
+          - v4-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ checksum "requirements/colors.txt" }}-{{ .Environment.CIRCLE_JOB }}
       - run:
           name: install dependencies
           command: |
+            pwd
+            ls -al
             $PYTHON_EXE -m venv venv || virtualenv -v venv  # first command is python3 || second is python2
             . venv/bin/activate
             # The "full" dependency install
@@ -165,8 +170,9 @@ jobs:
             pip install .
       - save_cache:
           paths:
-            - ./venv
-          key: v3-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ checksum "requirements/colors.txt" }}-{{ .Environment.CIRCLE_JOB }}
+            #- ./venv
+            - ./pipcache
+          key: v4-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ checksum "requirements/colors.txt" }}-{{ .Environment.CIRCLE_JOB }}
       # ### RUN TESTS ###
       - run:
           name: run tests
@@ -196,32 +202,32 @@ jobs:
   test_full/cp3_10-3_10-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.10-rc
+      - image: cimg/python:3.10.0
   
   test_full/cp39-39-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.9
+      - image: cimg/python:3.9
   
   test_full/cp38-38-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.8
+      - image: cimg/python:3.8
   
   test_full/cp37-37m-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
 
   test_full/cp36-36m-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.6
+      - image: cimg/python:3.6
 
   test_full/cp35-35m-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.5
+      - image: cimg/python:3.5
 
   test_full/cp34-34m-linux:
     <<: *test_full_template
@@ -231,38 +237,38 @@ jobs:
   test_full/cp27-27mu-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:2.7
+      - image: cimg/python:2.7
 
   # ------------
   test_minimal/cp3_10-3_10-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.10-rc
+      - image: cimg/python:3.10
   
   test_minimal/cp39-39-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.9
+      - image: cimg/python:3.9
   
   test_minimal/cp38-38-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.8
+      - image: cimg/python:3.8
 
   test_minimal/cp37-37m-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
 
   test_minimal/cp36-36m-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.6
+      - image: cimg/python:3.6
 
   test_minimal/cp35-35m-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.5
+      - image: cimg/python:3.5
 
   test_minimal/cp34-34m-linux:
     <<: *test_minimal_template
@@ -272,7 +278,7 @@ jobs:
   test_minimal/cp27-27mu-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:2.7
+      - image: cimg/python:2.7
 
   # --- pypy ----
 
@@ -294,20 +300,44 @@ jobs:
 .__doc__: &__doc__
     - | 
 
-        IMAGE_NAME=circleci/python:3.9
+        IMAGE_NAME=cimg/python:3.9
         docker pull $IMAGE_NAME
 
         IMAGE_NAME=pypy:3
         docker pull $IMAGE_NAME
         docker run -v $HOME/code/xdoctest:/io -it $IMAGE_NAME bash
 
-        IMAGE_NAME=circleci/python:3.10-rc
+        IMAGE_NAME=cimg/python:3.10
         docker pull $IMAGE_NAME
 
         
         docker run -v $HOME/code/xdoctest:/io -it pypy:3 bash
 
+        IMAGE_NAME=cimg/python:3.10
         docker run -v $HOME/code/xdoctest:/io -it $IMAGE_NAME bash
+
+
+        IMAGE_NAME=cimg/python:2.7
+        docker run -v $HOME/code/xdoctest:/io -it $IMAGE_NAME bash
+
+
+        IMAGE_NAME=circleci/python:3.4
+        docker run -v $HOME/code/xdoctest:/io -it $IMAGE_NAME bash
+        git clone /io $HOME/repo
+        cd $HOME/repo
+        source dev/make_strict_req.sh
+        pip install -r requirements-strict.txt --user
+        PATH=/home/circleci/.local/bin:$PAT:$PATH
+        pip install -e . --user
+        python -m pytest 
+        
+
+
+        python -m pip wheel --no-deps --wheel-dir wheelhouse /io 
+        WHEEL_FPATH=$(ls wheelhouse/* -t| head -n1)
+        echo $WHEEL_FPATH
+
+        python -m pip wheel --wheel-dir wheelhouse /io 
 
         cd /io
         

@@ -235,7 +235,7 @@ def test_runner_failures():
         file.write(source)
 
     # disabled tests dont run in "all" mode
-    with utils.CaptureStdout(supress=True) as cap:
+    with utils.CaptureStdout(suppress=True) as cap:
         try:
             runner.doctest_module(modpath, 'all', argv=[''], verbose=1)
         except Exception:

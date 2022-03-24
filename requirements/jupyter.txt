@@ -1,5 +1,37 @@
-nbformat;python_version>'3.4'
-nbconvert; python_version>'3.4'
-jupyter_client; python_version>'3.4'
-IPython; python_version>'3.4' 
-ipykernel; python_version>'3.4'
+# See ~/local/tools/supported_python_versions_pip.py for helper script
+
+
+nbconvert>=6.0.0;                              python_version >= '3.6.0'   # Python 3.6+
+
+
+jupyter_client>=7.0.0     ;                              python_version >= '3.6.1'  # Python 3.6.1+
+jupyter_client>=6.1.5     ; python_version < '3.6.1' and python_version >= '3.6'    # Python 3.6
+
+
+IPython>=7.23.1    ;                            python_version >= '3.7'    # Python 3.7+
+IPython>=7.10.0    ; python_version < '3.7' and python_version >= '3.6'    # Python 3.6
+
+
+ipykernel>=6.0.0     ;                            python_version >= '3.7'    # Python 3.7+
+ipykernel>=5.2.0     ; python_version < '3.7' and python_version >= '3.6'    # Python 3.6
+
+
+# For IPython-kernel
+debugpy>=1.0.0 ; python_version >= '3.6'    # Python 3.6+
+
+
+# For IPython
+jedi>=0.16  ; python_version >= '3.6'    # Python 3.6+
+
+
+# For nbconvert
+jinja2>=3.0.0   ; python_version >= '3.6'    # Python 3.6+
+attrs>=19.2.0   ; python_version >= '3.6'    # Python 3.6+
+
+
+# For jupyter-client
+jupyter_core >= 4.6.0  ; python_version >= '3.6'    # Python 3.6+
+
+
+# For jupyter-core
+# pywin32>=1.0; platform_system=="Windows" and python_version >= '3.6' and platform_python_implementation != "PyPy"

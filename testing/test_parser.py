@@ -546,7 +546,7 @@ def test_inline_directive():
         print(parts)
     except ImportError:
         pass
-    # TODO: finsh me
+    # TODO: finish me
 
 
 def test_block_directive_nowant1():
@@ -589,7 +589,7 @@ def test_block_directive_nowant2():
     # source_lines = string.splitlines()
     self = parser.DoctestParser()
     parts = self.parse(string)
-    # TODO: finsh me
+    # TODO: finish me
     assert len(parts) == 2
 
 

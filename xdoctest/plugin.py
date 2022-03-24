@@ -62,7 +62,7 @@ monkey_patch_disable_normal_doctest()
 
 
 def pytest_addoption(parser):
-    # TODO: make this programatically mirror the argparse in __main__
+    # TODO: make this programmatically mirror the argparse in __main__
     from xdoctest import core
 
     def str_lower(x):

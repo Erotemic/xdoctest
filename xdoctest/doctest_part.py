@@ -23,7 +23,7 @@ TODO:
 class DoctestPart(object):
     """
     The result of parsing that represents a "logical block" of code.
-    If a want statment is defined, it is stored here.
+    If a want statement is defined, it is stored here.
 
     Attributes:
         exec_lines (list): executable lines in this part
@@ -185,7 +185,7 @@ class DoctestPart(object):
             #     print(ex.output_difference())
             #     print(ex.output_repr_difference())
             # If none of the checks pass, return the error message with the
-            # largets got message. (perhaps the output with the closest edit
+            # largest got message. (perhaps the output with the closest edit
             # distance might be better to report?)
             raise exceptions[-1]
 

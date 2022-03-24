@@ -1,3 +1,6 @@
 -r requirements/runtime.txt
 -r requirements/tests.txt
--r requirements/optional.txt
+-r requirements/jupyter.txt
+-r requirements/colors.txt
+
+#-r requirements/optional.txt

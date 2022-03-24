@@ -25,8 +25,8 @@ For more details see:
 
     python -m xdoctest --help
 
-Using the XDoctest Runner Programatically
------------------------------------------
+Using the XDoctest Runner Programmatically
+------------------------------------------
 
 This interface may also be run programmatically using
 ``xdoctest.doctest_module(path)``, which can be placed in the
@@ -381,7 +381,7 @@ def _print_summary_report(run_summary, parse_warnlist, n_seconds,
 
     if failed and len(enabled_examples) > 1:
         # If there is more than one test being run, _log out all the
-        # errors that occured so they are consolidated in a single place.
+        # errors that occurred so they are consolidated in a single place.
         cprint('\n=== Found {} errors ==='.format(len(failed)), 'red')
         for fail_idx, example in enumerate(failed, start=1):
             cprint('--- Error: {} / {} ---'.format(fail_idx, len(failed)), 'red')
@@ -452,7 +452,7 @@ def _run_examples(enabled_examples, verbose, config=None, _log=None):
     failed = []
     warned = []
     times = {}
-    # It is important to raise immediatly within the test to display errors
+    # It is important to raise immediately within the test to display errors
     # returned from multiprocessing. Especially in zero-arg mode
 
     on_error = 'return' if n_total > 1 else 'raise'

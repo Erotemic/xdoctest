@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Defines sentinal values for internal xdoctest usage
+Defines sentinel values for internal xdoctest usage
 """
 from __future__ import print_function, division, absolute_import, unicode_literals
 
@@ -8,7 +8,7 @@ if False:
     NOT_EVALED = object()  # nocover
 else:
     # Create the most singleton object ever to avoid reload issues
-    # see ubelt.NoParam for details on how thi works
+    # see ubelt.NoParam for details on how this works
     class _NOT_EVAL_TYPE(object):
         def __new__(cls):
             return NOT_EVALED

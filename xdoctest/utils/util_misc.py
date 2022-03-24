@@ -94,7 +94,7 @@ def _run_case(source, style='auto'):
         with open(modpath, 'w') as file:
             file.write(source)
 
-        with utils.CaptureStdout(supress=False) as cap:
+        with utils.CaptureStdout(suppress=False) as cap:
             runner.doctest_module(modpath, 'all', argv=[''], style=style)
 
     cprint('\n\n --- </END RUN CASE> --- \n\n', COLOR)

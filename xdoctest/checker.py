@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Checks for got-vs-want statments
+Checks for got-vs-want statements
 
-A "got-string" is data produced by a doctest that we want to check matches som
-eexpected value.
+A "got-string" is data produced by a doctest that we want to check matches some
+expected value.
 
 A "want-string" is a representation of the output we expect, if the
 "got-string" is different than the "want-string" the doctest will fail with a
@@ -18,7 +18,7 @@ A doctest that uses stdout might look like this
 >>> print('We expect this exact string')
 We expect this exact string
 
-A doctest that uses a raw expresion might look like this
+A doctest that uses a raw expression might look like this
 
 >>> def foo():
 >>>     return 3
@@ -283,7 +283,7 @@ def _ellipsis_match(got, want):
 
 def normalize(got, want, runstate=None):
     r"""
-    Adapated from doctest_nose_plugin.py from the nltk project:
+    Adapted from doctest_nose_plugin.py from the nltk project:
         https://github.com/nltk/nltk
 
     Further extended to also support byte literals.
@@ -325,7 +325,7 @@ def normalize(got, want, runstate=None):
     if not runstate['DONT_ACCEPT_BLANKLINE']:
         want = remove_blankline_marker(want)
 
-    # always remove trailing whitepsace
+    # always remove trailing whitespace
     got = re.sub(TRAILING_WS, '', got)
     want = re.sub(TRAILING_WS, '', want)
     # normalize endling newlines
@@ -415,7 +415,7 @@ class GotWantException(AssertionError):
         Note:
             This does not check if got matches want, it only outputs the raw
             differences. Got/Want normalization may make the differences appear
-            more exagerated than they are.
+            more exaggerated than they are.
         """
         got = self.got
         want = self.want

@@ -91,3 +91,6 @@ ENV/
 .pytest_cache
 
 dev/*.pgp
+
+requirements-strict.txt
+requirements-strict

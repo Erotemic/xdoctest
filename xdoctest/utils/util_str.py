@@ -13,8 +13,8 @@ import sys
 
 
 # Global state that determines if ANSI-coloring text is allowed
-# (which is mainly to address non-ANSI complient windows consoles)
-# complient with https://no-color.org/
+# (which is mainly to address non-ANSI compliant windows consoles)
+# compliant with https://no-color.org/
 NO_COLOR = bool(os.environ.get('NO_COLOR'))
 
 
@@ -216,12 +216,12 @@ def highlight_code(text, lexer_name='python', **kwargs):
         import pygments.formatters
         import pygments.formatters.terminal
 
-        formater = pygments.formatters.terminal.TerminalFormatter(bg='dark')
+        formatter = pygments.formatters.terminal.TerminalFormatter(bg='dark')
         lexer = pygments.lexers.get_lexer_by_name(lexer_name, ensurenl=False, **kwargs)
-        new_text = pygments.highlight(text, lexer, formater)
-        # formater = pygments.formatters.terminal.TerminalFormatter(bg='dark')
+        new_text = pygments.highlight(text, lexer, formatter)
+        # formatter = pygments.formatters.terminal.TerminalFormatter(bg='dark')
         # lexer = pygments.lexers.get_lexer_by_name(lexer_name, **kwargs)
-        # new_text = pygments.highlight(text, lexer, formater)
+        # new_text = pygments.highlight(text, lexer, formatter)
 
     except ImportError:  # nocover
         warnings.warn('pygments is not installed, code will not be highlighted')

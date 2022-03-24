@@ -75,7 +75,7 @@ def parse_google_retblock(lines, return_annot=None):
         lines (str): unindented lines from a Returns or Yields section
         return_annot (str): the return type annotation (if one exists)
 
-    Yeilds:
+    Yields:
         Dict[str, str]: each dict specifies the return type and its description
 
     Example:
@@ -391,7 +391,7 @@ def split_google_docblocks(docstr):
         ['See Also'],
         ['Todo'],
     ]
-    # Map aliased tags to a cannonical name (the first item in the group).
+    # Map aliased tags to a canonical name (the first item in the group).
     tag_aliases = dict([(item, group[0]) for group in tag_groups for item in group])
     # Allow for single or double colon (support for pytorch)
     tag_pattern = '^' + '(' + '|'.join(tag_aliases.keys()) + ') *::? *$'
