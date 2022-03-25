@@ -7,7 +7,7 @@
    :align: left
 
 
-Xdoctest - Execute Doctests. A Python package for executing tests in
+Xdoctest - Execute doctests. A Python package for executing tests in
 documentation strings!
 
 What is a `doctest <https://en.wikipedia.org/wiki/Doctest>`__? 
