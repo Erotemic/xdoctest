@@ -396,6 +396,45 @@ to transform your ``xdoctest`` into a ``unittest`` when you realize your
 doctests are getting too long.
 
 
+One Last Example
+----------------
+
+XDoctest is a good demonstration of itself. After pip installing xdoctest, try
+running xdoctest on xdoctest.
+
+.. code:: bash
+
+    xdoctest xdoctest
+
+If you would like a slightly less verbose output, try
+
+.. code:: bash
+
+    xdoctest xdoctest --verbose=1
+
+    # or
+
+    xdoctest xdoctest --verbose=0
+
+
+You could also consider running xdoctests tests through pytest:
+
+
+.. code:: bash
+
+    pytest $(python -c 'import xdoctest, pathlib; print(pathlib.Path(xdoctest.__file__).parent)') --xdoctest
+
+
+If you would like a slightly more verbose output, try
+
+.. code:: bash
+
+    pytest -s --verbose --xdoctest-verbose=3 --xdoctest $(python -c 'import xdoctest, pathlib; print(pathlib.Path(xdoctest.__file__).parent)') 
+    
+
+If you ran these commands, the myriad of characters that flew across your
+screen are lots more examples of what you can do with doctests.
+
 
 .. |CircleCI| image:: https://circleci.com/gh/Erotemic/xdoctest.svg?style=svg
     :target: https://circleci.com/gh/Erotemic/xdoctest
