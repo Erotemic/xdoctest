@@ -14,6 +14,9 @@ To ensure maximum backwards compatibility with the original doctest module,
 this code is heavilly based on ``pytest/_pytest/doctest.py`` plugin file in
 https://github.com/pytest-dev/pytest
 
+References:
+    .. [PytestAPI] https://docs.pytest.org/en/6.2.x/reference.html
+
 """
 from __future__ import absolute_import, division, print_function
 import pytest
@@ -69,50 +72,70 @@ def pytest_addoption(parser):
         # python2 fix
         return str.lower(str(x))
 
-    group = parser.getgroup('collect')
-    parser.addini('xdoctest_encoding', 'encoding used for xdoctest files', default='utf-8')
+    parser.addini(
+        'xdoctest_encoding', 'encoding used for xdoctest files', default='utf-8')
+
+    collect_group = parser.getgroup('collect')
+
     # parser.addini('xdoctest_options', 'default directive flags for doctests',
     #               type="args", default=["+ELLIPSIS"])
-    group.addoption('--xdoctest-modules', '--xdoctest', '--xdoc',
-                    action='store_true', default=False,
-                    help='Run doctests in all .py modules using new style parsing',
-                    dest='xdoctestmodules')
-    group.addoption('--xdoctest-glob', '--xdoc-glob',
-                    action='append', default=[], metavar='pat',
-                    help=(
-                        'Text files matching this pattern will be checked '
-                        'for doctests. This option may be specified multiple '
-                        'times. XDoctest does not check any text files by '
-                        'default. For compatibility with doctest set this to '
-                        'test*.txt'),
-                    dest='xdoctestglob')
-    group.addoption('--xdoctest-ignore-syntax-errors',
-                    action='store_true', default=False,
-                    help='Ignore xdoctest SyntaxErrors',
-                    dest='xdoctest_ignore_syntax_errors')
+    collect_group.addoption(
+        '--xdoc-request', default=None,
+        help='temp-testing', dest='requested_modules')
 
-    group.addoption('--xdoctest-style', '--xdoc-style',
-                    type=str_lower, default='freeform',
-                    help='Basic style used to write doctests',
-                    choices=core.DOCTEST_STYLES,
-                    dest='xdoctest_style')
+    collect_group.addoption(
+        '--xdoctest-modules', '--xdoctest', '--xdoc',
+        action='store_true', default=False,
+        help='Run doctests in all .py modules using new style parsing',
+        dest='xdoctestmodules')
+    collect_group.addoption(
+        '--xdoctest-glob', '--xdoc-glob',
+        action='append', default=[], metavar='pat',
+        help=(
+            'Text files matching this pattern will be checked '
+            'for doctests. This option may be specified multiple '
+            'times. XDoctest does not check any text files by '
+            'default. For compatibility with doctest set this to '
+            'test*.txt'),
+        dest='xdoctestglob')
+    collect_group.addoption(
+        '--xdoctest-ignore-syntax-errors',
+        action='store_true', default=False,
+        help='Ignore xdoctest SyntaxErrors in collection',
+        dest='xdoctest_ignore_syntax_errors')
 
-    group.addoption('--xdoctest-analysis', '--xdoc-analysis',
-                    type=str_lower, default='auto',
-                    help=('How doctests are collected. '
-                          'Can either be static, dynamic, or auto'),
-                    choices=['static', 'dynamic', 'auto'],
-                    dest='xdoctest_analysis')
+    collect_group.addoption(
+        '--xdoctest-style', '--xdoc-style',
+        type=str_lower, default='freeform',
+        help='Basic style used to write doctests',
+        choices=core.DOCTEST_STYLES,
+        dest='xdoctest_style')
+
+    collect_group.addoption(
+        '--xdoctest-analysis', '--xdoc-analysis',
+        type=str_lower, default='auto',
+        help=('How doctests are collected. '
+              'Can either be static, dynamic, or auto'),
+        choices=['static', 'dynamic', 'auto'],
+        dest='xdoctest_analysis')
+
+    runtime_group = parser.getgroup('xdoctest runtime')
 
     from xdoctest import doctest_example
     doctest_example.DoctestConfig()._update_argparse_cli(
-        group.addoption, prefix=['xdoctest', 'xdoc'],
+        runtime_group.addoption, prefix=['xdoctest', 'xdoc'],
         defaults=dict(verbose=2)
     )
 
 
+# def pytest_collection(session):
+#     pass
+
+
 def pytest_collect_file(path, parent):
     config = parent.config
+    # config.option.requested_modules
+
     if path.ext == ".py":
         if config.option.xdoctestmodules:
             if hasattr(XDoctestModule, 'from_parent'):
