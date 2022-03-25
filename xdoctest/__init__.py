@@ -196,43 +196,41 @@ which produces something similar to the following output:
 
 .. code-block:: text
 
-    usage: xdoctest [-h] [--version] [-m MODNAME] [-c COMMAND] [--style {auto,google,freeform}] [--analysis {auto,static,dynamic}]
-                    [--durations DURATIONS] [--time] [--colored COLORED] [--nocolor] [--offset]
-                    [--report {none,cdiff,ndiff,udiff,only_first_failure}] [--options OPTIONS] [--global-exec GLOBAL_EXEC]
+    usage: xdoctest [-h] [--version] [-m MODNAME] [-c COMMAND] [--style {auto,google,freeform}] [--analysis {auto,static,dynamic}] [--durations DURATIONS] [--time]
+                    [--colored COLORED] [--nocolor] [--offset] [--report {none,cdiff,ndiff,udiff,only_first_failure}] [--options OPTIONS] [--global-exec GLOBAL_EXEC]
                     [--verbose VERBOSE] [--quiet] [--silent]
-                    [arg [arg ...]]
+                    [arg ...]
 
-    Xdoctest 0.15.0 - on Python - 3.8.3 (default, Jul  2 2020, 16:21:59)
-    [GCC 7.3.0] - discover and run doctests within a python package
+    Xdoctest 1.0.0 - on Python - 3.9.9 (main, Jan  6 2022, 18:33:12)
+    [GCC 10.3.0] - discover and run doctests within a python package
 
     positional arguments:
-      arg                   Ignored if optional arguments are specified, otherwise: Defaults --modname to arg.pop(0). Defaults --command
-                            to arg.pop(0). (default: None)
+      arg                   Ignored if optional arguments are specified, otherwise: Defaults --modname to arg.pop(0). Defaults --command to arg.pop(0). (default: None)
 
     optional arguments:
       -h, --help            show this help message and exit
-      --version             display version info and quit (default: False)
+      --version             Display version info and quit (default: False)
       -m MODNAME, --modname MODNAME
-                            module name or path. If specified positional modules are ignored (default: None)
+                            Module name or path. If specified positional modules are ignored (default: None)
       -c COMMAND, --command COMMAND
-                            a doctest name or a command (list|all|<callname>). Defaults to all (default: None)
+                            A doctest name or a command (list|all|<callname>). Defaults to all (default: None)
       --style {auto,google,freeform}
-                            choose the style of doctests that will be parsed (default: auto)
+                            Choose the style of doctests that will be parsed (default: auto)
       --analysis {auto,static,dynamic}
-                            How doctests are collected (default: static)
+                            How doctests are collected (default: auto)
       --durations DURATIONS
-                            specify execution times for slowest N tests.N=0 will show times for all tests (default: None)
+                            Specify execution times for slowest N tests.N=0 will show times for all tests (default: None)
       --time                Same as if durations=0 (default: False)
       --colored COLORED     Enable or disable ANSI coloration in stdout (default: True)
       --nocolor             Disable ANSI coloration in stdout
-      --offset              if True formatted source linenumbers will agree with their location in the source file. Otherwise they will
-                            be relative to the doctest itself. (default: False)
+      --offset              If True formatted source linenumbers will agree with their location in the source file. Otherwise they will be relative to the doctest itself. (default:
+                            False)
       --report {none,cdiff,ndiff,udiff,only_first_failure}
-                            choose another output format for diffs on xdoctest failure (default: udiff)
-      --options OPTIONS     default directive flags for doctests (default: None)
+                            Choose another output format for diffs on xdoctest failure (default: udiff)
+      --options OPTIONS     Default directive flags for doctests (default: None)
       --global-exec GLOBAL_EXEC
-                            exec these lines before every test (default: None)
-      --verbose VERBOSE     verbosity level (default: 3)
+                            Custom Python code to execute before every test (default: None)
+      --verbose VERBOSE     Verbosity level. 0 is silent, 1 prints out test names, 2 additionally prints test stdout, 3 additionally prints test source (default: 3)
       --quiet               sets verbosity to 1
       --silent              sets verbosity to 0
 

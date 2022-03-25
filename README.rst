@@ -98,7 +98,7 @@ future), you should also verify this agrees with the contents of
 ``dev/public_gpg_key``. 
 
 
-Usage: Run your Doctests
+Usage: run your doctests
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 
@@ -337,7 +337,7 @@ backwards-compatible) syntax:
 
         """
 
-Xdoctest parsing style 
+Xdoctest Parsing Style 
 ----------------------
 
 There are currently two main doctest parsing styles: ``google`` and
@@ -364,7 +364,7 @@ pytest) which will pull all google-style blocks out as single doctests, while
 still all other ``>>>`` prefixed code out as a freeform doctest. 
 
 
-Notes on Got/Want tests
+Notes On Got/Want Tests
 -----------------------
 
 The new got/want tester is very permissive by default; it ignores
