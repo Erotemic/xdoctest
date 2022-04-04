@@ -243,6 +243,8 @@ class DocTest(object):
         self.failed_part = None
         self.warn_list = None
 
+        self._partfilename = None
+
         self.logged_evals = OrderedDict()
         self.logged_stdout = OrderedDict()
         self._unmatched_stdout = []
@@ -1082,7 +1084,7 @@ class DocTest(object):
                                 # raise Exception('foo')
                                 # continue
 
-                        if self._partfilename in line:
+                        if self._partfilename is not None and self._partfilename in line:
                             # Intercept the line corresponding to the doctest
                             tbparts = line.split(',')
                             tb_lineno = int(tbparts[-2].strip().split()[1])
