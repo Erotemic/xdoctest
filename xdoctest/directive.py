@@ -67,6 +67,13 @@ arguments allow you to condition on:
     * Environment variables, via: ``env:<varname>==<val>``, (e.g. ``# xdoctest +REQUIRES(env:MYENVIRON==1)``)
 
 
+TODO
+----
+
+- [ ] Directive for Python version: e.g. xdoctest: +REQUIRES(Python>=3.7)
+- [ ] Directive for module version: e.g. xdoctest: +REQUIRES(module:rich>=1.0)
+
+
 CommandLine:
     python -m xdoctest.directive __doc__
 
