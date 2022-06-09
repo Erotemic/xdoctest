@@ -17,3 +17,4 @@ DEBUG = _boolean_environ('XDOCTEST_DEBUG') or '--debug' in sys.argv
 DEBUG_PARSER = DEBUG or _boolean_environ('XDOCTEST_DEBUG_PARSER')
 DEBUG_CORE = DEBUG or _boolean_environ('XDOCTEST_DEBUG_CORE')
 DEBUG_RUNNER = DEBUG or _boolean_environ('XDOCTEST_DEBUG_RUNNER')
+DEBUG_DOCTEST = DEBUG or _boolean_environ('XDOCTEST_DEBUG_DOCTEST')

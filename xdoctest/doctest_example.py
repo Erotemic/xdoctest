@@ -18,6 +18,7 @@ from xdoctest import static_analysis as static
 from xdoctest import parser
 from xdoctest import checker
 from xdoctest import exceptions
+from xdoctest import global_state
 
 __devnotes__ = """
 TODO:
@@ -470,9 +471,17 @@ class DocTest(object):
         if self.module is None:
             if not self.modname.startswith('<'):
                 # self.module = utils.import_module_from_path(self.modpath, index=0)
+                if global_state.DEBUG_DOCTEST:
+                    print('Pre-importing modpath = {}'.format(self.modpath))
                 try:
+                    # Note: there is a possibility of conflicts that arises
+                    # here depending on your local environment. We may want to
+                    # try and detect that.
                     self.module = utils.import_module_from_path(self.modpath, index=-1)
                 except RuntimeError as ex:
+                    if global_state.DEBUG_DOCTEST:
+                        print('sys.path={}'.format(sys.path))
+                        print('Failed to pre-import modpath = {}'.format(self.modpath))
                     msg_parts = [
                         ('XDoctest failed to pre-import the module '
                          'containing the doctest.')
@@ -708,7 +717,7 @@ class DocTest(object):
                 except Exception as _ex_dbg:
                     ex_type, ex_value, tb = sys.exc_info()
 
-                    DEBUG = 0
+                    DEBUG = global_state.DEBUG_DOCTEST
                     if DEBUG:
                         print('_ex_dbg = {!r}'.format(_ex_dbg))
                         print('<DEBUG: doctest encountered exception>', file=sys.stderr)
