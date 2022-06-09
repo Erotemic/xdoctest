@@ -21,14 +21,13 @@ def paragraph(text):
         str: the reduced text block
 
     Example:
-        >>> import ubelt as ub
         >>> text = (
         >>>     '''
         >>>     Lorem ipsum dolor sit amet, consectetur adipiscing
         >>>     elit, sed do eiusmod tempor incididunt ut labore et
         >>>     dolore magna aliqua.
         >>>     ''')
-        >>> out = ub.paragraph(text)
+        >>> out = paragraph(text)
         >>> assert chr(10) in text
         >>> assert chr(10) not in out
         >>> print('text = {!r}'.format(text))
