@@ -19,15 +19,10 @@ from xdoctest import parser
 from xdoctest import checker
 from xdoctest import exceptions
 
-# I believe the original reason for this hack was fixed in 3.9rc (The CI will
-# tell us otherwise if this is incorrect)
-# from distutils.version import LooseVersion
-# EVAL_MIGHT_RETURN_COROUTINE = LooseVersion(sys.version.split(' ')[0]) >= LooseVersion('3.9.0')
-# EVAL_MIGHT_RETURN_COROUTINE = False
-
 __devnotes__ = """
 TODO:
     - [ ] Rename DocTest to Doctest?
+    - [ ] I dont like having "example" as a suffix to this modname, can we rename?
 """
 
 
@@ -279,7 +274,8 @@ class DocTest(object):
         """
         Checks for comment directives on the first line of the doctest
 
-        A doctest is disabled if it starts with any of the following patterns
+        A doctest is force-disabled if it starts with any of the following
+        patterns
 
         * ``>>> # DISABLE_DOCTEST``
         * ``>>> # SCRIPT``
@@ -289,6 +285,17 @@ class DocTest(object):
         And if running in pytest, you can also use
 
         * ``>>> import pytest; pytest.skip()``
+
+        Note:
+            modern versions of xdoctest contain directives like
+            `# xdoctest: +SKIP`, which are a better way to do this.
+
+        TODO:
+            Robustly deprecate these non-standard ways of disabling a doctest.
+            Generate a warning for several versions if they are used, and
+            indicate what the replacement strategy is. Then raise an error for
+            several more versions before finally removing this code.
+
         """
         disable_patterns = [
             r'>>>\s*#\s*DISABLE',
@@ -641,16 +648,6 @@ class DocTest(object):
                             if part.compile_mode == 'eval':
                                 # print('test_globals = {}'.format(sorted(test_globals.keys())))
                                 got_eval = eval(code, test_globals)
-                                # if EVAL_MIGHT_RETURN_COROUTINE:
-                                #     import types
-                                #     if isinstance(got_eval, types.CoroutineType):
-                                #         # In 3.9-rc (2020-mar-31) it looks like
-                                #         # eval sometimes returns coroutines. I
-                                #         # found no docs on this. Not sure if it
-                                #         # will be mainlined, but this seems to
-                                #         # fix it.
-                                #         import asyncio
-                                #         got_eval =  asyncio.run(got_eval)
                             else:
                                 exec(code, test_globals)
 

@@ -140,9 +140,13 @@ class CaptureStdout(CaptureStream):
     def __init__(self, suppress=True, enabled=True, **kwargs):
         _misspelled_varname = 'supress'
         if _misspelled_varname in kwargs:  # nocover
-            import warnings
-            warnings.warn(
-                'Argument of CaptureStdout {} is misspelled and deprecated. Use suppress instead'.format(_misspelled_varname), DeprecationWarning)
+            from xdoctest.utils import util_deprecation
+            util_deprecation.schedule_deprecation3(
+                modname='xdoctest',
+                name='supress', type='Argument of CaptureStdout',
+                migration='Use suppress instead',
+                deprecate='1.0.0', error='1.1.0', remove='1.2.0'
+            )
             suppress = kwargs.pop(_misspelled_varname)
             if len(kwargs) > 0:
                 raise ValueError('unexpected args: {}'.format(kwargs))

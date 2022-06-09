@@ -58,14 +58,12 @@ import time
 import types
 import warnings
 import sys
+from xdoctest import global_state
 
 
 def log(msg, verbose):
     if verbose > 0:
         print(msg)
-
-
-DEBUG = '--debug' in sys.argv
 
 
 def doctest_callable(func):
@@ -170,7 +168,7 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
         >>> from xdoctest import runner
         >>> result = doctest_module('xdoctest.static_analysis::parse_static_value')
     """
-    _log = partial(log, verbose=DEBUG)
+    _log = partial(log, verbose=global_state.DEBUG_RUNNER)
     _log('------+ DEBUG +------')
     _log('CALLED doctest_module')
     _log('exclude = {!r}'.format(exclude))

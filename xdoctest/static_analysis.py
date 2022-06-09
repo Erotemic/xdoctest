@@ -679,10 +679,13 @@ def parse_static_calldefs(source=None, fpath=None):
 
 
 def parse_calldefs(source=None, fpath=None):
-    import warnings
-    warnings.warn((
-        'parse_calldefs is deprecated '
-        'use parse_static_calldefs instead'), DeprecationWarning)
+    from xdoctest.utils import util_deprecation
+    util_deprecation.schedule_deprecation3(
+        modname='xdoctest',
+        name='parse_calldefs', type='function',
+        migration='use parse_static_calldefs instead',
+        deprecate='1.0.0', error='1.1.0', remove='1.2.0'
+    )
     return parse_static_calldefs(source=source, fpath=fpath)
 
 

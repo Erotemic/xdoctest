@@ -45,9 +45,8 @@ from xdoctest import directive
 from xdoctest import exceptions
 from xdoctest import doctest_part
 from xdoctest import static_analysis as static
+from xdoctest import global_state
 
-
-DEBUG = '--debug' in sys.argv
 
 INDENT_RE = re.compile(r'^([ ]*)(?=\S)', re.MULTILINE)
 
@@ -143,7 +142,7 @@ class DoctestParser(object):
             >>> assert len(doctest_parts) == 6
             >>> len(doctest_parts)
         """
-        if DEBUG > 1:
+        if global_state.DEBUG_PARSER > 1:
             print('\n===== PARSE ====')
         if sys.version_info.major == 2:  # nocover
             string = utils.ensure_unicode(string)
@@ -172,7 +171,7 @@ class DoctestParser(object):
                 failpoint = '_group_labeled_lines'
             elif all_parts is None:
                 failpoint = '_package_groups'
-            if DEBUG:
+            if global_state.DEBUG_PARSER:
                 print('<FAILPOINT>')
                 print('!!! FAILED !!!')
                 print('failpoint = {!r}'.format(failpoint))
@@ -199,12 +198,12 @@ class DoctestParser(object):
             raise exceptions.DoctestParseError(
                 'Failed to parse doctest in {}'.format(failpoint),
                 string=string, info=info, orig_ex=orig_ex)
-        if DEBUG > 1:
+        if global_state.DEBUG_PARSER > 1:
             print('\n===== FINISHED PARSE ====')
         return all_parts
 
     def _package_groups(self, grouped_lines):
-        if DEBUG > 1:
+        if global_state.DEBUG_PARSER > 1:
             import ubelt as ub
             print('<PACKAGE LABEL GROUPS>')
             print('grouped_lines = {}'.format(ub.repr2(grouped_lines, nl=2)))
@@ -219,7 +218,7 @@ class DoctestParser(object):
                 text_part = '\n'.join(chunk)
                 yield text_part
                 lineno += len(chunk)
-        if DEBUG > 1:
+        if global_state.DEBUG_PARSER > 1:
             print('</PACKAGE LABEL GROUPS>')
 
     def _package_chunk(self, raw_source_lines, raw_want_lines, lineno=0):
@@ -243,7 +242,7 @@ class DoctestParser(object):
             'string'
 
         """
-        if DEBUG > 1:
+        if global_state.DEBUG_PARSER > 1:
             print('<PACKAGE CHUNK>')
         match = INDENT_RE.search(raw_source_lines[0])
         line_indent = 0 if match is None else (match.end() - match.start())
@@ -256,11 +255,11 @@ class DoctestParser(object):
 
         exec_source_lines = [p[4:] for p in source_lines]
 
-        if DEBUG > 1:
+        if global_state.DEBUG_PARSER > 1:
             print(' * locate ps1 lines')
         # Find the line number of each standalone statement
         ps1_linenos, mode_hint = self._locate_ps1_linenos(source_lines)
-        if DEBUG > 1:
+        if global_state.DEBUG_PARSER > 1:
             print('mode_hint = {!r}'.format(mode_hint))
             print(' * located ps1 lines')
 
@@ -336,7 +335,7 @@ class DoctestParser(object):
             assert mode_hint in {'eval', 'exec', 'single'}
             example.compile_mode = mode_hint
 
-        if DEBUG > 1:
+        if global_state.DEBUG_PARSER > 1:
             print('example.compile_mode = {!r}'.format(example.compile_mode))
             print('<YIELD CHUNK>')
         yield example
@@ -351,7 +350,7 @@ class DoctestParser(object):
                 lines.  Executable parts are returned as a tuple of source
                 lines and an optional "want" statement.
         """
-        if DEBUG > 1:
+        if global_state.DEBUG_PARSER > 1:
             print('<GROUP LABEL LINES>')
         # Now that lines have types, groups them. This could have done this
         # above, but functionality is split for readability.
@@ -363,7 +362,7 @@ class DoctestParser(object):
         groups = []
         current = []
         state = None
-        if DEBUG > 4:
+        if global_state.DEBUG_PARSER > 4:
             print('labeled_lines = {!r}'.format(labeled_lines))
 
         # Need to ensure that old-style continuations with want statements are
@@ -380,7 +379,7 @@ class DoctestParser(object):
         if current:
             groups.append((state, current))
 
-        if DEBUG > 4:
+        if global_state.DEBUG_PARSER > 4:
             print('groups = {!r}'.format(groups))
 
         # need to merge consecutive dsrc groups without want statements
@@ -429,7 +428,7 @@ class DoctestParser(object):
         if prev_source:
             grouped_lines.append((prev_source, ''))
 
-        if DEBUG > 1:  # nocover
+        if global_state.DEBUG_PARSER > 1:  # nocover
             print('</GROUP LABEL LINES>')
         return grouped_lines
 
@@ -727,7 +726,7 @@ class DoctestParser(object):
         for line_idx, line in line_iter:
             match = INDENT_RE.search(line)
             line_indent = 0 if match is None else (match.end() - match.start())
-            if DEBUG:  # nocover
+            if global_state.DEBUG_PARSER:  # nocover
                 print('Next line {}: {}'.format(line_idx, line))
                 print('state_indent = {!r}'.format(state_indent))
                 print('match = {!r}'.format(match))
@@ -796,10 +795,10 @@ class DoctestParser(object):
             if curr_state in {DSRC, DCNT}:
                 # source parts may consume more than one line
                 try:
-                    if DEBUG:  # nocover
+                    if global_state.DEBUG_PARSER:  # nocover
                         print('completing source')
                     for part, norm_line in _complete_source(line, state_indent, line_iter):
-                        if DEBUG > 4:  # nocover
+                        if global_state.DEBUG_PARSER > 4:  # nocover
                             print('Append Completion Line:')
                             print('part = {!r}'.format(part))
                             print('norm_line = {!r}'.format(norm_line))
@@ -811,7 +810,7 @@ class DoctestParser(object):
                 except exceptions.IncompleteParseError:
                     raise
                 except SyntaxError:
-                    if DEBUG:  # nocover
+                    if global_state.DEBUG_PARSER:  # nocover
                         print('<LABEL FAIL>')
                         # print('next(line_iter) = {!r}'.format(line_iter))
                         print('state_indent = {!r}'.format(state_indent))
@@ -829,9 +828,9 @@ class DoctestParser(object):
                 labeled_lines.append((curr_state, line))
             prev_state = curr_state
 
-        if DEBUG > 1:  # nocover
+        if global_state.DEBUG_PARSER > 1:  # nocover
             import ubelt as ub
-            # if DEBUG > 3:
+            # if global_state.DEBUG_PARSER > 3:
             #     print('string = {!r}'.format(string))
             print('<FINISH LABELED LINES')
             print('labeled_lines = {}'.format(ub.repr2(labeled_lines, nl=1)))
@@ -899,7 +898,7 @@ def _complete_source(line, state_indent, line_iter):
                         error = False
 
                 if error:
-                    if DEBUG:
+                    if global_state.DEBUG_PARSER:
                         print(' * !!!ERROR!!!')
                         print(' * source_parts = {!r}'.format(source_parts))
                         print(' * prefix = {!r}'.format(prefix))
@@ -912,7 +911,7 @@ def _complete_source(line, state_indent, line_iter):
             source_parts.append(suffix)
             yield next_line, norm_line
     except StopIteration:
-        if DEBUG:
+        if global_state.DEBUG_PARSER:
             import ubelt as ub
             print('<FAIL DID NOT COMPLETE SOURCE>')
             import traceback
@@ -943,7 +942,7 @@ def _complete_source(line, state_indent, line_iter):
             'ill-formed doctest: all parts have been processed '
             'but the doctest source is not balanced')
     else:
-        if DEBUG > 1:
+        if global_state.DEBUG_PARSER > 1:
             import ubelt as ub
             print('<SUCCESS COMPLETED SOURCE>')
             # print(' * line_iter = {!r}'.format(line_iter))

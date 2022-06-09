@@ -437,7 +437,13 @@ class Directive(utils.NiceRepr):
             return '{}{}'.format(prefix, self.name)
 
     def _unpack_args(self, num):
-        warnings.warn('Deprecated and will be removed', DeprecationWarning)
+        from xdoctest.utils import util_deprecation
+        util_deprecation.schedule_deprecation3(
+            modname='xdoctest',
+            name='Directive._unpack_args', type='method',
+            migration='there is no need to use this',
+            deprecate='1.0.0', error='1.1.0', remove='1.2.0'
+        )
         nargs = self.args
         if len(nargs) != 1:
             raise TypeError(
@@ -446,7 +452,13 @@ class Directive(utils.NiceRepr):
         return self.args
 
     def effect(self, argv=None, environ=None):
-        warnings.warn('Deprecated use effects', DeprecationWarning)
+        from xdoctest.utils import util_deprecation
+        util_deprecation.schedule_deprecation3(
+            modname='xdoctest',
+            name='Directive.effect', type='method',
+            migration='Use Directive.effects instead',
+            deprecate='1.0.0', error='1.1.0', remove='1.2.0'
+        )
         effects = self.effects(argv=argv, environ=environ)
         if len(effects) > 1:
             raise Exception('Old method cannot handle multiple effects')

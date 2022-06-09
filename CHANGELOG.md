@@ -7,8 +7,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## Version 1.0.1 - Unreleased
 
 ### Fixed
-
 * Corner case bug in error reporting
+
+### Changed
+* Moved some globals into a new module called `global_state` and allowed
+  environs to enable debug print statements.
+* Added `util_deprecation` module to robustly mark features as deprecated.
 
 
 ## Version 1.0.0 - Released 2022-03-25

@@ -39,9 +39,7 @@ from xdoctest import doctest_example
 from xdoctest import utils
 from xdoctest.docstr import docscrape_google
 from xdoctest.utils import util_import
-
-
-DEBUG = '--debug' in sys.argv
+from xdoctest import global_state
 
 
 DOCTEST_STYLES = [
@@ -147,7 +145,7 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         example._parts = parts
         return example
 
-    if DEBUG:
+    if global_state.DEBUG_CORE:
         print('Parsing docstring for callname={} in modpath={}'.format(
             callname, modpath))
 
@@ -292,7 +290,7 @@ def parse_auto_docstr_examples(docstr, *args, **kwargs):
     First try to parse google style, but if no tests are found use freeform
     style.
     """
-    if DEBUG:
+    if global_state.DEBUG_CORE:
         print('Automatic style is trying google parsing')
 
     n_found = 0
@@ -306,7 +304,7 @@ def parse_auto_docstr_examples(docstr, *args, **kwargs):
 
     # no google style tests were found, parse in freeform
     if n_found == 0:
-        if DEBUG:
+        if global_state.DEBUG_CORE:
             print('Automatic style is trying freeform parsing')
         for example in parse_freeform_docstr_examples(docstr, *args, **kwargs):
             yield example
@@ -363,7 +361,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
         1
         >>> examples = list(parse_docstr_examples(docstr, fpath='foo.txt'))
     """
-    if DEBUG:
+    if global_state.DEBUG_CORE:
         print('Parsing docstring examples for '
               'callname={} in modpath={}'.format(callname, modpath))
     if style == 'freeform':
@@ -379,7 +377,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
         raise KeyError('Unknown style={}. Valid styles are {}'.format(
             style, DOCTEST_STYLES))
 
-    if DEBUG:
+    if global_state.DEBUG_CORE:
         print('parser = {!r}'.format(parser))
 
     n_parsed = 0
@@ -389,7 +387,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
             n_parsed += 1
             yield example
     except Exception as ex:
-        if DEBUG:
+        if global_state.DEBUG_CORE:
             print('Caught an error when parsing')
         msg = ('Cannot scrape callname={} in modpath={} line={}.\n'
                'Caused by: {}\n')
@@ -420,7 +418,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
             pass
         else:
             raise
-    if DEBUG:
+    if global_state.DEBUG_CORE:
         print('Finished parsing {} examples'.format(n_parsed))
 
 
@@ -474,7 +472,7 @@ def package_calldefs(pkg_identifier, exclude=[], ignore_syntax_errors=True,
         >>> assert util_import.modpath_to_modname(modpath) == pkg_identifier
         >>> assert 'package_calldefs' in calldefs
     """
-    if DEBUG:
+    if global_state.DEBUG_CORE:
         print('Find package calldefs: pkg_identifier = {!r}'.format(pkg_identifier))
 
     if isinstance(pkg_identifier, types.ModuleType):
@@ -531,14 +529,22 @@ def parse_calldefs(module_identifier, analysis='auto'):
     """
     # backwards compatibility hacks
     if '--allow-xdoc-dynamic' in sys.argv:
-        warnings.warn(
-            '--allow-xdoc-dynamic is deprecated  and will be removed in '
-            'the future use --analysis=auto instead', DeprecationWarning)
+        from xdoctest.utils import util_deprecation
+        util_deprecation.schedule_deprecation3(
+            modname='xdoctest',
+            name='--allow-xdoc-dynamic', type='CLI flag',
+            migration='use --analysis=auto instead',
+            deprecate='1.0.0', error='1.1.0', remove='1.2.0'
+        )
         analysis = 'auto'
     if '--xdoc-force-dynamic' in sys.argv:
-        warnings.warn(
-            '--xdoc-force-dynamic is deprecated and will be removed in '
-            'the future use --analysis=dynamic instead', DeprecationWarning)
+        from xdoctest.utils import util_deprecation
+        util_deprecation.schedule_deprecation3(
+            modname='xdoctest',
+            name='--xdoc-force-dynamic', type='CLI flag',
+            migration='use --analysis=dynamic instead',
+            deprecate='1.0.0', error='1.1.0', remove='1.2.0'
+        )
         analysis = 'dynamic'
 
     if isinstance(module_identifier, types.ModuleType):
@@ -567,7 +573,7 @@ def parse_calldefs(module_identifier, analysis='auto'):
     else:
         raise KeyError(analysis)
 
-    if DEBUG:
+    if global_state.DEBUG_CORE:
         print('About to parse calldefs with do_dynamic={}'.format(do_dynamic))
 
     calldefs = None
@@ -586,6 +592,9 @@ def parse_calldefs(module_identifier, analysis='auto'):
             raise
     else:
         calldefs = static_analysis.parse_static_calldefs(fpath=module_identifier)
+
+    if global_state.DEBUG_CORE:
+        print('Found {} calldefs'.format(len(calldefs)))
 
     return calldefs
 
@@ -661,12 +670,16 @@ def parse_doctestables(module_identifier, exclude=[], style='auto',
             docstr = calldef.docstr
             if calldef.docstr is not None:
                 lineno = calldef.doclineno
-                for example in parse_docstr_examples(docstr, callname=callname,
-                                                     modpath=modpath,
-                                                     lineno=lineno,
-                                                     style=style,
-                                                     parser_kw=parser_kw):
-                    yield example
+                example_gen = parse_docstr_examples(
+                    docstr, callname=callname, modpath=modpath, lineno=lineno,
+                    style=style, parser_kw=parser_kw)
+                if global_state.DEBUG_CORE:  # nocover
+                    for example in example_gen:
+                        print(' * Yield example={}'.format(example))
+                        yield example
+                else:
+                    for example in example_gen:
+                        yield example
 
 
 if __name__ == '__main__':
