@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 Handles parsing of information out of google style docstrings
+
+It is not clear which of these `GoogleStyleDocs1`_ `GoogleStyleDocs2`_ is *the*
+standard or if there is one.
+
+References:
+    [GoogleStyleDocs1] https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google
+    [GoogleStyleDocs2] http://www.sphinx-doc.org/en/stable/ext/example_google.html#example-google
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
 import re
@@ -71,6 +78,12 @@ def parse_google_returns(docstr, return_annot=None):
 
 def parse_google_retblock(lines, return_annot=None):
     r"""
+    Parse information out of a returns or yeilds block.
+
+    A returns or yeids block should be formatted as one or more
+    '{type}:{description}' strings. The description can occupy multiple lines,
+    but the indentation should increase.
+
     Args:
         lines (str): unindented lines from a Returns or Yields section
         return_annot (str): the return type annotation (if one exists)
@@ -120,7 +133,6 @@ def parse_google_retblock(lines, return_annot=None):
         ... ])))
         >>> assert len(hints) == 0
         ...
-
     """
     if return_annot is not None:
         # If the function has a return type annotation then the return block
@@ -147,6 +159,11 @@ def parse_google_retblock(lines, return_annot=None):
                     # Finalize and return any previously constructed type hint
                     yield finalize(retdict)
                     retdict = None
+                # FIXME:
+                # This doesn't quite work if ":" is part of the type
+                # definition.  Not sure if it can be. Needs better parsing
+                # to ensure the ":" is actually the separator between
+                # type and desc
                 if ':' in line:
                     parts = line.split(':')
                     retdict = {
@@ -168,11 +185,6 @@ def parse_google_argblock(lines):
     r"""
     Args:
         lines (str): the unindented lines from an Args docstring section
-
-    References:
-        # It is not clear which of these is *the* standard or if there is one
-        https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google
-        http://www.sphinx-doc.org/en/stable/ext/example_google.html#example-google
 
     Example:
         >>> # Test various ways that arglines can be written
