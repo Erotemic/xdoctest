@@ -13,6 +13,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Moved some globals into a new module called `global_state` and allowed
   environs to enable debug print statements.
 * Added `util_deprecation` module to robustly mark features as deprecated.
+* Modified the google style return type parser to return a type if the 
+  only content is some parsable python code.
 
 
 ## Version 1.0.0 - Released 2022-03-25

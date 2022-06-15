@@ -94,7 +94,6 @@ def parse_google_retblock(lines, return_annot=None):
     Example:
         >>> # Test various ways that retlines can be written
         >>> assert len(list(parse_google_retblock('list: a desc'))) == 1
-        >>> assert len(list(parse_google_retblock('no type, just desc'))) == 0
         >>> # ---
         >>> hints = list(parse_google_retblock('\n'.join([
         ...     'entire line can be desc',
@@ -126,12 +125,14 @@ def parse_google_retblock(lines, return_annot=None):
         ... ])))
         >>> assert len(hints) == 4
         >>> # ---
+        >>> # If the colon is not specified nothing will be parsed
+        >>> # according to the "official" spec, but lets try and do it anyway
         >>> hints = list(parse_google_retblock('\n'.join([
-        ...     # If the colon is not specified nothing will be parsed
         ...     'list',
         ...     'Tuple[int, str]',
         ... ])))
-        >>> assert len(hints) == 0
+        >>> assert len(hints) == 2
+        >>> assert len(list(parse_google_retblock('no type, just desc'))) == 1
         ...
     """
     if return_annot is not None:
@@ -171,8 +172,26 @@ def parse_google_retblock(lines, return_annot=None):
                         'desc': [':'.join(parts[1:]).strip()],
                     }
                 else:
-                    # warning (malformatted google docstring)
-                    pass
+                    # warning (malformatted google docstring) We should support
+                    # the case where they just specify the type and no
+                    # description.
+                    USE_TYPE_HACK = 1
+                    if USE_TYPE_HACK:
+                        import ast
+                        try:
+                            ast.parse(line.strip())
+                        except Exception:
+                            # Not parseable, assume this is a description.
+                            retdict = {
+                                'type': None,
+                                'desc': [line.strip()],
+                            }
+                        else:
+                            # Parseable, assume this is a type
+                            retdict = {
+                                'type': line.strip(),
+                                'desc': [],
+                            }
             else:
                 # Lines with indentation should extend previous descriptions.
                 if retdict is not None:
