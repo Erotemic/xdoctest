@@ -72,6 +72,18 @@ class DoctestPart(object):
         else:
             return '\n'.join(self.exec_lines)
 
+    def has_any_code(self):
+        """
+        Heuristic to check if there is any runnable code in this doctest.  We
+        currently just check that not every line is a comment, which helps the
+        runner count a test as skipped if only lines with comments "ran".
+        """
+        slines = [line.strip() for line in self.exec_lines]
+        return not all(
+            not line or line.startswith('#')
+            for line in slines
+        )
+
     @property
     def directives(self):
         """

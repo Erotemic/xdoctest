@@ -622,12 +622,22 @@ class DocTest(object):
                     self._skipped_parts.append(part)
                     continue
 
+                import ubelt as ub
+                print('part.exec_lines = {}'.format(ub.repr2(part.exec_lines, nl=1)))
+                flag = part.has_any_code()
+                print(f'flag={flag}')
+                if not part.has_any_code():
+                    print('Skipping')
+                    self._skipped_parts.append(part)
+                    continue
+
                 try:
                     # Compile code, handle syntax errors
                     #   part.compile_mode can be single, exec, or eval.
                     #   Typically single is used instead of eval
                     self._partfilename = '<doctest:' + self.node + '>'
                     source_text = part.compilable_source()
+
                     code = compile(
                         source_text, mode=part.compile_mode,
                         filename=self._partfilename,

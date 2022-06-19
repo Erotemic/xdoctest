@@ -8,6 +8,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 * Corner case bug in error reporting
+* Doctests that never run any code are now correctly marked as skipped 
 
 ### Changed
 * Moved some globals into a new module called `global_state` and allowed
