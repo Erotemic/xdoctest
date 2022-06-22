@@ -622,12 +622,7 @@ class DocTest(object):
                     self._skipped_parts.append(part)
                     continue
 
-                import ubelt as ub
-                print('part.exec_lines = {}'.format(ub.repr2(part.exec_lines, nl=1)))
-                flag = part.has_any_code()
-                print(f'flag={flag}')
                 if not part.has_any_code():
-                    print('Skipping')
                     self._skipped_parts.append(part)
                     continue
 
