@@ -5,6 +5,11 @@ Handles parsing of information out of google style docstrings
 It is not clear which of these `GoogleStyleDocs1`_ `GoogleStyleDocs2`_ is *the*
 standard or if there is one.
 
+This may be moved to a standalone package similar to:
+
+    * https://pypi.org/project/docstring-parser/
+    * https://pypi.org/project/numpydoc/
+
 References:
     [GoogleStyleDocs1] https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google
     [GoogleStyleDocs2] http://www.sphinx-doc.org/en/stable/ext/example_google.html#example-google
@@ -17,261 +22,27 @@ import six
 from xdoctest import exceptions
 from xdoctest.utils.util_str import ensure_unicode
 
-
-def parse_google_args(docstr):
-    r"""
-    Generates dictionaries of argument hints based on a google docstring
-
-    Args:
-        docstr (str): a google-style docstring
-
-    Yields:
-        Dict[str, str]: dictionaries of parameter hints
-
-    Example:
-        >>> docstr = parse_google_args.__doc__
-        >>> argdict_list = list(parse_google_args(docstr))
-        >>> print([sorted(d.items()) for d in argdict_list])
-        [[('desc', 'a google-style docstring'), ('name', 'docstr'), ('type', 'str')]]
-    """
-    blocks = split_google_docblocks(docstr)
-    for key, block in blocks:
-        lines = block[0]
-        if key == 'Args':
-            for argdict in parse_google_argblock(lines):
-                yield argdict
-
-
-def parse_google_returns(docstr, return_annot=None):
-    r"""
-    Generates dictionaries of possible return hints based on a google docstring
-
-    Args:
-        docstr (str): a google-style docstring
-        return_annot (str): the return type annotation (if one exists)
-
-    Yields:
-        Dict[str, str]: dictionaries of return value hints
-
-    Example:
-        >>> docstr = parse_google_returns.__doc__
-        >>> retdict_list = list(parse_google_returns(docstr))
-        >>> print([sorted(d.items()) for d in retdict_list])
-        [[('desc', 'dictionaries of return value hints'), ('type', 'Dict[str, str]')]]
-
-    Example:
-        >>> docstr = split_google_docblocks.__doc__
-        >>> retdict_list = list(parse_google_returns(docstr))
-        >>> print([sorted(d.items())[1] for d in retdict_list])
-        [('type', 'List[Tuple]')]
-    """
-    blocks = split_google_docblocks(docstr)
-    for key, block in blocks:
-        lines = block[0]
-        if key == 'Returns':
-            for retdict in parse_google_retblock(lines, return_annot):
-                yield retdict
-        if key == 'Yields':
-            for retdict in parse_google_retblock(lines, return_annot):
-                yield retdict
-
-
-def parse_google_retblock(lines, return_annot=None):
-    r"""
-    Parse information out of a returns or yeilds block.
-
-    A returns or yeids block should be formatted as one or more
-    '{type}:{description}' strings. The description can occupy multiple lines,
-    but the indentation should increase.
-
-    Args:
-        lines (str): unindented lines from a Returns or Yields section
-        return_annot (str): the return type annotation (if one exists)
-
-    Yields:
-        Dict[str, str]: each dict specifies the return type and its description
-
-    Example:
-        >>> # Test various ways that retlines can be written
-        >>> assert len(list(parse_google_retblock('list: a desc'))) == 1
-        >>> # ---
-        >>> hints = list(parse_google_retblock('\n'.join([
-        ...     'entire line can be desc',
-        ...     ' ',
-        ...     ' if a return type annotation is given',
-        ... ]), return_annot='int'))
-        >>> assert len(hints) == 1
-        >>> # ---
-        >>> hints = list(parse_google_retblock('\n'.join([
-        ...     'bool: a description',
-        ...     ' with a newline',
-        ... ])))
-        >>> assert len(hints) == 1
-        >>> # ---
-        >>> hints = list(parse_google_retblock('\n'.join([
-        ...     'int or bool: a description',
-        ...     ' ',
-        ...     ' with a separated newline',
-        ...     ' ',
-        ... ])))
-        >>> assert len(hints) == 1
-        >>> # ---
-        >>> hints = list(parse_google_retblock('\n'.join([
-        ...     # Multiple types can be specified
-        ...     'threading.Thread: a description',
-        ...     '(int, str): a tuple of int and str',
-        ...     'tuple: a tuple of int and str',
-        ...     'Tuple[int, str]: a tuple of int and str',
-        ... ])))
-        >>> assert len(hints) == 4
-        >>> # ---
-        >>> # If the colon is not specified nothing will be parsed
-        >>> # according to the "official" spec, but lets try and do it anyway
-        >>> hints = list(parse_google_retblock('\n'.join([
-        ...     'list',
-        ...     'Tuple[int, str]',
-        ... ])))
-        >>> assert len(hints) == 2
-        >>> assert len(list(parse_google_retblock('no type, just desc'))) == 1
-        ...
-    """
-    if return_annot is not None:
-        # If the function has a return type annotation then the return block
-        # should only be interpreted as a description. The formatting of the
-        # lines is not modified in this case.
-        retdict = {'type': return_annot, 'desc': lines}
-        yield retdict
-    else:
-        # Otherwise, this examines each line without any extra indentation (wrt
-        # the returns block) splits each line using a colon, and interprets
-        # anything to the left of the colon as the type hint. The rest of the
-        # parts are the description. Extra whitespace is removed from the
-        # descriptions.
-        def finalize(retdict):
-            final_desc = ' '.join([p for p in retdict['desc'] if p])
-            retdict['desc'] = final_desc
-            return retdict
-        retdict = None
-        noindent_pat = re.compile(r'^[^\s]')
-        for line in lines.split('\n'):
-            # Lines without indentation should declare new type hints
-            if noindent_pat.match(line):
-                if retdict is not None:
-                    # Finalize and return any previously constructed type hint
-                    yield finalize(retdict)
-                    retdict = None
-                # FIXME:
-                # This doesn't quite work if ":" is part of the type
-                # definition.  Not sure if it can be. Needs better parsing
-                # to ensure the ":" is actually the separator between
-                # type and desc
-                if ':' in line:
-                    parts = line.split(':')
-                    retdict = {
-                        'type': parts[0].strip(),
-                        'desc': [':'.join(parts[1:]).strip()],
-                    }
-                else:
-                    # warning (malformatted google docstring) We should support
-                    # the case where they just specify the type and no
-                    # description.
-                    USE_TYPE_HACK = 1
-                    if USE_TYPE_HACK:
-                        import ast
-                        try:
-                            ast.parse(line.strip())
-                        except Exception:
-                            # Not parseable, assume this is a description.
-                            retdict = {
-                                'type': None,
-                                'desc': [line.strip()],
-                            }
-                        else:
-                            # Parseable, assume this is a type
-                            retdict = {
-                                'type': line.strip(),
-                                'desc': [],
-                            }
-            else:
-                # Lines with indentation should extend previous descriptions.
-                if retdict is not None:
-                    retdict['desc'].append(line.strip())
-        if retdict is not None:
-            yield finalize(retdict)
-
-
-def parse_google_argblock(lines):
-    r"""
-    Args:
-        lines (str): the unindented lines from an Args docstring section
-
-    Example:
-        >>> # Test various ways that arglines can be written
-        >>> line_list = [
-        ...     '',
-        ...     'foo1 (int): a description',
-        ...     'foo2: a description\n    with a newline',
-        ...     'foo3 (int or str): a description',
-        ...     'foo4 (int or threading.Thread): a description',
-        ...     #
-        ...     # this is sphynx-like typing style
-        ...     'param1 (:obj:`str`, optional): ',
-        ...     'param2 (:obj:`list` of :obj:`str`):',
-        ...     #
-        ...     # the Type[type] syntax is defined by the python typeing module
-        ...     'attr1 (Optional[int]): Description of `attr1`.',
-        ...     'attr2 (List[str]): Description of `attr2`.',
-        ...     'attr3 (Dict[str, str]): Description of `attr3`.',
-        ... ]
-        >>> lines = '\n'.join(line_list)
-        >>> argdict_list = list(parse_google_argblock(lines))
-        >>> # All lines except the first should be accepted
-        >>> assert len(argdict_list) == len(line_list) - 1
-        >>> assert argdict_list[1]['desc'] == 'a description with a newline'
-    """
-    def named(key, pattern):
-        return '(?P<{}>{})'.format(key, pattern)
-    def optional(pattern):
-        return '({})?'.format(pattern)
-    def positive_lookahead(pattern):
-        return '(?={})'.format(pattern)
-    def regex_or(patterns):
-        return '({})'.format('|'.join(patterns))
-    whitespace = r'\s*'
-    endofstr = r'\Z'
-    # Define characters that can be part of variable / type names
-    varname = named('name', '[A-Za-z_][A-Za-z0-9_]*')
-    typename = named('type', '[^)]*?')
-    argdesc = named('desc', '.*?')
-    # Types are optional, and must be enclosed in parens
-    optional_type = optional(whitespace.join([r'\(', typename, r'\)']))
-    # Each arg hint must defined a on newline without any indentation
-    argdef = whitespace.join([varname, optional_type, ':'])
-    # the description is everything after the colon until either the next line
-    # without any indentation or the end of the string
-    end_desc = regex_or(['^' + positive_lookahead(r'[^\s]'), endofstr])
-
-    flags = re.MULTILINE | re.DOTALL
-    argline_pat = re.compile('^' + argdef + argdesc + end_desc, flags=flags)
-
-    for match in argline_pat.finditer(lines):
-        argdict = match.groupdict()
-        # Clean description
-        desc_lines = [p.strip() for p in argdict['desc'].split('\n')]
-        argdict['desc'] = ' '.join([p for p in desc_lines if p])
-        yield argdict
+DocBlock = collections.namedtuple('DocBlock', ['text', 'offset'])
 
 
 def split_google_docblocks(docstr):
-    """ Breaks a docstring into parts defined by google style
+    """
+    Breaks a docstring into parts defined by google style
 
     Args:
         docstr (str): a docstring
 
     Returns:
-        List[Tuple]: list of 2-tuples where the first item is a google style
-            docstring tag and the second item is the bock corresponding to that
-            tag.
+        List[Tuple[str, DocBlock[str, int]]]:
+            list of 2-tuples where the first item is a google style docstring
+            tag and the second item is the bock corresponding to that tag. The
+            block itself is a 2-tuple where the first item is the unindented
+            text and the second item is the line offset indicating that blocks
+            location in the docstring.
+
+    Note:
+        Unknown or "freeform" sections are given a generic "__DOC__" tag.
+        A section tag may be specified multiple times.
 
     CommandLine:
         xdoctest xdoctest.docstr.docscrape_google split_google_docblocks:2
@@ -479,7 +250,281 @@ def split_google_docblocks(docstr):
             subblock = '\n'.join(val)
 
         key = tag_aliases.get(key, key)
-        block = (subblock, line_offset)
+        block = DocBlock(subblock, line_offset)
         groups.append((key, block))
         line_offset += len(lines)
     return groups
+
+
+def parse_google_args(docstr):
+    r"""
+    Generates dictionaries of argument hints based on a google docstring
+
+    Args:
+        docstr (str): a google-style docstring
+
+    Yields:
+        Dict[str, str]: dictionaries of parameter hints
+
+    Example:
+        >>> docstr = parse_google_args.__doc__
+        >>> argdict_list = list(parse_google_args(docstr))
+        >>> print([sorted(d.items()) for d in argdict_list])
+        [[('desc', 'a google-style docstring'), ('name', 'docstr'), ('type', 'str')]]
+    """
+    blocks = split_google_docblocks(docstr)
+    for key, block in blocks:
+        lines = block[0]
+        if key == 'Args':
+            for argdict in parse_google_argblock(lines):
+                yield argdict
+
+
+def parse_google_returns(docstr, return_annot=None):
+    r"""
+    Generates dictionaries of possible return hints based on a google docstring
+
+    Args:
+        docstr (str): a google-style docstring
+
+        return_annot (str | None):
+            the return type annotation (if one exists)
+
+    Yields:
+        Dict[str, str]: dictionaries of return value hints
+
+    Example:
+        >>> docstr = parse_google_returns.__doc__
+        >>> retdict_list = list(parse_google_returns(docstr))
+        >>> print([sorted(d.items()) for d in retdict_list])
+        [[('desc', 'dictionaries of return value hints'), ('type', 'Dict[str, str]')]]
+
+    Example:
+        >>> docstr = split_google_docblocks.__doc__
+        >>> retdict_list = list(parse_google_returns(docstr))
+        >>> print([sorted(d.items())[1] for d in retdict_list])
+        [('type', 'List[Tuple]')]
+    """
+    blocks = split_google_docblocks(docstr)
+    for key, block in blocks:
+        lines = block[0]
+        if key == 'Returns':
+            for retdict in parse_google_retblock(lines, return_annot):
+                yield retdict
+        if key == 'Yields':
+            for retdict in parse_google_retblock(lines, return_annot):
+                yield retdict
+
+
+def parse_google_retblock(lines, return_annot=None):
+    r"""
+    Parse information out of a returns or yeilds block.
+
+    A returns or yeids block should be formatted as one or more
+    ``'{type}:{description}'`` strings. The description can occupy multiple
+    lines, but the indentation should increase.
+
+    Args:
+        lines (str):
+            unindented lines from a Returns or Yields section
+
+        return_annot (str | None):
+            the return type annotation (if one exists)
+
+    Yields:
+        Dict[str, str]: each dict specifies the return type and its description
+
+    Example:
+        >>> # Test various ways that retlines can be written
+        >>> assert len(list(parse_google_retblock('list: a desc'))) == 1
+        >>> # ---
+        >>> hints = list(parse_google_retblock('\n'.join([
+        ...     'entire line can be desc',
+        ...     ' ',
+        ...     ' if a return type annotation is given',
+        ... ]), return_annot='int'))
+        >>> assert len(hints) == 1
+        >>> # ---
+        >>> hints = list(parse_google_retblock('\n'.join([
+        ...     'bool: a description',
+        ...     ' with a newline',
+        ... ])))
+        >>> assert len(hints) == 1
+        >>> # ---
+        >>> hints = list(parse_google_retblock('\n'.join([
+        ...     'int or bool: a description',
+        ...     ' ',
+        ...     ' with a separated newline',
+        ...     ' ',
+        ... ])))
+        >>> assert len(hints) == 1
+        >>> # ---
+        >>> hints = list(parse_google_retblock('\n'.join([
+        ...     # Multiple types can be specified
+        ...     'threading.Thread: a description',
+        ...     '(int, str): a tuple of int and str',
+        ...     'tuple: a tuple of int and str',
+        ...     'Tuple[int, str]: a tuple of int and str',
+        ... ])))
+        >>> assert len(hints) == 4
+        >>> # ---
+        >>> # If the colon is not specified nothing will be parsed
+        >>> # according to the "official" spec, but lets try and do it anyway
+        >>> hints = list(parse_google_retblock('\n'.join([
+        ...     'list',
+        ...     'Tuple[int, str]',
+        ... ])))
+        >>> assert len(hints) == 2
+        >>> assert len(list(parse_google_retblock('no type, just desc'))) == 1
+        ...
+    """
+    if return_annot is not None:
+        # If the function has a return type annotation then the return block
+        # should only be interpreted as a description. The formatting of the
+        # lines is not modified in this case.
+        retdict = {'type': return_annot, 'desc': lines}
+        yield retdict
+    else:
+        # Otherwise, this examines each line without any extra indentation (wrt
+        # the returns block) splits each line using a colon, and interprets
+        # anything to the left of the colon as the type hint. The rest of the
+        # parts are the description. Extra whitespace is removed from the
+        # descriptions.
+        def finalize(retdict):
+            final_desc = ' '.join([p for p in retdict['desc'] if p])
+            retdict['desc'] = final_desc
+            return retdict
+        retdict = None
+        noindent_pat = re.compile(r'^[^\s]')
+        for line in lines.split('\n'):
+            # Lines without indentation should declare new type hints
+            if noindent_pat.match(line):
+                if retdict is not None:
+                    # Finalize and return any previously constructed type hint
+                    yield finalize(retdict)
+                    retdict = None
+                # FIXME:
+                # This doesn't quite work if ":" is part of the type
+                # definition.  Not sure if it can be. Needs better parsing
+                # to ensure the ":" is actually the separator between
+                # type and desc
+                if ':' in line:
+                    parts = line.split(':')
+                    retdict = {
+                        'type': parts[0].strip(),
+                        'desc': [':'.join(parts[1:]).strip()],
+                    }
+                else:
+                    # warning (malformatted google docstring) We should support
+                    # the case where they just specify the type and no
+                    # description.
+                    USE_TYPE_HACK = 1
+                    if USE_TYPE_HACK:
+                        import ast
+                        try:
+                            ast.parse(line.strip())
+                        except Exception:
+                            # Not parseable, assume this is a description.
+                            retdict = {
+                                'type': None,
+                                'desc': [line.strip()],
+                            }
+                        else:
+                            # Parseable, assume this is a type
+                            retdict = {
+                                'type': line.strip(),
+                                'desc': [],
+                            }
+            else:
+                # Lines with indentation should extend previous descriptions.
+                if retdict is not None:
+                    retdict['desc'].append(line.strip())
+        if retdict is not None:
+            yield finalize(retdict)
+
+
+def parse_google_argblock(lines, clean_desc=True):
+    r"""
+    Parse out individual items from google-style args blocks.
+
+    Args:
+        lines (str): the unindented lines from an Args docstring section
+
+        clean_desc (bool):
+            if True, will strip the description of newlines and indents.
+            Defaults to True.
+
+    Yields:
+        Dict[str, str | None]:
+            A dictionary containing keys, "name", "type", and "desc"
+            corresponding to an argument in the Args block.
+
+    Example:
+        >>> # Test various ways that arglines can be written
+        >>> line_list = [
+        ...     '',
+        ...     'foo1 (int): a description',
+        ...     'foo2: a description\n    with a newline',
+        ...     'foo3 (int or str): a description',
+        ...     'foo4 (int or threading.Thread): a description',
+        ...     #
+        ...     # this is sphynx-like typing style
+        ...     'param1 (:obj:`str`, optional): ',
+        ...     'param2 (:obj:`list` of :obj:`str`):',
+        ...     #
+        ...     # the Type[type] syntax is defined by the python typeing module
+        ...     'attr1 (Optional[int]): Description of `attr1`.',
+        ...     'attr2 (List[str]): Description of `attr2`.',
+        ...     'attr3 (Dict[str, str]): Description of `attr3`.',
+        ...     '*args : variable positional args description',
+        ...     '**kwargs : keyword arguments description',
+        ...     'malformed and unparseable',
+        ...     'param_no_desc1',  # todo: this should be parseable
+        ...     'param_no_desc2:',
+        ...     'param_no_desc3 ()',  # todo: this should be parseable
+        ...     'param_no_desc4 ():',
+        ...     'param_no_desc5 (str)',  # todo: this should be parseable
+        ...     'param_no_desc6 (str):',
+        ... ]
+        >>> lines = '\n'.join(line_list)
+        >>> argdict_list = list(parse_google_argblock(lines))
+        >>> # All lines except the first should be accepted
+        >>> assert len(argdict_list) == len(line_list) - 5
+        >>> assert argdict_list[1]['desc'] == 'a description with a newline'
+    """
+    def named(key, pattern):
+        return '(?P<{}>{})'.format(key, pattern)
+    def optional(pattern):
+        return '({})?'.format(pattern)
+    def positive_lookahead(pattern):
+        return '(?={})'.format(pattern)
+    def regex_or(patterns):
+        return '({})'.format('|'.join(patterns))
+    whitespace = r'\s*'
+    endofstr = r'\Z'
+
+    # Define characters that can be part of variable / type names
+    # Note: a variable name might be prefixed with 0, 1, or 2, `*` to indicate
+    # *args or **kwargs
+    varname = named('name', r'\*?\*?[A-Za-z_][A-Za-z0-9_]*')
+    typename = named('type', '[^)]*?')
+    argdesc = named('desc', '.*?')
+    # Types are optional, and must be enclosed in parens
+    optional_type = optional(whitespace.join([r'\(', typename, r'\)']))
+    # Each arg hint must defined a on newline without any indentation
+    argdef = whitespace.join([varname, optional_type, ':'])
+    # the description is everything after the colon until either the next line
+    # without any indentation or the end of the string
+    end_desc = regex_or(['^' + positive_lookahead(r'[^\s]'), endofstr])
+
+    flags = re.MULTILINE | re.DOTALL
+    argline_pat = re.compile('^' + argdef + argdesc + end_desc, flags=flags)
+
+    for match in argline_pat.finditer(lines):
+        argdict = match.groupdict()
+        # Clean description
+        if clean_desc:
+            desc_lines = [p.strip() for p in argdict['desc'].split('\n')]
+            argdict['desc'] = ' '.join([p for p in desc_lines if p])
+
+        yield argdict
