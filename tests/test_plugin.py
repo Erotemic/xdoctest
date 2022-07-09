@@ -10,7 +10,10 @@ import _pytest._code
 from xdoctest.plugin import XDoctestItem, XDoctestModule, XDoctestTextfile
 from xdoctest import utils
 import pytest
-from distutils.version import LooseVersion
+try:
+    from packaging.version import parse as LooseVersion
+except ImportError:
+    from distutils.version import LooseVersion
 
 PY36 = sys.version_info[:2] >= (3, 6)
 MODULE_NOT_FOUND_ERROR = 'ModuleNotFoundError' if PY36 else 'ImportError'
