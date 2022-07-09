@@ -18,10 +18,11 @@ def parse_dynamic_calldefs(modpath_or_module):
     this can discover doctests in binary extension libraries.
 
     Args:
-       modpath_or_module (str | Module): path to module or the module itself
+       modpath_or_module (str | PathLike | ModuleType):
+           path to module or the module itself
 
     Returns:
-        Dict[str, CallDefNode]:
+        Dict[str, xdoctest.static_analysis.CallDefNode]:
             mapping from callnames to CallDefNodes, which contain
                info about the item with the doctest.
 
@@ -95,7 +96,7 @@ def get_stack_frame(n=0, strict=True):
         strict (bool): (default = True)
 
     Returns:
-        frame: frame_cur
+        FrameType: frame_cur
 
     Example:
         >>> frame_cur = get_stack_frame(n=0)
@@ -125,7 +126,7 @@ def get_parent_frame(n=0):
                  n=1 is the parent frame.
 
     Returns:
-        frame: parent_frame
+        FrameType: parent_frame
 
     Example:
         >>> root0 = get_stack_frame(n=0)
@@ -154,10 +155,10 @@ def iter_module_doctestables(module):
     Yields doctestable objects that belong to a live python module
 
     Args:
-        module (module): live python module
+        module (ModuleType): live python module
 
     Yields:
-        tuple (str, callable): (funcname, func) doctestable
+        Tuple[str, callable]: (funcname, func) doctestable
 
     CommandLine:
         python -m xdoctest.dynamic_analysis iter_module_doctestables
@@ -227,6 +228,10 @@ def is_defined_by_module(item, module):
     Check if item is directly defined by a module.
 
     This check may not always work, especially for decorated functions.
+
+    Args:
+        item (object): item to check
+        module (ModuleType): module to check against
 
     CommandLine:
         xdoctest -m xdoctest.dynamic_analysis is_defined_by_module

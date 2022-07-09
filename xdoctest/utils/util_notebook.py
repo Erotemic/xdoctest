@@ -152,7 +152,7 @@ def import_notebook_from_path(ipynb_fpath, only_defs=False):
     clean sys.path variables.
 
     Args:
-        ipynb_fpath (str | Path): path to the ipython notebook file to import
+        ipynb_fpath (str | PathLike): path to the ipython notebook file to import
         only_defs (bool, default=False): if True ignores all non-definition
             statements
 
@@ -195,12 +195,12 @@ def execute_notebook(ipynb_fpath, timeout=None, verbose=None):
     Execute an IPython notebook in a separate kernel
 
     Args:
-        ipynb_fpath (str | Path): path to the ipython notebook file to import
+        ipynb_fpath (str | PathLike): path to the ipython notebook file to import
 
     Returns:
-        nb : NotebookNode
+        nbformat.notebooknode.NotebookNode : nb
             The executed notebook.
-        resources : dictionary
+        dict: resources
             Additional resources used in the conversion process.
 
     Example:

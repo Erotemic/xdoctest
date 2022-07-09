@@ -33,7 +33,7 @@ def split_google_docblocks(docstr):
         docstr (str): a docstring
 
     Returns:
-        List[Tuple[str, DocBlock[str, int]]]:
+        List[Tuple[str, DocBlock]]:
             list of 2-tuples where the first item is a google style docstring
             tag and the second item is the bock corresponding to that tag. The
             block itself is a 2-tuple where the first item is the unindented
@@ -303,7 +303,7 @@ def parse_google_returns(docstr, return_annot=None):
         >>> docstr = split_google_docblocks.__doc__
         >>> retdict_list = list(parse_google_returns(docstr))
         >>> print([sorted(d.items())[1] for d in retdict_list])
-        [('type', 'List[Tuple[str, DocBlock[str, int]]]')]
+        [('type', 'List[Tuple[str, DocBlock]]')]
     """
     blocks = split_google_docblocks(docstr)
     for key, block in blocks:

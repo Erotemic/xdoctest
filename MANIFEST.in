@@ -1,5 +1,6 @@
 include *.md
 include *.py
+include *.toml
 include run_doctests.sh
 include *.txt
 include LICENSE

@@ -444,7 +444,7 @@ def package_calldefs(pkg_identifier, exclude=[], ignore_syntax_errors=True,
     Statically generates all callable definitions in a module or package
 
     Args:
-        pkg_identifier (str | Module): path to or name of the module to be
+        pkg_identifier (str | ModuleType): path to or name of the module to be
             tested (or the live module itself, which is not recommended)
 
         exclude (List[str]): glob-patterns of file names to exclude
@@ -459,7 +459,7 @@ def package_calldefs(pkg_identifier, exclude=[], ignore_syntax_errors=True,
             dynamic analysis is used to parse all calldefs.
 
     Yields:
-        Tuple[Dict[str, CallDefNode], str | Module] -
+        Tuple[Dict[str, xdoctest.static_analysis.CallDefNode], str | ModuleType] -
             * item[0]: the mapping of callnames-to-calldefs
             * item[1]: the path to the file containing the doctest
               (usually a module) or the module itself
@@ -514,7 +514,7 @@ def parse_calldefs(module_identifier, analysis='auto'):
     analysis.
 
     Args:
-        module_identifier (str | Module): path to or name of the module to be
+        module_identifier (str | ModuleType): path to or name of the module to be
             tested (or the live module itself, which is not recommended)
 
         analysis (str, default='auto'):
@@ -524,8 +524,8 @@ def parse_calldefs(module_identifier, analysis='auto'):
             dynamic analysis is used to parse all calldefs.
 
     Returns:
-        Dict[str, CallDefNode]: the mapping of callnames-to-calldefs within
-          the module.
+        Dict[str, xdoctest.static_analysis.CallDefNode]:
+            the mapping of callnames-to-calldefs within the module.
     """
     # backwards compatibility hacks
     if '--allow-xdoc-dynamic' in sys.argv:
@@ -607,7 +607,7 @@ def parse_doctestables(module_identifier, exclude=[], style='auto',
     example objects.  The style influences which tests are found.
 
     Args:
-        module_identifier (str | PathLike | Module):
+        module_identifier (str | PathLike | ModuleType):
             path or name of a module or a module itself (we prefer a path)
 
         exclude (List[str]): glob-patterns of file names to exclude

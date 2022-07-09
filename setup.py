@@ -222,6 +222,9 @@ if __name__ == '__main__':
         # packages=['xdoctest', 'xdoctest.utils', 'xdoctest.docstr'],
         # custom PyPI classifier for pytest plugins
         python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*',
+        package_data={
+            'xdoctest': ['py.typed', '*.pyi'],
+        },
         classifiers=[
             'Development Status :: 5 - Production/Stable',
             'Intended Audience :: Developers',
