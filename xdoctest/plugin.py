@@ -116,8 +116,8 @@ def pytest_addoption(parser):
 
 
 if pytest.__version__ < '7.':
-    def pytest_collect_file(file_path, parent):
-        return _pytest_collect_file(file_path, parent, fspath=file_path)
+    def pytest_collect_file(path, parent):
+        return _pytest_collect_file(path, parent, fspath=path)
 
     def _suffix(path):
         return path.ext
@@ -126,7 +126,7 @@ if pytest.__version__ < '7.':
         return path.check(fnmatch=glob)
 
 else:
-    def pytest_collect_file(file_path, parent):
+    def pytest_collect_file(file_path, parent):  # type: ignore
         return _pytest_collect_file(file_path, parent, path=file_path)
 
     def _suffix(path):
