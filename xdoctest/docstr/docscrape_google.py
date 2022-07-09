@@ -11,8 +11,8 @@ This may be moved to a standalone package similar to:
     * https://pypi.org/project/numpydoc/
 
 References:
-    [GoogleStyleDocs1] https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google
-    [GoogleStyleDocs2] http://www.sphinx-doc.org/en/stable/ext/example_google.html#example-google
+    .. [GoogleStyleDocs1] https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google
+    .. [GoogleStyleDocs2] http://www.sphinx-doc.org/en/stable/ext/example_google.html#example-google
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
 import re

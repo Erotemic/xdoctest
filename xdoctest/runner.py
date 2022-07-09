@@ -110,15 +110,15 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
             The name of / path to the module, or the live module itself.
             If not specified, dynamic analysis will be used to introspect the
             module that called this function and that module will be used.
-            This can also contain the callname followed by the `::` token.
+            This can also contain the callname followed by the ``::`` token.
 
         command (str):
             determines which doctests to run.
             if command is None, this is determined by parsing sys.argv
             Value values are
-                'all' - find and run all tests in a module
-                'list' - list the tests in a module
-                'dump' - dumps tests to stdout
+            'all' - find and run all tests in a module
+            'list' - list the tests in a module
+            'dump' - dumps tests to stdout
 
         argv (List[str], default=None):
             if specified, command line flags that might influence beharior.
@@ -128,9 +128,9 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
 
         verbose (int, default=None):
             Verbosity level.
-                0 - disables all text
-                1 - minimal printing
-                3 - verbose printing
+            0 - disables all text
+            1 - minimal printing
+            3 - verbose printing
 
         exclude (List[str]):
             ignores any modname matching any of these glob-like patterns

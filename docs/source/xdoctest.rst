@@ -25,6 +25,7 @@ Submodules
    xdoctest.doctest_part
    xdoctest.dynamic_analysis
    xdoctest.exceptions
+   xdoctest.global_state
    xdoctest.parser
    xdoctest.plugin
    xdoctest.runner
