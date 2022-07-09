@@ -27,7 +27,7 @@ def test_fail_call_onefunc():
 
 def test_fail_call_twofunc():
     """
-        python ~/code/xdoctest/testing/test_traceback.py test_fail_call_twofunc
+        python ~/code/xdoctest/tests/test_traceback.py test_fail_call_twofunc
 
     """
     import warnings
@@ -58,7 +58,7 @@ def test_fail_call_twofunc():
 
 def test_fail_inside_twofunc():
     """
-        python ~/code/xdoctest/testing/test_traceback.py test_fail_inside_twofunc
+        python ~/code/xdoctest/tests/test_traceback.py test_fail_inside_twofunc
 
     """
     import warnings
@@ -92,7 +92,7 @@ def test_fail_inside_twofunc():
 
 def test_fail_inside_onefunc():
     """
-        python ~/code/xdoctest/testing/test_traceback.py test_fail_inside_onefunc
+        python ~/code/xdoctest/tests/test_traceback.py test_fail_inside_onefunc
 
     """
     text = _run_case(utils.codeblock(
@@ -117,7 +117,7 @@ def test_fail_inside_onefunc():
 def test_failure_linenos():
     """
     Example:
-        python ~/code/xdoctest/testing/test_linenos.py test_failure_linenos
+        python ~/code/xdoctest/tests/test_linenos.py test_failure_linenos
 
     Example:
         >>> test_failure_linenos()
@@ -167,14 +167,14 @@ def test_failure_linenos():
 
 SeeAlso:
     # This plugin tests also checks line numbers. Make sure we dont break it
-    pytest testing/test_plugin.py::TestXDoctest::test_doctest_property_lineno -v -s
+    pytest tests/test_plugin.py::TestXDoctest::test_doctest_property_lineno -v -s
 
 """
 
 
 def test_lineno_failcase_gotwant():
     """
-        python ~/code/xdoctest/testing/test_linenos.py test_lineno_failcase_gotwant
+        python ~/code/xdoctest/tests/test_linenos.py test_lineno_failcase_gotwant
 
     """
     text = _run_case(utils.codeblock(
@@ -195,8 +195,8 @@ def test_lineno_failcase_gotwant():
 
 def test_lineno_failcase_called_code():
     """
-        python ~/code/xdoctest/testing/test_linenos.py test_lineno_failcase_called_code
-        python ~/code/xdoctest/testing/test_linenos.py
+        python ~/code/xdoctest/tests/test_linenos.py test_lineno_failcase_called_code
+        python ~/code/xdoctest/tests/test_linenos.py
 
     """
     text = _run_case(utils.codeblock(
@@ -227,7 +227,7 @@ def test_lineno_failcase_called_code():
 
 def test_lineno_failcase_doctest_code():
     """
-        python ~/code/xdoctest/testing/test_linenos.py test_lineno_failcase_doctest_code
+        python ~/code/xdoctest/tests/test_linenos.py test_lineno_failcase_doctest_code
 
     """
     text = _run_case(utils.codeblock(
@@ -260,8 +260,8 @@ if __name__ == '__main__':
     """
     CommandLine:
         export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/testing
-        python ~/code/xdoctest/testing/test_traceback.py
-        pytest ~/code/xdoctest/testing/test_traceback.py -s
+        python ~/code/xdoctest/tests/test_traceback.py
+        pytest ~/code/xdoctest/tests/test_traceback.py -s
     """
     import xdoctest
     xdoctest.doctest_module(__file__)

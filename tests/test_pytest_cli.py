@@ -46,7 +46,7 @@ def test_simple_pytest_import_error_cli():
     dev/0.15.7
 
     CommandLine:
-        xdoctest ~/code/xdoctest/testing/test_pytest_cli.py test_simple_pytest_import_error_cli
+        xdoctest ~/code/xdoctest/tests/test_pytest_cli.py test_simple_pytest_import_error_cli
     """
     module_text = utils.codeblock(
         '''

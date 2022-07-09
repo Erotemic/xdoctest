@@ -12,7 +12,7 @@ def test_final_eval_exec():
     compare its value to the want value.
 
     CommandLine:
-        xdoctest -m ~/code/xdoctest/testing/test_parser.py test_final_eval_exec
+        xdoctest -m ~/code/xdoctest/tests/test_parser.py test_final_eval_exec
     """
     string = utils.codeblock(
         '''
@@ -279,7 +279,7 @@ def test_retain_source():
 
 def test_package_string_tup():
     """
-    pytest testing/test_parser.py::test_package_string_tup
+    pytest tests/test_parser.py::test_package_string_tup
     """
     raw_source_lines = ['>>> "string"']
     raw_want_lines = ['string']
@@ -290,7 +290,7 @@ def test_package_string_tup():
 
 def test_simulate_repl():
     """
-    pytest testing/test_parser.py::test_package_string_tup
+    pytest tests/test_parser.py::test_package_string_tup
     """
     string = utils.codeblock(
         '''
@@ -421,7 +421,7 @@ def test_syntax_error():
 
 def test_nonbalanced_statement():
     """
-    xdoctest ~/code/xdoctest/testing/test_parser.py test_nonbalanced_statement
+    xdoctest ~/code/xdoctest/tests/test_parser.py test_nonbalanced_statement
 
     from xdoctest import static_analysis as static
     lines = ['x = [']
@@ -443,7 +443,7 @@ def test_nonbalanced_statement():
 def test_bad_indent():
     """
     CommandLine:
-        python testing/test_parser.py test_bad_indent
+        python tests/test_parser.py test_bad_indent
     """
     string = utils.codeblock(
         '''
@@ -505,7 +505,7 @@ def test_repl_comment_in_string():
 
 def test_inline_directive():
     """
-        python ~/code/xdoctest/testing/test_parser.py test_inline_directive
+        python ~/code/xdoctest/tests/test_parser.py test_inline_directive
     """
     string = utils.codeblock(
         '''
@@ -551,7 +551,7 @@ def test_inline_directive():
 
 def test_block_directive_nowant1():
     """
-        python ~/code/xdoctest/testing/test_parser.py test_block_directive_nowant1
+        python ~/code/xdoctest/tests/test_parser.py test_block_directive_nowant1
     """
     string = utils.codeblock(
         '''
@@ -575,7 +575,7 @@ def test_block_directive_nowant1():
 
 def test_block_directive_nowant2():
     """
-        python ~/code/xdoctest/testing/test_parser.py test_block_directive_nowant
+        python ~/code/xdoctest/tests/test_parser.py test_block_directive_nowant
     """
     string = utils.codeblock(
         '''
@@ -595,7 +595,7 @@ def test_block_directive_nowant2():
 
 def test_block_directive_want1_assign():
     """
-        python ~/code/xdoctest/testing/test_parser.py test_block_directive_want1
+        python ~/code/xdoctest/tests/test_parser.py test_block_directive_want1
     """
     string = utils.codeblock(
         '''
@@ -619,7 +619,7 @@ def test_block_directive_want1_assign():
 
 def test_block_directive_want1_eval():
     """
-        python ~/code/xdoctest/testing/test_parser.py test_block_directive_want1
+        python ~/code/xdoctest/tests/test_parser.py test_block_directive_want1
     """
     string = utils.codeblock(
         '''
@@ -635,7 +635,7 @@ def test_block_directive_want1_eval():
 
 def test_block_directive_want2_assign():
     """
-        python ~/code/xdoctest/testing/test_parser.py test_block_directive_want2
+        python ~/code/xdoctest/tests/test_parser.py test_block_directive_want2
     """
     string = utils.codeblock(
         '''
@@ -652,7 +652,7 @@ def test_block_directive_want2_assign():
 
 def test_block_directive_want2_eval():
     """
-        python ~/code/xdoctest/testing/test_parser.py test_block_directive_want2_eval
+        python ~/code/xdoctest/tests/test_parser.py test_block_directive_want2_eval
     """
     string = utils.codeblock(
         '''
@@ -677,7 +677,7 @@ def test_block_directive_want2_eval():
 
 def test_block_directive_want2_eval2():
     """
-        python ~/code/xdoctest/testing/test_parser.py test_block_directive_want2_eval
+        python ~/code/xdoctest/tests/test_parser.py test_block_directive_want2_eval
     """
     string = utils.codeblock(
         '''
@@ -726,11 +726,11 @@ def test_gh_issue_25_parsing_failure():
 if __name__ == '__main__':
     """
     CommandLine:
-        python ~/code/xdoctest/testing/test_parser.py --help
-        python ~/code/xdoctest/testing/test_parser.py test_inline_directive
-        python ~/code/xdoctest/testing/test_parser.py zero-all
-        python ~/code/xdoctest/testing/test_parser.py test_gh_issue_25_parsing_failure
-        pytest testing/test_parser.py -vv
+        python ~/code/xdoctest/tests/test_parser.py --help
+        python ~/code/xdoctest/tests/test_parser.py test_inline_directive
+        python ~/code/xdoctest/tests/test_parser.py zero-all
+        python ~/code/xdoctest/tests/test_parser.py test_gh_issue_25_parsing_failure
+        pytest tests/test_parser.py -vv
     """
     import xdoctest
     xdoctest.doctest_module(__file__)

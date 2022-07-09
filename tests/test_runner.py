@@ -5,7 +5,7 @@ from xdoctest import utils
 
 def test_zero_args():
     """
-    python testing/test_runner.py test_zero_args
+    python tests/test_runner.py test_zero_args
     """
     from xdoctest import runner
 
@@ -142,8 +142,8 @@ def test_example_run():
 
 def test_all_disabled():
     """
-    pytest testing/test_runner.py::test_all_disabled -s -vv
-    python testing/test_runner.py test_all_disabled
+    pytest tests/test_runner.py::test_all_disabled -s -vv
+    python tests/test_runner.py test_all_disabled
     """
     from xdoctest import runner
 
@@ -186,9 +186,9 @@ def test_all_disabled():
 
 def test_runner_failures():
     """
-    python testing/test_runner.py  test_runner_failures
-    pytest testing/test_runner.py::test_runner_failures -s
-    pytest testing/test_runner.py::test_all_disabled -s
+    python tests/test_runner.py  test_runner_failures
+    pytest tests/test_runner.py::test_runner_failures -s
+    pytest tests/test_runner.py::test_all_disabled -s
     """
     from xdoctest import runner
 
@@ -253,7 +253,7 @@ def test_runner_failures():
 
 def test_run_zero_arg():
     """
-    pytest testing/test_runner.py::test_run_zero_arg -s
+    pytest tests/test_runner.py::test_run_zero_arg -s
     """
     from xdoctest import runner
 
@@ -289,7 +289,7 @@ def test_run_zero_arg():
 
 def test_parse_cmdline():
     """
-    pytest testing/test_runner.py::test_parse_cmdline -s
+    pytest tests/test_runner.py::test_parse_cmdline -s
     """
     from xdoctest import runner
     # sys.argv could be anything, so just run this for coverage to make sure it doesnt crash
@@ -302,7 +302,7 @@ def test_parse_cmdline():
 
 def test_runner_config():
     """
-    pytest testing/test_runner.py::test_runner_config -s
+    pytest tests/test_runner.py::test_runner_config -s
     """
     from xdoctest import runner
 
@@ -334,7 +334,7 @@ def test_runner_config():
 
 def test_global_exec():
     """
-    pytest testing/test_runner.py::test_global_exec -s
+    pytest tests/test_runner.py::test_global_exec -s
     """
     from xdoctest import runner
 
@@ -368,7 +368,7 @@ def test_hack_the_sys_argv():
     """
     Tests hacky solution to issue #76
 
-    pytest testing/test_runner.py::test_global_exec -s
+    pytest tests/test_runner.py::test_global_exec -s
 
     References:
         https://github.com/Erotemic/xdoctest/issues/76
@@ -413,9 +413,9 @@ def test_hack_the_sys_argv():
 if __name__ == '__main__':
     """
     CommandLine:
-        pytest testing/test_runner.py -s
-        pytest testing/test_runner.py -s
-        python testing/test_runner.py test_zero_args
+        pytest tests/test_runner.py -s
+        pytest tests/test_runner.py -s
+        python tests/test_runner.py test_zero_args
     """
     # import pytest
     # pytest.main([__file__])

@@ -86,7 +86,7 @@ def simple_func1():
 def test_parse_dynamic_calldefs():
     """
     CommandLine:
-        python testing/test_dynamic.py test_parse_dynamic_calldefs
+        python tests/test_dynamic.py test_parse_dynamic_calldefs
     """
 
     def subfunc():
@@ -132,7 +132,7 @@ def test_parse_dynamic_calldefs():
 def test_defined_by_module():
     """
     CommandLine:
-        python testing/test_dynamic.py test_defined_by_module
+        python tests/test_dynamic.py test_defined_by_module
     """
     module = sys.modules[test_defined_by_module.__module__]
 
@@ -249,8 +249,8 @@ def test_programatically_generated_docstrings():
 if __name__ == '__main__':
     """
     CommandLine:
-        python testing/test_dynamic.py
-        pytest testing/test_dynamic.py
+        python tests/test_dynamic.py
+        pytest tests/test_dynamic.py
     """
     import xdoctest
     xdoctest.doctest_module(__file__)

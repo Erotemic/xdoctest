@@ -8,7 +8,7 @@ from xdoctest import checker
 
 def test_exit_test_exception():
     """
-    pytest testing/test_doctest_example.py::test_exit_test_exception
+    pytest tests/test_doctest_example.py::test_exit_test_exception
     """
     string = utils.codeblock(
         '''
@@ -24,7 +24,7 @@ def test_exit_test_exception():
 
 def test_failed_assign_want():
     """
-    pytest testing/test_doctest_example.py::test_exit_test_exception
+    pytest tests/test_doctest_example.py::test_exit_test_exception
     """
     string = utils.codeblock(
         '''
@@ -40,7 +40,7 @@ def test_failed_assign_want():
 
 def test_continue_ambiguity():
     """
-    pytest testing/test_doctest_example.py::test_exit_test_exception
+    pytest tests/test_doctest_example.py::test_exit_test_exception
     """
     string = utils.codeblock(
         '''
@@ -59,8 +59,8 @@ def test_continue_ambiguity():
 
 def test_failed_assign_want():
     """
-    pytest testing/test_doctest_example.py::test_exit_test_exception
-    xdoctest ~/code/xdoctest/testing/test_doctest_example.py test_failed_assign_want
+    pytest tests/test_doctest_example.py::test_exit_test_exception
+    xdoctest ~/code/xdoctest/tests/test_doctest_example.py test_failed_assign_want
     """
     string = utils.codeblock(
         '''
@@ -76,7 +76,7 @@ def test_failed_assign_want():
 
 def test_contination_want_ambiguity():
     """
-    xdoctest ~/code/xdoctest/testing/test_doctest_example.py test_contination_want_ambiguity
+    xdoctest ~/code/xdoctest/tests/test_doctest_example.py test_contination_want_ambiguity
     """
     string = utils.codeblock(
         '''
@@ -95,7 +95,7 @@ def test_contination_want_ambiguity():
 
 def test_multiline_list():
     """
-    pytest testing/test_doctest_example.py::test_multiline_list
+    pytest tests/test_doctest_example.py::test_multiline_list
     """
     string = utils.codeblock(
         '''
@@ -131,9 +131,9 @@ def test_failure():
 
 def test_format_src():
     """
-    python testing/test_doctest_example.py test_format_src
+    python tests/test_doctest_example.py test_format_src
 
-    pytest testing/test_doctest_example.py::test_format_src -s -v
+    pytest tests/test_doctest_example.py::test_format_src -s -v
     """
     string = utils.codeblock(
         '''
@@ -158,7 +158,7 @@ def test_format_src():
 
 def test_eval_expr_capture():
     """
-    pytest testing/test_doctest_example.py::test_eval_expr_capture -s
+    pytest tests/test_doctest_example.py::test_eval_expr_capture -s
     """
     docsrc = utils.codeblock(
         '''
@@ -249,8 +249,8 @@ def test_comment():
 
 def test_want_error_msg():
     """
-    python testing/test_doctest_example.py test_want_error_msg
-    pytest testing/test_doctest_example.py::test_want_error_msg
+    python tests/test_doctest_example.py test_want_error_msg
+    pytest tests/test_doctest_example.py::test_want_error_msg
     """
     string = utils.codeblock(
         '''
@@ -265,8 +265,8 @@ def test_want_error_msg():
 
 def test_want_error_msg_failure():
     """
-    python testing/test_doctest_example.py test_want_error_msg_failure
-    pytest testing/test_doctest_example.py::test_want_error_msg_failure
+    python tests/test_doctest_example.py test_want_error_msg_failure
+    pytest tests/test_doctest_example.py::test_want_error_msg_failure
     """
     string = utils.codeblock(
         '''
@@ -285,8 +285,8 @@ if __name__ == '__main__':
     """
     CommandLine:
         export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/testing
-        python ~/code/xdoctest/testing/test_doctest_example.py
-        xdoctest ~/code/xdoctest/testing/test_doctest_example.py zero-args
+        python ~/code/xdoctest/tests/test_doctest_example.py
+        xdoctest ~/code/xdoctest/tests/test_doctest_example.py zero-args
     """
     import xdoctest
     xdoctest.doctest_module(__file__)

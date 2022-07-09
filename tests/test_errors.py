@@ -59,7 +59,7 @@ from xdoctest.utils.util_misc import _run_case
 def test_parse_syntax_error():
     """
     CommandLine:
-        python testing/test_errors.py test_parse_syntax_error
+        python tests/test_errors.py test_parse_syntax_error
     """
     docstr = utils.codeblock(
         '''
@@ -104,9 +104,9 @@ def test_parse_syntax_error():
 
 def test_runner_syntax_error():
     """
-        python testing/test_errors.py test_runner_syntax_error
+        python tests/test_errors.py test_runner_syntax_error
 
-        xdoctest -m testing/test_errors.py test_runner_syntax_error
+        xdoctest -m tests/test_errors.py test_runner_syntax_error
     """
     source = utils.codeblock(
         r'''
@@ -200,7 +200,7 @@ def test_extract_got_exception():
     Make a repr that fails
 
     CommandLine:
-        xdoctest -m ~/code/xdoctest/testing/test_errors.py test_extract_got_exception
+        xdoctest -m ~/code/xdoctest/tests/test_errors.py test_extract_got_exception
     """
 
     source = utils.codeblock(
@@ -223,11 +223,11 @@ if __name__ == '__main__':
     """
     CommandLine:
         export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/testing
-        python ~/code/xdoctest/testing/test_errors.py
-        pytest ~/code/xdoctest/testing/test_errors.py -s --verbose
+        python ~/code/xdoctest/tests/test_errors.py
+        pytest ~/code/xdoctest/tests/test_errors.py -s --verbose
 
     CommandLine:
-        xdoctest -m ~/code/xdoctest/testing/test_errors.py test_extract_got_exception zero
+        xdoctest -m ~/code/xdoctest/tests/test_errors.py test_extract_got_exception zero
     """
     import xdoctest
     xdoctest.doctest_module(__file__)

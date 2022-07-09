@@ -87,7 +87,7 @@ def test_mod_globals():
 
 def test_show_entire():
     """
-    pytest testing/test_core.py::test_show_entire
+    pytest tests/test_core.py::test_show_entire
     """
     temp = utils.TempDir()
     dpath = temp.ensure()
@@ -148,7 +148,7 @@ def test_show_entire():
 
 def test_freeform_parse_lineno():
     """
-        python ~/code/xdoctest/testing/test_core.py test_freeform_parse_lineno
+        python ~/code/xdoctest/tests/test_core.py test_freeform_parse_lineno
 
     """
     docstr = utils.codeblock(
@@ -210,7 +210,7 @@ def test_freeform_parse_lineno():
 
 def test_collect_module_level():
     """
-    pytest testing/test_core.py::test_collect_module_level -s -vv
+    pytest tests/test_core.py::test_collect_module_level -s -vv
 
     Ignore:
         temp = utils.TempDir()
@@ -246,7 +246,7 @@ def test_collect_module_level():
 
 def test_collect_module_level_singleline():
     """
-    pytest testing/test_core.py::test_collect_module_level
+    pytest tests/test_core.py::test_collect_module_level
 
     Ignore:
         temp = utils.TempDir()
@@ -297,7 +297,7 @@ def test_no_docstr():
 
 def test_oneliner():
     """
-    python ~/code/xdoctest/testing/test_core.py test_oneliner
+    python ~/code/xdoctest/tests/test_core.py test_oneliner
     """
     with utils.TempDir() as temp:
         dpath = temp.dpath
@@ -330,7 +330,7 @@ def test_delayed_want_pass_cases():
     index of the last part with a success match.
 
     CommandLine:
-        python ~/code/xdoctest/testing/test_core.py test_delayed_want_pass_cases
+        python ~/code/xdoctest/tests/test_core.py test_delayed_want_pass_cases
     """
 
     # Pass Case1:
@@ -366,7 +366,7 @@ def test_delayed_want_pass_cases():
 def test_delayed_want_fail_cases():
     """
     CommandLine:
-        xdoctest -m ~/code/xdoctest/testing/test_core.py test_delayed_want_fail_cases
+        xdoctest -m ~/code/xdoctest/tests/test_core.py test_delayed_want_fail_cases
     """
     # Fail Case4: "more text has not been printed yet"
     status = _test_status(
@@ -423,7 +423,7 @@ def test_indented_grouping():
     string in the indented block).
 
     CommandLine:
-        xdoctest -m ~/code/xdoctest/testing/test_core.py test_indented_grouping
+        xdoctest -m ~/code/xdoctest/tests/test_core.py test_indented_grouping
     """
     from xdoctest.doctest_example import DocTest
     example = DocTest(
@@ -455,7 +455,7 @@ def test_backwards_compat_eval_in_loop():
     Test that changes in 0.10.0 fix backwards compatibility issue.
 
     CommandLine:
-        xdoctest -m ~/code/xdoctest/testing/test_core.py test_backwards_compat_eval_in_loop
+        xdoctest -m ~/code/xdoctest/tests/test_core.py test_backwards_compat_eval_in_loop
     """
     from xdoctest.doctest_example import DocTest
     example = DocTest(
@@ -484,7 +484,7 @@ def test_backwards_compat_eval_in_loop():
 def test_backwards_compat_indent_value():
     """
     CommandLine:
-        xdoctest -m ~/code/xdoctest/testing/test_core.py test_backwards_compat_indent_value
+        xdoctest -m ~/code/xdoctest/tests/test_core.py test_backwards_compat_indent_value
     """
     from xdoctest.doctest_example import DocTest
     example = DocTest(
@@ -502,7 +502,7 @@ def test_backwards_compat_indent_value():
 def test_concise_try_except():
     """
     CommandLine:
-        xdoctest -m ~/code/xdoctest/testing/test_core.py test_concise_try_except
+        xdoctest -m ~/code/xdoctest/tests/test_core.py test_concise_try_except
     """
     from xdoctest.doctest_example import DocTest
     example = DocTest(
@@ -565,7 +565,7 @@ def test_semicolon_line():
 
 
     CommandLine:
-        xdoctest -m ~/code/xdoctest/testing/test_core.py test_concise_exceptions
+        xdoctest -m ~/code/xdoctest/tests/test_core.py test_concise_exceptions
     """
     from xdoctest.doctest_example import DocTest
     example = DocTest(
@@ -603,8 +603,8 @@ if __name__ == '__main__':
     """
     CommandLine:
         export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/testing
-        python ~/code/xdoctest/testing/test_core.py zero
-        pytest testing/test_core.py -vv
+        python ~/code/xdoctest/tests/test_core.py zero
+        pytest tests/test_core.py -vv
     """
     import xdoctest  # NOQA
     xdoctest.doctest_module(__file__)

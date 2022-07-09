@@ -84,12 +84,12 @@ git clone -b dev/hotfix https://github.com/Erotemic/xdoctest.git
 cd $HOME/code/xdoctest
 pip install -e .[all]
 
-python testing/test_binary_ext.py build_demo_extmod
+python tests/test_binary_ext.py build_demo_extmod
 
 
-cd /io/testing/pybind11_test
-mkdir -p /io/testing/pybind11_test/build
-cd /io/testing/pybind11_test/build
+cd /io/tests/pybind11_test
+mkdir -p /io/tests/pybind11_test/build
+cd /io/tests/pybind11_test/build
 cmake ..
 
 
@@ -99,7 +99,7 @@ cmake ..
 def build_demo_extmod():
     """
     CommandLine:
-        python testing/test_binary_ext.py build_demo_extmod
+        python tests/test_binary_ext.py build_demo_extmod
     """
     import os
     import glob
@@ -170,10 +170,10 @@ def test_run_binary_doctests():
     Tests that we can run doctests in a compiled pybind11 module
 
     CommandLine:
-        python ~/code/xdoctest/testing/test_binary_ext.py test_run_binary_doctests
+        python ~/code/xdoctest/tests/test_binary_ext.py test_run_binary_doctests
 
     Notes:
-        xdoctest -m $HOME/code/xdoctest/testing/pybind11_test/install/my_ext.cpython-38-x86_64-linux-gnu.so list --analysis=dynamic
+        xdoctest -m $HOME/code/xdoctest/tests/pybind11_test/install/my_ext.cpython-38-x86_64-linux-gnu.so list --analysis=dynamic
 
     """
     extmod_fpath = build_demo_extmod()
@@ -193,7 +193,7 @@ def test_run_binary_doctests():
 if __name__ == '__main__':
     """
     CommandLine:
-        python ~/code/xdoctest/testing/test_binary_ext.py
+        python ~/code/xdoctest/tests/test_binary_ext.py
     """
     import xdoctest
     xdoctest.doctest_module(__file__)

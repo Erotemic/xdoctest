@@ -74,7 +74,7 @@ def test_xdoc_console_script_exec():
 def test_xdoc_cli_version():
     """
     CommandLine:
-        python -m xdoctest -m ~/code/xdoctest/testing/test_entry_point.py test_xdoc_cli_version
+        python -m xdoctest -m ~/code/xdoctest/tests/test_entry_point.py test_xdoc_cli_version
     """
     import sys
     if sys.platform.startswith('win32'):
@@ -106,7 +106,7 @@ def test_xdoc_cli_version():
 if __name__ == '__main__':
     """
     CommandLine:
-        python ~/code/xdoctest/testing/test_entry_point.py
+        python ~/code/xdoctest/tests/test_entry_point.py
     """
     import xdoctest
     xdoctest.doctest_module(__file__)

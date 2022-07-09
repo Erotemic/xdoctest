@@ -105,8 +105,8 @@ def check_got_vs_want(want, got_stdout, got_eval=constants.NOT_EVALED,
                     got = got_stdout
     if not flag:
         msg = 'got differs with doctest want'
-        ex = GotWantException(msg, got, want)
-        raise ex
+        exp = GotWantException(msg, got, want)
+        raise exp
     return flag
 
 

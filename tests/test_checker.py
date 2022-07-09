@@ -5,7 +5,7 @@ from xdoctest import directive
 
 def test_visible_lines():
     """
-    pytest testing/test_checker.py
+    pytest tests/test_checker.py
     """
     got = 'this is invisible\ronly this is visible'
     print(got)
@@ -15,7 +15,7 @@ def test_visible_lines():
 
 def test_visible_lines_explicit():
     """
-    pytest testing/test_checker.py
+    pytest tests/test_checker.py
     """
     got = 'invisible\rIS-visible'
     want = 'invisible\rIS-visible'
@@ -26,7 +26,7 @@ def test_visible_lines_explicit():
 
 def test_blankline_accept():
     """
-    pytest testing/test_checker.py
+    pytest tests/test_checker.py
     """
     # Check that blankline is normalized away
     runstate = directive.RuntimeState({'DONT_ACCEPT_BLANKLINE': False})

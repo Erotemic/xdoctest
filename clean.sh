@@ -14,7 +14,11 @@ rm -rf pip-wheel-metadata
 rm -rf htmlcov
 rm -rf .coverage
 rm -rf __pycache__
-rm -rf testing/pybind11_test/tmp
+rm -rf tests/pybind11_test/tmp
+rm -rf tests/pybind11_test/_skbuild
+rm -rf tests/pybind11_test/my_ext.egg-info
+
+rm -rf .mypy_cache
 
 rm distutils.errors 2&> /dev/null || echo "skip rm"
 

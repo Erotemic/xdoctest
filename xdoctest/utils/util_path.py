@@ -3,10 +3,10 @@
 Utilities related to filesystem paths
 """
 from __future__ import print_function, division, absolute_import, unicode_literals
+import os
 from os.path import exists
 from os.path import join
 from os.path import normpath
-from os.path import os
 import shutil
 
 

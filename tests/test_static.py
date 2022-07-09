@@ -132,8 +132,8 @@ def test_mod_lineno2():
 if __name__ == '__main__':
     """
     CommandLine:
-        python -B %HOME%/code/xdoctest/testing/test_static.py all
-        pytest ~/code/xdoctest/testing/test_static.py
+        python -B %HOME%/code/xdoctest/tests/test_static.py all
+        pytest ~/code/xdoctest/tests/test_static.py
     """
     import xdoctest
     xdoctest.doctest_module(__file__)

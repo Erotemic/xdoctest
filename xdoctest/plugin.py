@@ -19,9 +19,13 @@ from __future__ import absolute_import, division, print_function
 import pytest
 from _pytest._code import code
 from _pytest import fixtures
-from distutils.version import LooseVersion
-# import traceback
 
+try:
+    from packaging.version import parse as parse_version
+    _PYTEST_IS_GE_620 = parse_version(pytest.__version__) >= parse_version('6.2.0')
+except ImportError:
+    from distutils.version import LooseVersion
+    _PYTEST_IS_GE_620 = LooseVersion(pytest.__version__) >= LooseVersion('6.2.0')
 
 # def print(text):
 #     """ Hack so we can get stdout when debugging the plugin file """
@@ -112,8 +116,8 @@ def pytest_addoption(parser):
 
 
 if pytest.__version__ < '7.':
-    def pytest_collect_file(path, parent):
-        return _pytest_collect_file(path, parent, fspath=path)
+    def pytest_collect_file(file_path, parent):
+        return _pytest_collect_file(file_path, parent, fspath=file_path)
 
     def _suffix(path):
         return path.ext
@@ -287,10 +291,6 @@ class XDoctestModule(_XDoctestBase):
             else:
                 # direct construction is deprecated
                 yield XDoctestItem(name, self, example)
-
-
-_PYTEST_IS_GE_620 = LooseVersion(pytest.__version__) >= LooseVersion('6.2.0')
-# _PYTEST_IS_GE_620 = 0
 
 
 def _setup_fixtures(xdoctest_item):

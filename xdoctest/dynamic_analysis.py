@@ -49,8 +49,8 @@ def parse_dynamic_calldefs(modpath_or_module):
         modpath = modpath_or_module
         if modpath.endswith('.ipynb'):
             """
-            modpath = ub.expandpath("~/code/xdoctest/testing/notebook_with_doctests.ipynb")
-            xdoctest ~/code/xdoctest/testing/notebook_with_doctests.ipynb
+            modpath = ub.expandpath("~/code/xdoctest/tests/notebook_with_doctests.ipynb")
+            xdoctest ~/code/xdoctest/tests/notebook_with_doctests.ipynb
             """
             from xdoctest.utils import util_notebook
             module = util_notebook.import_notebook_from_path(modpath)

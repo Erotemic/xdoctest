@@ -52,7 +52,7 @@ def demodata_notebook_fpath():
     except NameError:
         # Hack for dev CLI usage
         import os
-        testdir = os.path.expandvars('$HOME/code/xdoctest/testing/')
+        testdir = os.path.expandvars('$HOME/code/xdoctest/tests/')
         assert exists(testdir), 'assuming a specific dev environment'
     notebook_fpath = join(testdir, "notebook_with_doctests.ipynb")
     return notebook_fpath
@@ -60,8 +60,8 @@ def demodata_notebook_fpath():
 
 def test_xdoctest_inside_notebook():
     """
-    xdoctest ~/code/xdoctest/testing/test_notebook.py test_xdoctest_inside_notebook
-    xdoctest testing/test_notebook.py test_xdoctest_inside_notebook
+    xdoctest ~/code/xdoctest/tests/test_notebook.py test_xdoctest_inside_notebook
+    xdoctest tests/test_notebook.py test_xdoctest_inside_notebook
 
     xdoctest notebook_with_doctests.ipynb
     """

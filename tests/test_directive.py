@@ -6,7 +6,7 @@ from xdoctest import utils
 
 def test_inline_skip_directive():
     """
-    pytest testing/test_directive.py::test_inline_skip_directive
+    pytest tests/test_directive.py::test_inline_skip_directive
     """
     string = utils.codeblock(
         '''
@@ -22,7 +22,7 @@ def test_inline_skip_directive():
 
 def test_block_skip_directive():
     """
-    pytest testing/test_directive.py::test_block_skip_directive
+    pytest tests/test_directive.py::test_block_skip_directive
     """
     string = utils.codeblock(
         '''
@@ -39,7 +39,7 @@ def test_multi_requires_directive():
     """
     Test semi-complex case with multiple requirements in a single line
 
-    xdoctest ~/code/xdoctest/testing/test_directive.py test_multi_requires_directive
+    xdoctest ~/code/xdoctest/tests/test_directive.py test_multi_requires_directive
     """
     string = utils.codeblock(
         '''
@@ -93,8 +93,8 @@ def test_directive_syntax_error():
 if __name__ == '__main__':
     """
     CommandLine:
-        python ~/code/xdoctest/testing/test_directive.py
-        pytest ~/code/xdoctest/testing/test_directive.py
+        python ~/code/xdoctest/tests/test_directive.py
+        pytest ~/code/xdoctest/tests/test_directive.py
     """
     import xdoctest
     xdoctest.doctest_module(__file__)

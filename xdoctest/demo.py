@@ -13,13 +13,13 @@ CommandLine:
 def myfunc():
     """
     Demonstrates how to write a doctest.
-    Prefix with `>>>` and ideally place in an `Example:` block.
+    Prefix with ``>>>`` and ideally place in an `Example:` block.
     You can also change Example, Ignore will
-    Prefix with `>>>` and ideally place in an `Example:` block.
+    Prefix with ``>>>`` and ideally place in an `Example:` block.
 
     CommandLine:
         # it would be nice if sphinx.ext.napoleon could handle this
-        xdoctest -m ~/code/xdoctest/xdoctest/demo.py myfunc
+        xdoctest -m xdoctest.demo myfunc
 
     Example:
         >>> result = myfunc()
@@ -50,8 +50,8 @@ class MyClass(object):
     def demo(cls, **kw):
         """
         CommandLine:
-            xdoctest -m ~/code/xdoctest/xdoctest/demo.py MyClass.demo
-            xdoctest -m ~/code/xdoctest/xdoctest/demo.py MyClass.demo --say
+            xdoctest -m xdoctest.demo MyClass.demo
+            xdoctest -m xdoctest.demo MyClass.demo --say
 
         Example:
             >>> print('starting my doctest')
@@ -61,17 +61,18 @@ class MyClass(object):
         """
         return MyClass(['spam'] * 42, ['eggs'],  **kw)
 
+    @staticmethod
     def always_fails():
         """
         CommandLine:
-            xdoctest -m ~/code/xdoctest/xdoctest/demo.py MyClass.always_fails
-            xdoctest -m ~/code/xdoctest/xdoctest/demo.py MyClass.always_fails --fail
-            xdoctest -m ~/code/xdoctest/xdoctest/demo.py MyClass.always_fails --fail --really
+            xdoctest -m xdoctest.demo MyClass.always_fails
+            xdoctest -m xdoctest.demo MyClass.always_fails --fail
+            xdoctest -m xdoctest.demo MyClass.always_fails --fail --really
 
-            xdoctest -m ~/code/xdoctest/xdoctest/demo.py MyClass.always_fails:0 --fail
-            xdoctest -m ~/code/xdoctest/xdoctest/demo.py MyClass.always_fails:1 --fail
-            xdoctest -m ~/code/xdoctest/xdoctest/demo.py MyClass.always_fails:2 --fail
-            xdoctest -m ~/code/xdoctest/xdoctest/demo.py MyClass.always_fails:3 --fail --really
+            xdoctest -m xdoctest.demo MyClass.always_fails:0 --fail
+            xdoctest -m xdoctest.demo MyClass.always_fails:1 --fail
+            xdoctest -m xdoctest.demo MyClass.always_fails:2 --fail
+            xdoctest -m xdoctest.demo MyClass.always_fails:3 --fail --really
 
         Example:
             >>> # xdoctest: +REQUIRES(--fail)
