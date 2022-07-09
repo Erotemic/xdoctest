@@ -221,7 +221,8 @@ if __name__ == '__main__':
         packages=find_packages('.'),
         # packages=['xdoctest', 'xdoctest.utils', 'xdoctest.docstr'],
         # custom PyPI classifier for pytest plugins
-        python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*',
+        # python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*',
+        python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
         package_data={
             'xdoctest': ['py.typed', '*.pyi'],
         },
@@ -242,6 +243,7 @@ if __name__ == '__main__':
             'Programming Language :: Python :: 3.7',
             'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: 3.5',
+            'Programming Language :: Python :: 3.4',
             'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: Implementation :: PyPy',
             'Programming Language :: Python :: Implementation :: CPython',
