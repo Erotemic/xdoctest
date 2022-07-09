@@ -1,2 +1,2 @@
 #!/bin/bash
-xdoctest xdoctest --style=google all $@
+xdoctest xdoctest --style=google all "$@"

@@ -303,7 +303,7 @@ def parse_google_returns(docstr, return_annot=None):
         >>> docstr = split_google_docblocks.__doc__
         >>> retdict_list = list(parse_google_returns(docstr))
         >>> print([sorted(d.items())[1] for d in retdict_list])
-        [('type', 'List[Tuple]')]
+        [('type', 'List[Tuple[str, DocBlock[str, int]]]')]
     """
     blocks = split_google_docblocks(docstr)
     for key, block in blocks:

@@ -1,23 +1,19 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 if __name__ == '__main__':
     import pytest
     import sys
     package_name = 'xdoctest'
-    package_dpath = package_name
+    mod_dpath = package_name
+    test_dpath = 'tests'
     pytest_args = [
         '-p', 'pytester',
         '-p', 'no:doctest',
-        '--xdoctest',
-        '--cov-config', '.coveragerc',
+        '--cov-config', 'pyproject.toml',
         '--cov-report', 'html',
         '--cov-report', 'term',
+        '--xdoctest',
         '--cov=' + package_name,
-        package_dpath, 'testing'
+        mod_dpath, test_dpath
     ]
     pytest_args = pytest_args + sys.argv[1:]
-    print('pytest.__version__ = {!r}'.format(pytest.__version__))
-    print('pytest_args = {!r}'.format(pytest_args))
-    ret = pytest.main(pytest_args)
-    print('ret = {!r}'.format(ret))
-    sys.exit(ret)
+    sys.exit(pytest.main(pytest_args))
