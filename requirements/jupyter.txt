@@ -2,6 +2,10 @@
 # python ~/local/tools/supported_python_versions_pip.py jupyter_client
 # python ~/local/tools/supported_python_versions_pip.py nbconvert
 # python ~/local/tools/supported_python_versions_pip.py jupyter_core
+# python ~/local/tools/supported_python_versions_pip.py IPython
+# python ~/local/tools/supported_python_versions_pip.py debugpy
+# python ~/local/tools/supported_python_versions_pip.py jedi
+# python ~/local/tools/supported_python_versions_pip.py attrs
 
 
 nbconvert>=6.0.0;                              python_version >= '3.6.0'   # Python 3.6+
@@ -20,7 +24,11 @@ ipykernel>=5.2.0     ; python_version < '3.7' and python_version >= '3.6'    # P
 
 
 # For IPython-kernel
-debugpy>=1.0.0 ; python_version >= '3.6'    # Python 3.6+
+debugpy>=1.6.0     ;                            python_version >= '3.10'    # Python 3.10+
+debugpy>=1.3.0     ; python_version < '3.10' and python_version >= '3.9'    # Python 3.9
+debugpy>=1.0.0     ; python_version < '3.9' and python_version >= '3.8'    # Python 3.8
+debugpy>=1.0.0     ; python_version < '3.8' and python_version >= '3.7'    # Python 3.7
+debugpy>=1.0.0     ; python_version < '3.7' and python_version >= '3.6'    # Python 3.6
 
 
 # For IPython
