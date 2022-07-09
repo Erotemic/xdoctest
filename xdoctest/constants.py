@@ -30,6 +30,6 @@ class _NOT_EVAL_TYPE(object):
         return False
     __nonzero__ = __bool__
 try:
-    NOT_EVALED  # pragma: no cover
+    NOT_EVALED  # type: ignore
 except NameError:  # pragma: no cover
     NOT_EVALED = object.__new__(_NOT_EVAL_TYPE)  # pragma: no cover

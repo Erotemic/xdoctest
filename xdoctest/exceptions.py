@@ -38,7 +38,7 @@ try:
     import _pytest.outcomes
 except ImportError:  # nocover
     # Define dummy skipped exception if pytest is not available
-    class _pytest(object):
+    class _pytest(object):  # type: ignore
         class outcomes(object):
             class Skipped(Exception):
                 pass
