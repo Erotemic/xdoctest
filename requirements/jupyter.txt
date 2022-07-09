@@ -1,4 +1,7 @@
 # See ~/local/tools/supported_python_versions_pip.py for helper script
+# python ~/local/tools/supported_python_versions_pip.py jupyter_client
+# python ~/local/tools/supported_python_versions_pip.py nbconvert
+# python ~/local/tools/supported_python_versions_pip.py jupyter_core
 
 
 nbconvert>=6.0.0;                              python_version >= '3.6.0'   # Python 3.6+
@@ -30,7 +33,7 @@ attrs>=19.2.0   ; python_version >= '3.6'    # Python 3.6+
 
 
 # For jupyter-client
-jupyter_core >= 4.6.0  ; python_version >= '3.6'    # Python 3.6+
+jupyter_core >= 4.7.0  ; python_version >= '3.6'    # Python 3.6+
 
 
 # For jupyter-core
