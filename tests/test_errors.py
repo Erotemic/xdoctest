@@ -222,7 +222,7 @@ def test_extract_got_exception():
 if __name__ == '__main__':
     """
     CommandLine:
-        export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/testing
+        export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/tests
         python ~/code/xdoctest/tests/test_errors.py
         pytest ~/code/xdoctest/tests/test_errors.py -s --verbose
 

@@ -114,6 +114,7 @@ def test_fail_inside_onefunc():
     assert '>>> a = []()' in text
     assert 'rel: 6, abs: 9,' in text
 
+
 def test_failure_linenos():
     """
     Example:
@@ -255,11 +256,10 @@ def test_lineno_failcase_doctest_code():
     assert text
 
 
-
 if __name__ == '__main__':
     """
     CommandLine:
-        export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/testing
+        export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/tests
         python ~/code/xdoctest/tests/test_traceback.py
         pytest ~/code/xdoctest/tests/test_traceback.py -s
     """

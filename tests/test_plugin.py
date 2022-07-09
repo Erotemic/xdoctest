@@ -51,7 +51,7 @@ def explicit_testdir():
         "
     Ignore:
         >>> import sys
-        >>> sys.path.append('/home/joncrall/code/xdoctest/testing')
+        >>> sys.path.append('/home/joncrall/code/xdoctest/tests')
         >>> from test_plugin import *
     """
     # modpath = _modname_to_modpath_backup('pytest')
@@ -159,7 +159,7 @@ class TestXDoctest(object):
 
         Ignore:
             >>> import sys
-            >>> sys.path.append('/home/joncrall/code/xdoctest/testing')
+            >>> sys.path.append('/home/joncrall/code/xdoctest/tests')
             >>> from test_plugin import *
             >>> testdir = explicit_testdir()
         """
@@ -306,7 +306,7 @@ class TestXDoctest(object):
 
         Ignore:
             >>> import sys
-            >>> sys.path.append('/home/joncrall/code/xdoctest/testing')
+            >>> sys.path.append('/home/joncrall/code/xdoctest/tests')
             >>> from test_plugin import *
             >>> testdir = explicit_testdir()
             >>> self = TestXDoctest()
@@ -597,7 +597,7 @@ class TestXDoctest(object):
 
         Ignore:
             >>> import sys
-            >>> sys.path.append('/home/joncrall/code/xdoctest/testing')
+            >>> sys.path.append('/home/joncrall/code/xdoctest/tests')
             >>> from test_plugin import *
             >>> testdir = explicit_testdir()
             >>> self = TestXDoctest()
@@ -884,7 +884,7 @@ class TestXDoctest(object):
 
         Ignore:
             >>> import sys
-            >>> sys.path.append('/home/joncrall/code/xdoctest/testing')
+            >>> sys.path.append('/home/joncrall/code/xdoctest/tests')
             >>> from test_plugin import *
             >>> testdir = explicit_testdir()
 
@@ -933,7 +933,7 @@ class TestXDoctestModuleLevel(object):
 
         Ignore:
             >>> import sys
-            >>> sys.path.append('/home/joncrall/code/xdoctest/testing')
+            >>> sys.path.append('/home/joncrall/code/xdoctest/tests')
             >>> from test_plugin import *
             >>> testdir = explicit_testdir()
             >>> self = TestXDoctest()
@@ -958,7 +958,7 @@ class TestXDoctestModuleLevel(object):
 
         Ignore:
             >>> import sys
-            >>> sys.path.append('/home/joncrall/code/xdoctest/testing')
+            >>> sys.path.append('/home/joncrall/code/xdoctest/tests')
             >>> from test_plugin import *
             >>> testdir = explicit_testdir()
             >>> self = TestXDoctestModuleLevel()
@@ -991,7 +991,7 @@ class TestXDoctestModuleLevel(object):
 
         Ignore:
             >>> import sys
-            >>> sys.path.append('/home/joncrall/code/xdoctest/testing')
+            >>> sys.path.append('/home/joncrall/code/xdoctest/tests')
             >>> from test_plugin import *
             >>> testdir = explicit_testdir()
             >>> self = TestXDoctestModuleLevel()

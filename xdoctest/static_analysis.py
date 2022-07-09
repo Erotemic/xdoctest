@@ -680,7 +680,7 @@ def parse_static_calldefs(source=None, fpath=None):
 
 def parse_calldefs(source=None, fpath=None):
     from xdoctest.utils import util_deprecation
-    util_deprecation.schedule_deprecation3(
+    util_deprecation.schedule_deprecation(
         modname='xdoctest',
         name='parse_calldefs', type='function',
         migration='use parse_static_calldefs instead',

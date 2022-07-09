@@ -343,7 +343,10 @@ def _parse_changelog(fpath):
         >>> fpath = 'CHANGELOG.md'
         >>> _parse_changelog(fpath)
     """
-    from distutils.version import LooseVersion
+    try:
+        from packaging.version import parse as LooseVersion
+    except ImportError:
+        from distutils.version import LooseVersion
     import re
     pat = re.compile(r'#.*Version ([0-9]+\.[0-9]+\.[0-9]+)')
     # We can statically modify this to a constant value when we deploy

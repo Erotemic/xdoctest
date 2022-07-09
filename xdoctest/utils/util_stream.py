@@ -141,7 +141,7 @@ class CaptureStdout(CaptureStream):
         _misspelled_varname = 'supress'
         if _misspelled_varname in kwargs:  # nocover
             from xdoctest.utils import util_deprecation
-            util_deprecation.schedule_deprecation3(
+            util_deprecation.schedule_deprecation(
                 modname='xdoctest',
                 name='supress', type='Argument of CaptureStdout',
                 migration='Use suppress instead',

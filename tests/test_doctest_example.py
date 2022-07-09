@@ -57,23 +57,6 @@ def test_continue_ambiguity():
     assert result['passed']
 
 
-def test_failed_assign_want():
-    """
-    pytest tests/test_doctest_example.py::test_exit_test_exception
-    xdoctest ~/code/xdoctest/tests/test_doctest_example.py test_failed_assign_want
-    """
-    string = utils.codeblock(
-        '''
-        >>> name = 'foo'
-        'anything'
-        ''')
-    self = doctest_example.DocTest(docsrc=string)
-    result = self.run(on_error='return', verbose=0)
-    assert result['failed']
-    fail_text = '\n'.join(self.repr_failure())
-    assert 'Got nothing' in fail_text
-
-
 def test_contination_want_ambiguity():
     """
     xdoctest ~/code/xdoctest/tests/test_doctest_example.py test_contination_want_ambiguity
@@ -284,7 +267,7 @@ def test_want_error_msg_failure():
 if __name__ == '__main__':
     """
     CommandLine:
-        export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/testing
+        export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/tests
         python ~/code/xdoctest/tests/test_doctest_example.py
         xdoctest ~/code/xdoctest/tests/test_doctest_example.py zero-args
     """

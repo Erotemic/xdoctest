@@ -602,7 +602,7 @@ def test_semicolon_line():
 if __name__ == '__main__':
     """
     CommandLine:
-        export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/testing
+        export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/xdoctest/tests
         python ~/code/xdoctest/tests/test_core.py zero
         pytest tests/test_core.py -vv
     """

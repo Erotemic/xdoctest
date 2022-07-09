@@ -530,7 +530,7 @@ def parse_calldefs(module_identifier, analysis='auto'):
     # backwards compatibility hacks
     if '--allow-xdoc-dynamic' in sys.argv:
         from xdoctest.utils import util_deprecation
-        util_deprecation.schedule_deprecation3(
+        util_deprecation.schedule_deprecation(
             modname='xdoctest',
             name='--allow-xdoc-dynamic', type='CLI flag',
             migration='use --analysis=auto instead',
@@ -539,7 +539,7 @@ def parse_calldefs(module_identifier, analysis='auto'):
         analysis = 'auto'
     if '--xdoc-force-dynamic' in sys.argv:
         from xdoctest.utils import util_deprecation
-        util_deprecation.schedule_deprecation3(
+        util_deprecation.schedule_deprecation(
             modname='xdoctest',
             name='--xdoc-force-dynamic', type='CLI flag',
             migration='use --analysis=dynamic instead',
