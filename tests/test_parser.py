@@ -166,7 +166,6 @@ def test_label_indented_lines():
     ]
     if labeled != expected:
         try:
-            # import ubelt as ub  # NOQA
             import itertools as it
             for got, want in it.zip_longest(labeled, expected):
                 if got != want:

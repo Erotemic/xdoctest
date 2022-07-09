@@ -17,7 +17,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Modified the google style return type parser to return a type if the 
   only content is some parsable python code.
 * Modified docscrape google to allow for parsing of `*args` and `**kwargs` in
-  args blocks. May move this to a standalone package soon.
+  args blocks. This has also moved to the standalone package `googledoc`
+* Overhaul of repo structure in an effort to modernize and to agree with
+  templates defined by xcookie
+
 
 
 ## Version 1.0.0 - Released 2022-03-25
