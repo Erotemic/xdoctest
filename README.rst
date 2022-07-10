@@ -163,8 +163,12 @@ Using the native interface.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In addition to the ``pytest`` plugin, xdoctest has a native doctest runner.
-This interface is run programmatically using ``xdoctest.doctest_module(path)``,
-which can be placed in the ``__main__`` section of any module as such:
+You can use the ``xdoctest`` command line tool that is installed with the
+package and point it a module directory or a particular file.
+
+You can also make it such that invoking your module as ``__main__`` invokes the
+xdoctest native runner using the using the ``xdoctest.doctest_module(path)``
+method, which can be placed in the ``__main__`` section of any module as such:
 
 .. code:: python
 
@@ -173,7 +177,15 @@ which can be placed in the ``__main__`` section of any module as such:
         xdoctest.doctest_module(__file__)
 
 This sets up the ability to invoke the ``xdoctest`` command line
-interface. ``python -m <modname> <command>``
+interface. ``python -m <modname> <command>``. 
+
+However, it is typically prefered to just use the ``xdoctest`` executable and
+pass it the path to your file, or the name of an installed module. In this case
+it is invoked like ``xdoctest -m <modname> <command>``.
+
+Using either of these methods you can natively invoke xdoctest on a module or
+package, which exposes the command line interface. Both of these expose the
+command line interface, allowing you to pass a command to xdoctest.
 
 -  If ``<command>`` is ``all``, then each enabled doctest in the module
    is executed: ``python -m <modname> all``
@@ -210,20 +222,58 @@ code:
         """
         return a + 1
 
-    if __name__ == '__main__':
-        import xdoctest 
-        xdoctest.doctest_module(__file__)
-
 You could 
 
-* Use the command ``python -m mymod list`` to list the names of all functions with doctests
-* Use the command ``python -m mymod all`` to run all functions with doctests
-* Use the command ``python -m mymod func1`` to run only func1's doctest
-* Use the command ``python -m mymod func2`` to run only func2's doctest
+* Use the command ``xdoctest -m mymod list`` to list the names of all functions with doctests
+* Use the command ``xdoctest -m mymod all`` to run all functions with doctests
+* Use the command ``xdoctest -m mymod func1`` to run only func1's doctest
+* Use the command ``xdoctest -m mymod func2`` to run only func2's doctest
 
-Lastly, by running the command ``xdoctest.doctest_module(<pkgname>)``,
-``xdoctest`` will recursively find and execute all doctests within the
-modules belonging to the package.
+
+Passing ``--help`` to either way of invoking the native runner will result in
+something similar to the following that outlines what other options are
+available:
+
+.. code:: 
+
+    usage: xdoctest [-h] [--version] [-m MODNAME] [-c COMMAND] [--style {auto,google,freeform}] [--analysis {auto,static,dynamic}] [--durations DURATIONS] [--time]
+                    [--colored COLORED] [--nocolor] [--offset] [--report {none,cdiff,ndiff,udiff,only_first_failure}] [--options OPTIONS] [--global-exec GLOBAL_EXEC]
+                    [--verbose VERBOSE] [--quiet] [--silent]
+                    [arg ...]
+
+    Xdoctest 1.0.1 - on Python - 3.9.9 (main, Jun 10 2022, 17:45:11) 
+    [GCC 11.2.0] - discover and run doctests within a python package
+
+    positional arguments:
+      arg                   Ignored if optional arguments are specified, otherwise: Defaults --modname to arg.pop(0). Defaults --command to arg.pop(0). (default: None)
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --version             Display version info and quit (default: False)
+      -m MODNAME, --modname MODNAME
+                            Module name or path. If specified positional modules are ignored (default: None)
+      -c COMMAND, --command COMMAND
+                            A doctest name or a command (list|all|<callname>). Defaults to all (default: None)
+      --style {auto,google,freeform}
+                            Choose the style of doctests that will be parsed (default: auto)
+      --analysis {auto,static,dynamic}
+                            How doctests are collected (default: auto)
+      --durations DURATIONS
+                            Specify execution times for slowest N tests.N=0 will show times for all tests (default: None)
+      --time                Same as if durations=0 (default: False)
+      --colored COLORED     Enable or disable ANSI coloration in stdout (default: True)
+      --nocolor             Disable ANSI coloration in stdout
+      --offset              If True formatted source linenumbers will agree with their location in the source file. Otherwise they will be relative to the doctest itself. (default:
+                            False)
+      --report {none,cdiff,ndiff,udiff,only_first_failure}
+                            Choose another output format for diffs on xdoctest failure (default: udiff)
+      --options OPTIONS     Default directive flags for doctests (default: None)
+      --global-exec GLOBAL_EXEC
+                            Custom Python code to execute before every test (default: None)
+      --verbose VERBOSE     Verbosity level. 0 is silent, 1 prints out test names, 2 additionally prints test stdout, 3 additionally prints test source (default: 3)
+      --quiet               sets verbosity to 1
+      --silent              sets verbosity to 0
+       
 
 Zero-args runner
 ^^^^^^^^^^^^^^^^
