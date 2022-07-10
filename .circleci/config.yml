@@ -232,7 +232,7 @@ jobs:
   test_full/cp34-34m-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.4
+      - image: cimg/python:3.4
 
   test_full/cp27-27mu-linux:
     <<: *test_full_template
@@ -273,7 +273,7 @@ jobs:
   test_minimal/cp34-34m-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.4
+      - image: cimg/python:3.4
 
   test_minimal/cp27-27mu-linux:
     <<: *test_minimal_template
