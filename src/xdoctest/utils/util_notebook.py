@@ -59,7 +59,7 @@ def _find_notebook(fullname, path=None):
         >>> fullname = splitext(basename(fpath))[0]
         >>> path = [dpath]
         >>> _find_notebook(fullname, path)
-        .../test_import_notebook.ipynb
+        ...test_import_notebook.ipynb
         >>> _find_notebook(fullname, None)
         None
     """
