@@ -127,7 +127,7 @@ autoapi_modules = {
 }
 
 
-autoapi_dirs = [f'../../{modname}']
+autoapi_dirs = [f'../../src/{modname}']
 # autoapi_keep_files = True
 
 # Add any paths that contain templates here, relative to this directory.
