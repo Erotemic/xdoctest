@@ -235,22 +235,42 @@ class RuntimeState(utils.NiceRepr):
         })>
     """
     def __init__(self, default_state=None):
+        """
+        Args:
+            default_state (None | dict): starting default state, if unspecified
+                falls back to the global DEFAULT_RUNTIME_STATE
+        """
         self._global_state = copy.deepcopy(DEFAULT_RUNTIME_STATE)
         if default_state:
             self._global_state.update(default_state)
         self._inline_state = {}
 
     def to_dict(self):
+        """
+        Returns:
+            OrderedDict
+        """
         state = self._global_state.copy()
         state.update(self._inline_state)
         state = OrderedDict(sorted(state.items()))
         return state
 
     def __nice__(self):
+        """
+        Returns:
+            str
+        """
         parts = ['{}: {}'.format(*item) for item in self.to_dict().items()]
         return ('{' + ', '.join(parts) + '}')
 
     def __getitem__(self, key):
+        """
+        Args:
+            key (str):
+
+        Returns:
+            Any
+        """
         if key not in self._global_state:
             raise KeyError('Unknown key: {}'.format(key))
         if key in self._inline_state:
@@ -259,12 +279,21 @@ class RuntimeState(utils.NiceRepr):
             return self._global_state[key]
 
     def __setitem__(self, key, value):
+        """
+        Args:
+            key (str):
+            value (Any):
+        """
         if key not in self._global_state:
             raise KeyError('Unknown key: {}'.format(key))
         self._global_state[key] = value
 
     def set_report_style(self, reportchoice, state=None):
         """
+        Args:
+            reportchoice (str): name of report style
+            state (None | Dict): if unspecified defaults to the global state
+
         Example:
             >>> from xdoctest.directive import *
             >>> runstate = RuntimeState()
@@ -286,8 +315,9 @@ class RuntimeState(utils.NiceRepr):
         Update the runtime state given a set of directives
 
         Args:
-            directives (List[Directive]): list of directives. The ``effects``
-                method is used to update this object.
+            directives (List[Directive]):
+                list of directives. The ``effects`` method is used to update
+                this object.
         """
         # Clear the previous inline state
         self._inline_state.clear()
@@ -327,6 +357,13 @@ class Directive(utils.NiceRepr):
     Directives modify the runtime state.
     """
     def __init__(self, name, positive=True, args=[], inline=None):
+        """
+        Args:
+            name (str):
+            positive (bool):
+            args (List[str]):
+            inline (bool | None): True if this is an inline directive
+        """
         self.name = name
         self.args = args
         self.inline = inline
@@ -429,6 +466,10 @@ class Directive(utils.NiceRepr):
                                 yield directive
 
     def __nice__(self):
+        """
+        Returns:
+            str
+        """
         prefix = ['-', '+'][int(self.positive)]
         if self.args:
             argstr = ', '.join(self.args)
@@ -569,6 +610,12 @@ class Directive(utils.NiceRepr):
 def _split_opstr(optstr):
     """
     Simplified balanced paren logic to only split commas outside of parens
+
+    Args:
+        opstr (str):
+
+    Returns:
+        List[str]
 
     Example:
         >>> optstr = '+FOO, REQUIRES(foo,bar), +ELLIPSIS'
@@ -756,6 +803,10 @@ def parse_directive_optstr(optpart, inline=None):
         comma separated
         may contain one paren enclosed argument (experimental)
         all spaces are ignored
+
+    Args:
+        optpart (str):
+        inline (None | bool):
 
     Returns:
         Directive: the parsed directive

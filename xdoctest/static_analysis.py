@@ -103,6 +103,9 @@ class TopLevelVisitor(ast.NodeVisitor):
         main entry point
 
         executes parsing algorithm and populates self.calldefs
+
+        Args:
+            source (str):
         """
         self = cls(source)
         pt = self.syntax_tree()
@@ -114,6 +117,10 @@ class TopLevelVisitor(ast.NodeVisitor):
         return self
 
     def __init__(self, source=None):
+        """
+        Args:
+            source (None | str):
+        """
         super(TopLevelVisitor, self).__init__()
         self.calldefs = OrderedDict()
         self.source = source
@@ -127,14 +134,24 @@ class TopLevelVisitor(ast.NodeVisitor):
         self.assignments = []
 
     def syntax_tree(self):
-        """ creates the abstract syntax tree """
+        """
+        creates the abstract syntax tree
+
+        Returns:
+            ast.Module:
+        """
         self.sourcelines = self.source.splitlines()
         source_utf8  = self.source.encode('utf8')
         pt = ast.parse(source_utf8)
         return pt
 
     def process_finished(self, node):
-        """ process (get ending lineno) for everything marked as finished """
+        """
+        process (get ending lineno) for everything marked as finished
+
+        Args:
+            node (ast.AST):
+        """
         if self._finish_queue:
             if isinstance(node, int):
                 lineno_end = node
@@ -145,10 +162,18 @@ class TopLevelVisitor(ast.NodeVisitor):
                 calldef.lineno_end = lineno_end
 
     def visit(self, node):
+        """
+        Args:
+            node (ast.AST):
+        """
         self.process_finished(node)
         super(TopLevelVisitor, self).visit(node)
 
     def visit_FunctionDef(self, node):
+        """
+        Args:
+            node (ast.FunctionDef):
+        """
         if self._current_classname is None:
             callname = node.name
         else:
@@ -180,6 +205,10 @@ class TopLevelVisitor(ast.NodeVisitor):
         self._finish_queue.append(calldef)
 
     def visit_ClassDef(self, node):
+        """
+        Args:
+            node (ast.ClassDef):
+        """
         if self._current_classname is None:
             callname = node.name
             self._current_classname = callname
@@ -194,6 +223,10 @@ class TopLevelVisitor(ast.NodeVisitor):
             self._finish_queue.append(calldef)
 
     def visit_Module(self, node):
+        """
+        Args:
+            node (ast.Module):
+        """
         # get the module level docstr
         docstr, doclineno, doclineno_end = self._get_docstring(node)
         if docstr:
@@ -208,6 +241,10 @@ class TopLevelVisitor(ast.NodeVisitor):
         # self._finish_queue.append(calldef)
 
     def visit_Assign(self, node):
+        """
+        Args:
+            node (ast.Assign):
+        """
         # print('VISIT FunctionDef node = %r' % (node,))
         # print('VISIT FunctionDef node = %r' % (node.__dict__,))
         if self._current_classname is None:
@@ -220,6 +257,10 @@ class TopLevelVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_If(self, node):
+        """
+        Args:
+            node (ast.If):
+        """
         if isinstance(node.test, ast.Compare):  # pragma: nobranch
             try:
                 if all([
@@ -252,6 +293,12 @@ class TopLevelVisitor(ast.NodeVisitor):
     def _docnode_line_workaround(self, docnode):
         """
         Find the start and ending line numbers of a docstring
+
+        Args:
+            docnode (ast.AST):
+
+        Returns:
+            Tuple[int, int]
 
         CommandLine:
             xdoctest -m xdoctest.static_analysis TopLevelVisitor._docnode_line_workaround
@@ -957,6 +1004,9 @@ def extract_comments(source):
     Returns the text in each comment in a block of python code.
     Uses tokenize to account for quotations.
 
+    Args:
+        source (str):
+
     CommandLine:
         python -m xdoctest.static_analysis extract_comments
 
@@ -993,6 +1043,14 @@ def extract_comments(source):
 def six_axt_parse(source_block, filename='<source_block>', compatible=True):
     """
     Python 2/3 compatible replacement for ast.parse(source_block, filename='<source_block>')
+
+    Args:
+        source (str):
+        filename (str):
+        compatible (bool):
+
+    Returns:
+        ast.Module | types.CodeType
     """
     # Note Python2.7 does not accept unicode variable names so this
     # will fail (in 2.7) if source contains a unicode varname.

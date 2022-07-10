@@ -1,5 +1,6 @@
-from _typeshed import Incomplete
+from typing import Union
+from typing import List
 
 
-def main(argv: Incomplete | None = ...):
+def main(argv: Union[List[str], None] = None):
     ...

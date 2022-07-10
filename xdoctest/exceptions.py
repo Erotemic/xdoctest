@@ -16,6 +16,13 @@ class DoctestParseError(Exception):
     Exception raised when doctest code has an error.
     """
     def __init__(self, msg, string=None, info=None, orig_ex=None):
+        """
+        Args:
+            msg (str): error message
+            string (str): the string that failed
+            info (Any): extra information
+            orig_ex (Exception): The underlying exceptoin
+        """
         super(DoctestParseError, self).__init__(msg)
         self.msg = msg
         self.string = string

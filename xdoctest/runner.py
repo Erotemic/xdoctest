@@ -62,6 +62,11 @@ from xdoctest import global_state
 
 
 def log(msg, verbose):
+    """
+    Args:
+        msg (str):
+        verbose (int):
+    """
     if verbose > 0:
         print(msg)
 
@@ -120,13 +125,13 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
             'list' - list the tests in a module
             'dump' - dumps tests to stdout
 
-        argv (List[str], default=None):
+        argv (List[str] | None):
             if specified, command line flags that might influence beharior.
             if None uses sys.argv.
             SeeAlso :func:_update_argparse_cli
             SeeAlso :func:doctest_example.DoctestConfig._update_argparse_cli
 
-        verbose (int, default=None):
+        verbose (int | None):
             Verbosity level.
             0 - disables all text
             1 - minimal printing
@@ -138,13 +143,13 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
         config (Dict[str, object]):
             modifies each examples configuration
 
-        durations (int, default=None): if specified report top N slowest tests
+        durations (int | None): if specified report top N slowest tests
 
         analysis (str): determines if doctests are found using static or
             dynamic analysis.
 
     Returns:
-        Dict: run_summary
+        Dict[str, Any]: run_summary
 
     Example:
         >>> modname = 'xdoctest.dynamic_analysis'

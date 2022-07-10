@@ -15,13 +15,15 @@ Ignore:
 
     xdoctest -m xdoctest.demo
     xdoctest ~/code/xdoctest/xdoctest/demo.py
+    python -m xdoctest xdoctest all
+    python -m xdoctest networkx all --options=+IGNORE_WHITESPACE
 """
 
 
 def main(argv=None):
     """
-    python -m xdoctest xdoctest all
-    python -m xdoctest networkx all --options=+IGNORE_WHITESPACE
+    Args:
+        argv (List[str] | None):
     """
     import argparse
     import xdoctest

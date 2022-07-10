@@ -1,3 +1,9 @@
+from typing import Any
+from typing import List
+from typing import Union
+import xdoctest
+from typing import Tuple
+from typing import Dict
 import pytest
 from _pytest._code import code
 from _typeshed import Incomplete
@@ -18,10 +24,10 @@ def pytest_collect_file(path, parent):
 
 
 class ReprFailXDoctest(code.TerminalRepr):
-    reprlocation: Incomplete
-    lines: Incomplete
+    reprlocation: Any
+    lines: List[str]
 
-    def __init__(self, reprlocation, lines) -> None:
+    def __init__(self, reprlocation: Any, lines: List[str]) -> None:
         ...
 
     def toterminal(self, tw) -> None:
@@ -30,11 +36,14 @@ class ReprFailXDoctest(code.TerminalRepr):
 
 class XDoctestItem(pytest.Item):
     cls: Incomplete
-    example: Incomplete
+    example: xdoctest.doctest_example.DocTest
     obj: Incomplete
     fixture_request: Incomplete
 
-    def __init__(self, name, parent, example: Incomplete | None = ...) -> None:
+    def __init__(self,
+                 name: str,
+                 parent: Union[Any, None],
+                 example: xdoctest.doctest_example.DocTest = None) -> None:
         ...
 
     def setup(self) -> None:
@@ -46,7 +55,7 @@ class XDoctestItem(pytest.Item):
     def repr_failure(self, excinfo):
         ...
 
-    def reportinfo(self):
+    def reportinfo(self) -> Tuple[str, int, str]:
         ...
 
 
@@ -57,7 +66,7 @@ class _XDoctestBase(pytest.Module):
 class XDoctestTextfile(_XDoctestBase):
     obj: Incomplete
 
-    def collect(self) -> Generator[Any, None, None]:
+    def collect(self) -> Generator[XDoctestItem, None, None]:
         ...
 
 
@@ -67,5 +76,5 @@ class XDoctestModule(_XDoctestBase):
         ...
 
 
-def xdoctest_namespace():
+def xdoctest_namespace() -> Dict:
     ...

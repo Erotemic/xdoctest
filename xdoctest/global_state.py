@@ -7,6 +7,13 @@ import sys
 
 
 def _boolean_environ(key):
+    """
+    Args:
+        key (str)
+
+    Returns:
+        bool
+    """
     value = os.environ.get(key, '').lower()
     TRUTHY_ENVIRONS = {'true', 'on', 'yes', '1'}
     return value in TRUTHY_ENVIRONS

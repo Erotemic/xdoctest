@@ -167,6 +167,12 @@ def _is_xdoctest(config, path, parent):
 class ReprFailXDoctest(code.TerminalRepr):
 
     def __init__(self, reprlocation, lines):
+        """
+        Args:
+            reprlocation (Any):
+                _pytest._code.code.ReprFileLocation where the error happened
+            lines (List[str]): text of the error
+        """
         self.reprlocation = reprlocation
         self.lines = lines
 
@@ -178,6 +184,12 @@ class ReprFailXDoctest(code.TerminalRepr):
 
 class XDoctestItem(pytest.Item):
     def __init__(self, name, parent, example=None):
+        """
+        Args:
+            name (str):
+            parent (Any | None):
+            example (xdoctest.doctest_example.DocTest):
+        """
         super(XDoctestItem, self).__init__(name, parent)
         self.cls = XDoctestItem
         self.example = example
@@ -201,6 +213,13 @@ class XDoctestItem(pytest.Item):
             pytest.skip('doctest is empty or all parts were skipped')
 
     def repr_failure(self, excinfo):
+        """
+        # Args:
+        #     excinfo (_pytest._code.code.ExceptionInfo):
+
+        # Returns:
+        #     ReprFailXDoctest | str | _pytest._code.code.TerminalRepr:
+        """
         example = self.example
         if example.exc_info is not None:
             lineno = example.failed_lineno()
@@ -214,6 +233,10 @@ class XDoctestItem(pytest.Item):
             return super(XDoctestItem, self).repr_failure(excinfo)
 
     def reportinfo(self):
+        """
+        Returns:
+            Tuple[str, int, str]
+        """
         return self.fspath, self.example.lineno, "[xdoctest] %s" % self.name
 
 
@@ -239,6 +262,10 @@ class XDoctestTextfile(_XDoctestBase):
     obj = None
 
     def collect(self):
+        """
+        Yields:
+            XDoctestItem
+        """
         from xdoctest import core
         encoding = self.config.getini("xdoctest_encoding")
         text = self.fspath.read_text(encoding)
@@ -296,6 +323,12 @@ class XDoctestModule(_XDoctestBase):
 def _setup_fixtures(xdoctest_item):
     """
     Used by XDoctestTextfile and XDoctestItem to setup fixture information.
+
+    Args:
+        xdoctest_item (XDoctestItem):
+
+    Returns:
+        fixtures.FixtureRequest
     """
     def func():
         pass
@@ -321,5 +354,8 @@ def _setup_fixtures(xdoctest_item):
 def xdoctest_namespace():
     """
     Inject names into the xdoctest namespace.
+
+    Returns:
+        Dict
     """
     return dict()

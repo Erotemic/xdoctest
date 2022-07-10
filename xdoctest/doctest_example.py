@@ -129,6 +129,14 @@ class DoctestConfig(dict):
             add_argument(*alias, **kw)
 
     def getvalue(self, key, given=None):
+        """
+        Args:
+            key (str): The configuration key
+            given (Any): A user override
+
+        Returns:
+            Any: if given is None returns the configured value
+        """
         if given is None:
             return self[key]
         else:
@@ -144,17 +152,17 @@ class DocTest(object):
         docsrc (str):
             doctest source code
 
-        modpath (str | PathLike, default=None):
+        modpath (str | PathLike):
             module the source was read from
 
-        callname (str, default=None):
+        callname (str):
             name of the function/method/class/module being tested
 
-        num (int, default=0):
+        num (int):
             the index of the doctest in the docstring. (i.e. this object
             refers to the num-th doctest within a docstring)
 
-        lineno (int, default=1):
+        lineno (int):
             The line (starting from 1) in the file that the doctest begins on.
             (i.e. if you were to go to this line in the file, the first line of
             the doctest should be on this line).
@@ -163,11 +171,11 @@ class DocTest(object):
             Typically the same as modpath, only specified for non-python files
             (e.g. rst files).
 
-        block_type (str, default=None):
+        block_type (str | None):
             Hint indicating the type of docstring block. Can be ('Example',
             'Doctest', 'Script', 'Benchmark', 'zero-arg', etc..).
 
-        mode (str, default='pytest'):
+        mode (str):
             Hint at what created / is running this doctest. This impacts
             how results are presented and what doctests are skipped.
 
@@ -199,6 +207,17 @@ class DocTest(object):
 
     def __init__(self, docsrc, modpath=None, callname=None, num=0,
                  lineno=1, fpath=None, block_type=None, mode='pytest'):
+        """
+        Args:
+            docsrc (str): the text of the doctest
+            modpath (str | PathLike | None):
+            callname (str | None):
+            num (int):
+            lineno (int):
+            fpath (str | None):
+            block_type (str | None):
+            mode (str):
+        """
         import types
         # if we know the google block type it is recorded
         self.block_type = block_type
@@ -254,6 +273,10 @@ class DocTest(object):
         self.mode = mode
 
     def __nice__(self):
+        """
+        Returns:
+            str
+        """
         parts = []
         parts.append(self.modname)
         parts.append('%s:%s' % (self.callname, self.num))
@@ -262,11 +285,19 @@ class DocTest(object):
         return ' '.join(parts)
 
     def __repr__(self):
+        """
+        Returns:
+            str
+        """
         classname = self.__class__.__name__
         devnice = self.__nice__()
         return '<%s(%s) at %s>' % (classname, devnice, hex(id(self)))
 
     def __str__(self):
+        """
+        Returns:
+            str
+        """
         classname = self.__class__.__name__
         devnice = self.__nice__()
         return '<%s(%s)>' % (classname, devnice)
@@ -297,6 +328,8 @@ class DocTest(object):
             indicate what the replacement strategy is. Then raise an error for
             several more versions before finally removing this code.
 
+        Returns:
+            bool:
         """
         disable_patterns = [
             r'>>>\s*#\s*DISABLE',
@@ -319,6 +352,9 @@ class DocTest(object):
     def unique_callname(self):
         """
         A key that references this doctest given its module
+
+        Returns:
+            str
         """
         return self.callname + ':' + str(self.num)
 
@@ -326,6 +362,9 @@ class DocTest(object):
     def node(self):
         """
         A key that references this doctest within pytest
+
+        Returns:
+            str
         """
         return self.modpath + '::' + self.callname + ':' + str(self.num)
 
@@ -333,6 +372,9 @@ class DocTest(object):
     def valid_testnames(self):
         """
         A set of callname and unique_callname
+
+        Returns:
+            Set[str]
         """
         return {
             self.callname,
@@ -342,6 +384,9 @@ class DocTest(object):
     def wants(self):
         """
         Returns a list of the populated wants
+
+        Yields:
+            str
         """
         self._parse()
         for part in self._parts:
@@ -352,6 +397,14 @@ class DocTest(object):
                      offset_linenos=None, prefix=True):
         """
         Used by :func:`format_src`
+
+        Args:
+            linenos (bool): show line numbers
+            colored (bool | None): pygmentize the code
+            want (bool): include the want value if it exists
+            offset_linenos (bool): if True include the line offset relative to
+                the source file
+            prefix (bool): if False, exclude the doctest ``>>> `` prefix
         """
         self._parse()
         colored = self.config.getvalue('colored', colored)
@@ -394,6 +447,9 @@ class DocTest(object):
 
             prefix (bool): if False, exclude the doctest `>>> ` prefix
 
+        Returns:
+            str
+
         Example:
             >>> from xdoctest.core import *
             >>> from xdoctest import core
@@ -414,6 +470,9 @@ class DocTest(object):
     def _parse(self):
         """
         Divide the given string into examples and intervening text.
+
+        Returns:
+            None
 
         Example:
             >>> s = 'I am a dummy example with three parts'
@@ -467,6 +526,9 @@ class DocTest(object):
         """
         After this point we are in dynamic analysis mode, in most cases
         xdoctest should have been in static-analysis-only mode.
+
+        Returns:
+            None
         """
         if self.module is None:
             if not self.modname.startswith('<'):
@@ -501,6 +563,9 @@ class DocTest(object):
         """
         Return the compiler-flags associated with the future features that
         have been imported into the given namespace (i.e. globals).
+
+        Returns:
+            int
         """
         compileflags = 0
         for key in __future__.all_feature_names:
@@ -522,6 +587,10 @@ class DocTest(object):
         return test_globals, compileflags
 
     def anything_ran(self):
+        """
+        Returns:
+            bool
+        """
         # If everything was skipped, then there will be no stdout
         return len(self.logged_stdout) > 0
 
@@ -837,6 +906,9 @@ class DocTest(object):
     def failed_line_offset(self):
         """
         Determine which line in the doctest failed.
+
+        Returns:
+            int | None
         """
         if self.exc_info is None:
             return None
@@ -857,6 +929,10 @@ class DocTest(object):
             return offset
 
     def failed_lineno(self):
+        """
+        Returns:
+            int | None
+        """
         offset = self.failed_line_offset()
         if offset is None:
             return None
@@ -868,6 +944,12 @@ class DocTest(object):
     def repr_failure(self, with_tb=True):
         r"""
         Constructs lines detailing information about a failed doctest
+
+        Args:
+            with_tb (bool): if True include the traceback
+
+        Returns:
+            List[str]
 
         CommandLine:
             python -m xdoctest.core DocTest.repr_failure:0

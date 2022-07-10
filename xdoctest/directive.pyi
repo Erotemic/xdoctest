@@ -1,8 +1,11 @@
-from typing import List
+from typing import Union
 from typing import Dict
+from collections import OrderedDict
+from typing import Any
+from typing import List
 from _typeshed import Incomplete
 from collections.abc import Generator
-from typing import NamedTuple
+from typing import Any, NamedTuple
 from xdoctest import utils
 
 
@@ -21,24 +24,24 @@ class Effect(NamedTuple):
 
 class RuntimeState(utils.NiceRepr):
 
-    def __init__(self, default_state: Incomplete | None = ...) -> None:
+    def __init__(self, default_state: Union[None, dict] = None) -> None:
         ...
 
-    def to_dict(self):
+    def to_dict(self) -> OrderedDict:
         ...
 
-    def __nice__(self):
+    def __nice__(self) -> str:
         ...
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         ...
 
-    def __setitem__(self, key, value) -> None:
+    def __setitem__(self, key: str, value: Any) -> None:
         ...
 
     def set_report_style(self,
-                         reportchoice,
-                         state: Incomplete | None = ...) -> None:
+                         reportchoice: str,
+                         state: Union[None, Dict] = None) -> None:
         ...
 
     def update(self, directives: List[Directive]) -> None:
@@ -46,23 +49,23 @@ class RuntimeState(utils.NiceRepr):
 
 
 class Directive(utils.NiceRepr):
-    name: Incomplete
-    args: Incomplete
-    inline: Incomplete
-    positive: Incomplete
+    name: str
+    args: List[str]
+    inline: Union[bool, None]
+    positive: bool
 
     def __init__(self,
-                 name,
-                 positive: bool = ...,
-                 args=...,
-                 inline: Incomplete | None = ...) -> None:
+                 name: str,
+                 positive: bool = True,
+                 args: List[str] = ...,
+                 inline: Union[bool, None] = None) -> None:
         ...
 
     @classmethod
     def extract(cls, text: str) -> Generator[Directive, None, None]:
         ...
 
-    def __nice__(self):
+    def __nice__(self) -> str:
         ...
 
     def effect(self,
@@ -81,6 +84,6 @@ DIRECTIVE_PATTERNS: Incomplete
 DIRECTIVE_RE: Incomplete
 
 
-def parse_directive_optstr(optpart,
-                           inline: Incomplete | None = ...) -> Directive:
+def parse_directive_optstr(optpart: str,
+                           inline: Union[None, bool] = None) -> Directive:
     ...

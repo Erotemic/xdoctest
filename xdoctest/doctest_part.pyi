@@ -1,57 +1,58 @@
-from _typeshed import Incomplete
+from typing import List
+from typing import Union
 from xdoctest import directive
 
 __devnotes__: str
 
 
 class DoctestPart:
-    exec_lines: Incomplete
-    want_lines: Incomplete
-    line_offset: Incomplete
-    orig_lines: Incomplete
+    exec_lines: List[str]
+    want_lines: Union[List[str], None]
+    line_offset: int
+    orig_lines: Union[List[str], None]
+    partno: Union[int, None]
     compile_mode: str
-    partno: Incomplete
 
     def __init__(self,
-                 exec_lines,
-                 want_lines: Incomplete | None = ...,
-                 line_offset: int = ...,
-                 orig_lines: Incomplete | None = ...,
-                 directives: Incomplete | None = ...,
-                 partno: Incomplete | None = ...) -> None:
+                 exec_lines: List[str],
+                 want_lines: Union[List[str], None] = None,
+                 line_offset: int = 0,
+                 orig_lines: Union[List[str], None] = None,
+                 directives: Union[list, None] = None,
+                 partno: Union[int, None] = None) -> None:
         ...
 
     @property
-    def n_lines(self):
+    def n_lines(self) -> int:
         ...
 
     @property
-    def n_exec_lines(self):
+    def n_exec_lines(self) -> int:
         ...
 
     @property
-    def n_want_lines(self):
+    def n_want_lines(self) -> int:
         ...
 
     @property
-    def source(self):
+    def source(self) -> str:
         ...
 
-    def compilable_source(self):
+    def compilable_source(self) -> str:
         ...
 
-    def has_any_code(self):
-        ...
-
-    @property
-    def directives(self):
+    def has_any_code(self) -> bool:
         ...
 
     @property
-    def want(self):
+    def directives(self) -> List[directive.Directive]:
         ...
 
-    def __nice__(self):
+    @property
+    def want(self) -> str | None:
+        ...
+
+    def __nice__(self) -> str:
         ...
 
     def check(part,
@@ -68,5 +69,5 @@ class DoctestPart:
                     n_digits: int = None,
                     colored: bool = False,
                     partnos: bool = False,
-                    prefix: bool = True):
+                    prefix: bool = True) -> str:
         ...

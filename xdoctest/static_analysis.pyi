@@ -1,5 +1,8 @@
+from typing import Union
+import ast
 from typing import Dict
 from typing import List
+import types
 import ast
 from _typeshed import Incomplete
 from collections.abc import Generator
@@ -11,11 +14,11 @@ HAS_UPDATED_LINENOS: Incomplete
 
 
 class CallDefNode:
-    callname: Incomplete
+    callname: str
+    doclineno: int
+    doclineno_end: int
     lineno: Incomplete
     docstr: Incomplete
-    doclineno: Incomplete
-    doclineno_end: Incomplete
     lineno_end: Incomplete
     args: Incomplete
 
@@ -32,39 +35,39 @@ class CallDefNode:
 class TopLevelVisitor(ast.NodeVisitor):
 
     @classmethod
-    def parse(cls, source):
+    def parse(cls, source: str):
         ...
 
     calldefs: Incomplete
-    source: Incomplete
+    source: Union[None, str]
     sourcelines: Incomplete
     assignments: Incomplete
 
-    def __init__(self, source: Incomplete | None = ...) -> None:
+    def __init__(self, source: Union[None, str] = None) -> None:
         ...
 
-    def syntax_tree(self):
+    def syntax_tree(self) -> ast.Module:
         ...
 
-    def process_finished(self, node) -> None:
+    def process_finished(self, node: ast.AST) -> None:
         ...
 
-    def visit(self, node) -> None:
+    def visit(self, node: ast.AST) -> None:
         ...
 
-    def visit_FunctionDef(self, node) -> None:
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         ...
 
-    def visit_ClassDef(self, node) -> None:
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
         ...
 
-    def visit_Module(self, node) -> None:
+    def visit_Module(self, node: ast.Module) -> None:
         ...
 
-    def visit_Assign(self, node) -> None:
+    def visit_Assign(self, node: ast.Assign) -> None:
         ...
 
-    def visit_If(self, node) -> None:
+    def visit_If(self, node: ast.If) -> None:
         ...
 
 
@@ -98,9 +101,11 @@ def is_balanced_statement(lines: List[str],
     ...
 
 
-def extract_comments(source) -> Generator[Any, None, Any]:
+def extract_comments(source: str) -> Generator[Any, None, Any]:
     ...
 
 
-def six_axt_parse(source_block, filename: str = ..., compatible: bool = ...):
+def six_axt_parse(source_block,
+                  filename: str = '<source_block>',
+                  compatible: bool = True) -> ast.Module | types.CodeType:
     ...

@@ -88,6 +88,12 @@ class DoctestParser(object):
     """
 
     def __init__(self, simulate_repl=False):
+        """
+        Args:
+            simulate_repl (bool): if True each line will be treated as its
+                own doctest. This more closely mimics the original doctest
+                module.  Defaults to False.
+        """
         self.simulate_repl = simulate_repl
 
     def parse(self, string, info=None):
@@ -96,11 +102,12 @@ class DoctestParser(object):
 
         Args:
             string (str): string representing the doctest
-            info (dict): info about where the string came from in case of an
+            info (dict | None): info about where the string came from in case of an
                 error
 
         Returns:
-            list : a list of `DoctestPart` objects
+            List[xdoctest.doctest_part.DoctestPart]:
+                a list of `DoctestPart` objects
 
         CommandLine:
             python -m xdoctest.parser DoctestParser.parse

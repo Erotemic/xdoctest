@@ -1,9 +1,11 @@
+from typing import Union
+from typing import List
 from _typeshed import Incomplete
 
 NO_COLOR: Incomplete
 
 
-def strip_ansi(text):
+def strip_ansi(text: str) -> str:
     ...
 
 
@@ -11,7 +13,7 @@ def color_text(text: str, color: str) -> str:
     ...
 
 
-def ensure_unicode(text):
+def ensure_unicode(text: str) -> str:
     ...
 
 
@@ -23,9 +25,9 @@ def highlight_code(text: str, lexer_name: str = 'python', **kwargs) -> str:
     ...
 
 
-def add_line_numbers(source,
-                     start: int = ...,
-                     n_digits: Incomplete | None = ...):
+def add_line_numbers(source: Union[str, List[str]],
+                     start: int = 1,
+                     n_digits: Union[int, None] = None) -> List[str] | str:
     ...
 
 

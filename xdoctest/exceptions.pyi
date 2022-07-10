@@ -1,4 +1,5 @@
-from _typeshed import Incomplete
+from typing import Any
+from typing import Any
 
 
 class MalformedDocstr(Exception):
@@ -6,16 +7,16 @@ class MalformedDocstr(Exception):
 
 
 class DoctestParseError(Exception):
-    msg: Incomplete
-    string: Incomplete
-    info: Incomplete
-    orig_ex: Incomplete
+    msg: str
+    string: str
+    info: Any
+    orig_ex: Exception
 
     def __init__(self,
-                 msg,
-                 string: Incomplete | None = ...,
-                 info: Incomplete | None = ...,
-                 orig_ex: Incomplete | None = ...) -> None:
+                 msg: str,
+                 string: str = None,
+                 info: Any = None,
+                 orig_ex: Exception = None) -> None:
         ...
 
 

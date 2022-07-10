@@ -26,34 +26,55 @@ class DoctestPart(object):
     If a want statement is defined, it is stored here.
 
     Attributes:
-        exec_lines (list): executable lines in this part
-        want_lines (list): lines that the result of the execution should match
+        exec_lines (List[str]): executable lines in this part
+        want_lines (List[str] | None): lines that the result of the execution should match
         line_offset (int): line number relative to the start of the doctest
-        orig_lines (list): the original text parsed into exec and want
-        _directives (list): directives that this part will apply before being run
-        partno (int): identifies the part number in the larger example
+        orig_lines (List[str] | None): the original text parsed into exec and want
+        _directives (list | None): directives that this part will apply before being run
+        partno (int | None): identifies the part number in the larger example
         compile_mode (str): mode passed to compile.
     """
     def __init__(self, exec_lines, want_lines=None, line_offset=0,
                  orig_lines=None, directives=None, partno=None):
+        """
+        Args:
+            exec_lines (List[str]): executable lines in this part
+            want_lines (List[str] | None): lines that the result of the execution should match
+            line_offset (int): line number relative to the start of the doctest
+            orig_lines (List[str] | None): the original text parsed into exec and want
+            directives (list | None): directives that this part will apply before being run
+            partno (int | None): identifies the part number in the larger example
+        """
         self.exec_lines = exec_lines
         self.want_lines = want_lines
         self.line_offset = line_offset
         self.orig_lines = orig_lines
-        self.compile_mode = 'exec'
         self._directives = directives
         self.partno = partno
+        self.compile_mode = 'exec'
 
     @property
     def n_lines(self):
+        """
+        Returns:
+            int
+        """
         return self.n_exec_lines + self.n_want_lines
 
     @property
     def n_exec_lines(self):
+        """
+        Returns:
+            int
+        """
         return len(self.exec_lines)
 
     @property
     def n_want_lines(self):
+        """
+        Returns:
+            int
+        """
         if self.want_lines:
             return len(self.want_lines)
         else:
@@ -61,11 +82,18 @@ class DoctestPart(object):
 
     @property
     def source(self):
+        """
+        Returns:
+            str
+        """
         return '\n'.join(self.exec_lines)
 
     def compilable_source(self):
         """
         Use this to build the string for compile. Takes care of a corner case.
+
+        Returns:
+            str
         """
         if self.compile_mode == 'single':
             return '\n'.join(self.exec_lines + [''])
@@ -77,6 +105,9 @@ class DoctestPart(object):
         Heuristic to check if there is any runnable code in this doctest.  We
         currently just check that not every line is a comment, which helps the
         runner count a test as skipped if only lines with comments "ran".
+
+        Returns:
+            bool
         """
         slines = [line.strip() for line in self.exec_lines]
         return not all(
@@ -90,6 +121,9 @@ class DoctestPart(object):
         CommandLine:
             python -m xdoctest.parser DoctestPart.directives
 
+        Returns:
+            List[directive.Directive]
+
         Example:
             >>> self = DoctestPart(['# doctest: +SKIP'], None, 0)
             >>> print(', '.join(list(map(str, self.directives))))
@@ -101,6 +135,10 @@ class DoctestPart(object):
 
     @property
     def want(self):
+        """
+        Returns:
+            str | None
+        """
         # options = self._find_options(source, name, lineno + s1)
         # example = DoctestPart(source, None, None, lineno=lineno + s1,
         #                       indent=indent, options=options)
@@ -114,6 +152,10 @@ class DoctestPart(object):
             return None
 
     def __nice__(self):
+        """
+        Returns:
+            str
+        """
         parts = []
         if self.line_offset is not None:
             parts.append('ln %s' % (self.line_offset))
@@ -155,6 +197,9 @@ class DoctestPart(object):
             unmatched (list): if specified, the want statement is allowed
                 to match any trailing sequence of unmatched output and
                 got_stdout from this doctest part.
+
+        Returns:
+            None
 
         Raises:
             xdoctest.checker.GotWantException - If the "got" differs from this
@@ -214,9 +259,12 @@ class DoctestPart(object):
             want (bool): include the want value if it exists
             startline (int): offsets the line numbering
             n_digits (int): number of digits to use for line numbers
-            colored (bool): pygmentize the colde
+            colored (bool): pygmentize the code
             partnos (bool): if True, shows the part number in the string
-            prefix (bool): if False, exclude the doctest `>>> ` prefix
+            prefix (bool): if False, exclude the doctest ``>>> `` prefix
+
+        Returns:
+            str
 
         CommandLine:
             python -m xdoctest.doctest_part DoctestPart.format_part:0

@@ -22,6 +22,12 @@ def strip_ansi(text):
     r"""
     Removes all ansi directives from the string.
 
+    Args:
+        text (str):
+
+    Returns:
+        str
+
     References:
         http://stackoverflow.com/questions/14693701/remove-ansi
         https://stackoverflow.com/questions/13506033/filtering-out-ansi-escape-sequences
@@ -51,7 +57,7 @@ def color_text(text, color):
             standout, darkteal, darkgray, overline, purple, green, teal, fuscia
 
     Returns:
-        str: text : colorized text.
+        str: colorized text.
             If pygments is not installed plain text is returned.
 
     Example:
@@ -117,6 +123,12 @@ def color_text(text, color):
 def ensure_unicode(text):
     """
     Casts bytes into utf8 (mostly for python2 compatibility)
+
+    Args:
+        text (str):
+
+    Returns:
+        str
 
     References:
         http://stackoverflow.com/questions/12561063/python-extract-data-from-file
@@ -232,6 +244,14 @@ def highlight_code(text, lexer_name='python', **kwargs):
 def add_line_numbers(source, start=1, n_digits=None):
     """
     Prefixes code with line numbers
+
+    Args:
+        source (str | List[str]):
+        start (int):
+        n_digits (int | None):
+
+    Returns:
+        List[str] | str
 
     Example:
         >>> print(chr(10).join(add_line_numbers(['a', 'b', 'c'])))
