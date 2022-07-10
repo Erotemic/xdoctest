@@ -263,6 +263,7 @@ def import_module_from_path(modpath, index=-1):
         >>> assert module is xdoctest
 
     Example:
+        >>> # xdoctest: +REQUIRES(CPYTHON)
         >>> # Test importing a module from within a zipfile
         >>> import zipfile
         >>> from xdoctest import utils
