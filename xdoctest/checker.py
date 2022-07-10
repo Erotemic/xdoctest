@@ -74,6 +74,7 @@ def check_got_vs_want(want, got_stdout, got_eval=constants.NOT_EVALED,
         want (str): target to match against
         got_stdout (str): output from stdout
         got_eval (str): output from an eval statement.
+        runstate (xdoctest.directive.RuntimeState | None): current state
 
     Raises:
         GotWantException - If the "got" differs from this parts want.
@@ -111,6 +112,13 @@ def check_got_vs_want(want, got_stdout, got_eval=constants.NOT_EVALED,
 
 
 def _strip_exception_details(msg):
+    """
+    Args:
+        msg (str):
+
+    Returns:
+        str:
+    """
     # Support for IGNORE_EXCEPTION_DETAIL.
     # Get rid of everything except the exception name; in particular, drop
     # the possibly dotted module path (if any) and the exception message (if
@@ -138,6 +146,13 @@ def _strip_exception_details(msg):
 
 
 def extract_exc_want(want):
+    """
+    Args:
+        want (str):
+
+    Returns:
+        str:
+    """
     want_ = utils.codeblock(want)
     m = _EXCEPTION_RE.search(want_)
     exc_want = m.group('msg') if m else None
@@ -148,8 +163,16 @@ def check_exception(exc_got, want, runstate=None):
     """
     Checks want against an exception
 
+    Args:
+        exc_got (str): the exception message
+        want (str): target to match against
+        runstate (xdoctest.directive.RuntimeState | None): current state
+
     Raises:
         GotWantException - If the "got" differs from this parts want.
+
+    Returns:
+        bool: True if got matches want
     """
     exc_want = extract_exc_want(want)
     if exc_want is None:
@@ -177,7 +200,16 @@ def check_exception(exc_got, want, runstate=None):
 
 def check_output(got, want, runstate=None):
     """
-    Does the actual comparison between `got` and `want`
+    Does the actual comparison between `got` and `want` as long as the check is
+    enabled.
+
+    Args:
+        got (str): text produced by the test
+        want (str): target to match against
+        runstate (xdoctest.directive.RuntimeState | None): current state
+
+    Returns:
+        bool: True if got matches want or if the check is disabled
     """
     if not want:  # nocover
         return True
@@ -195,6 +227,17 @@ def check_output(got, want, runstate=None):
 
 
 def _check_match(got, want, runstate):
+    """
+    Does the actual comparison between `got` and `want`
+
+    Args:
+        got (str): normalized text produced by the test
+        want (str): normalized target to match against
+        runstate (xdoctest.directive.RuntimeState | None): current state
+
+    Returns:
+        bool: True if got matches want
+    """
     if got == want:
         return True
 
@@ -210,6 +253,13 @@ def _ellipsis_match(got, want):
     The ellipsis matching algorithm taken directly from standard doctest.
 
     Worst-case linear-time ellipsis matching.
+
+    Args:
+        got (str):
+        want (str):
+
+    Returns:
+        bool: True if the text matches according to the ellipsis rule
 
     CommandLine:
         python -m xdoctest.checker _ellipsis_match
@@ -283,14 +333,29 @@ def _ellipsis_match(got, want):
 
 def normalize(got, want, runstate=None):
     r"""
+    Normalizes the got and want string based on the runtime state.
+
     Adapted from doctest_nose_plugin.py from the nltk project:
         https://github.com/nltk/nltk
 
     Further extended to also support byte literals.
 
+    Args:
+        got (str): unnormalized got str.
+        want (str): unnormalized want str.
+        runstate (xdoctest.directive.RuntimeState | None): current state
+
+    Returns:
+        Tuple[str, str]:
+            The normalized got and want str
+
     Example:
+        >>> from xdoctest.checker import *  # NOQA
         >>> want = "...\n(0, 2, {'weight': 1})\n(0, 3, {'weight': 2})"
         >>> got = "(0, 2, {'weight': 1})\n(0, 3, {'weight': 2})"
+        >>> normalize(got, want)
+        ("(0, 2, {'weight': 1}) (0, 3, {'weight': 2})",
+         "... (0, 2, {'weight': 1}) (0, 3, {'weight': 2})")
     """
     if runstate is None:
         runstate = directive.RuntimeState()
@@ -372,6 +437,11 @@ class ExtractGotReprException(AssertionError):
     Exception used when we are unable to extract a string "got"
     """
     def __init__(self, msg, orig_ex):
+        """
+        Args:
+            msg (str): The exception message
+            orig_ex (Exception): The parent exception
+        """
         super(ExtractGotReprException, self).__init__(msg)
         self.orig_ex = orig_ex
 
@@ -380,9 +450,14 @@ class GotWantException(AssertionError):
     """
     Exception used when the "got" output of a doctest differs from the expected
     "want" output.
-
     """
     def __init__(self, msg, got, want):
+        """
+        Args:
+            msg (str): The exception message
+            got (str): The unnormalized got str
+            want (str): The unnormalized want str
+        """
         super(GotWantException, self).__init__(msg)
         self.got = got
         self.want = want
@@ -411,6 +486,13 @@ class GotWantException(AssertionError):
         Return a string describing the differences between the expected output
         for a given example (`example`) and the actual output (`got`).
         The `runstate` contains option flags used to compare `want` and `got`.
+
+        Args:
+            runstate (xdoctest.directive.RuntimeState | None): current state
+            colored (bool): if the text should be colored
+
+        Returns:
+            str: formatted difference text
 
         Note:
             This does not check if got matches want, it only outputs the raw
@@ -493,6 +575,12 @@ class GotWantException(AssertionError):
     def output_repr_difference(self, runstate=None):
         """
         Constructs a repr difference with minimal normalization.
+
+        Args:
+            runstate (xdoctest.directive.RuntimeState | None): current state
+
+        Returns:
+            str: formatted repr difference text
         """
         minimal_got = self.got.rstrip()
         minimal_want = self.want.rstrip()
@@ -517,6 +605,12 @@ class GotWantException(AssertionError):
 
 def remove_blankline_marker(text):
     r"""
+    Args:
+        text (str): input text
+
+    Returns:
+        str: output text
+
     Example:
         >>> text1 = 'foo\n{}\nbar'.format(BLANKLINE_MARKER)
         >>> text2 = '{}\nbar'.format(BLANKLINE_MARKER)

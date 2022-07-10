@@ -1,3 +1,6 @@
+from typing import Union
+import xdoctest
+from typing import Tuple
 from _typeshed import Incomplete
 
 unicode_literal_re: Incomplete
@@ -10,48 +13,63 @@ TRAILING_WS: Incomplete
 def check_got_vs_want(want: str,
                       got_stdout: str,
                       got_eval: str = ...,
-                      runstate: Incomplete | None = ...):
+                      runstate: Union[xdoctest.directive.RuntimeState,
+                                      None] = None):
     ...
 
 
-def extract_exc_want(want):
+def extract_exc_want(want: str) -> str:
     ...
 
 
-def check_exception(exc_got, want, runstate: Incomplete | None = ...):
+def check_exception(
+        exc_got: str,
+        want: str,
+        runstate: Union[xdoctest.directive.RuntimeState, None] = None) -> bool:
     ...
 
 
-def check_output(got, want, runstate: Incomplete | None = ...):
+def check_output(
+        got: str,
+        want: str,
+        runstate: Union[xdoctest.directive.RuntimeState, None] = None) -> bool:
     ...
 
 
-def normalize(got, want, runstate: Incomplete | None = ...):
+def normalize(
+    got: str,
+    want: str,
+    runstate: Union[xdoctest.directive.RuntimeState, None] = None
+) -> Tuple[str, str]:
     ...
 
 
 class ExtractGotReprException(AssertionError):
-    orig_ex: Incomplete
+    orig_ex: Exception
 
-    def __init__(self, msg, orig_ex) -> None:
+    def __init__(self, msg: str, orig_ex: Exception) -> None:
         ...
 
 
 class GotWantException(AssertionError):
-    got: Incomplete
-    want: Incomplete
+    got: str
+    want: str
 
-    def __init__(self, msg, got, want) -> None:
+    def __init__(self, msg: str, got: str, want: str) -> None:
         ...
 
     def output_difference(self,
-                          runstate: Incomplete | None = ...,
-                          colored: bool = ...):
+                          runstate: Union[xdoctest.directive.RuntimeState,
+                                          None] = None,
+                          colored: bool = True) -> str:
         ...
 
-    def output_repr_difference(self, runstate: Incomplete | None = ...):
+    def output_repr_difference(
+            self,
+            runstate: Union[xdoctest.directive.RuntimeState,
+                            None] = None) -> str:
         ...
 
 
-def remove_blankline_marker(text):
+def remove_blankline_marker(text: str) -> str:
     ...
