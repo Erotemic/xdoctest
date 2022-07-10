@@ -8,13 +8,48 @@ ignore_missing_imports = true
 tags = [ "erotemic", "github", "purepy",]
 mod_name = "xdoctest"
 repo_name = "xdoctest"
-rel_mod_parent_dpath = "."
+rel_mod_parent_dpath = "./src"
 os = [ "all", "win", "linux", "osx",]
 min_python = 2.7
 author = "Jon Crall"
 author_email = "erotemic@gmail.com"
-description = "A module cut from xcookie"
+description = "A rewrite of the builtin doctest module"
+url = "https://github.com/Erotemic/xdoctest"
 license = "Apache 2"
+dev_status = "stable"
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'Intended Audience :: Developers',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+    'Topic :: Utilities',
+    'Topic :: Software Development :: Testing',
+    'Framework :: Pytest',
+    # This should be interpreted as Apache License v2.0
+    'License :: OSI Approved :: Apache Software License',
+    # Supported Python versions
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.5',
+    'Programming Language :: Python :: 3.4',
+    'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: Implementation :: PyPy',
+    'Programming Language :: Python :: Implementation :: CPython',
+]
+
+[tool.xcookie.entry_points]
+# the pytest11 entry point makes the plugin available to pytest
+pytest11 = [
+    "xdoctest = xdoctest.plugin",
+]
+# the console_scripts entry point creates the xdoctest executable
+console_scripts = [
+    "xdoctest = xdoctest.__main__:main",
+]
+
 
 [tool.pytest.ini_options]
 addopts = "-p no:doctest --xdoctest --xdoctest-style=google --ignore-glob=setup.py --ignore-glob=dev"

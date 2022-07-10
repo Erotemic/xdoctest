@@ -336,7 +336,7 @@ def _parse_changelog(fpath):
     Helper to parse the changelog for the version to verify versions agree.
 
     CommandLine:
-        xdoctest ~/code/xdoctest/xdoctest/__init__.py _parse_changelog --dev
+        xdoctest -m xdoctest.__init__ _parse_changelog --dev
 
     Example:
         >>> # xdoctest: +REQUIRES(--dev)

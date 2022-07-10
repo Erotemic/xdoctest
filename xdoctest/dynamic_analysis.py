@@ -50,6 +50,7 @@ def parse_dynamic_calldefs(modpath_or_module):
         modpath = modpath_or_module
         if modpath.endswith('.ipynb'):
             """
+            # Devnote:
             modpath = ub.expandpath("~/code/xdoctest/tests/notebook_with_doctests.ipynb")
             xdoctest ~/code/xdoctest/tests/notebook_with_doctests.ipynb
             """

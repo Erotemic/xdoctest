@@ -1165,11 +1165,8 @@ class DocTest(object):
                         #     # not sure if this should be removed or not
                         #     continue
 
-                        # if 'xdoctest/utils/util_import' in line:
-                        #     # hack, remove ourselves from the tracback
-                        #     continue
-
-                        if 1:
+                        if 0:
+                            # Not a robust acheck
                             if 'xdoctest/xdoctest/doctest_example' in line:
                                 # hack, remove ourselves from the tracback
                                 continue

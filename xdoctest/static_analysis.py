@@ -626,7 +626,7 @@ class TopLevelVisitor(ast.NodeVisitor):
     def _get_docstring(self, node):
         """
         CommandLine:
-            xdoctest -m ~/code/xdoctest/xdoctest/static_analysis.py TopLevelVisitor._get_docstring
+            xdoctest -m xdoctest.static_analysis.py TopLevelVisitor._get_docstring
 
         Example:
             >>> source = utils.codeblock(

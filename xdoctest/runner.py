@@ -163,7 +163,7 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
         >>> result = doctest_module('xdoctest.static_analysis')
         >>> #
         >>> # Using a module path
-        >>> result = doctest_module(os.expandpath('~/code/xdoctest/xdoctest/static_analysis.py'))
+        >>> result = doctest_module(os.expandpath('~/code/xdoctest/src/xdoctest/static_analysis.py'))
         >>> #
         >>> # Using a module itself
         >>> from xdoctest import runner

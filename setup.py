@@ -178,17 +178,9 @@ from setuptools import find_packages  # NOQA
 
 
 if __name__ == '__main__':
-    setupkw = dict(
-        name=NAME,
-        version=VERSION,
-        author='Jon Crall',
-        author_email='erotemic@gmail.com',
-        url='https://github.com/Erotemic/xdoctest',
-        license='Apache 2',
-    )
-
-    setupkw["install_requires"] = parse_requirements("requirements/runtime.txt")
-    setupkw["extras_require"] = {
+    setupkw = {}
+    setupkw['install_requires'] = parse_requirements('requirements/runtime.txt')
+    setupkw['extras_require'] = {
         "all": parse_requirements("requirements.txt"),
         "tests": parse_requirements("requirements/tests.txt"),
         "optional": parse_requirements("requirements/optional.txt"),
@@ -202,53 +194,52 @@ if __name__ == '__main__':
         ),
         'colors': parse_requirements('requirements/colors.txt'),
         'jupyter': parse_requirements('requirements/jupyter.txt'),
-    }
+        }
 
-    setupkw.update(dict(
-        description='A rewrite of the builtin doctest module',
-        long_description=parse_description(),
-        long_description_content_type='text/x-rst',
-        entry_points={
-            # the pytest11 entry point makes the plugin available to pytest
-            'pytest11': [
-                'xdoctest = xdoctest.plugin',
-            ],
-            # the console_scripts entry point creates the xdoctest executable
-            'console_scripts': [
-                'xdoctest = xdoctest.__main__:main'
-            ]
-        },
-        packages=find_packages('.'),
-        # packages=['xdoctest', 'xdoctest.utils', 'xdoctest.docstr'],
-        # custom PyPI classifier for pytest plugins
-        # python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*',
-        python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
-        package_data={
-            'xdoctest': ['py.typed', '*.pyi'],
-        },
-        classifiers=[
-            'Development Status :: 5 - Production/Stable',
-            'Intended Audience :: Developers',
-            'Topic :: Software Development :: Libraries :: Python Modules',
-            'Topic :: Utilities',
-            'Topic :: Software Development :: Testing',
-            'Framework :: Pytest',
-            # This should be interpreted as Apache License v2.0
-            'License :: OSI Approved :: Apache Software License',
-            # Supported Python versions
-            'Programming Language :: Python :: 3',
-            'Programming Language :: Python :: 3.10',
-            'Programming Language :: Python :: 3.9',
-            'Programming Language :: Python :: 3.8',
-            'Programming Language :: Python :: 3.7',
-            'Programming Language :: Python :: 3.6',
-            'Programming Language :: Python :: 3.5',
-            'Programming Language :: Python :: 3.4',
-            'Programming Language :: Python :: 2.7',
-            'Programming Language :: Python :: Implementation :: PyPy',
-            'Programming Language :: Python :: Implementation :: CPython',
+    setupkw['name'] = NAME
+    setupkw['version'] = VERSION
+    setupkw['author'] = 'Jon Crall'
+    setupkw['author_email'] = 'erotemic@gmail.com'
+    setupkw['url'] = 'https://github.com/Erotemic/xdoctest'
+    setupkw['description'] = 'A rewrite of the builtin doctest module'
+    setupkw['long_description'] = parse_description()
+    setupkw['long_description_content_type'] = 'text/x-rst'
+    setupkw['license'] = 'Apache 2'
+    setupkw['packages'] = find_packages('.')
+    setupkw['python_requires'] = '>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*'
+    setupkw['classifiers'] = [
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Developers',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+        'Topic :: Utilities',
+        'Topic :: Software Development :: Testing',
+        'Framework :: Pytest',
+        # This should be interpreted as Apache License v2.0
+        'License :: OSI Approved :: Apache Software License',
+        # Supported Python versions
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: Implementation :: PyPy',
+        'Programming Language :: Python :: Implementation :: CPython',
+    ]
+    setupkw['package_dir'] = {
+        '': './src',
+    }
+    setupkw['entry_points'] = {
+        'console_scripts': [
+            'xdoctest = xdoctest.__main__:main',
         ],
-    ))
+        'pytest11': [
+            'xdoctest = xdoctest.plugin',
+        ],
+    }
     if sys.version_info[0] == 3 and sys.version_info[1] <= 4:
         setupkw.pop('long_description_content_type', None)
     setup(**setupkw)

@@ -14,7 +14,7 @@ __tests = """
 Ignore:
 
     xdoctest -m xdoctest.demo
-    xdoctest ~/code/xdoctest/xdoctest/demo.py
+    xdoctest ~/code/xdoctest/src/xdoctest/demo.py
     python -m xdoctest xdoctest all
     python -m xdoctest networkx all --options=+IGNORE_WHITESPACE
 """
