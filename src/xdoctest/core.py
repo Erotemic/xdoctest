@@ -16,11 +16,19 @@ The following is a glossary of terms and jargon used in this repo.
 * directives - special in-doctest comments that change the behavior of the
   doctests at runtime. See :mod:`xdoctest.directive` for more details.
 
-* the three cheverons (``>>> ``) - this is the standard prefix for a doctest,
-  also referred to as a PS1 line in the parser.
+* chevrons - the three cheverons (``>>> ``) or right angle brakets are the
+    standard prefix for a doctest, also referred to as a PS1 line in the
+    parser.
 
-* TODO - complete this list.
+* zero-args - a function that can be called without any arguments.
 
+* freeform style - This is the term used to refer to a doctest that could be
+    anywhere in the docstring. The alternative are structured doctests where
+    they are only expected in known positions like in "Example blocks" for
+    google and numpy style docstrings.
+
+* TODO - complete this list (Make an issue or PR if there is any term you don't
+    immediately understand!).
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
 import sys
@@ -145,7 +153,7 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
         example._parts = parts
         return example
 
-    if global_state.DEBUG_CORE:
+    if global_state.DEBUG_CORE:  # nocover
         print('Parsing docstring for callname={} in modpath={}'.format(
             callname, modpath))
 
@@ -290,7 +298,7 @@ def parse_auto_docstr_examples(docstr, *args, **kwargs):
     First try to parse google style, but if no tests are found use freeform
     style.
     """
-    if global_state.DEBUG_CORE:
+    if global_state.DEBUG_CORE:  # nocover
         print('Automatic style is trying google parsing')
 
     n_found = 0
@@ -304,7 +312,7 @@ def parse_auto_docstr_examples(docstr, *args, **kwargs):
 
     # no google style tests were found, parse in freeform
     if n_found == 0:
-        if global_state.DEBUG_CORE:
+        if global_state.DEBUG_CORE:  # nocover
             print('Automatic style is trying freeform parsing')
         for example in parse_freeform_docstr_examples(docstr, *args, **kwargs):
             yield example
@@ -361,7 +369,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
         1
         >>> examples = list(parse_docstr_examples(docstr, fpath='foo.txt'))
     """
-    if global_state.DEBUG_CORE:
+    if global_state.DEBUG_CORE:  # nocover
         print('Parsing docstring examples for '
               'callname={} in modpath={}'.format(callname, modpath))
     if style == 'freeform':
@@ -377,7 +385,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
         raise KeyError('Unknown style={}. Valid styles are {}'.format(
             style, DOCTEST_STYLES))
 
-    if global_state.DEBUG_CORE:
+    if global_state.DEBUG_CORE:  # nocover
         print('parser = {!r}'.format(parser))
 
     n_parsed = 0
@@ -387,7 +395,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
             n_parsed += 1
             yield example
     except Exception as ex:
-        if global_state.DEBUG_CORE:
+        if global_state.DEBUG_CORE:  # nocover
             print('Caught an error when parsing')
         msg = ('Cannot scrape callname={} in modpath={} line={}.\n'
                'Caused by: {}\n')
@@ -418,7 +426,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
             pass
         else:
             raise
-    if global_state.DEBUG_CORE:
+    if global_state.DEBUG_CORE:  # nocover
         print('Finished parsing {} examples'.format(n_parsed))
 
 
@@ -472,7 +480,7 @@ def package_calldefs(pkg_identifier, exclude=[], ignore_syntax_errors=True,
         >>> assert util_import.modpath_to_modname(modpath) == pkg_identifier
         >>> assert 'package_calldefs' in calldefs
     """
-    if global_state.DEBUG_CORE:
+    if global_state.DEBUG_CORE:  # nocover
         print('Find package calldefs: pkg_identifier = {!r}'.format(pkg_identifier))
 
     if isinstance(pkg_identifier, types.ModuleType):
@@ -573,7 +581,7 @@ def parse_calldefs(module_identifier, analysis='auto'):
     else:
         raise KeyError(analysis)
 
-    if global_state.DEBUG_CORE:
+    if global_state.DEBUG_CORE:  # nocover
         print('About to parse calldefs with do_dynamic={}'.format(do_dynamic))
 
     calldefs = None
@@ -593,7 +601,7 @@ def parse_calldefs(module_identifier, analysis='auto'):
     else:
         calldefs = static_analysis.parse_static_calldefs(fpath=module_identifier)
 
-    if global_state.DEBUG_CORE:
+    if global_state.DEBUG_CORE:  # nocover
         print('Found {} calldefs'.format(len(calldefs)))
 
     return calldefs

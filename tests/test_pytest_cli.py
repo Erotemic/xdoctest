@@ -137,3 +137,56 @@ def test_simple_pytest_syntax_error_no_xdoctest():
     info = cmd(sys.executable + ' -m pytest ' + temp_module.dpath)
     print(info['out'])
     assert info['ret'] != 0
+
+
+def test_version_and_cli_info():
+    """
+    """
+    import xdoctest
+    info = cmd(sys.executable + ' -m xdoctest --version')
+    assert info['out'].strip() == xdoctest.__version__
+
+    info = cmd(sys.executable + ' -m xdoctest --version-info')
+    assert xdoctest.__version__ in info['out']
+
+
+def test_simple_xdoctest_cli():
+    module_text = utils.codeblock(
+        '''
+        def module_func1():
+            """
+            This module has a doctest
+
+            Example:
+                >>> print('hello world')
+            """
+        ''')
+    temp_module = util_misc.TempModule(module_text)
+    modpath = temp_module.modpath
+    info = cmd(sys.executable + ' -m xdoctest ' + modpath + ' --time')
+    assert 'time:' in info['out']
+
+    info = cmd(sys.executable + ' -m xdoctest ' + modpath + ' all')
+    assert 'passed' in info['out']
+    info = cmd(sys.executable + ' -m xdoctest ' + modpath + ' list')
+    assert 'passed' not in info['out']
+    info = cmd(sys.executable + ' -m xdoctest ' + modpath + ' --verbose=0')
+    print(repr(info['out']))
+    assert info['out'].strip() == ''
+
+
+def test_simple_xdoctest_cli_errors():
+    module_text = utils.codeblock(
+        '''
+        def module_func1():
+            """
+            This module has a doctest
+
+            Example:
+                >>> raise Exception
+            """
+        ''')
+    temp_module = util_misc.TempModule(module_text)
+    modpath = temp_module.modpath
+    info = cmd(sys.executable + ' -m xdoctest ' + modpath + ' --time')
+    assert '1 failed' in info['out']

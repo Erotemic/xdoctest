@@ -8,10 +8,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 * Add type stubs
+* Basic support for pyproject.toml under `tool.xdoctest`. Currently only
+  supports options in the native runner.
 
 ### Fixed
 * Corner case bug in error reporting
 * Doctests that never run any code are now correctly marked as skipped 
+* Issue where the "dumps" command was undocumented and has an error.
 
 ### Changed
 * Moved some globals into a new module called `global_state` and allowed

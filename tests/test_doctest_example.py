@@ -103,7 +103,7 @@ def test_failure():
     self._parse()
     try:
         self.run(on_error='raise')
-    except ZeroDivisionError as ex:
+    except ZeroDivisionError:
         pass
     else:
         raise AssertionError('should have gotten zero division')

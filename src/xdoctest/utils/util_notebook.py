@@ -45,6 +45,23 @@ def _find_notebook(fullname, path=None):
     This turns "foo.bar" into "foo/bar.ipynb"
     and tries turning "Foo_Bar" into "Foo Bar" if Foo_Bar
     does not exist.
+
+    Example:
+        >>> # xdoctest: +REQUIRES(PY3, module:IPython, module:nbconvert)
+        >>> from xdoctest.utils.util_notebook import _find_notebook
+        >>> from xdoctest import utils
+        >>> from os.path import join, basename, splitext
+        >>> self = utils.TempDir()
+        >>> dpath = self.ensure()
+        >>> fpath = join(dpath, 'test_import_notebook.ipynb')
+        >>> cells = ['x = 1']
+        >>> _make_test_notebook_fpath(fpath, cells)
+        >>> fullname = splitext(basename(fpath))[0]
+        >>> path = [dpath]
+        >>> _find_notebook(fullname, path)
+        .../test_import_notebook.ipynb
+        >>> _find_notebook(fullname, None)
+        None
     """
     name = fullname.rsplit('.', 1)[-1]
     if not path:

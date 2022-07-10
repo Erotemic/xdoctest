@@ -38,13 +38,13 @@ from xdoctest import utils
 from xdoctest import constants
 from xdoctest import directive
 
-unicode_literal_re = re.compile(r"(\W|^)[uU]([rR]?[\'\"])", re.UNICODE)  # nocover
-bytes_literal_re = re.compile(r"(\W|^)[bB]([rR]?[\'\"])", re.UNICODE)  # nocover
+unicode_literal_re = re.compile(r"(\W|^)[uU]([rR]?[\'\"])", re.UNICODE)
+bytes_literal_re = re.compile(r"(\W|^)[bB]([rR]?[\'\"])", re.UNICODE)
 
-BLANKLINE_MARKER = '<BLANKLINE>'  # nocover
-ELLIPSIS_MARKER = '...'  # nocover
+BLANKLINE_MARKER = '<BLANKLINE>'
+ELLIPSIS_MARKER = '...'
 
-TRAILING_WS = re.compile(r"[ \t]*$", re.UNICODE | re.MULTILINE)  # nocover
+TRAILING_WS = re.compile(r"[ \t]*$", re.UNICODE | re.MULTILINE)
 
 
 _EXCEPTION_RE = re.compile(r"""

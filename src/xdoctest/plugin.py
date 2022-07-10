@@ -23,7 +23,7 @@ from _pytest import fixtures
 try:
     from packaging.version import parse as parse_version
     _PYTEST_IS_GE_620 = parse_version(pytest.__version__) >= parse_version('6.2.0')
-except ImportError:
+except ImportError:  # nocover
     from distutils.version import LooseVersion
     _PYTEST_IS_GE_620 = LooseVersion(pytest.__version__) >= LooseVersion('6.2.0')
 
@@ -115,7 +115,7 @@ def pytest_addoption(parser):
     )
 
 
-if pytest.__version__ < '7.':
+if pytest.__version__ < '7.':  # nocover
     def pytest_collect_file(path, parent):
         return _pytest_collect_file(path, parent, fspath=path)
 

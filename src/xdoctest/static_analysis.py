@@ -471,7 +471,6 @@ class TopLevelVisitor(ast.NodeVisitor):
             >>> # xdoctest: +REQUIRES(CPython)
             >>> # This function is a specific workaround for a CPython bug.
             >>> from xdoctest.static_analysis import *
-            >>> sys.DEBUG = '--debug' in sys.argv
             >>> sq = chr(39)  # single quote
             >>> dq = chr(34)  # double quote
             >>> source = utils.codeblock(
@@ -548,21 +547,11 @@ class TopLevelVisitor(ast.NodeVisitor):
             >>>         print('endpos = {!r}'.format(endpos))
             >>>         raise AssertionError('docstr workaround is failing')
             >>>     print('----------')
-            >>> sys.DEBUG = 0
         """
         # First assume a one-line string that starts and stops on the same line
         start = endpos
         stop = endpos + 1
         endline = sourcelines[stop - 1]
-
-        DEBUG = getattr(sys, 'DEBUG', 0)
-        if DEBUG:
-            print('----<<<')
-            #print('sourcelines = [{}]'.format('\n'.join(list(map(repr, sourcelines)))))
-            print('endpos = {!r}'.format(endpos))
-            print('start = {!r}'.format(start))
-            print('stop = {!r}'.format(stop))
-            print('endline = {!r}'.format(endline))
 
         # Determine if the docstring is a triple quoted string, by trying both
         # triple quote styles and checking if the string starts and ends with
@@ -571,8 +560,6 @@ class TopLevelVisitor(ast.NodeVisitor):
         # line position.
         trips = ("'''", '"""')
         for trip in trips:
-            if DEBUG:
-                print('trip = {!r}'.format(trip))
             pattern = re.escape(trip) + r'\s*#.*$'
             # Assuming the multiline string is using `trip` as the triple quote
             # format, then the first instance of that pattern must terminate
@@ -588,12 +575,7 @@ class TopLevelVisitor(ast.NodeVisitor):
             # in the extracted docstring. This works because all newline
             # characters in multiline string literals MUST correspond to actual
             # newlines in the source code.
-            if DEBUG:
-                print('pattern = {!r}'.format(pattern))
-                print('endline_ = {!r}'.format(endline_))
             if endline_.endswith(trip):
-                if DEBUG:
-                    print('endline ended with trip')
                 nlines = docstr.count('\n')
                 # assuming that the docstr is actually terminated with this
                 # kind of triple quote, then the start line is at this position
@@ -604,23 +586,11 @@ class TopLevelVisitor(ast.NodeVisitor):
                 # Account for raw strings. Note f-strings cannot be docstrings
                 if startline.strip().startswith((trip, 'r' + trip)):
                     # Both conditions pass.
-                    if DEBUG:
-                        print('startline did end with trip')
                     start = cand_start_
                     break
                 else:
                     # Conditions failed, revert to assuming a one-line string.
-                    if DEBUG:
-                        print('startline did not end with trip')
                     start = stop - 1
-            else:
-                if DEBUG:
-                    print('endline did not end with trip')
-
-        if DEBUG:
-            print('start = {!r}'.format(start))
-            print('stop = {!r}'.format(stop))
-            print('----<<<')
         return start, stop
 
     def _get_docstring(self, node):

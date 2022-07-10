@@ -25,10 +25,7 @@ def main(argv=None):
     Args:
         argv (List[str] | None):
     """
-    import argparse
     import xdoctest
-    from os.path import exists
-    from xdoctest import utils
 
     if argv is None:
         argv = sys.argv
@@ -47,6 +44,11 @@ def main(argv=None):
             print('{} = {}'.format(key, value))
         return 0
 
+    import argparse
+    import textwrap
+    from xdoctest import utils
+    from os.path import exists
+
     # FIXME: default values are reporting incorrectly or are missformated
     class RawDescriptionDefaultsHelpFormatter(
             argparse.RawDescriptionHelpFormatter,
@@ -61,12 +63,15 @@ def main(argv=None):
         ).format(**version_info),
         formatter_class=RawDescriptionDefaultsHelpFormatter,
     )
+
+    # Ignored if optional arguments are specified, otherwise:
+    # Defaults --modname to arg.pop(0).
+    # Defaults --command to arg.pop(0).
     parser.add_argument(
         'arg', nargs='*', help=utils.codeblock(
             '''
-            Ignored if optional arguments are specified, otherwise:
-            Defaults --modname to arg.pop(0).
-            Defaults --command to arg.pop(0).
+            If the `--command` key / value pair is unspecified, the first
+            positional argument is used as the command.
             '''))
     parser.add_argument('--version', action='store_true', help='Display version info and quit')
 
@@ -78,10 +83,6 @@ def main(argv=None):
 
     args, unknown = parser.parse_known_args(args=argv[1:])
     ns = args.__dict__.copy()
-
-    __DEBUG__ = '--debug' in sys.argv
-    if __DEBUG__:
-        print('ns = {!r}'.format(ns))
 
     if ns['version']:
         print(xdoctest.__version__)
@@ -125,6 +126,22 @@ def main(argv=None):
     options = ns['options']
     if options is None:
         options = ''
+        pyproject_fpath = 'pyproject.toml'
+        if exists(pyproject_fpath):
+            try:
+                import tomllib
+            except ImportError:
+                try:
+                    import tomli as tomllib
+                except ImportError:
+                    pass
+            else:
+                with open(pyproject_fpath, 'rb') as file:
+                    pyproject_settings = tomllib.load(file)
+                try:
+                    options = pyproject_settings['tool']['xdoctest']['options']
+                except KeyError:
+                    pass
         if exists('pytest.ini'):
             from six.moves import configparser
             parser = configparser.ConfigParser()
@@ -138,7 +155,6 @@ def main(argv=None):
     from xdoctest import doctest_example
     config = doctest_example.DoctestConfig()._populate_from_cli(ns)
 
-    import textwrap
     if config['verbose'] > 2:
         print(textwrap.dedent(
             r'''
@@ -149,15 +165,6 @@ def main(argv=None):
 
             =====================================
             '''))
-
-    if __DEBUG__:
-        try:
-            import ubelt as ub
-            print('config = {}'.format(ub.repr2(config)))
-            print('ns = {}'.format(ub.repr2(ns)))
-        except ImportError:
-            pass
-        print('modname = {!r}'.format(modname))
 
     run_summary = xdoctest.doctest_module(modname, argv=[command], style=style,
                                           verbose=config['verbose'],

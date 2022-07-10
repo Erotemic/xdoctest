@@ -140,6 +140,65 @@ def test_example_run():
     assert 'i wanna see this' in cap.text
 
 
+def test_durations():
+    from xdoctest import runner
+    source = utils.codeblock(
+        '''
+        def func1():
+            """
+            Example:
+                >>> print(1)
+            """
+
+        def func2():
+            """
+            Example:
+                >>> print(123)
+            """
+        ''')
+    with utils.TempDir() as temp:
+        dpath = temp.dpath
+        modpath = join(dpath, 'test_durations.py')
+        with open(modpath, 'w') as file:
+            file.write(source)
+        with utils.CaptureStdout() as cap1:
+            runner.doctest_module(modpath, 'all', argv=[''], durations=10)
+        with utils.CaptureStdout() as cap2:
+            runner.doctest_module(modpath, 'all', argv=[''], durations=1)
+    assert cap1.text.count('time: ') == 2, '2 tests should have 2 durations'
+    assert cap2.text.count('time: ') == 1, 'should only have gotten 1 durration'
+
+
+def test_dump():
+    from xdoctest import runner
+    source = utils.codeblock(
+        '''
+        def func1():
+            """
+            Example:
+                >>> these = 'tests will be converted to unit tests'
+                >>> print(these + ' because sometimes you wanna')
+            """
+
+        def func2():
+            """
+            Example:
+                >>> for i in range(10):
+                >>>     these = 'and sometimes your doctests should have been '
+                >>> for j in range(10):
+                ...     print(these + ' unit tests all along')
+            """
+        ''')
+    with utils.TempDir() as temp:
+        dpath = temp.dpath
+        modpath = join(dpath, 'test_durations.py')
+        with open(modpath, 'w') as file:
+            file.write(source)
+        with utils.CaptureStdout() as cap:
+            runner.doctest_module(modpath, 'dump', argv=[''])
+    print(cap.text)
+
+
 def test_all_disabled():
     """
     pytest tests/test_runner.py::test_all_disabled -s -vv

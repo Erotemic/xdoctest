@@ -327,9 +327,9 @@ def _convert_to_test_module(enabled_examples):
         func_name = 'test_' + example.callname.replace('.', '_')
         body_lines = []
         for part in example._parts:
-            body_part = part.format_src(linenos=False, want=False,
-                                        prefix=False, colored=False,
-                                        partnos=False)
+            body_part = part.format_part(linenos=False, want=False,
+                                         prefix=False, colored=False,
+                                         partnos=False)
             if part.want:
                 want_text = '# doctest want:\n'
                 want_text += utils.indent(part.want, '# ')
@@ -569,17 +569,17 @@ def _parse_commandline(command=None, style='auto', verbose=None, argv=None):
 
 
 def _update_argparse_cli(add_argument, prefix=None):
-    def str_lower(x):
-        # python2 fix
-        return str.lower(str(x))
-
     add_argument(*('-m', '--modname'), type=str,
                  help='Module name or path. If specified positional modules are ignored',
                  default=None)
 
     add_argument(*('-c', '--command'), type=str,
-                 help='A doctest name or a command (list|all|<callname>). '
-                 'Defaults to all',
+                 help=(
+                     'A doctest name or a command (all|list|dump|<callname>). '
+                     'Defaults to `all` (which runs everything). Using `list` will '
+                     'collect and print all doctests. '
+                     'Using `dump` will convert doctests into unit tests. '
+                     'Anything else will be interpreted as a "callname"'),
                  default=None)
 
     add_argument(*('--style',), type=str,

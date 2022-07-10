@@ -5,6 +5,7 @@ rm -rf _skbuild
 rm -rf -- *.so
 rm -rf build
 rm -rf xdoctest.egg-info
+rm -rf src/xdoctest.egg-info
 rm -rf dist
 rm -rf docs/build
 rm -rf mb_work
