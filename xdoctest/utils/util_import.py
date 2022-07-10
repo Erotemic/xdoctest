@@ -199,12 +199,22 @@ def import_module_from_path(modpath, index=-1):
     """
     Imports a module via its path
 
+    This works by modifying ``sys.path``, importing the module name, and then
+    attempting to undo the change to sys.path. This function may produce
+    unexpected results in the case where the imported module itself itself
+    modifies ``sys.path`` or if there is another conflicting module with the
+    same name.
+
     Args:
-        modpath (PathLike): path to the module on disk or within a zipfile.
-        index (int): location at which we modify PYTHONPATH if necessary.
-            If your module name does not conflict, the safest value is -1,
-            However, if there is a conflict, then use an index of 0.
-            The default may change to 0 in the future.
+        modpath (str | PathLike):
+            Path to the module on disk or within a zipfile. Paths within a
+            zipfile can be given by ``<path-to>.zip/<path-inside-zip>.py``.
+
+        index (int):
+            Location at which we modify PYTHONPATH if necessary.  If your
+            module name does not conflict, the safest value is -1, However, if
+            there is a conflict, then use an index of 0.  The default may
+            change to 0 in the future.
 
     Returns:
         ModuleType: the imported module
@@ -256,32 +266,28 @@ def import_module_from_path(modpath, index=-1):
         >>> # Test importing a module from within a zipfile
         >>> import zipfile
         >>> from xdoctest import utils
-        >>> from os.path import join, expanduser
+        >>> from os.path import join, expanduser, normpath
         >>> dpath = expanduser('~/.cache/xdoctest')
         >>> dpath = utils.ensuredir(dpath)
+        >>> #dpath = utils.TempDir().ensure()
         >>> # Write to an external module named bar
         >>> external_modpath = join(dpath, 'bar.py')
         >>> # For pypy support we have to write this using with
         >>> with open(external_modpath, 'w') as file:
         >>>     file.write('testvar = 1')
-        >>> assert open(external_modpath, 'r').read() == 'testvar = 1'
         >>> internal = 'folder/bar.py'
         >>> # Move the external bar module into a zipfile
         >>> zippath = join(dpath, 'myzip.zip')
         >>> with zipfile.ZipFile(zippath, 'w') as myzip:
         >>>     myzip.write(external_modpath, internal)
-        >>> assert exists(zippath)
         >>> # Import the bar module from within the zipfile
         >>> modpath = zippath + ':' + internal
         >>> modpath = zippath + os.path.sep + internal
         >>> module = import_module_from_path(modpath)
-        >>> assert module.__name__ == os.path.normpath('folder/bar')
-        >>> print('module = {!r}'.format(module))
-        >>> print('module.__file__ = {!r}'.format(module.__file__))
-        >>> print(dir(module))
+        >>> assert normpath(module.__name__) == normpath('folder/bar')
         >>> assert module.testvar == 1
 
-    Doctest:
+    Example:
         >>> # xdoctest: +REQUIRES(module:pytest)
         >>> import pytest
         >>> with pytest.raises(IOError):
