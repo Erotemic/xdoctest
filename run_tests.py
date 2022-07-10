@@ -3,7 +3,7 @@ if __name__ == '__main__':
     import pytest
     import sys
     package_name = 'xdoctest'
-    mod_dpath = package_name
+    mod_dpath = './src/' + package_name
     test_dpath = 'tests'
     pytest_args = [
         '-p', 'pytester',

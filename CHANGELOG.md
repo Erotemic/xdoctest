@@ -23,6 +23,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   args blocks. This has also moved to the standalone package `googledoc`
 * Overhaul of repo structure in an effort to modernize and to agree with
   templates defined by xcookie
+* Module code now lives in the "src" directory to remove install vs develop
+  ambiguity.
 
 
 
