@@ -197,7 +197,7 @@ if __name__ == '__main__':
     setupkw['long_description'] = parse_description()
     setupkw['long_description_content_type'] = 'text/x-rst'
     setupkw['license'] = 'Apache 2'
-    setupkw['python_requires'] = '>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*'
+    setupkw['python_requires'] = '>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4'
     setupkw['classifiers'] = [
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
@@ -215,7 +215,6 @@ if __name__ == '__main__':
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: Implementation :: PyPy',
         'Programming Language :: Python :: Implementation :: CPython',
