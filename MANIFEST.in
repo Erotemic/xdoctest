@@ -1,5 +1,6 @@
 include *.md
 include *.py
+include *.toml
 include run_doctests.sh
 include *.txt
 include LICENSE
@@ -10,5 +11,5 @@ recursive-include docs *.rst
 recursive-include docs *.txt
 recursive-include docs Makefile
 recursive-include requirements *.txt
-recursive-include testing *.py
-recursive-include testing *.ipynb
+recursive-include tests *.py
+recursive-include tests *.ipynb

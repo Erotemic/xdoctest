@@ -5,23 +5,21 @@ Statically ports utilities from ubelt needed by xdoctest.
 
 def _autogen_xdoctest_utils():
     import ubelt as ub
-
-    # Uses netharn closer until it is ported to a standalone module
-    from liberator import closer
-    closer = closer.Closer()
+    import liberator
+    lib = liberator.Liberator()
 
     from ubelt import util_import
-    closer.add_dynamic(util_import.split_modpath)
-    closer.add_dynamic(util_import.modpath_to_modname)
-    closer.add_dynamic(util_import.modname_to_modpath)
-    closer.add_dynamic(util_import.import_module_from_name)
-    closer.add_dynamic(util_import.import_module_from_path)
-    closer.add_dynamic(util_import._pkgutil_modname_to_modpath)
-    closer.add_dynamic(util_import._importlib_import_modpath)
-    closer.add_dynamic(util_import.is_modname_importable)
+    lib.add_dynamic(util_import.split_modpath)
+    lib.add_dynamic(util_import.modpath_to_modname)
+    lib.add_dynamic(util_import.modname_to_modpath)
+    lib.add_dynamic(util_import.import_module_from_name)
+    lib.add_dynamic(util_import.import_module_from_path)
+    lib.add_dynamic(util_import._pkgutil_modname_to_modpath)
+    lib.add_dynamic(util_import._importlib_import_modpath)
+    lib.add_dynamic(util_import.is_modname_importable)
 
-    closer.expand(['ubelt'])
-    text = closer.current_sourcecode()
+    lib.expand(['ubelt'])
+    text = lib.current_sourcecode()
     print(text)
 
     import redbaron

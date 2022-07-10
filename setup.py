@@ -7,42 +7,83 @@ TODO:
 from setuptools import setup
 import sys
 from os.path import exists
+from setuptools import find_packages
 
 
 def parse_version(fpath):
     """
     Statically parse the version number from a python file
     """
+    value = static_parse('__version__', fpath)
+    return value
+
+
+def static_parse(varname, fpath):
+    """
+    Statically parse the a constant variable from a python file
+    """
     import ast
+
     if not exists(fpath):
         raise ValueError('fpath={!r} does not exist'.format(fpath))
     with open(fpath, 'r') as file_:
         sourcecode = file_.read()
     pt = ast.parse(sourcecode)
-    class VersionVisitor(ast.NodeVisitor):
+
+    class StaticVisitor(ast.NodeVisitor):
         def visit_Assign(self, node):
             for target in node.targets:
-                if getattr(target, 'id', None) == '__version__':
-                    self.version = node.value.s
-    visitor = VersionVisitor()
+                if getattr(target, 'id', None) == varname:
+                    self.static_value = node.value.s
+
+    visitor = StaticVisitor()
     visitor.visit(pt)
-    return visitor.version
+    try:
+        value = visitor.static_value
+    except AttributeError:
+        import warnings
+
+        value = 'Unknown {}'.format(varname)
+        warnings.warn(value)
+    return value
 
 
-def parse_requirements(fname='requirements.txt', with_version=False):
+def parse_description():
+    """
+    Parse the description in the README file
+
+    CommandLine:
+        pandoc --from=markdown --to=rst --output=README.rst README.md
+        python -c "import setup; print(setup.parse_description())"
+    """
+    from os.path import dirname, join, exists
+
+    readme_fpath = join(dirname(__file__), 'README.rst')
+    # This breaks on pip install, so check that it exists.
+    if exists(readme_fpath):
+        with open(readme_fpath, 'r') as f:
+            text = f.read()
+        return text
+    return ''
+
+
+def parse_requirements(fname='requirements.txt', versions=False):
     """
     Parse the package dependencies listed in a requirements file but strips
     specific versioning information.
 
     Args:
         fname (str): path to requirements file
-        with_version (bool, default=False): if true include version specs
+        versions (bool | str, default=False):
+            If true include version specs.
+            If strict, then pin to the minimum version.
 
     Returns:
         List[str]: list of requirements items
     """
     from os.path import exists, dirname, join
     import re
+
     require_fpath = fname
 
     def parse_line(line, dpath=''):
@@ -104,8 +145,15 @@ def parse_requirements(fname='requirements.txt', with_version=False):
         if exists(require_fpath):
             for info in parse_require_file(require_fpath):
                 parts = [info['package']]
-                if with_version and 'version' in info:
-                    parts.extend(info['version'])
+                if versions and 'version' in info:
+                    if versions == 'strict':
+                        # In strict mode, we pin to the minimum version
+                        if info['version']:
+                            # Only replace the first >= instance
+                            verstr = ''.join(info['version']).replace('>=', '==', 1)
+                            parts.append(verstr)
+                    else:
+                        parts.extend(info['version'])
                 if not sys.version.startswith('3.4'):
                     # apparently package_deps are broken in 3.4
                     plat_deps = info.get('platform_deps')
@@ -118,150 +166,78 @@ def parse_requirements(fname='requirements.txt', with_version=False):
     return packages
 
 
-def parse_description():
-    """
-    Parse the description in the README file
-
-    CommandLine:
-        pandoc --from=markdown --to=rst --output=README.rst README.md
-        python -c "import setup; print(setup.parse_description())"
-    """
-    from os.path import dirname, join, exists
-    readme_fpath = join(dirname(__file__), 'README.rst')
-    # This breaks on pip install, so check that it exists.
-    if exists(readme_fpath):
-        with open(readme_fpath, 'r') as f:
-            text = f.read()
-        return text
-    return ''
-
-
-def native_mb_python_tag(plat_impl=None, version_info=None):
-    """
-    Get the correct manylinux python version tag for this interpreter
-
-    Example:
-        >>> print(native_mb_python_tag())
-        >>> print(native_mb_python_tag('PyPy', (2, 7)))
-        >>> print(native_mb_python_tag('CPython', (3, 8)))
-    """
-    if plat_impl is None:
-        import platform
-        plat_impl = platform.python_implementation()
-
-    if version_info is None:
-        import sys
-        version_info = sys.version_info
-
-    major, minor = version_info[0:2]
-    major, minor = version_info[0:2]
-    if minor > 9:
-        ver = '{}_{}'.format(major, minor)
-    else:
-        ver = '{}{}'.format(major, minor)
-
-    if plat_impl == 'CPython':
-        # TODO: get if cp27m or cp27mu
-        impl = 'cp'
-        if ver == '27':
-            IS_27_BUILT_WITH_UNICODE = True  # how to determine this?
-            if IS_27_BUILT_WITH_UNICODE:
-                abi = 'mu'
-            else:
-                abi = 'm'
-        else:
-            import sys
-            if sys.version_info[:2] >= (3, 8):
-                # bpo-36707: 3.8 dropped the m flag
-                abi = ''
-            else:
-                abi = 'm'
-        mb_tag = '{impl}{ver}-{impl}{ver}{abi}'.format(**locals())
-    elif plat_impl == 'PyPy':
-        abi = ''
-        impl = 'pypy'
-        ver = '{}{}'.format(major, minor)
-        mb_tag = '{impl}-{ver}'.format(**locals())
-    else:
-        raise NotImplementedError(plat_impl)
-    return mb_tag
-
-
 NAME = 'xdoctest'
-try:
-    VERSION = parse_version('xdoctest/__init__.py')
-except Exception:
-    raise
-    print('failed to parse values in setup.py')
-    VERSION = '???'
-
-try:
-    MB_PYTHON_TAG = native_mb_python_tag()
-except Exception:
-    # raise
-    MB_PYTHON_TAG = '???'
-
-
-from setuptools import find_packages  # NOQA
-setupkw = dict(
-    name=NAME,
-    version=VERSION,
-    author='Jon Crall',
-    author_email='erotemic@gmail.com',
-    url='https://github.com/Erotemic/xdoctest',
-    license='Apache 2',
-)
-
+VERSION = parse_version('src/xdoctest/__init__.py')
 
 if __name__ == '__main__':
-    setupkw.update(dict(
-        description='A rewrite of the builtin doctest module',
-        install_requires=parse_requirements('requirements/runtime.txt'),
-        extras_require={
-            'all': parse_requirements('requirements.txt'),
-            'tests': parse_requirements('requirements/tests.txt'),
-            'optional': parse_requirements('requirements/optional.txt'),
-            'colors': parse_requirements('requirements/colors.txt'),
-            'jupyter': parse_requirements('requirements/jupyter.txt'),
-        },
-        long_description=parse_description(),
-        long_description_content_type='text/x-rst',
-        entry_points={
-            # the pytest11 entry point makes the plugin available to pytest
-            'pytest11': [
-                'xdoctest = xdoctest.plugin',
-            ],
-            # the console_scripts entry point creates the xdoctest executable
-            'console_scripts': [
-                'xdoctest = xdoctest.__main__:main'
-            ]
-        },
-        packages=find_packages('.'),
-        # packages=['xdoctest', 'xdoctest.utils', 'xdoctest.docstr'],
-        # custom PyPI classifier for pytest plugins
-        classifiers=[
-            'Development Status :: 5 - Production/Stable',
-            'Intended Audience :: Developers',
-            'Topic :: Software Development :: Libraries :: Python Modules',
-            'Topic :: Utilities',
-            'Topic :: Software Development :: Testing',
-            'Framework :: Pytest',
-            # This should be interpreted as Apache License v2.0
-            'License :: OSI Approved :: Apache Software License',
-            # Supported Python versions
-            'Programming Language :: Python :: 3',
-            'Programming Language :: Python :: 3.10',
-            'Programming Language :: Python :: 3.9',
-            'Programming Language :: Python :: 3.8',
-            'Programming Language :: Python :: 3.7',
-            'Programming Language :: Python :: 3.6',
-            'Programming Language :: Python :: 3.5',
-            'Programming Language :: Python :: 3.4',
-            'Programming Language :: Python :: 2.7',
-            'Programming Language :: Python :: Implementation :: PyPy',
-            'Programming Language :: Python :: Implementation :: CPython',
+    setupkw = {}
+    setupkw['install_requires'] = parse_requirements('requirements/runtime.txt')
+    setupkw['extras_require'] = {
+        'all': parse_requirements('requirements.txt'),
+        'tests': parse_requirements('requirements/tests.txt'),
+        'optional': parse_requirements('requirements/optional.txt'),
+        'all-strict': parse_requirements('requirements.txt', versions='strict'),
+        'runtime-strict': parse_requirements(
+            'requirements/runtime.txt', versions='strict'
+        ),
+        'tests-strict': parse_requirements('requirements/tests.txt', versions='strict'),
+        'optional-strict': parse_requirements(
+            'requirements/optional.txt', versions='strict'
+        ),
+        'colors': parse_requirements('requirements/colors.txt'),
+        'jupyter': parse_requirements('requirements/jupyter.txt'),
+        }
+
+    setupkw['name'] = NAME
+    setupkw['version'] = VERSION
+    setupkw['author'] = 'Jon Crall'
+    setupkw['author_email'] = 'erotemic@gmail.com'
+    setupkw['url'] = 'https://github.com/Erotemic/xdoctest'
+    setupkw['description'] = 'A rewrite of the builtin doctest module'
+    setupkw['long_description'] = parse_description()
+    setupkw['long_description_content_type'] = 'text/x-rst'
+    setupkw['license'] = 'Apache 2'
+    setupkw['python_requires'] = '>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4'
+    setupkw['classifiers'] = [
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Developers',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+        'Topic :: Utilities',
+        'Topic :: Software Development :: Testing',
+        'Framework :: Pytest',
+        # This should be interpreted as Apache License v2.0
+        'License :: OSI Approved :: Apache Software License',
+        # Supported Python versions
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: Implementation :: PyPy',
+        'Programming Language :: Python :: Implementation :: CPython',
+    ]
+    # https://codefellows.github.io/sea-python-401d4/lectures/python_packaging_1.html
+    # We use a key of an empty string to indicate that the directory we are
+    # pointing to should be considered the root. Then the value is src, telling
+    # setuptools to use that directory as the root of our source.
+    setupkw['package_dir'] = {
+        '': 'src',
+    }
+    setupkw['packages'] = find_packages('src')
+    setupkw['package_data'] = {
+        'xdoctest': ['py.typed', '*.pyi'],
+    }
+    setupkw['entry_points'] = {
+        'console_scripts': [
+            'xdoctest = xdoctest.__main__:main',
         ],
-    ))
+        'pytest11': [
+            'xdoctest = xdoctest.plugin',
+        ],
+    }
     if sys.version_info[0] == 3 and sys.version_info[1] <= 4:
         setupkw.pop('long_description_content_type', None)
     setup(**setupkw)

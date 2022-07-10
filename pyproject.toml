@@ -1,0 +1,85 @@
+[build-system]
+requires = [ "setuptools>=41.0.1",]
+build-backend = "setuptools.build_meta"
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[tool.xcookie]
+tags = [ "erotemic", "github", "purepy",]
+mod_name = "xdoctest"
+repo_name = "xdoctest"
+rel_mod_parent_dpath = "./src"
+os = [ "all", "win", "linux", "osx",]
+min_python = 2.7
+author = "Jon Crall"
+author_email = "erotemic@gmail.com"
+description = "A rewrite of the builtin doctest module"
+url = "https://github.com/Erotemic/xdoctest"
+license = "Apache 2"
+dev_status = "stable"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+    "Topic :: Software Development :: Testing",
+    "Framework :: Pytest",
+    # This should be interpreted as Apache License v2.0
+    "License :: OSI Approved :: Apache Software License",
+    # Supported Python versions
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.4",
+    "Programming Language :: Python :: 2.7",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+
+[tool.xcookie.entry_points]
+# the pytest11 entry point makes the plugin available to pytest
+pytest11 = [
+    "xdoctest = xdoctest.plugin",
+]
+# the console_scripts entry point creates the xdoctest executable
+console_scripts = [
+    "xdoctest = xdoctest.__main__:main",
+]
+
+
+[tool.pytest.ini_options]
+addopts = "-p no:doctest --xdoctest --xdoctest-style=google --ignore-glob=setup.py --ignore-glob=dev"
+norecursedirs = ".git ignore build __pycache__ dev _skbuild"
+filterwarnings = [ "default", "ignore:.*No cfgstr given in Cacher constructor or call.*:Warning", "ignore:.*Define the __nice__ method for.*:Warning", "ignore:.*private pytest class or function.*:Warning",]
+
+[tool.coverage.run]
+branch = true
+source = ["src/xdoctest"]
+
+[tool.coverage.report]
+exclude_lines = [ 
+    "pragma: no cover",
+     ".*  # pragma: no cover",
+     ".*  # nocover",
+     "def __repr__",
+     "raise AssertionError",
+     "raise NotImplementedError",
+     "if 0:",
+     "if trace is not None",
+     "verbose = .*",
+     "^ *raise",
+     "^ *pass *$",
+     "if _debug:",
+     "if __name__ == .__main__.:", ".*if six.PY2:",
+]
+omit = [
+    "*/setup.py",
+]
+
+[tool.xdoctest]
+options = ''

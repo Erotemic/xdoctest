@@ -84,7 +84,7 @@ def parse_version(fpath):
 # module = ub.import_module_from_path(modpath)
 # release = module.__version__
 
-modpath = join(dirname(dirname(dirname(__file__))), modname, '__init__.py')
+modpath = join(dirname(dirname(dirname(__file__))), 'src', modname, '__init__.py')
 # The full version, including alpha/beta/rc tags
 release = parse_version(modpath)
 version = '.'.join(release.split('.')[0:2])
@@ -127,7 +127,7 @@ autoapi_modules = {
 }
 
 
-autoapi_dirs = [f'../../{modname}']
+autoapi_dirs = [f'../../src/{modname}']
 # autoapi_keep_files = True
 
 # Add any paths that contain templates here, relative to this directory.
@@ -147,7 +147,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

@@ -7,6 +7,7 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
+   xdoctest.utils.util_deprecation
    xdoctest.utils.util_import
    xdoctest.utils.util_misc
    xdoctest.utils.util_mixins

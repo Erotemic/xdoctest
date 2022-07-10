@@ -30,5 +30,3 @@ omit =
     xdoctest/__main__.py
     xdoctest/__init__.py
     xdoctest/exceptions.py
-    xdoctest/_old*.py
-    xdoctest/_grave*.py

@@ -4,11 +4,37 @@ We are currently working on porting this changelog to the specifications in
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Version 1.0.0 - Unreleased
+## Version 1.0.1 - Unreleased
+
+### Added
+* Add type stubs
+* Basic support for pyproject.toml under `tool.xdoctest`. Currently only
+  supports options in the native runner.
+
+### Fixed
+* Corner case bug in error reporting
+* Doctests that never run any code are now correctly marked as skipped 
+* Issue where the "dumps" command was undocumented and has an error.
+
+### Changed
+* Moved some globals into a new module called `global_state` and allowed
+  environs to enable debug print statements.
+* Added `util_deprecation` module to robustly mark features as deprecated.
+* Modified the google style return type parser to return a type if the 
+  only content is some parsable python code.
+* Modified docscrape google to allow for parsing of `*args` and `**kwargs` in
+  args blocks. This has also moved to the standalone package `googledoc`
+* Overhaul of repo structure in an effort to modernize and to agree with
+  templates defined by xcookie
+* Module code now lives in the "src" directory to remove install vs develop
+  ambiguity.
+
+
+
+## Version 1.0.0 - Released 2022-03-25
 
 ### Added
 * Support for Python 3.10
-
 
 ### Fixed
 * Warning in pytest8
