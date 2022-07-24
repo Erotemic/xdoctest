@@ -18,7 +18,7 @@ Notes:
 
     cd ~/code/xdoctest/docs
     make html
-    sphinx-apidoc -f -o ~/code/xdoctest/docs/source ~/code/xdoctest/xdoctest --separate
+    sphinx-apidoc -f -o ~/code/xdoctest/docs/source ~/code/xdoctest/src/xdoctest --separate
     make html
 
     Also:
@@ -100,7 +100,7 @@ version = '.'.join(release.split('.')[0:2])
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'autoapi.extension',
+    # 'autoapi.extension',
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
     'sphinx.ext.intersphinx',
@@ -114,9 +114,9 @@ extensions = [
 ]
 
 
-redirects = {
-    "index": "autoapi/xdoctest/index.html",
-}
+# redirects = {
+#     "index": "autoapi/xdoctest/index.html",
+# }
 
 
 autoapi_modules = {
@@ -328,7 +328,7 @@ class PatchedPythonDomain(PythonDomain):
 def setup(app):
     # app.add_domain(PatchedPythonDomain, override=True)
 
-    if 1:
+    if 0:
         # https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
         from sphinx.application import Sphinx
         from typing import Any, List
@@ -367,7 +367,7 @@ def setup(app):
                 if mode is None:
                     new_lines.append(line)
                 elif mode == 'ignore':
-                    # print('IGNORE line = {!r}'.format(line))
+                    print('IGNORE line = {!r}'.format(line))
                     pass
                 elif mode == 'cmdline':
                     if line.startswith('CommandLine'):

@@ -9,10 +9,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import sys
 
 
-__tests = """
-
+__tests__ = """
 Ignore:
-
     xdoctest -m xdoctest.demo
     xdoctest ~/code/xdoctest/src/xdoctest/demo.py
     python -m xdoctest xdoctest all
