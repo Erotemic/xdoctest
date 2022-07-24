@@ -579,7 +579,31 @@ class DocTest(object):
         if self.module is None:
             compileflags = 0
         else:
+            # Its unclear what the side effects of populating globals with
+            # __name__, __package__, etc are. They do cause differences.
+            # between that and IPython code. Probably regular code too.
+
+            # https://stackoverflow.com/questions/32175693/python-importlibs-analogue-for-imp-new-module
+            # https://stackoverflow.com/questions/31191947/pickle-and-exec-in-python
+            # import types
+            # dummy_name = self.module.__name__ + '_xdoctest_sandbox'
+            # if dummy_name in sys.modules:
+            #     dummy_mod = sys.modules[dummy_name]
+            # else:
+            # dummy_mod = types.ModuleType(dummy_name)
+            # sys.modules[dummy_name] = dummy_mod
+
             test_globals.update(self.module.__dict__)
+            # test_globals.update(dummy_mod.__dict__)
+            # importable_attrs = {
+            #     k: v for k, v in self.module.__dict__.items()
+            #     if not k.startswith('__')
+            # }
+            # test_globals.update(importable_attrs)
+            # test_globals['__name__'] = self.module.__name__ + '.doctest'
+            # test_globals['__name__'] = '__main__'
+            # test_globals['__file__'] = None
+            # test_globals['__package__'] = None
             compileflags = self._extract_future_flags(test_globals)
         # force print function and division futures
         compileflags |= __future__.print_function.compiler_flag
