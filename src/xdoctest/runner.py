@@ -308,13 +308,66 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
             toc = time.time()
             n_seconds = toc - tic
 
+            #### TODO: callback and plugin system.
+            # Can probably reuse some other library for this.
+
             # Print final summary info in a style similar to pytest
             if verbose >= 0 and run_summary:
                 _print_summary_report(run_summary, parse_warnlist, n_seconds,
                                       enabled_examples, durations,
                                       config=config, _log=_log)
 
+            print("AFTER PRINT SUMMARY")
+
+            # Hidden experimental feature
+            # os.environ['INSERT_SKIP_DIRECTIVE_ABOVE_FAILURES']
+            insert_skip_directive_above_failures = '--insert-skip-directive-above-failures' in sys.argv
+            insert_skip_directive_above_failures = 1
+            AFTER_ALL_HOOKS = []
+            if insert_skip_directive_above_failures:
+                AFTER_ALL_HOOKS.append(_auto_disable_failing_tests_hook)
+            for hook in AFTER_ALL_HOOKS:
+                context = {
+                    'enabled_example': enabled_examples,
+                    'run_summary': run_summary,
+                }
+                hook(context)
+
+            print("AFTER HOOKS SUMMARY")
+
     return run_summary
+
+
+def _auto_disable_failing_tests_hook(context):
+    run_summary = context['run_summary']
+    failing_examples = run_summary['failed']
+    from collections import defaultdict
+    path_to_failed_linos = defaultdict(list)
+    for example in failing_examples:
+        # We could disable at the point of failure, or at the start of the test
+        # Lets do the failing one. That makes it more clear what to fix.
+        failed_line_number = example.failed_lineno()
+        # start_line_number = example.lineno
+        path_to_failed_linos[example.fpath].append(failed_line_number)
+
+    for fpath, skip_linenos in path_to_failed_linos.items():
+        print(f'modifying fpath={fpath}')
+        with open(fpath, 'r') as file:
+            lines = file.readlines()
+        # Insert the lines in reverse order
+        for lineno in sorted(skip_linenos)[::-1]:
+            line_idx = lineno - 1
+            failed_line = lines[line_idx]
+            num_indent_chars = len(failed_line) - len(failed_line.lstrip())
+            indent = failed_line[:num_indent_chars]
+            endl = '\n'  # is there a case we use a different line end?
+            new_line = ''.join([indent, '>>> # xdoctest: +SKIP', endl])
+            # Dont insert the same line twice, its failing for some othe reason
+            # Probably a pre-import
+            if failed_line != new_line:
+                lines.insert(line_idx, new_line)
+        with open(fpath, 'w') as file:
+            file.write(''.join(lines))
 
 
 def _convert_to_test_module(enabled_examples):

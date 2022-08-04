@@ -550,6 +550,7 @@ class DocTest(object):
                     ]
                     msg_parts.append(str(ex))
                     new_exc = RuntimeError('\n'.join(msg_parts))
+                    raise
                     # new_exc = ex
                     # Remove traceback before this line
                     new_exc.__traceback__ = None
