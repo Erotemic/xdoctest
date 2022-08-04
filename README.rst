@@ -1,4 +1,4 @@
-|GithubActions| |CircleCI| |Appveyor| |Codecov| |Pypi| |Downloads| |ReadTheDocs|
+|GithubActions| |CircleCI| |Appveyor| |Codecov| |Pypi| |PypiDownloads| |CondaDownloads| |ReadTheDocs|
 
 
 .. The large version wont work because github strips rst image rescaling. 
@@ -496,8 +496,10 @@ screen are lots more examples of what you can do with doctests.
    :target: https://codecov.io/github/Erotemic/xdoctest?branch=main
 .. |Pypi| image:: https://img.shields.io/pypi/v/xdoctest.svg
    :target: https://pypi.python.org/pypi/xdoctest
-.. |Downloads| image:: https://img.shields.io/pypi/dm/xdoctest.svg
+.. |PypiDownloads| image:: https://img.shields.io/pypi/dm/xdoctest.svg
    :target: https://pypistats.org/packages/xdoctest
+.. |CondaDownloads| image:: https://anaconda.org/conda-forge/xdoctest/badges/downloads.svg
+   :target: https://anaconda.org/conda-forge/xdoctest
 .. |ReadTheDocs| image:: https://readthedocs.org/projects/xdoctest/badge/?version=latest
     :target: https://xdoctest.readthedocs.io
 .. |GithubActions| image:: https://github.com/Erotemic/xdoctest/actions/workflows/tests.yml/badge.svg?branch=main
