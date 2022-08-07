@@ -317,12 +317,12 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
                                       enabled_examples, durations,
                                       config=config, _log=_log)
 
-            print("AFTER PRINT SUMMARY")
-
             # Hidden experimental feature
-            # os.environ['INSERT_SKIP_DIRECTIVE_ABOVE_FAILURES']
-            insert_skip_directive_above_failures = '--insert-skip-directive-above-failures' in sys.argv
-            insert_skip_directive_above_failures = 1
+            import os
+            insert_skip_directive_above_failures = (
+                os.environ.get('XDOCTEST_INSERT_SKIP_DIRECTIVE_ABOVE_FAILURES') or
+                '--insert-skip-directive-above-failures' in sys.argv
+            )
             AFTER_ALL_HOOKS = []
             if insert_skip_directive_above_failures:
                 AFTER_ALL_HOOKS.append(_auto_disable_failing_tests_hook)
@@ -332,8 +332,6 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
                     'run_summary': run_summary,
                 }
                 hook(context)
-
-            print("AFTER HOOKS SUMMARY")
 
     return run_summary
 
@@ -622,6 +620,7 @@ def _parse_commandline(command=None, style='auto', verbose=None, argv=None):
 
 
 def _update_argparse_cli(add_argument, prefix=None):
+    import os
     add_argument(*('-m', '--modname'), type=str,
                  help='Module name or path. If specified positional modules are ignored',
                  default=None)
@@ -637,11 +636,13 @@ def _update_argparse_cli(add_argument, prefix=None):
 
     add_argument(*('--style',), type=str,
                  help='Choose the style of doctests that will be parsed',
-                 choices=['auto', 'google', 'freeform'], default='auto')
+                 choices=['auto', 'google', 'freeform'],
+                 default=os.environ.get('XDOCTEST_STYLE', 'auto'))
 
     add_argument(*('--analysis',), type=str,
                  help='How doctests are collected',
-                 choices=['auto', 'static', 'dynamic'], default='auto')
+                 choices=['auto', 'static', 'dynamic'],
+                 default=os.environ.get('XDOCTEST_ANALYSIS', 'auto'))
 
     add_argument(*('--durations',), type=int,
                  help=('Specify execution times for slowest N tests.'
@@ -662,7 +663,14 @@ def _update_argparse_cli(add_argument, prefix=None):
     if prefix is None:
         prefix = ['']
 
+    environ_aware = {'style', 'analysis'}
     for alias, kw in add_argument_kws:
+        # Use environment variables for some defaults
+        argname = alias[0].lstrip('-')
+        if argname in environ_aware:
+            env_argname = 'XDOCTEST_' + argname.replace('-', '_').upper()
+            if 'default' in kw:
+                kw['default'] = os.environ.get(env_argname, kw['default'])
         alias = [
             a.replace('--', '--' + p + '-') if p else a
             for a in alias for p in prefix

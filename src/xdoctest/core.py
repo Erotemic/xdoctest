@@ -378,6 +378,7 @@ def parse_docstr_examples(docstr, callname=None, modpath=None, lineno=1,
         parser = parse_google_docstr_examples
     elif style == 'auto':
         parser = parse_auto_docstr_examples
+    # TODO: epdoc
     # TODO:
     # elif style == 'numpy':
     #     parser = parse_numpy_docstr_examples

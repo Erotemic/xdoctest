@@ -722,6 +722,20 @@ def test_gh_issue_25_parsing_failure():
     assert len(parts) == 1
 
 
+def test_parser_with_type_annot():
+    string = utils.codeblock(
+        '''
+        >>> def foo(x: str) -> None:
+        >>>     ...
+        ''')
+    source_lines = string.splitlines()
+    self = parser.DoctestParser()
+    ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
+    assert ps1_linenos ==  [0, 1, 2, 11, 12]
+    parts = self.parse(string)
+    assert len(parts) == 1
+
+
 if __name__ == '__main__':
     """
     CommandLine:

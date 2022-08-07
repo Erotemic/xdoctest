@@ -56,6 +56,11 @@ class DoctestConfig(dict):
         if directive_optstr:
             for optpart in directive_optstr.split(','):
                 directive = parse_directive_optstr(optpart)
+                if directive is None:
+                    raise Exception(
+                        'Failed to parse directive given in the xdoctest "options"'
+                        'directive_optstr={!r}'.format(directive_optstr)
+                    )
                 default_runtime_state[directive.name] = directive.positive
         _examp_conf = {
             'default_runtime_state': default_runtime_state,
@@ -119,7 +124,18 @@ class DoctestConfig(dict):
         if prefix is None:
             prefix = ['']
 
+        # TODO: make environment variables as args more general
+        import os
+        environ_aware = {'report', 'options', 'global-exec', 'verbose'}
         for alias, kw in add_argument_kws:
+
+            # Use environment variables for some defaults
+            argname = alias[0].lstrip('-')
+            if argname in environ_aware:
+                env_argname = 'XDOCTEST_' + argname.replace('-', '_').upper()
+                if 'default' in kw:
+                    kw['default'] = os.environ.get(env_argname, kw['default'])
+
             alias = [
                 a.replace('--', '--' + p + '-') if p else a
                 for a in alias for p in prefix
@@ -178,6 +194,7 @@ class DocTest(object):
         mode (str):
             Hint at what created / is running this doctest. This impacts
             how results are presented and what doctests are skipped.
+            Can be "native" or "pytest". Defaults to "pytest".
 
     CommandLine:
         xdoctest -m xdoctest.doctest_example DocTest

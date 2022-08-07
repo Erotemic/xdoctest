@@ -73,6 +73,17 @@ TODO
 - [ ] Directive for Python version: e.g. xdoctest: +REQUIRES(Python>=3.7)
 - [ ] Directive for module version: e.g. xdoctest: +REQUIRES(module:rich>=1.0)
 
+- [ ] Customize directive.
+
+Customized Requirements Design:
+
+    * Allow user to specify a customized requirement on the CLI or environ.
+      e.g. XDOCTEST_CUSTOM_MY_REQUIRE="import torch; torch.cuda.is_available()"
+
+      Then xdoctest: +REQUIRES(custom:MY_REQUIRE) would invoke it and
+      enable the missing requirement if that snippet ended with a truthy or
+      falsy value
+
 
 CommandLine:
     python -m xdoctest.directive __doc__
@@ -88,7 +99,7 @@ Example:
     >>> print('This line will print: (B)')
     >>> # However, if a directive appears on its own line, then it applies
     >>> # too all subsequent lines.
-    >>> # xdoctest: +SKIP
+    >>> # xdoctest: +SKIP()
     >>> raise AssertionError('this will not be run (b)')
     >>> print('This line will not print: (A)')
     >>> # Note, that SKIP is simply a state and can be disabled to allow
@@ -97,11 +108,11 @@ Example:
     >>> print('This line will print: (C)')
     >>> print('This line will print: (D)')
     >>> # This applies to inline directives as well
-    >>> # xdoctest: +SKIP
+    >>> # xdoctest: +SKIP("an assertion would occur")
     >>> raise AssertionError('this will not be run (c)')
     >>> print('This line will print: (E)')  # xdoctest: -SKIP
     >>> raise AssertionError('this will not be run (d)')
-    >>> # xdoctest: -SKIP
+    >>> # xdoctest: -SKIP("a reason can be given as an argument")
     >>> print('This line will print: (F)')
 
 This next examples illustrates how to use the advanced ``+REQUIRES()``
