@@ -44,6 +44,7 @@ class DoctestConfig(dict):
             'default_runtime_state': {},
             'offset_linenos': False,
             'global_exec': None,
+            'supress_import_errors': False,
             'on_error': 'raise',
             'partnos': False,
             'verbose': 1,
@@ -68,6 +69,7 @@ class DoctestConfig(dict):
             'colored': ns['colored'],
             'reportchoice': ns['reportchoice'],
             'global_exec': ns['global_exec'],
+            'supress_import_errors': ns['supress_import_errors'],
             'verbose': ns['verbose'],
         }
         return _examp_conf
@@ -105,6 +107,9 @@ class DoctestConfig(dict):
                                  help='Default directive flags for doctests')),
             (['--global-exec'], dict(type=str, default=None, dest='global_exec',
                                      help='Custom Python code to execute before every test')),
+            (['--supress-import-errors'], dict(dest='supress_import_errors', action='store_true',
+                                               default=self['supress_import_errors'],
+                                               help='Removes tracebacks from errors in implicit imports')),
             (['--verbose'], dict(
                 type=int, default=defaults.get('verbose', 3), dest='verbose',
                 help=(
@@ -567,14 +572,16 @@ class DocTest(object):
                     ]
                     msg_parts.append(str(ex))
                     new_exc = RuntimeError('\n'.join(msg_parts))
-                    raise
-                    # new_exc = ex
-                    # Remove traceback before this line
-                    new_exc.__traceback__ = None
-                    # Backwards syntax compatible raise exc from None
-                    # https://www.python.org/dev/peps/pep-3134/#explicit-exception-chaining
-                    new_exc.__cause__ = None
-                    raise new_exc
+                    if not self.config['supress_import_errors']:
+                        raise
+                    else:
+                        # new_exc = ex
+                        # Remove traceback before this line
+                        new_exc.__traceback__ = None
+                        # Backwards syntax compatible raise exc from None
+                        # https://www.python.org/dev/peps/pep-3134/#explicit-exception-chaining
+                        new_exc.__cause__ = None
+                        raise new_exc
 
     @staticmethod
     def _extract_future_flags(namespace):

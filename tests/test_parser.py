@@ -731,7 +731,7 @@ def test_parser_with_type_annot():
     source_lines = string.splitlines()
     self = parser.DoctestParser()
     ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
-    assert ps1_linenos ==  [0, 1, 2, 11, 12]
+    assert ps1_linenos ==  [0]
     parts = self.parse(string)
     assert len(parts) == 1
 

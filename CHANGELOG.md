@@ -17,8 +17,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Added experimental hidden feature `--insert-skip-directive-above-failures`
   that can be used to modify your code such that failing doctests are marked as
   skip.
-* Disabled traceback suppression on module import errors (this might become
-  configurable). 
+* Disabled traceback suppression on module import errors (this is is
+  configurable via the "supress_import_errors" option).
 
 
 
