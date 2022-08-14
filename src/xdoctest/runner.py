@@ -141,7 +141,9 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
             ignores any modname matching any of these glob-like patterns
 
         config (Dict[str, object]):
-            modifies each examples configuration
+            modifies each examples configuration. Defaults and
+            expected keys are documented in
+            :class:`xdoctest.doctest_example.DoctestConfig`
 
         durations (int | None): if specified report top N slowest tests
 
@@ -612,6 +614,7 @@ def _parse_commandline(command=None, style='auto', verbose=None, argv=None):
                 command = argv[0]
 
     # Change how docstrs are found
+    # TODO: Undocumented flags. Either document in argparse or remove.
     if '--freeform' in argv:
         style = 'freeform'
     elif '--google' in argv:
