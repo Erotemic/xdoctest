@@ -362,7 +362,7 @@ def _auto_disable_failing_tests_hook(context):
         path_to_failed_linos[example.fpath].append(insert_line_number)
 
     for fpath, skip_linenos in path_to_failed_linos.items():
-        print(f'modifying fpath={fpath}')
+        print('modifying fpath={}'.format(fpath))
         with open(fpath, 'r') as file:
             lines = file.readlines()
         # Insert the lines in reverse order
