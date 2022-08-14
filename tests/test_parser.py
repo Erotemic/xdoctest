@@ -723,6 +723,10 @@ def test_gh_issue_25_parsing_failure():
 
 
 def test_parser_with_type_annot():
+    import six
+    if six.PY2:
+        pytest.skip('no type annot in py2')
+
     string = utils.codeblock(
         '''
         >>> def foo(x: str) -> None:
