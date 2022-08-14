@@ -337,16 +337,27 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
 
 
 def _auto_disable_failing_tests_hook(context):
+    """
+    Experimental feature to modify code based on failing tests.
+    This should likely be moved to its own submodule.
+    """
+    from collections import defaultdict
     run_summary = context['run_summary']
     failing_examples = run_summary['failed']
-    from collections import defaultdict
     path_to_failed_linos = defaultdict(list)
     for example in failing_examples:
-        # We could disable at the point of failure, or at the start of the test
-        # Lets do the failing one. That makes it more clear what to fix.
+        # We could disable at the point of failure, or at the start of the
+        # test. While I'm tempted to use the failing one, as it makes it more
+        # clear what to fix, that introduces potential incompatibility with
+        # got/want style errors, so let's default to the first line.
+        WHERE_INSERT = 'start-of-doctest'
         failed_line_number = example.failed_lineno()
-        # start_line_number = example.lineno
-        path_to_failed_linos[example.fpath].append(failed_line_number)
+        start_line_number = example.lineno
+        if WHERE_INSERT == 'start-of-doctest':
+            insert_line_number = start_line_number
+        elif WHERE_INSERT == 'failing-location':
+            insert_line_number = failed_line_number
+        path_to_failed_linos[example.fpath].append(insert_line_number)
 
     for fpath, skip_linenos in path_to_failed_linos.items():
         print(f'modifying fpath={fpath}')
