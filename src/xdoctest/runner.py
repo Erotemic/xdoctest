@@ -141,7 +141,9 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
             ignores any modname matching any of these glob-like patterns
 
         config (Dict[str, object]):
-            modifies each examples configuration
+            modifies each examples configuration. Defaults and
+            expected keys are documented in
+            :class:`xdoctest.doctest_example.DoctestConfig`
 
         durations (int | None): if specified report top N slowest tests
 
@@ -308,13 +310,75 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
             toc = time.time()
             n_seconds = toc - tic
 
+            #### TODO: callback and plugin system.
+            # Can probably reuse some other library for this.
+
             # Print final summary info in a style similar to pytest
             if verbose >= 0 and run_summary:
                 _print_summary_report(run_summary, parse_warnlist, n_seconds,
                                       enabled_examples, durations,
                                       config=config, _log=_log)
 
+            # Hidden experimental feature
+            import os
+            insert_skip_directive_above_failures = (
+                os.environ.get('XDOCTEST_INSERT_SKIP_DIRECTIVE_ABOVE_FAILURES') or
+                '--insert-skip-directive-above-failures' in sys.argv
+            )
+            AFTER_ALL_HOOKS = []
+            if insert_skip_directive_above_failures:
+                AFTER_ALL_HOOKS.append(_auto_disable_failing_tests_hook)
+            for hook in AFTER_ALL_HOOKS:
+                context = {
+                    'enabled_example': enabled_examples,
+                    'run_summary': run_summary,
+                }
+                hook(context)
+
     return run_summary
+
+
+def _auto_disable_failing_tests_hook(context):
+    """
+    Experimental feature to modify code based on failing tests.
+    This should likely be moved to its own submodule.
+    """
+    from collections import defaultdict
+    run_summary = context['run_summary']
+    failing_examples = run_summary['failed']
+    path_to_failed_linos = defaultdict(list)
+    for example in failing_examples:
+        # We could disable at the point of failure, or at the start of the
+        # test. While I'm tempted to use the failing one, as it makes it more
+        # clear what to fix, that introduces potential incompatibility with
+        # got/want style errors, so let's default to the first line.
+        WHERE_INSERT = 'start-of-doctest'
+        failed_line_number = example.failed_lineno()
+        start_line_number = example.lineno
+        if WHERE_INSERT == 'start-of-doctest':
+            insert_line_number = start_line_number
+        elif WHERE_INSERT == 'failing-location':
+            insert_line_number = failed_line_number
+        path_to_failed_linos[example.fpath].append(insert_line_number)
+
+    for fpath, skip_linenos in path_to_failed_linos.items():
+        print('modifying fpath={}'.format(fpath))
+        with open(fpath, 'r') as file:
+            lines = file.readlines()
+        # Insert the lines in reverse order
+        for lineno in sorted(skip_linenos)[::-1]:
+            line_idx = lineno - 1
+            failed_line = lines[line_idx]
+            num_indent_chars = len(failed_line) - len(failed_line.lstrip())
+            indent = failed_line[:num_indent_chars]
+            endl = '\n'  # is there a case we use a different line end?
+            new_line = ''.join([indent, '>>> # xdoctest: +SKIP', endl])
+            # Dont insert the same line twice, its failing for some othe reason
+            # Probably a pre-import
+            if failed_line != new_line:
+                lines.insert(line_idx, new_line)
+        with open(fpath, 'w') as file:
+            file.write(''.join(lines))
 
 
 def _convert_to_test_module(enabled_examples):
@@ -550,6 +614,7 @@ def _parse_commandline(command=None, style='auto', verbose=None, argv=None):
                 command = argv[0]
 
     # Change how docstrs are found
+    # TODO: Undocumented flags. Either document in argparse or remove.
     if '--freeform' in argv:
         style = 'freeform'
     elif '--google' in argv:
@@ -569,6 +634,7 @@ def _parse_commandline(command=None, style='auto', verbose=None, argv=None):
 
 
 def _update_argparse_cli(add_argument, prefix=None):
+    import os
     add_argument(*('-m', '--modname'), type=str,
                  help='Module name or path. If specified positional modules are ignored',
                  default=None)
@@ -584,11 +650,13 @@ def _update_argparse_cli(add_argument, prefix=None):
 
     add_argument(*('--style',), type=str,
                  help='Choose the style of doctests that will be parsed',
-                 choices=['auto', 'google', 'freeform'], default='auto')
+                 choices=['auto', 'google', 'freeform'],
+                 default=os.environ.get('XDOCTEST_STYLE', 'auto'))
 
     add_argument(*('--analysis',), type=str,
                  help='How doctests are collected',
-                 choices=['auto', 'static', 'dynamic'], default='auto')
+                 choices=['auto', 'static', 'dynamic'],
+                 default=os.environ.get('XDOCTEST_ANALYSIS', 'auto'))
 
     add_argument(*('--durations',), type=int,
                  help=('Specify execution times for slowest N tests.'
@@ -609,7 +677,14 @@ def _update_argparse_cli(add_argument, prefix=None):
     if prefix is None:
         prefix = ['']
 
+    environ_aware = {'style', 'analysis'}
     for alias, kw in add_argument_kws:
+        # Use environment variables for some defaults
+        argname = alias[0].lstrip('-')
+        if argname in environ_aware:
+            env_argname = 'XDOCTEST_' + argname.replace('-', '_').upper()
+            if 'default' in kw:
+                kw['default'] = os.environ.get(env_argname, kw['default'])
         alias = [
             a.replace('--', '--' + p + '-') if p else a
             for a in alias for p in prefix

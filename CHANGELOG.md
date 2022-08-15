@@ -4,7 +4,25 @@ We are currently working on porting this changelog to the specifications in
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Version 1.0.1 - Unreleased
+## Version 1.0.2 - Unreleased
+
+
+### Added
+* Environs as options: 
+  `XDOCTEST_VERBOSE`, `XDOCTEST_OPTIONS`, `XDOCTEST_GLOBAL_EXEC`, `XDOCTEST_REPORT`,
+  `XDOCTEST_STYLE`, and `XDOCTEST_ANALYSIS` environment variables can now be used
+  to specify configuration defaults.
+
+### Changed
+* Added experimental hidden feature `--insert-skip-directive-above-failures`
+  that can be used to modify your code such that failing doctests are marked as
+  skip.
+* Disabled traceback suppression on module import errors (this is is
+  configurable via the "supress_import_errors" option).
+
+
+
+## Version 1.0.1 - Released 2022-07-10
 
 ### Added
 * Add type stubs

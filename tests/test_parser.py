@@ -722,6 +722,24 @@ def test_gh_issue_25_parsing_failure():
     assert len(parts) == 1
 
 
+def test_parser_with_type_annot():
+    import six
+    if six.PY2:
+        pytest.skip('no type annot in py2')
+
+    string = utils.codeblock(
+        '''
+        >>> def foo(x: str) -> None:
+        >>>     ...
+        ''')
+    source_lines = string.splitlines()
+    self = parser.DoctestParser()
+    ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
+    assert ps1_linenos ==  [0]
+    parts = self.parse(string)
+    assert len(parts) == 1
+
+
 if __name__ == '__main__':
     """
     CommandLine:

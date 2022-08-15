@@ -199,11 +199,10 @@ class DoctestPart(object):
                 got_stdout from this doctest part.
 
         Returns:
-            None
+            None:
 
         Raises:
-            xdoctest.checker.GotWantException - If the "got" differs from this
-                parts want.
+            xdoctest.checker.GotWantException - If the "got" differs from this parts want.
 
         Example:
             >>> # xdoctest: +REQUIRES(module:pytest)
@@ -264,7 +263,7 @@ class DoctestPart(object):
             prefix (bool): if False, exclude the doctest ``>>> `` prefix
 
         Returns:
-            str
+            str:
 
         CommandLine:
             python -m xdoctest.doctest_part DoctestPart.format_part:0

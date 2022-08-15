@@ -5,10 +5,17 @@ Handles parsing of information out of google style docstrings
 It is not clear which of these `GoogleStyleDocs1`_ `GoogleStyleDocs2`_ is *the*
 standard or if there is one.
 
-This may be moved to a standalone package similar to:
+This code has been exported to a standalone package
+
+    * https://github.com/Erotemic/googledoc
+
+This is similar to:
 
     * https://pypi.org/project/docstring-parser/
     * https://pypi.org/project/numpydoc/
+
+It hasn't been decided if this will remain vendored in xdoctest or pulled in as
+a dependency.
 
 References:
     .. [GoogleStyleDocs1] https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google

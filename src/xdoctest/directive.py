@@ -73,6 +73,17 @@ TODO
 - [ ] Directive for Python version: e.g. xdoctest: +REQUIRES(Python>=3.7)
 - [ ] Directive for module version: e.g. xdoctest: +REQUIRES(module:rich>=1.0)
 
+- [ ] Customize directive.
+
+Customized Requirements Design:
+
+    * Allow user to specify a customized requirement on the CLI or environ.
+      e.g. XDOCTEST_CUSTOM_MY_REQUIRE="import torch; torch.cuda.is_available()"
+
+      Then xdoctest: +REQUIRES(custom:MY_REQUIRE) would invoke it and
+      enable the missing requirement if that snippet ended with a truthy or
+      falsy value
+
 
 CommandLine:
     python -m xdoctest.directive __doc__
@@ -88,7 +99,7 @@ Example:
     >>> print('This line will print: (B)')
     >>> # However, if a directive appears on its own line, then it applies
     >>> # too all subsequent lines.
-    >>> # xdoctest: +SKIP
+    >>> # xdoctest: +SKIP()
     >>> raise AssertionError('this will not be run (b)')
     >>> print('This line will not print: (A)')
     >>> # Note, that SKIP is simply a state and can be disabled to allow
@@ -97,11 +108,11 @@ Example:
     >>> print('This line will print: (C)')
     >>> print('This line will print: (D)')
     >>> # This applies to inline directives as well
-    >>> # xdoctest: +SKIP
+    >>> # xdoctest: +SKIP("an assertion would occur")
     >>> raise AssertionError('this will not be run (c)')
     >>> print('This line will print: (E)')  # xdoctest: -SKIP
     >>> raise AssertionError('this will not be run (d)')
-    >>> # xdoctest: -SKIP
+    >>> # xdoctest: -SKIP("a reason can be given as an argument")
     >>> print('This line will print: (F)')
 
 This next examples illustrates how to use the advanced ``+REQUIRES()``
@@ -109,21 +120,26 @@ directive. Note, the REQUIRES and SKIP states are independent.
 
 Example:
     >>> import sys
+    >>> plat = sys.platform
     >>> count = 0
     >>> # xdoctest: +REQUIRES(WIN32)
-    >>> assert sys.platform.startswith('win32')
+    >>> assert plat.startswith('win32'), 'this only runs on windows'
     >>> count += 1
     >>> # xdoctest: -REQUIRES(WIN32)
     >>> # xdoctest: +REQUIRES(LINUX)
-    >>> assert sys.platform.startswith('linux')
+    >>> assert plat.startswith('linux'), 'this only runs on linux'
     >>> count += 1
     >>> # xdoctest: -REQUIRES(LINUX)
     >>> # xdoctest: +REQUIRES(DARWIN)
-    >>> assert sys.platform.startswith('darwin')
+    >>> assert plat.startswith('darwin'), 'this only runs on osx'
     >>> count += 1
     >>> # xdoctest: -REQUIRES(DARWIN)
     >>> print(count)
-    >>> assert count == 1, 'Exactly one of the above parts should have run'
+    >>> import sys
+    >>> if any(plat.startswith(n) for n in {'linux', 'win32', 'darwin'}):
+    >>>     assert count == 1, 'Exactly one of the above parts should have run'
+    >>> else:
+    >>>     assert count == 0, 'Nothing should have run on plat={}'.format(plat)
     >>> # xdoctest: +REQUIRES(--verbose)
     >>> print('This is only printed if you run with --verbose')
 
@@ -694,7 +710,8 @@ def _is_requires_satisfied(arg, argv=None, environ=None):
         >>>     _is_requires_satisfied('env:BAR>=1', argv=[], environ={'BAR': '0'})
     """
     # TODO: add python version options
-    SYS_PLATFORM_TAGS = ['win32', 'linux', 'darwin', 'cywgin']
+    # https://docs.python.org/3/library/sys.html#sys.platform
+    SYS_PLATFORM_TAGS = ['win32', 'linux', 'darwin', 'cywgin', 'aix', 'freebsd']
     OS_NAME_TAGS = ['posix', 'nt', 'java']
     PY_IMPL_TAGS = ['cpython', 'ironpython', 'jython', 'pypy']
     # TODO: tox tags: https://tox.readthedocs.io/en/latest/example/basic.html

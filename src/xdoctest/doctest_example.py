@@ -44,6 +44,7 @@ class DoctestConfig(dict):
             'default_runtime_state': {},
             'offset_linenos': False,
             'global_exec': None,
+            'supress_import_errors': False,
             'on_error': 'raise',
             'partnos': False,
             'verbose': 1,
@@ -56,6 +57,11 @@ class DoctestConfig(dict):
         if directive_optstr:
             for optpart in directive_optstr.split(','):
                 directive = parse_directive_optstr(optpart)
+                if directive is None:
+                    raise Exception(
+                        'Failed to parse directive given in the xdoctest "options"'
+                        'directive_optstr={!r}'.format(directive_optstr)
+                    )
                 default_runtime_state[directive.name] = directive.positive
         _examp_conf = {
             'default_runtime_state': default_runtime_state,
@@ -63,6 +69,7 @@ class DoctestConfig(dict):
             'colored': ns['colored'],
             'reportchoice': ns['reportchoice'],
             'global_exec': ns['global_exec'],
+            'supress_import_errors': ns['supress_import_errors'],
             'verbose': ns['verbose'],
         }
         return _examp_conf
@@ -100,6 +107,9 @@ class DoctestConfig(dict):
                                  help='Default directive flags for doctests')),
             (['--global-exec'], dict(type=str, default=None, dest='global_exec',
                                      help='Custom Python code to execute before every test')),
+            (['--supress-import-errors'], dict(dest='supress_import_errors', action='store_true',
+                                               default=self['supress_import_errors'],
+                                               help='Removes tracebacks from errors in implicit imports')),
             (['--verbose'], dict(
                 type=int, default=defaults.get('verbose', 3), dest='verbose',
                 help=(
@@ -119,7 +129,18 @@ class DoctestConfig(dict):
         if prefix is None:
             prefix = ['']
 
+        # TODO: make environment variables as args more general
+        import os
+        environ_aware = {'report', 'options', 'global-exec', 'verbose'}
         for alias, kw in add_argument_kws:
+
+            # Use environment variables for some defaults
+            argname = alias[0].lstrip('-')
+            if argname in environ_aware:
+                env_argname = 'XDOCTEST_' + argname.replace('-', '_').upper()
+                if 'default' in kw:
+                    kw['default'] = os.environ.get(env_argname, kw['default'])
+
             alias = [
                 a.replace('--', '--' + p + '-') if p else a
                 for a in alias for p in prefix
@@ -178,6 +199,7 @@ class DocTest(object):
         mode (str):
             Hint at what created / is running this doctest. This impacts
             how results are presented and what doctests are skipped.
+            Can be "native" or "pytest". Defaults to "pytest".
 
     CommandLine:
         xdoctest -m xdoctest.doctest_example DocTest
@@ -550,13 +572,16 @@ class DocTest(object):
                     ]
                     msg_parts.append(str(ex))
                     new_exc = RuntimeError('\n'.join(msg_parts))
-                    # new_exc = ex
-                    # Remove traceback before this line
-                    new_exc.__traceback__ = None
-                    # Backwards syntax compatible raise exc from None
-                    # https://www.python.org/dev/peps/pep-3134/#explicit-exception-chaining
-                    new_exc.__cause__ = None
-                    raise new_exc
+                    if not self.config['supress_import_errors']:
+                        raise
+                    else:
+                        # new_exc = ex
+                        # Remove traceback before this line
+                        new_exc.__traceback__ = None
+                        # Backwards syntax compatible raise exc from None
+                        # https://www.python.org/dev/peps/pep-3134/#explicit-exception-chaining
+                        new_exc.__cause__ = None
+                        raise new_exc
 
     @staticmethod
     def _extract_future_flags(namespace):
@@ -579,7 +604,31 @@ class DocTest(object):
         if self.module is None:
             compileflags = 0
         else:
+            # Its unclear what the side effects of populating globals with
+            # __name__, __package__, etc are. They do cause differences.
+            # between that and IPython code. Probably regular code too.
+
+            # https://stackoverflow.com/questions/32175693/python-importlibs-analogue-for-imp-new-module
+            # https://stackoverflow.com/questions/31191947/pickle-and-exec-in-python
+            # import types
+            # dummy_name = self.module.__name__ + '_xdoctest_sandbox'
+            # if dummy_name in sys.modules:
+            #     dummy_mod = sys.modules[dummy_name]
+            # else:
+            # dummy_mod = types.ModuleType(dummy_name)
+            # sys.modules[dummy_name] = dummy_mod
+
             test_globals.update(self.module.__dict__)
+            # test_globals.update(dummy_mod.__dict__)
+            # importable_attrs = {
+            #     k: v for k, v in self.module.__dict__.items()
+            #     if not k.startswith('__')
+            # }
+            # test_globals.update(importable_attrs)
+            # test_globals['__name__'] = self.module.__name__ + '.doctest'
+            # test_globals['__name__'] = '__main__'
+            # test_globals['__file__'] = None
+            # test_globals['__package__'] = None
             compileflags = self._extract_future_flags(test_globals)
         # force print function and division futures
         compileflags |= __future__.print_function.compiler_flag
