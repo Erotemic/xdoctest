@@ -19,7 +19,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   skip.
 * Disabled traceback suppression on module import errors (this is is
   configurable via the "supress_import_errors" option).
-
+* Xdoctest will no longer try to pre-import the module if none of its doctests
+  have any enabled lines. This also means global-exec statements will NOT run 
+  for those tests, which means you can no longer use global-exec to
+  force enabling tests.
 
 
 ## Version 1.0.1 - Released 2022-07-10

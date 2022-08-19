@@ -677,29 +677,9 @@ class DocTest(object):
         # setup reporting choice
         runstate.set_report_style(self.config['reportchoice'].lower())
 
-        try:
-            self._import_module()
-        except Exception:
-            self.failed_part = '<IMPORT>'
-            self._partfilename = '<doctest:' + self.node + ':pre_import>'
-            self.exc_info = sys.exc_info()
-            if on_error == 'raise':
-                raise
-            else:
-                summary = self._post_run(verbose)
-                return summary
-
-        test_globals, compileflags = self._test_globals()
-        global_exec = self.config.getvalue('global_exec')
-        if global_exec:
-            # Hack to make it easier to specify multi-line input on the CLI
-            global_source = utils.codeblock(global_exec.replace('\\n', '\n'))
-            global_code = compile(
-                global_source, mode='exec',
-                filename='<doctest:' + self.node + ':' + 'global_exec>',
-                flags=compileflags, dont_inherit=True
-            )
-            exec(global_code, test_globals)
+        # Defer the execution of the pre-import until we know at least one part
+        # in the doctest will run.
+        did_pre_import = False
 
         # Can't do this because we can't force execution of SCRIPTS
         # if self.is_disabled():
@@ -743,6 +723,35 @@ class DocTest(object):
                 if not part.has_any_code():
                     self._skipped_parts.append(part)
                     continue
+
+                if not did_pre_import:
+                    # Execute the pre-import before the first run of
+                    # non-skipped code.
+                    try:
+                        self._import_module()
+                    except Exception:
+                        self.failed_part = '<IMPORT>'
+                        self._partfilename = '<doctest:' + self.node + ':pre_import>'
+                        self.exc_info = sys.exc_info()
+                        if on_error == 'raise':
+                            raise
+                        else:
+                            summary = self._post_run(verbose)
+                            return summary
+
+                    test_globals, compileflags = self._test_globals()
+                    global_exec = self.config.getvalue('global_exec')
+                    if global_exec:
+                        # Hack to make it easier to specify multi-line input on the CLI
+                        global_source = utils.codeblock(global_exec.replace('\\n', '\n'))
+                        global_code = compile(
+                            global_source, mode='exec',
+                            filename='<doctest:' + self.node + ':' + 'global_exec>',
+                            flags=compileflags, dont_inherit=True
+                        )
+                        exec(global_code, test_globals)
+
+                    did_pre_import = True
 
                 try:
                     # Compile code, handle syntax errors

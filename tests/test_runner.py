@@ -427,7 +427,9 @@ def test_hack_the_sys_argv():
     """
     Tests hacky solution to issue #76
 
-    pytest tests/test_runner.py::test_global_exec -s
+    NOTE: in version 1.0.2 this hack no longer works!
+
+    pytest tests/test_runner.py::test_hack_the_sys_argv -s
 
     References:
         https://github.com/Erotemic/xdoctest/issues/76
@@ -461,12 +463,13 @@ def test_hack_the_sys_argv():
         with utils.CaptureStdout() as cap:
             runner.doctest_module(modpath, 'foo', argv=[''], config=config)
 
-    if NEEDS_FIX:
+    if 0 and NEEDS_FIX:
         # Fix the global state
         sys.argv.remove('--hackedflag')
 
     # print(cap.text)
-    assert '1 passed' in cap.text
+    assert '1 skipped' in cap.text
+    # assert '1 passed' in cap.text
 
 
 if __name__ == '__main__':
