@@ -75,7 +75,6 @@ def _pkgutil_modname_to_modpath(modname):  # nocover
     mechanisms, but unfortunately it doesn't play nice with pytest.
 
     Example:
-        >>> # xdoctest: +SKIP
         >>> modname = 'xdoctest.static_analysis'
         >>> _pkgutil_modname_to_modpath(modname)
         ...static_analysis.py
@@ -412,14 +411,27 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
 
     Args:
         modname (str): name of module to find
-        sys_path (List[PathLike], default=None):
-            if specified overrides ``sys.path``
-        exclude (List[PathLike], default=None):
-            list of directory paths. if specified prevents these directories
-            from being searched.
+
+        sys_path (None | List[str | PathLike]):
+            The paths to search for the module.
+            If unspecified, defaults to ``sys.path``.
+
+        exclude (List[str | PathLike] | None):
+            If specified prevents these directories from being searched.
+            Defaults to None.
+
+    Returns:
+        str: path to the module.
 
     Note:
         This is much slower than the pkgutil mechanisms.
+
+        There seems to be a change to the editable install mechanism:
+        https://github.com/pypa/setuptools/issues/3548
+        Trying to find more docs about it.
+
+        TODO: add a test where we make an editable install, regular install,
+        standalone install, and check that we always find the right path.
 
     Example:
         >>> print(_syspath_modname_to_modpath('xdoctest.static_analysis'))
@@ -441,8 +453,9 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
         >>> exclude = [split_modpath(modpath)[0]]
         >>> found = _syspath_modname_to_modpath(modname, exclude=exclude)
         >>> # this only works if installed in dev mode, pypi fails
-        >>> # assert found is None, 'should not have found {}'.format(found)
+        >>> assert found is None, 'should not have found {} because we excluded'.format(found, exclude)
     """
+    import glob
 
     def _isvalid(modpath, base):
         # every directory up to the module, should have an init
@@ -496,15 +509,35 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
 
     _pkg_name = _fname_we.split(os.path.sep)[0]
 
+    _egglink_fname = _pkg_name + '.egg-link'
+    # _editable_fname_pth_pat = '__editable__.' + _pkg_name + '-*.pth'
+    _editable_fname_py_pat = '__editable___' + _pkg_name + '_*finder.py'
+
+    found_modpath = None
     for dpath in candidate_dpaths:
         modpath = check_dpath(dpath)
         if modpath:
-            return modpath
+            found_modpath = modpath
+            break
+
+        new_editable_paths = sorted(glob.glob(join(dpath, _editable_fname_py_pat)))
+        if new_editable_paths:
+            # This makes some assumptions, which may not hold in general
+            # We may need to fallback entirely on pkgutil, which would
+            # ultimately be good. Hopefully the new standards mean it does not
+            # break with pytest anymore?
+            finder_fpath = new_editable_paths[-1]
+            mapping = _static_parse('MAPPING', finder_fpath)
+            target = dirname(mapping[_pkg_name])
+            modpath = check_dpath(target)
+            if modpath:
+                found_modpath = modpath
+                break
 
         # If file path checks fails, check for egg-link based modules
         # (Python usually puts egg links into sys.path, but if the user is
         #  providing the path then it is important to check them explicitly)
-        linkpath = join(dpath, _pkg_name + '.egg-link')
+        linkpath = join(dpath, _egglink_fname)
         if isfile(linkpath):  # nocover
             # We exclude this from coverage because its difficult to write a
             # unit test where we can enforce that there is a module installed
@@ -518,7 +551,10 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
             if not exclude or normalize(target) not in real_exclude:
                 modpath = check_dpath(target)
                 if modpath:
-                    return modpath
+                    found_modpath = modpath
+                    break
+
+    return found_modpath
 
 
 def modname_to_modpath(modname, hide_init=True, hide_main=False, sys_path=None):
@@ -732,3 +768,62 @@ def split_modpath(modpath, check=True):
     relmod_parts = _relmod_parts[::-1]
     rel_modpath = os.path.sep.join(relmod_parts)
     return dpath, rel_modpath
+
+
+def _static_parse(varname, fpath):
+    """
+    Statically parse the a constant variable from a python file
+    """
+    import ast
+
+    if not exists(fpath):
+        raise ValueError('fpath={!r} does not exist'.format(fpath))
+    with open(fpath, 'r') as file_:
+        sourcecode = file_.read()
+    pt = ast.parse(sourcecode)
+
+    class StaticVisitor(ast.NodeVisitor):
+        def visit_Assign(self, node):
+            for target in node.targets:
+                if getattr(target, 'id', None) == varname:
+                    self.static_value = _parse_static_node_value(node.value)
+
+    visitor = StaticVisitor()
+    visitor.visit(pt)
+    try:
+        value = visitor.static_value
+    except AttributeError:
+        import warnings
+
+        value = 'Unknown {}'.format(varname)
+        warnings.warn(value)
+    return value
+
+
+def _parse_static_node_value(node):
+    """
+    Extract a constant value from a node if possible
+    """
+    import ast
+    from collections import OrderedDict
+    # TODO: ast.Constant for 3.8
+    if isinstance(node, ast.Num):
+        value = node.n
+    elif isinstance(node, ast.Str):
+        value = node.s
+    elif isinstance(node, ast.List):
+        value = list(map(_parse_static_node_value, node.elts))
+    elif isinstance(node, ast.Tuple):
+        value = tuple(map(_parse_static_node_value, node.elts))
+    elif isinstance(node, (ast.Dict)):
+        keys = map(_parse_static_node_value, node.keys)
+        values = map(_parse_static_node_value, node.values)
+        value = OrderedDict(zip(keys, values))
+        # value = dict(zip(keys, values))
+    elif isinstance(node, (ast.NameConstant)):
+        value = node.value
+    else:
+        print(node.__dict__)
+        raise TypeError('Cannot parse a static value from non-static node '
+                        'of type: {!r}'.format(type(node)))
+    return value
