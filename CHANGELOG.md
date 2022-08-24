@@ -9,6 +9,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Fixed
 * Can now handle basic versions of the new `__editable__` package finder mechanism.
 
+### Changed
+* Improved the "dump" functionality of converting doctests to unit tests.
+
 
 ## Version 1.0.2 - Released 2022-08-19
 

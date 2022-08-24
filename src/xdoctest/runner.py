@@ -387,9 +387,25 @@ def _convert_to_test_module(enabled_examples):
     """
     module_lines = []
     for example in enabled_examples:
+
         # Create a unit-testable function for this example
-        func_name = 'test_' + example.callname.replace('.', '_')
+        func_name = 'test_' + example.modname.replace('.', '_') + '_' + example.callname.replace('.', '_')
         body_lines = []
+
+        docstr_lines = [
+            '"""',
+            'converted from {}'.format(example.node),
+            '"""',
+        ]
+        header_lines = []
+
+        if example.config['global_exec'] is not None:
+            # It might also be a reasonable idea to put the global exec at the
+            # top, but this is more accurate to how it actually runs.
+            # hack for newlines, not sure why it is escaping them.
+            global_lines = example.config['global_exec'].split('\\n')
+            header_lines.extend([g + '  # NOQA' for g in global_lines])
+
         for part in example._parts:
             body_part = part.format_part(linenos=False, want=False,
                                          prefix=False, colored=False,
@@ -399,12 +415,70 @@ def _convert_to_test_module(enabled_examples):
                 want_text += utils.indent(part.want, '# ')
                 body_part += '\n' + want_text
             body_lines.append(body_part)
-        body = '\n'.join(body_lines)
+        if len(body_lines) == 0:
+            body_lines.append('...')
+
+        body = '\n'.join(docstr_lines + header_lines + body_lines)
+
+        undefined = sorted(undefined_names(body))
+        if undefined:
+            # Assume we can find them in the parent module
+            header_lines.append('from {} import {}'.format(example.modname, ', '.join(undefined)))
+            body = '\n'.join(docstr_lines + header_lines + body_lines)
+
+        # if '+SKIP' in body:
+        #     continue
+        # if '+REQUIRES' in body:
+        #     continue
         func_text = 'def {}():\n'.format(func_name) + utils.indent(body)
         module_lines.append(func_text)
 
     module_text = '\n\n\n'.join(module_lines)
     return module_text
+
+
+def undefined_names(sourcecode):
+    """
+    Parses source code for undefined names
+
+    Args:
+        sourcecode (str): code to check for unused names
+
+    Returns:
+        Set[str]: the unused variable names
+
+    Example:
+        >>> # xdoctest: +REQUIRES(module:pyflakes)
+        >>> print(ub.repr2(undefined_names('x = y'), nl=0))
+        {'y'}
+    """
+    import pyflakes.api
+    import pyflakes.reporter
+
+    class CaptureReporter(pyflakes.reporter.Reporter):
+        def __init__(reporter, warningStream, errorStream):
+            reporter.syntax_errors = []
+            reporter.messages = []
+            reporter.unexpected = []
+
+        def unexpectedError(reporter, filename, msg):
+            reporter.unexpected.append(msg)
+
+        def syntaxError(reporter, filename, msg, lineno, offset, text):
+            reporter.syntax_errors.append(msg)
+
+        def flake(reporter, message):
+            reporter.messages.append(message)
+
+    names = set()
+
+    reporter = CaptureReporter(None, None)
+    pyflakes.api.check(sourcecode, '_.py', reporter)
+    for msg in reporter.messages:
+        if msg.__class__.__name__.endswith('UndefinedName'):
+            assert len(msg.message_args) == 1
+            names.add(msg.message_args[0])
+    return names
 
 
 def _print_summary_report(run_summary, parse_warnlist, n_seconds,
