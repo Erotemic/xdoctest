@@ -420,11 +420,14 @@ def _convert_to_test_module(enabled_examples):
 
         body = '\n'.join(docstr_lines + header_lines + body_lines)
 
-        undefined = sorted(undefined_names(body))
-        if undefined:
-            # Assume we can find them in the parent module
-            header_lines.append('from {} import {}'.format(example.modname, ', '.join(undefined)))
-            body = '\n'.join(docstr_lines + header_lines + body_lines)
+        try:
+            undefined = sorted(undefined_names(body))
+            if undefined:
+                # Assume we can find them in the parent module
+                header_lines.append('from {} import {}'.format(example.modname, ', '.join(undefined)))
+                body = '\n'.join(docstr_lines + header_lines + body_lines)
+        except Exception:
+            warnings.warn('Unable to check for undefined names without pyflakes')
 
         # if '+SKIP' in body:
         #     continue

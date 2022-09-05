@@ -454,30 +454,6 @@ def _extension_module_tags():
 def _static_parse(varname, fpath):
     """
     Statically parse the a constant variable from a python file
-
-    Example:
-        >>> import ubelt as ub
-        >>> dpath = ub.Path.appdir('tests/import/staticparse').ensuredir()
-        >>> fpath = (dpath / 'foo.py')
-        >>> fpath.write_text('a = {1: 2}')
-        >>> assert _static_parse('a', fpath) == {1: 2}
-        >>> fpath.write_text('a = 2')
-        >>> assert _static_parse('a', fpath) == 2
-        >>> fpath.write_text('a = "3"')
-        >>> assert _static_parse('a', fpath) == "3"
-        >>> fpath.write_text('a = ["3", 5, 6]')
-        >>> assert _static_parse('a', fpath) == ["3", 5, 6]
-        >>> fpath.write_text('a = ("3", 5, 6)')
-        >>> assert _static_parse('a', fpath) == ("3", 5, 6)
-        >>> fpath.write_text('b = 10' + chr(10) + 'a = None')
-        >>> assert _static_parse('a', fpath) is None
-        >>> import pytest
-        >>> with pytest.raises(TypeError):
-        >>>     fpath.write_text('a = list(range(10))')
-        >>>     assert _static_parse('a', fpath) is None
-        >>> with pytest.raises(AttributeError):
-        >>>     fpath.write_text('a = list(range(10))')
-        >>>     assert _static_parse('c', fpath) is None
     """
     import ast
 
