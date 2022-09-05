@@ -4,7 +4,7 @@ We are currently working on porting this changelog to the specifications in
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Version 1.1.0 - Released 2022-08-19
+## Version 1.1.0 - Released 2022-09-05
 
 ### Fixed
 * Can now handle basic versions of the new `__editable__` package finder mechanism.
@@ -35,7 +35,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   that can be used to modify your code such that failing doctests are marked as
   skip.
 * Disabled traceback suppression on module import errors (this is is
-  configurable via the "supress_import_errors" option).
+  configurable via the `supress_import_errors` option).
 * Xdoctest will no longer try to pre-import the module if none of its doctests
   have any enabled lines. This also means global-exec statements will NOT run 
   for those tests, which means you can no longer use global-exec to
