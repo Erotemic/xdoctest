@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 * Can now handle basic versions of the new `__editable__` package finder mechanism.
+* Parsing bug where directives were incorrectly flagged as inline if they were
+  directly followed by a function with a decorator.
 
 
 ### Removed

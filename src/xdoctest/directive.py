@@ -157,7 +157,6 @@ from xdoctest import static_analysis as static
 from xdoctest import utils
 from collections import OrderedDict
 from collections import namedtuple
-# from xdoctest import exceptions
 
 
 def named(key, pattern):
@@ -463,7 +462,8 @@ class Directive(utils.NiceRepr):
             >>> any(Directive.extract(' # badprefix: not-a-directive'))
             False
         """
-        # Flag extracted directives as inline iff the text is only comments
+        # Flag extracted directives as inline iff the text contains non-comments
+        print(f'text={text}')
         inline = not all(line.strip().startswith('#')
                          for line in text.splitlines())
         #

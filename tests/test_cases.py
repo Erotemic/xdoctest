@@ -113,7 +113,7 @@ def test_properties():
     assert 'running 0 test' in text
 
 
-def WIP_test_torch_dispatch_case():
+def test_correct_skipping_on_decorators():
     """
     This is a weird case similar to the torch dispatch doctest
 
@@ -121,6 +121,12 @@ def WIP_test_torch_dispatch_case():
 
     Something about it causes the skip directive not to be applied to the
     entire thing. Not quite sure what's going on yet.
+
+    The issue was that decorator line numbers were returning as the line of the
+    function itself. This mean that the PS1 grouping put the directive in a
+    group with logic, which made the parser think it was inline, which meant
+    the skip state was cleared after it was executed, so it executed the bad
+    code. This fixes that.
     """
     import xdoctest
     from xdoctest import runner
@@ -182,13 +188,14 @@ def WIP_test_torch_dispatch_case():
     }
 
     xdoctest.global_state.DEBUG = 1
-    xdoctest.global_state.DEBUG_PARSER = 1
+    xdoctest.global_state.DEBUG_PARSER = 10
     xdoctest.global_state.DEBUG_CORE = 1
     xdoctest.global_state.DEBUG_RUNNER = 1
     xdoctest.global_state.DEBUG_DOCTEST = 1
 
-    with utils.TempDir() as temp:
-        dpath = temp.dpath
+    temp = utils.TempDir()
+    dpath = temp.ensure()
+    with temp as temp:
         modpath = join(dpath, 'test_example_run.py')
 
         with open(modpath, 'w') as file:
@@ -199,6 +206,11 @@ def WIP_test_torch_dispatch_case():
 
         with utils.CaptureStdout() as cap:
             runner.doctest_module(modpath, 'all', argv=[''], config=config)
-    print(cap.text)
-    # assert 'running 0 test' in cap.text
-    print(z.format_src())
+        print(cap.text)
+        assert '1 skipped' in cap.text
+
+        # example = examples[0]
+        # print(example.format_src())
+        # example.run()
+
+    # temp.cleanup()
