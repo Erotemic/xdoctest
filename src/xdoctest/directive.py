@@ -463,7 +463,6 @@ class Directive(utils.NiceRepr):
             False
         """
         # Flag extracted directives as inline iff the text contains non-comments
-        print(f'text={text}')
         inline = not all(line.strip().startswith('#')
                          for line in text.splitlines())
         #

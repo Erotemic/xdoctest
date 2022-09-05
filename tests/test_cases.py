@@ -134,34 +134,6 @@ def test_correct_skipping_on_decorators():
 
     source = utils.codeblock(
         '''
-        import inspect
-        import sys
-
-        global_namespace = {}  # type: ignore[var-annotated]
-
-        def dispatch(*types, **kwargs):
-            """ blah blah blah blah blah blah blah blah blah blah blah blah
-            blah blah blah blah blah blah blah blah
-
-            Examples
-            --------
-            >>> # xdoctest: +SKIP
-            >>> @dispatch(int)
-            ... def f(x):
-            ...     return x + 1
-            >>> @dispatch(float)
-            ... def f(x):
-            ...     return x - 1
-            >>> f(3)
-            4
-            >>> f(3.0)
-            2.0
-            """
-            ...
-        ''')
-
-    source = utils.codeblock(
-        '''
         def dispatch(*types, **kwargs):
             """ blah blah blah blah blah blah blah blah blah blah blah blah
             blah blah blah blah blah blah blah blah
@@ -187,11 +159,11 @@ def test_correct_skipping_on_decorators():
         'style': 'google',
     }
 
-    xdoctest.global_state.DEBUG = 1
-    xdoctest.global_state.DEBUG_PARSER = 10
-    xdoctest.global_state.DEBUG_CORE = 1
-    xdoctest.global_state.DEBUG_RUNNER = 1
-    xdoctest.global_state.DEBUG_DOCTEST = 1
+    # xdoctest.global_state.DEBUG = 1
+    # xdoctest.global_state.DEBUG_PARSER = 10
+    # xdoctest.global_state.DEBUG_CORE = 1
+    # xdoctest.global_state.DEBUG_RUNNER = 1
+    # xdoctest.global_state.DEBUG_DOCTEST = 1
 
     temp = utils.TempDir()
     dpath = temp.ensure()
@@ -208,9 +180,3 @@ def test_correct_skipping_on_decorators():
             runner.doctest_module(modpath, 'all', argv=[''], config=config)
         print(cap.text)
         assert '1 skipped' in cap.text
-
-        # example = examples[0]
-        # print(example.format_src())
-        # example.run()
-
-    # temp.cleanup()

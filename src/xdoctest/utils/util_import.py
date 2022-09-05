@@ -566,6 +566,7 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
         >>> assert _syspath_modname_to_modpath('this', sys_path=[]) is None
 
     Example:
+        >>> # xdoctest: +SKIP("dont test ourselves here)
         >>> # test what happens when the module is not visible in the path
         >>> modname = 'xdoctest.static_analysis'
         >>> modpath = _syspath_modname_to_modpath(modname)

@@ -390,7 +390,6 @@ class DoctestParser(object):
         if current:
             groups.append((state, current))
 
-        print(f'global_state.DEBUG_PARSER={global_state.DEBUG_PARSER}')
         if global_state.DEBUG_PARSER > 4:
             print('groups = {!r}'.format(groups))
 
