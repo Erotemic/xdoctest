@@ -19,26 +19,7 @@ environment:
 
     - PYTHON: "C:/Python36-x64"
       ARCH_BITS: "64"
-
-    - PYTHON: "C:/Python35-x64"
-      ARCH_BITS: "64"
     
-    - PYTHON: "C:\\Python34-x64"
-      ARCH_BITS: "64"
-      DISTUTILS_USE_SDK: "1"
-
-    - PYTHON: "C:\\Python27-x64"
-      ARCH_BITS: "64"
-
-    - PYTHON: "C:\\Python27"
-      ARCH_BITS: "32"
-
-    - PYTHON: "C:\\Python34"
-      ARCH_BITS: "32"
-
-    - PYTHON: "C:\\Python35"
-      ARCH_BITS: "32"
-
     - PYTHON: "C:\\Python36"
       ARCH_BITS: "32"
 

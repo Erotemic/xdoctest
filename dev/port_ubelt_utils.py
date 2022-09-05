@@ -22,17 +22,23 @@ def _autogen_xdoctest_utils():
     text = lib.current_sourcecode()
     print(text)
 
-    import redbaron
-    new_baron = redbaron.RedBaron(text)
-    new_names = [n.name for n in new_baron.node_list if n.type in ['class', 'def']]
+    """
+    pip install rope
+    pip install parso
+    """
 
+    # target_fpath = ub.Path('~/code/xdoctest/src/xdoctest/utils/util_import.py').expand()
+    target_fpath = ub.Path(xdoctest.utils.util_import.__file__)
+
+    import parso
     import xdoctest
-    old_baron = redbaron.RedBaron(open(xdoctest.utils.util_import.__file__, 'r').read())
+    new_module = parso.parse(text)
+    old_module = parso.parse(target_fpath.read_text())
+    new_names = [child.name.value for child in new_module.children if child.type in {'funcdef', 'classdef'}]
+    old_names = [child.name.value for child in old_module.children if child.type in {'funcdef', 'classdef'}]
 
-    old_names = [n.name for n in old_baron.node_list if n.type in ['class', 'def']]
-
-    set(old_names) - set(new_names)
-    set(new_names) - set(old_names)
+    print(set(old_names) - set(new_names))
+    print(set(new_names) - set(old_names))
 
     prefix = ub.codeblock(
         '''
@@ -43,5 +49,4 @@ def _autogen_xdoctest_utils():
         from __future__ import print_function, division, absolute_import, unicode_literals
         ''')
 
-    fpath = ub.expandpath('~/code/xdoctest/xdoctest/utils/util_import.py')
-    open(fpath, 'w').write(prefix + '\n' + text + '\n')
+    target_fpath.write_text(prefix + '\n' + text + '\n')

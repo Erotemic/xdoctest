@@ -687,11 +687,16 @@ class DocTest(object):
 
         needs_capture = True
 
+        DEBUG = global_state.DEBUG_DOCTEST
+
         # Use the same capture object for all parts in the test
         cap = utils.CaptureStdout(suppress=self._suppressed_stdout,
                                   enabled=needs_capture)
         with warnings.catch_warnings(record=True) as self.warn_list:
             for partx, part in enumerate(self._parts):
+
+                if DEBUG:
+                    print(f'part[{partx}] checking')
 
                 # Prepare to capture stdout and evaluated values
                 self.failed_part = part  # Assume part will fail (it may not)
@@ -699,6 +704,8 @@ class DocTest(object):
 
                 # Extract directives and and update runtime state
                 part_directive = part.directives
+                if DEBUG:
+                    print(f'part[{partx}] directives: {part_directive}')
                 try:
                     try:
                         runstate.update(part_directive)
@@ -715,18 +722,29 @@ class DocTest(object):
                         raise
                     break
 
+                if DEBUG:
+                    print(f'part[{partx}] runstate={runstate}')
+                    print(f'runstate._inline_state={runstate._inline_state}')
+                    print(f'runstate._global_state={runstate._global_state}')
+
                 # Handle runtime actions
                 if runstate['SKIP'] or len(runstate['REQUIRES']) > 0:
+                    if DEBUG:
+                        print(f'part[{partx}] runstate requests skipping')
                     self._skipped_parts.append(part)
                     continue
 
                 if not part.has_any_code():
+                    if DEBUG:
+                        print(f'part[{partx}] No code, skipping')
                     self._skipped_parts.append(part)
                     continue
 
                 if not did_pre_import:
                     # Execute the pre-import before the first run of
                     # non-skipped code.
+                    if DEBUG:
+                        print(f'part[{partx}] Importing parent module')
                     try:
                         self._import_module()
                     except Exception:

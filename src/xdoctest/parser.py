@@ -269,6 +269,7 @@ class DoctestParser(object):
         if global_state.DEBUG_PARSER > 1:
             print('mode_hint = {!r}'.format(mode_hint))
             print(' * located ps1 lines')
+            print(f'ps1_linenos={ps1_linenos}')
 
         # Find all directives here:
         # A directive necessarily will split a doctest into multiple parts
@@ -289,6 +290,9 @@ class DoctestParser(object):
                 if directives[0].inline:
                     if s2 is not None:
                         break_linenos.append(s2)
+
+        if global_state.DEBUG_PARSER > 3:
+            print(f'break_linenos={break_linenos}')
 
         def slice_example(s1, s2, want_lines=None):
             exec_lines = exec_source_lines[s1:s2]
@@ -491,6 +495,20 @@ class DoctestParser(object):
             >>> linenos, mode_hint = self._locate_ps1_linenos(source_lines)
             >>> assert linenos == [0]
             >>> assert mode_hint == 'single'
+
+        Example:
+            >>> # We should ensure that decorators are PS1 lines
+            >>> from xdoctest.parser import *  # NOQA
+            >>> self = DoctestParser()
+            >>> source_lines = [
+            >>>    '>>> # foo',
+            >>>    '>>> @foo',
+            >>>    '... def bar():',
+            >>>    '...     ...',
+            >>> ]
+            >>> linenos, mode_hint = self._locate_ps1_linenos(source_lines)
+            >>> print(f'linenos={linenos}')
+            >>> assert linenos == [0, 1]
         """
         # Strip indentation (and PS1 / PS2 from source)
         exec_source_lines = [p[4:] for p in source_lines]
@@ -555,6 +573,17 @@ class DoctestParser(object):
 
         statement_nodes = pt.body
         ps1_linenos = [node.lineno - 1 for node in statement_nodes]
+
+        if 1:
+            # Get PS1 line numbers of statements accounting for decorators
+            ps1_linenos = []
+            for node in statement_nodes:
+                if hasattr(node, 'decorator_list') and node.decorator_list:
+                    lineno = node.decorator_list[0].lineno - 1
+                else:
+                    lineno = node.lineno - 1
+                ps1_linenos.append(lineno)
+
         # NEED_16806_WORKAROUND = 1
         if NEED_16806_WORKAROUND:  # pragma: nobranch
             ps1_linenos = self._workaround_16806(

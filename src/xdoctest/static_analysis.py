@@ -749,6 +749,9 @@ def parse_static_value(key, source=None, fpath=None):
         source (str): python text
         fpath (str): filepath to read if source is not specified
 
+    Returns:
+        object
+
     Example:
         >>> from xdoctest.static_analysis import parse_static_value
         >>> key = 'foo'

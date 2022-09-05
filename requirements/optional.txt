@@ -1,5 +1,7 @@
 -r colors.txt
 -r jupyter.txt
 
+pyflakes >= 2.2.0
+
 # python  ~/local/tools/supported_python_versions_pip.py tomli
 tomli>=0.2.0  ; python_version < '3.11.0' and python_version >= '3.6'    # Python 3.6+
