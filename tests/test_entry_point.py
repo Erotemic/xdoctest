@@ -32,7 +32,9 @@ def skip_if_not_installed():
 def test_xdoc_console_script_location():
     skip_if_not_installed()
 
-    if sys.platform.startswith('win32'):
+    if sys.platform.startswith('freebsd'):
+        pytest.skip('freebsd is minimal and might not have xdoctest on the path')
+    elif sys.platform.startswith('win32'):
         pytest.skip()
         path = os.path.realpath(sys.executable)
         for i in range(4):
@@ -46,13 +48,17 @@ def test_xdoc_console_script_location():
     else:
         from shutil import which
         script_fpath = which('xdoctest')
+        assert script_fpath is not None, (
+            'xdoctest should be installed in the path in normal circumstances')
         script_fname = os.path.basename(script_fpath)
         assert script_fname.startswith('xdoctest')
 
 
 def test_xdoc_console_script_exec():
     skip_if_not_installed()
-    if sys.platform.startswith('win32'):
+    if sys.platform.startswith('freebsd'):
+        pytest.skip('freebsd is minimal and might not have xdoctest on the path')
+    elif sys.platform.startswith('win32'):
         path = os.path.realpath(sys.executable)
         for i in range(4):
             path = os.path.dirname(path)
