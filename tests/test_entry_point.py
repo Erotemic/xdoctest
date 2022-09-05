@@ -43,15 +43,11 @@ def test_xdoc_console_script_location():
                 break
         script_path = os.path.join(scriptdir, 'xdoctest.exe')
         assert os.path.exists(script_path)
-        # info = cmd('where xdoctest.exe')
-        return
     else:
-        info = cmd('which xdoctest')
-
-    out = info['out']
-    script_fpath = out.strip()
-    script_fname = os.path.basename(script_fpath)
-    assert script_fname.startswith('xdoctest')
+        from shutil import which
+        script_fpath = which('xdoctest')
+        script_fname = os.path.basename(script_fpath)
+        assert script_fname.startswith('xdoctest')
 
 
 def test_xdoc_console_script_exec():

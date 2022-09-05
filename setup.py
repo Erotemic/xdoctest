@@ -171,15 +171,13 @@ if __name__ == '__main__':
     setupkw['extras_require'] = {
         'all': parse_requirements('requirements.txt'),
         'tests': parse_requirements('requirements/tests.txt'),
+        'tests-binary': parse_requirements('requirements/tests-binary.txt'),
         'optional': parse_requirements('requirements/optional.txt'),
         'all-strict': parse_requirements('requirements.txt', versions='strict'),
-        'runtime-strict': parse_requirements(
-            'requirements/runtime.txt', versions='strict'
-        ),
+        'runtime-strict': parse_requirements('requirements/runtime.txt', versions='strict'),
         'tests-strict': parse_requirements('requirements/tests.txt', versions='strict'),
-        'optional-strict': parse_requirements(
-            'requirements/optional.txt', versions='strict'
-        ),
+        'tests-binary-strict': parse_requirements('requirements/tests-binary.txt', versions='strict'),
+        'optional-strict': parse_requirements('requirements/optional.txt', versions='strict'),
         'colors': parse_requirements('requirements/colors.txt'),
         'jupyter': parse_requirements('requirements/jupyter.txt'),
         }
