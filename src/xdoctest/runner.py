@@ -449,7 +449,7 @@ def undefined_names(sourcecode):
 
     Example:
         >>> # xdoctest: +REQUIRES(module:pyflakes)
-        >>> print(ub.repr2(undefined_names('x = y'), nl=0))
+        >>> print(undefined_names('x = y'))
         {'y'}
     """
     import pyflakes.api

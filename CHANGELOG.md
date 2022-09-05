@@ -4,10 +4,16 @@ We are currently working on porting this changelog to the specifications in
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Version 1.0.3 - Released 2022-08-19
+## Version 1.1.0 - Released 2022-08-19
 
 ### Fixed
 * Can now handle basic versions of the new `__editable__` package finder mechanism.
+
+
+### Removed
+* Dropped 2.7 and 3.5 support. Now supporting 3.6+ Use xdoctest<=1.0.2 for 2.7
+  or 3.5 support.
+
 
 ### Changed
 * Improved the "dump" functionality of converting doctests to unit tests.

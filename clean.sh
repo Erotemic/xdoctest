@@ -2,6 +2,7 @@
 echo "start clean"
 
 rm -rf _skbuild
+rm -rf coverage.xml
 rm -rf -- *.so
 rm -rf build
 rm -rf xdoctest.egg-info

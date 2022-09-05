@@ -44,15 +44,6 @@ workflows:
       - test_full/cp36-36m-linux:
           filters:
               <<: *__ignore_release__
-      - test_full/cp35-35m-linux:
-          filters:
-              <<: *__ignore_release__
-      #- test_full/cp34-34m-linux:
-      #    filters:
-      #        <<: *__ignore_release__
-      - test_full/cp27-27mu-linux:
-          filters:
-              <<: *__ignore_release__
 
       - test_minimal/cp3_10-3_10-linux:
           filters:
@@ -67,15 +58,6 @@ workflows:
           filters:
               <<: *__ignore_release__
       - test_minimal/cp36-36m-linux:
-          filters:
-              <<: *__ignore_release__
-      - test_minimal/cp35-35m-linux:
-          filters:
-              <<: *__ignore_release__
-      #- test_minimal/cp34-34m-linux:
-      #    filters:
-      #        <<: *__ignore_release__
-      - test_minimal/cp27-27mu-linux:
           filters:
               <<: *__ignore_release__
 
@@ -224,21 +206,6 @@ jobs:
     docker:
       - image: cimg/python:3.6
 
-  test_full/cp35-35m-linux:
-    <<: *test_full_template
-    docker:
-      - image: cimg/python:3.5
-
-  #test_full/cp34-34m-linux:
-  #  <<: *test_full_template
-  #  docker:
-  #    - image: circleci/python:3.4
-
-  test_full/cp27-27mu-linux:
-    <<: *test_full_template
-    docker:
-      - image: cimg/python:2.7
-
   # ------------
   test_minimal/cp3_10-3_10-linux:
     <<: *test_minimal_template
@@ -264,21 +231,6 @@ jobs:
     <<: *test_minimal_template
     docker:
       - image: cimg/python:3.6
-
-  test_minimal/cp35-35m-linux:
-    <<: *test_minimal_template
-    docker:
-      - image: cimg/python:3.5
-
-  #test_minimal/cp34-34m-linux:
-  #  <<: *test_minimal_template
-  #  docker:
-  #    - image: circleci/python:3.4
-
-  test_minimal/cp27-27mu-linux:
-    <<: *test_minimal_template
-    docker:
-      - image: cimg/python:2.7
 
   # --- pypy ----
 
@@ -314,10 +266,6 @@ jobs:
         docker run -v $HOME/code/xdoctest:/io -it pypy:3 bash
 
         IMAGE_NAME=cimg/python:3.10
-        docker run -v $HOME/code/xdoctest:/io -it $IMAGE_NAME bash
-
-
-        IMAGE_NAME=cimg/python:2.7
         docker run -v $HOME/code/xdoctest:/io -it $IMAGE_NAME bash
 
 
@@ -413,6 +361,6 @@ jobs:
         $HOME/.local/bin/circleci config validate
         $HOME/.local/bin/circleci local execute --job test_minimal/3.9
         $HOME/.local/bin/circleci local execute --job test_minimal/pypy3
-        $HOME/.local/bin/circleci local execute --job test_full/2.7
+        $HOME/.local/bin/circleci local execute --job test_full/3.6
         $HOME/.local/bin/circleci local execute --config .circleci/config.yml --job test_full/cp38-38-linux
         $HOME/.local/bin/circleci local execute --config .circleci/config.yml 
