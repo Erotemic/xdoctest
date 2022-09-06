@@ -1,5 +1,6 @@
 -r requirements/runtime.txt
 -r requirements/tests.txt
+-r requirements/tests-binary.txt
 -r requirements/jupyter.txt
 -r requirements/colors.txt
 
