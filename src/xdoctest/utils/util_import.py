@@ -136,7 +136,7 @@ class PythonPathContext(object):
         >>>     self.__exit__(None, None, None)
     """
     def __init__(self, dpath, index=0):
-        self.dpath = dpath
+        self.dpath = os.fspath(dpath)
         self.index = index
 
     def __enter__(self):
@@ -454,6 +454,30 @@ def _extension_module_tags():
 def _static_parse(varname, fpath):
     """
     Statically parse the a constant variable from a python file
+
+    Example:
+        >>> # xdoctest: +SKIP("ubelt dependency")
+        >>> dpath = ub.Path.appdir('tests/import/staticparse').ensuredir()
+        >>> fpath = (dpath / 'foo.py')
+        >>> fpath.write_text('a = {1: 2}')
+        >>> assert _static_parse('a', fpath) == {1: 2}
+        >>> fpath.write_text('a = 2')
+        >>> assert _static_parse('a', fpath) == 2
+        >>> fpath.write_text('a = "3"')
+        >>> assert _static_parse('a', fpath) == "3"
+        >>> fpath.write_text('a = ["3", 5, 6]')
+        >>> assert _static_parse('a', fpath) == ["3", 5, 6]
+        >>> fpath.write_text('a = ("3", 5, 6)')
+        >>> assert _static_parse('a', fpath) == ("3", 5, 6)
+        >>> fpath.write_text('b = 10' + chr(10) + 'a = None')
+        >>> assert _static_parse('a', fpath) is None
+        >>> import pytest
+        >>> with pytest.raises(TypeError):
+        >>>     fpath.write_text('a = list(range(10))')
+        >>>     assert _static_parse('a', fpath) is None
+        >>> with pytest.raises(AttributeError):
+        >>>     fpath.write_text('a = list(range(10))')
+        >>>     assert _static_parse('c', fpath) is None
     """
     import ast
 
@@ -542,7 +566,6 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
         >>> assert _syspath_modname_to_modpath('this', sys_path=[]) is None
 
     Example:
-        >>> # xdoctest: +SKIP("dont test ourselves here)
         >>> # test what happens when the module is not visible in the path
         >>> modname = 'xdoctest.static_analysis'
         >>> modpath = _syspath_modname_to_modpath(modname)
@@ -627,7 +650,7 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
         # basic pth will be used for "simple" structures (which means has a
         # src/modname folder).
         new_editable_finder_paths = sorted(glob.glob(join(dpath, _editable_fname_finder_py_pat)))
-        if new_editable_finder_paths:
+        if new_editable_finder_paths:  # nocover
             # This makes some assumptions, which may not hold in general
             # We may need to fallback entirely on pkgutil, which would
             # ultimately be good. Hopefully the new standards mean it does not
@@ -636,22 +659,26 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
             finder_fpath = new_editable_finder_paths[-1]
             mapping = _static_parse('MAPPING', finder_fpath)
             target = dirname(mapping[_pkg_name])
-            modpath = check_dpath(target)
-            if modpath:  # pragma: nobranch
-                found_modpath = modpath
-                break
+            if not exclude or normalize(target) not in real_exclude:  # pragma: nobranch
+                modpath = check_dpath(target)
+                if modpath:  # pragma: nobranch
+                    found_modpath = modpath
+                    break
 
         # If a finder does not exist, then the __editable__ pth file might hold
         # the path itself. Check for that.
         new_editable_pth_paths = sorted(glob.glob(join(dpath, _editable_fname_pth_pat)))
-        if new_editable_pth_paths:
+        if new_editable_pth_paths:  # nocover
+            # Disable coverage because the test that covers this is too slow.
+            # It can be made faster, re-enable when that lands.
             import pathlib
             editable_pth = pathlib.Path(new_editable_pth_paths[-1])
             target = editable_pth.read_text().strip().split('\n')[-1]
-            modpath = check_dpath(target)
-            if modpath:  # pragma: nobranch
-                found_modpath = modpath
-                break
+            if not exclude or normalize(target) not in real_exclude:
+                modpath = check_dpath(target)
+                if modpath:  # pragma: nobranch
+                    found_modpath = modpath
+                    break
 
         # If file path checks fails, check for egg-link based modules
         # (Python usually puts egg links into sys.path, but if the user is
