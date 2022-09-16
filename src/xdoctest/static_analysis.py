@@ -55,9 +55,10 @@ class TopLevelVisitor(ast.NodeVisitor):
     """
     Parses top-level function names and docstrings
 
+    For other visit_<classname> values see [MeetTheNodes]_.
+
     References:
-        # For other visit_<classname> values see
-        http://greentreesnakes.readthedocs.io/en/latest/nodes.html
+        ..[MeetTheNodes] http://greentreesnakes.readthedocs.io/en/latest/nodes.html
 
     CommandLine:
         python -m xdoctest.static_analysis TopLevelVisitor
@@ -978,7 +979,7 @@ def extract_comments(source):
     Uses tokenize to account for quotations.
 
     Args:
-        source (str):
+        source (str | List[str]):
 
     CommandLine:
         python -m xdoctest.static_analysis extract_comments
@@ -1011,6 +1012,89 @@ def extract_comments(source):
                 yield t[1]
     except tokenize.TokenError:
         pass
+
+
+def _strip_hashtag_comments_and_newlines(source):
+    """
+    Removes hashtag comments from underlying source
+
+    Args:
+        source (str | List[str]):
+
+    CommandLine:
+        xdoctest -m xdoctest.static_analysis _strip_hashtag_comments_and_newlines
+
+    TODO:
+        would be better if this was some sort of configurable minify API
+
+    Example:
+        >>> from xdoctest.static_analysis import _strip_hashtag_comments_and_newlines
+        >>> from xdoctest import utils
+        >>> fmtkw = dict(sss=chr(39) * 3, ddd=chr(34) * 3)
+        >>> source = utils.codeblock(
+        >>>    '''
+               # comment 1
+               a = '# not a comment'  # comment 2
+
+               multiline_string = {ddd}
+
+               one
+
+               {ddd}
+               b = [
+                   1,  # foo
+
+
+                   # bar
+                   3,
+               ]
+               c = 3
+               ''').format(**fmtkw)
+        >>> non_comments = _strip_hashtag_comments_and_newlines(source)
+        >>> print(non_comments)
+        >>> assert non_comments.count(chr(10)) == 10
+        >>> assert non_comments.count('#') == 1
+    """
+    if isinstance(source, six.string_types):
+        import io
+        f = io.StringIO(source)
+        readline = f.readline
+    else:
+        readline = iter(source).__next__
+
+    def strip_hashtag_comments(tokens):
+        """
+        Drop comment tokens from a `tokenize` stream.
+        """
+        return (t for t in tokens if t[0] != tokenize.COMMENT)
+
+    def strip_consecutive_newlines(tokens):
+        """
+        Consecutive newlines are dropped and trailing whitespace
+
+        Adapated from: https://github.com/mitogen-hq/mitogen/blob/master/mitogen/minify.py#L65
+        """
+        prev_typ = None
+        prev_end_col = 0
+        skipped_rows = 0
+        for token_info in tokens:
+            typ, tok, (start_row, start_col), (end_row, end_col), line = token_info
+            if typ in (tokenize.NL, tokenize.NEWLINE):
+                if prev_typ in (tokenize.NL, tokenize.NEWLINE, None):
+                    skipped_rows += 1
+                    continue
+                else:
+                    start_col = prev_end_col
+                end_col = start_col + 1
+            prev_typ = typ
+            prev_end_col = end_col
+            yield typ, tok, (start_row - skipped_rows, start_col), (end_row - skipped_rows, end_col), line
+
+    tokens = tokenize.generate_tokens(readline)
+    tokens = strip_hashtag_comments(tokens)
+    tokens = strip_consecutive_newlines(tokens)
+    new_source = tokenize.untokenize(tokens)
+    return new_source
 
 
 def six_axt_parse(source_block, filename='<source_block>', compatible=True):

@@ -164,7 +164,8 @@ def main(argv=None):
             =====================================
             '''))
 
-    run_summary = xdoctest.doctest_module(modname, argv=[command], style=style,
+    run_summary = xdoctest.doctest_module(modname, argv=[], style=style,
+                                          command=command,
                                           verbose=config['verbose'],
                                           config=config, durations=durations,
                                           analysis=analysis)
