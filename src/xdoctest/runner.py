@@ -61,13 +61,17 @@ import sys
 from xdoctest import global_state
 
 
-def log(msg, verbose):
+def log(msg, verbose, level=1):
     """
+    Simple conditional print logger
+
     Args:
-        msg (str):
-        verbose (int):
+        msg (str): message to print
+        verbose (int): verbosity level, higher means more is print
+        level (int): verbosity level at which this is printed. 0 is always,
+            1 is info, 2 is verbose, 3 is very-verbose.
     """
-    if verbose > 0:
+    if verbose >= level:
         print(msg)
 
 
@@ -103,6 +107,11 @@ def doctest_callable(func):
         doctest.run(verbose=3)
 
 
+def gather_doctests(doctest_identifiers, style='auto', analysis='auto',
+                    verbose=None):
+    raise NotImplementedError('todo')
+
+
 def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
                    style='auto', verbose=None, config=None, durations=None,
                    analysis='auto'):
@@ -130,6 +139,9 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
             if None uses sys.argv.
             SeeAlso :func:_update_argparse_cli
             SeeAlso :func:doctest_example.DoctestConfig._update_argparse_cli
+
+        style (str): Determines how doctests are recognized and grouped.
+            Can be freeform, google, or auto.
 
         verbose (int | None):
             Verbosity level.
@@ -175,24 +187,27 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
         >>> from xdoctest import runner
         >>> result = doctest_module('xdoctest.static_analysis::parse_static_value')
     """
-    _log = partial(log, verbose=global_state.DEBUG_RUNNER)
-    _log('------+ DEBUG +------')
-    _log('CALLED doctest_module')
-    _log('exclude = {!r}'.format(exclude))
-    _log('argv = {!r}'.format(argv))
-    _log('command = {!r}'.format(command))
-    _log('module_identifier = {!r}'.format(module_identifier))
-    _log('durations = {!r}'.format(durations))
-    _log('config = {!r}'.format(config))
-    _log('verbose = {!r}'.format(verbose))
-    _log('style = {!r}'.format(style))
-    _log('------+ /DEBUG +------')
+    _debug = partial(log, verbose=global_state.DEBUG_RUNNER)
+    _debug('------+ DEBUG +------')
+    _debug('CALLED doctest_module')
+    _debug('exclude = {!r}'.format(exclude))
+    _debug('argv = {!r}'.format(argv))
+    _debug('command = {!r}'.format(command))
+    _debug('module_identifier = {!r}'.format(module_identifier))
+    _debug('durations = {!r}'.format(durations))
+    _debug('config = {!r}'.format(config))
+    _debug('verbose = {!r}'.format(verbose))
+    _debug('style = {!r}'.format(style))
+    _debug('------+ /DEBUG +------')
 
     modinfo = {
         'modpath': None,
         'modname': None,
         'module': None,
     }
+
+    # TODO: allow a list of doctest specifiers to be passed.
+    # TODO: abstract into a "gather" doctest method.
     if module_identifier is None:
         # Determine package name via caller if not specified
         frame_parent = dynamic_analysis.get_parent_frame()
@@ -233,8 +248,8 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
     else:
         parsable_identifier = modinfo['modpath']
 
-    _log('Start doctest_module({!r})'.format(parsable_identifier))
-    _log('Listing tests')
+    _log('Start doctest_module({!r})'.format(parsable_identifier), level=2)
+    _log('Listing tests', level=2)
 
     if command is None:
         # Display help if command is not specified
@@ -267,7 +282,7 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
                                           for example in examples]))
         run_summary = {'action': 'list'}
     else:
-        _log('gathering tests')
+        _log('gathering tests', level=2)
         enabled_examples = []
         for example in examples:
             if gather_all or command in example.valid_testnames:
@@ -290,9 +305,9 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
 
         if command == 'dump':
             # format the doctests as normal unit tests
-            _log('dumping tests to stdout')
+            _log('dumping tests to stdout', level=2)
             module_text = _convert_to_test_module(enabled_examples)
-            _log(module_text)
+            _log(module_text, level=0)
 
             run_summary = {'action': 'dump'}
         else:
@@ -383,8 +398,15 @@ def _auto_disable_failing_tests_hook(context):
 
 def _convert_to_test_module(enabled_examples):
     """
+    Logic for the "dumps" command.
+
     Converts all doctests to unit tests that can exist in a standalone module
     """
+    dump_config = {
+        'remove_import_star': True,
+    }
+    from xdoctest import static_analysis as static
+
     module_lines = []
     for example in enabled_examples:
 
@@ -407,6 +429,19 @@ def _convert_to_test_module(enabled_examples):
             header_lines.extend([g + '  # NOQA' for g in global_lines])
 
         for part in example._parts:
+
+            if dump_config['remove_import_star']:
+                new_exec_lines = []
+                for line in part.exec_lines:
+                    # TODO: this is not robust, need AST magic here
+                    # import ubelt as ub
+                    # print('line = {}'.format(ub.repr2(line, nl=1)))
+                    # stripped = static._strip_hashtag_comments_and_newlines(line)
+                    if ' import *' in line:
+                        continue
+                    new_exec_lines.append(line)
+                part.exec_lines = new_exec_lines
+
             body_part = part.format_part(linenos=False, want=False,
                                          prefix=False, colored=False,
                                          partnos=False)
@@ -711,6 +746,10 @@ def _parse_commandline(command=None, style='auto', verbose=None, argv=None):
 
 
 def _update_argparse_cli(add_argument, prefix=None):
+    """
+    Update the CLI with arguments that control how doctests are collected ando
+    how aggregate results are reported.
+    """
     import os
     add_argument(*('-m', '--modname'), type=str,
                  help='Module name or path. If specified positional modules are ignored',

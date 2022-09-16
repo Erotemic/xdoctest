@@ -28,10 +28,10 @@ def _autogen_xdoctest_utils():
     """
 
     # target_fpath = ub.Path('~/code/xdoctest/src/xdoctest/utils/util_import.py').expand()
-    target_fpath = ub.Path(xdoctest.utils.util_import.__file__)
-
     import parso
     import xdoctest
+    target_fpath = ub.Path(xdoctest.utils.util_import.__file__)
+
     new_module = parso.parse(text)
     old_module = parso.parse(target_fpath.read_text())
     new_names = [child.name.value for child in new_module.children if child.type in {'funcdef', 'classdef'}]
