@@ -49,4 +49,23 @@ def _autogen_xdoctest_utils():
         from __future__ import print_function, division, absolute_import, unicode_literals
         ''')
 
+    # Remove doctest references to ubelt
+    new_lines = []
+    import re
+    for line in text.split('\n'):
+        if line.strip().startswith('>>> from ubelt'):
+            continue
+        if line.strip().startswith('>>> import ubelt as ub'):
+            line = re.sub('>>> .*', '>>> # xdoctest: +SKIP("ubelt dependency")', line)
+        new_lines.append(line)
+
+    text = '\n'.join(new_lines)
     target_fpath.write_text(prefix + '\n' + text + '\n')
+
+
+if __name__ == '__main__':
+    """
+    CommandLine:
+        python ~/code/xdoctest/dev/port_ubelt_utils.py
+    """
+    _autogen_xdoctest_utils()
