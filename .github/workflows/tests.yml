@@ -17,7 +17,7 @@ jobs:
     - name: Checkout source
       uses: actions/checkout@v3
     - name: Set up Python 3.8
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v4.2.0
       with:
         python-version: 3.8
     - name: Install dependencies
@@ -40,7 +40,7 @@ jobs:
     - name: Checkout source
       uses: actions/checkout@v3
     - name: Set up Python 3.8
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v4.2.0
       with:
         python-version: 3.8
     - name: Upgrade pip
@@ -104,7 +104,8 @@ jobs:
         - '3.8'
         - '3.9'
         - '3.10'
-        - '3.11.0-rc.1'
+        - '3.11.0-rc.2'
+        #- '3.11' soon
         - pypy-3.7
         install-extras:
         - tests
@@ -165,7 +166,7 @@ jobs:
       with:
         platforms: all
     - name: Setup Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v4.2.0
       with:
         python-version: ${{ matrix.python-version }}
     - name: Build pure wheel
@@ -201,7 +202,7 @@ jobs:
       shell: bash
       run: ls -la wheelhouse
     - name: Set up Python 3.8 to combine coverage Linux
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v4.2.0
       if: runner.os == 'Linux'
       with:
         python-version: 3.8
@@ -251,24 +252,22 @@ jobs:
         TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
         TWINE_USERNAME: ${{ secrets.TEST_TWINE_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.TEST_TWINE_PASSWORD }}
-        CI_SECRET: ${{ secrets.EROTEMIC_CI_SECRET }}
+        CI_SECRET: ${{ secrets.CI_SECRET }}
       run: |-
         GPG_EXECUTABLE=gpg
         $GPG_EXECUTABLE --version
         openssl version
         $GPG_EXECUTABLE --list-keys
         echo "Decrypting Keys"
-        CIS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CIS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import
-        CIS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CIS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
-        CIS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CIS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import
+        openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CI_SECRET -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import
+        openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CI_SECRET -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
+        openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CI_SECRET -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import
         echo "Finish Decrypt Keys"
         $GPG_EXECUTABLE --list-keys || true
         $GPG_EXECUTABLE --list-keys  || echo "first invocation of gpg creates directories and returns 1"
         $GPG_EXECUTABLE --list-keys
         VERSION=$(python -c "import setup; print(setup.VERSION)")
-        pip install twine
-        pip install six pyopenssl ndg-httpsclient pyasn1 -U --user
-        pip install requests[security] twine --user
+        pip install urllib3 requests[security] twine
         GPG_KEYID=$(cat dev/public_gpg_key)
         echo "GPG_KEYID = '$GPG_KEYID'"
         DO_GPG=True GPG_KEYID=$GPG_KEYID TWINE_REPOSITORY_URL=${TWINE_REPOSITORY_URL} TWINE_PASSWORD=$TWINE_PASSWORD TWINE_USERNAME=$TWINE_USERNAME GPG_EXECUTABLE=$GPG_EXECUTABLE DO_UPLOAD=True DO_TAG=False ./publish.sh
@@ -295,24 +294,22 @@ jobs:
         TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
         TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
-        CI_SECRET: ${{ secrets.EROTEMIC_CI_SECRET }}
+        CI_SECRET: ${{ secrets.CI_SECRET }}
       run: |-
         GPG_EXECUTABLE=gpg
         $GPG_EXECUTABLE --version
         openssl version
         $GPG_EXECUTABLE --list-keys
         echo "Decrypting Keys"
-        CIS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CIS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import
-        CIS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CIS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
-        CIS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CIS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import
+        openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CI_SECRET -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import
+        openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CI_SECRET -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
+        openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CI_SECRET -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import
         echo "Finish Decrypt Keys"
         $GPG_EXECUTABLE --list-keys || true
         $GPG_EXECUTABLE --list-keys  || echo "first invocation of gpg creates directories and returns 1"
         $GPG_EXECUTABLE --list-keys
         VERSION=$(python -c "import setup; print(setup.VERSION)")
-        pip install twine
-        pip install six pyopenssl ndg-httpsclient pyasn1 -U --user
-        pip install requests[security] twine --user
+        pip install urllib3 requests[security] twine
         GPG_KEYID=$(cat dev/public_gpg_key)
         echo "GPG_KEYID = '$GPG_KEYID'"
         DO_GPG=True GPG_KEYID=$GPG_KEYID TWINE_REPOSITORY_URL=${TWINE_REPOSITORY_URL} TWINE_PASSWORD=$TWINE_PASSWORD TWINE_USERNAME=$TWINE_USERNAME GPG_EXECUTABLE=$GPG_EXECUTABLE DO_UPLOAD=True DO_TAG=False ./publish.sh
