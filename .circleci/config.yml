@@ -96,7 +96,7 @@ jobs:
        ### INITIALIZE AND CACHE REQUIREMENTS ###
       - restore_cache:
           keys:
-          - v4-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ .Environment.CIRCLE_JOB }}
+          - v5-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ .Environment.CIRCLE_JOB }}
       - run:
           name: install dependencies
           command: |
@@ -112,7 +112,7 @@ jobs:
       - save_cache:
           paths:
             - ./pipcache
-          key: v4-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ .Environment.CIRCLE_JOB }}
+          key: v5-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ .Environment.CIRCLE_JOB }}
       # ### RUN TESTS ###
       - run:
           name: run tests
@@ -137,7 +137,7 @@ jobs:
        ### INITIALIZE AND CACHE REQUIREMENTS ###
       - restore_cache:
           keys:
-          - v4-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ checksum "requirements/colors.txt" }}-{{ .Environment.CIRCLE_JOB }}
+          - v5-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ checksum "requirements/colors.txt" }}-{{ .Environment.CIRCLE_JOB }}
       - run:
           name: install dependencies
           command: |
@@ -154,7 +154,7 @@ jobs:
           paths:
             #- ./venv
             - ./pipcache
-          key: v4-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ checksum "requirements/colors.txt" }}-{{ .Environment.CIRCLE_JOB }}
+          key: v5-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ checksum "requirements/jupyter.txt" }}-{{ checksum "requirements/colors.txt" }}-{{ .Environment.CIRCLE_JOB }}
       # ### RUN TESTS ###
       - run:
           name: run tests
