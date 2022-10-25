@@ -17,7 +17,7 @@ jobs:
     - name: Checkout source
       uses: actions/checkout@v3
     - name: Set up Python 3.8
-      uses: actions/setup-python@v4.2.0
+      uses: actions/setup-python@v4.3.0
       with:
         python-version: 3.8
     - name: Install dependencies
@@ -40,7 +40,7 @@ jobs:
     - name: Checkout source
       uses: actions/checkout@v3
     - name: Set up Python 3.8
-      uses: actions/setup-python@v4.2.0
+      uses: actions/setup-python@v4.3.0
       with:
         python-version: 3.8
     - name: Upgrade pip
@@ -104,8 +104,7 @@ jobs:
         - '3.8'
         - '3.9'
         - '3.10'
-        - '3.11.0-rc.2'
-        #- '3.11' soon
+        - '3.11'
         - pypy-3.7
         install-extras:
         - tests
