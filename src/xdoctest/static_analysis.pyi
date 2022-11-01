@@ -81,7 +81,9 @@ def parse_calldefs(source: Incomplete | None = ...,
     ...
 
 
-def parse_static_value(key: str, source: str = None, fpath: str = None):
+def parse_static_value(key: str,
+                       source: str = None,
+                       fpath: str = None) -> object:
     ...
 
 
@@ -101,7 +103,8 @@ def is_balanced_statement(lines: List[str],
     ...
 
 
-def extract_comments(source: str) -> Generator[Any, None, Any]:
+def extract_comments(
+        source: Union[str, List[str]]) -> Generator[Any, None, Any]:
     ...
 
 

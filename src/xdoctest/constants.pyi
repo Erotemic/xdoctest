@@ -24,4 +24,4 @@ class _NOT_EVAL_TYPE:
     __nonzero__: Incomplete
 
 
-NOT_EVALED: Incomplete
+NOT_EVALED: _NOT_EVAL_TYPE
