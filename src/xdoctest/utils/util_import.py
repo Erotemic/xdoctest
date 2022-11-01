@@ -580,9 +580,9 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
         >>>     found = _syspath_modname_to_modpath(modname, exclude=exclude)
         >>> if found is not None:
         >>>     raise AssertionError(
-        >>>         'should not have found {}.'.format(found)
-        >>>         ' because we excluded: {}.'.format(exclude)
-        >>>         ' cwd={} '.format(os.getcwd())
+        >>>         'should not have found {}.'.format(found) +
+        >>>         ' because we excluded: {}.'.format(exclude) +
+        >>>         ' cwd={} '.format(os.getcwd()) +
         >>>         ' sys.path={} '.format(sys.path)
         >>>     )
     """
