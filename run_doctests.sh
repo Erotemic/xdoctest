@@ -1,2 +1,2 @@
-#!/bin/bash
-xdoctest ./src/xdoctest --style=google all "$@"
+#!/usr/bin/env bash
+xdoctest src/xdoctest --style=google all "$@"
