@@ -3,11 +3,9 @@ if __name__ == '__main__':
     import pytest
     import sys
     package_name = 'xdoctest'
-    mod_dpath = './src/' + package_name
+    mod_dpath = 'src/xdoctest'
     test_dpath = 'tests'
     pytest_args = [
-        '-p', 'pytester',
-        '-p', 'no:doctest',
         '--cov-config', 'pyproject.toml',
         '--cov-report', 'html',
         '--cov-report', 'term',
