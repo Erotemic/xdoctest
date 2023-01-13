@@ -17,7 +17,7 @@ jobs:
     - name: Checkout source
       uses: actions/checkout@v3
     - name: Set up Python 3.8
-      uses: actions/setup-python@v4.3.0
+      uses: actions/setup-python@v4.5.0
       with:
         python-version: 3.8
     - name: Install dependencies
@@ -40,7 +40,7 @@ jobs:
     - name: Checkout source
       uses: actions/checkout@v3
     - name: Set up Python 3.8
-      uses: actions/setup-python@v4.3.0
+      uses: actions/setup-python@v4.5.0
       with:
         python-version: 3.8
     - name: Upgrade pip
@@ -97,96 +97,123 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        arch:
-        - auto
         include:
         - python-version: '3.6'
-          os: ubuntu-latest
+          os: ubuntu-20.04
           install-extras: tests-strict,runtime-strict
+          arch: auto
         - python-version: '3.6'
           os: macOS-latest
           install-extras: tests-strict,runtime-strict
+          arch: auto
         - python-version: '3.6'
           os: windows-latest
           install-extras: tests-strict,runtime-strict
+          arch: auto
         - python-version: '3.11'
           os: ubuntu-latest
           install-extras: tests-strict,runtime-strict,optional-strict
+          arch: auto
         - python-version: '3.11'
           os: macOS-latest
           install-extras: tests-strict,runtime-strict,optional-strict
+          arch: auto
         - python-version: '3.11'
           os: windows-latest
           install-extras: tests-strict,runtime-strict,optional-strict
+          arch: auto
         - python-version: '3.11'
           os: macOS-latest
           install-extras: tests
+          arch: auto
         - python-version: '3.11'
           os: windows-latest
           install-extras: tests
+          arch: auto
         - python-version: '3.6'
-          os: ubuntu-latest
+          os: ubuntu-20.04
           install-extras: tests,optional
+          arch: auto
         - python-version: '3.7'
           os: ubuntu-latest
           install-extras: tests,optional
+          arch: auto
         - python-version: '3.8'
           os: ubuntu-latest
           install-extras: tests,optional
+          arch: auto
         - python-version: '3.9'
           os: ubuntu-latest
           install-extras: tests,optional
+          arch: auto
         - python-version: '3.10'
           os: ubuntu-latest
           install-extras: tests,optional
+          arch: auto
         - python-version: '3.11'
           os: ubuntu-latest
           install-extras: tests,optional
+          arch: auto
         - python-version: '3.6'
           os: macOS-latest
           install-extras: tests,optional
+          arch: auto
         - python-version: '3.7'
           os: macOS-latest
           install-extras: tests,optional
+          arch: auto
         - python-version: '3.8'
           os: macOS-latest
           install-extras: tests,optional
+          arch: auto
         - python-version: '3.9'
           os: macOS-latest
           install-extras: tests,optional
+          arch: auto
         - python-version: '3.10'
           os: macOS-latest
           install-extras: tests,optional
+          arch: auto
         - python-version: '3.11'
           os: macOS-latest
           install-extras: tests,optional
+          arch: auto
         - python-version: '3.6'
           os: windows-latest
           install-extras: tests,optional
+          arch: auto
         - python-version: '3.7'
           os: windows-latest
           install-extras: tests,optional
+          arch: auto
         - python-version: '3.8'
           os: windows-latest
           install-extras: tests,optional
+          arch: auto
         - python-version: '3.9'
           os: windows-latest
           install-extras: tests,optional
+          arch: auto
         - python-version: '3.10'
           os: windows-latest
           install-extras: tests,optional
+          arch: auto
         - python-version: '3.11'
           os: windows-latest
           install-extras: tests,optional
+          arch: auto
         - python-version: pypy-3.7
           os: ubuntu-latest
           install-extras: tests,optional
+          arch: auto
         - python-version: pypy-3.7
           os: macOS-latest
           install-extras: tests,optional
+          arch: auto
         - python-version: pypy-3.7
           os: windows-latest
           install-extras: tests,optional
+          arch: auto
     steps:
     - name: Checkout source
       uses: actions/checkout@v3
@@ -204,7 +231,7 @@ jobs:
       with:
         platforms: all
     - name: Setup Python
-      uses: actions/setup-python@v4.3.0
+      uses: actions/setup-python@v4.5.0
       with:
         python-version: ${{ matrix.python-version }}
     - name: Build pure wheel
@@ -220,9 +247,17 @@ jobs:
         CI_PYTHON_VERSION: py${{ matrix.python-version }}
       run: |-
         # Find the path to the wheel
-        WHEEL_FPATH=$(ls wheelhouse/xdoctest*.whl)
-        # Install the wheel
-        python -m pip install ${WHEEL_FPATH}[${INSTALL_EXTRAS}]
+        ls wheelhouse
+        pip install tomli pkginfo
+        MOD_NAME=xdoctest
+        echo "MOD_NAME=$MOD_NAME"
+        WHEEL_FPATH=$(python -c "import pathlib; print(str(sorted(pathlib.Path('wheelhouse').glob('$MOD_NAME*.whl'))[-1]).replace(chr(92), chr(47)))")
+        echo "WHEEL_FPATH=$WHEEL_FPATH"
+        MOD_VERSION=$(python -c "from pkginfo import Wheel; print(Wheel('$WHEEL_FPATH').version)")
+        echo "MOD_VERSION=$MOD_VERSION"
+        # Install the wheel (ensure we are using the version we just built)
+        # NOTE: THE VERSION MUST BE NEWER THAN AN EXISTING PYPI VERSION OR THIS MAY FAIL
+        pip install "$MOD_NAME[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
         # Create a sandboxed directory
         WORKSPACE_DNAME="testdir_${CI_PYTHON_VERSION}_${GITHUB_RUN_ID}_${RUNNER_OS}"
         mkdir -p $WORKSPACE_DNAME
@@ -230,7 +265,7 @@ jobs:
         # Get the path to the installed package and run the tests
         MOD_DPATH=$(python -c "import xdoctest, os; print(os.path.dirname(xdoctest.__file__))")
         echo "MOD_DPATH = $MOD_DPATH"
-        python -m pytest -p pytester -p no:doctest --xdoctest --cov-config ../pyproject.toml --cov-report term --cov=xdoctest $MOD_DPATH ../tests
+        python -m pytest -p pytester -p no:doctest --xdoctest --cov-config ../pyproject.toml --cov-report term --cov="$MOD_NAME" "$MOD_DPATH" ../tests
         # Move coverage file to a new name
         mv .coverage "../.coverage.$WORKSPACE_DNAME"
         cd ..
@@ -238,7 +273,7 @@ jobs:
       shell: bash
       run: ls -la wheelhouse
     - name: Set up Python 3.8 to combine coverage Linux
-      uses: actions/setup-python@v4.3.0
+      uses: actions/setup-python@v4.5.0
       if: runner.os == 'Linux'
       with:
         python-version: 3.8
