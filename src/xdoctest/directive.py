@@ -675,6 +675,7 @@ def _is_requires_satisfied(arg, argv=None, environ=None):
 
     Example:
         >>> from xdoctest.directive import *  # NOQA
+        >>> from xdoctest.directive import _is_requires_satisfied
         >>> _is_requires_satisfied('PY2', argv=[])
         >>> _is_requires_satisfied('PY3', argv=[])
         >>> _is_requires_satisfied('cpython', argv=[])
