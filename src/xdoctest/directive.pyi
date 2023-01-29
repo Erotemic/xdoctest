@@ -74,8 +74,8 @@ class Directive(utils.NiceRepr):
         ...
 
     def effects(self,
-                argv: List[str] = None,
-                environ: Dict[str, str] = None) -> List[Effect]:
+                argv: Union[List[str], None] = None,
+                environ: Union[Dict[str, str], None] = None) -> List[Effect]:
         ...
 
 

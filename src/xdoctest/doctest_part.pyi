@@ -58,15 +58,15 @@ class DoctestPart:
     def check(part,
               got_stdout: str,
               got_eval: str = ...,
-              runstate: directive.RuntimeState = None,
-              unmatched: list = None) -> None:
+              runstate: Union[directive.RuntimeState, None] = None,
+              unmatched: Union[list, None] = None) -> None:
         ...
 
     def format_part(self,
                     linenos: bool = True,
                     want: bool = True,
                     startline: int = 1,
-                    n_digits: int = None,
+                    n_digits: Union[int, None] = None,
                     colored: bool = False,
                     partnos: bool = False,
                     prefix: bool = True) -> str:

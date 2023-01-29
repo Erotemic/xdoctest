@@ -118,15 +118,17 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
+            ls
+            $PYTHON_EXE -m pip freeze
             $PYTHON_EXE run_tests.py
             # Upload to codecov.io (requires a CODECOV_TOKEN environ or github+circleci integration)
-            codecov
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
-      - store_artifacts:
-          path: .coverage
-          destination: .coverage
+            #codecov
+      #- store_artifacts:
+      #    path: test-reports
+      #    destination: test-reports
+      #- store_artifacts:
+      #    path: .coverage
+      #    destination: .coverage
 
 
   .test_full_template: &test_full_template  
@@ -160,15 +162,17 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
+            ls
+            $PYTHON_EXE -m pip freeze
             $PYTHON_EXE run_tests.py
             # Upload to codecov.io (requires a CODECOV_TOKEN environ or github+circleci integration)
-            codecov
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
-      - store_artifacts:
-          path: .coverage
-          destination: .coverage
+            #codecov
+      #- store_artifacts:
+      #    path: test-reports
+      #    destination: test-reports
+      #- store_artifacts:
+      #    path: .coverage
+      #    destination: .coverage
 
 
   ###################################

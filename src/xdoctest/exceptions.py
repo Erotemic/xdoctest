@@ -19,9 +19,9 @@ class DoctestParseError(Exception):
         """
         Args:
             msg (str): error message
-            string (str): the string that failed
-            info (Any): extra information
-            orig_ex (Exception): The underlying exceptoin
+            string (str | None): the string that failed
+            info (Any | None): extra information
+            orig_ex (Exception | None): The underlying exceptoin
         """
         super(DoctestParseError, self).__init__(msg)
         self.msg = msg

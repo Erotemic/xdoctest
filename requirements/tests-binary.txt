@@ -1,5 +1,13 @@
 # For testing doctests in binary extension modules
-scikit-build>=0.11.1
-cmake>=3.21.2
-ninja>=1.10.2
-pybind11>=2.7.1
+
+scikit-build>=0.16.1    ; python_version < '4.0'  and python_version >= '3.11'    # Python 3.11+
+scikit-build>=0.11.1    ; python_version < '3.11'                                 # Python <=3.10
+
+ninja>=1.11.1    ; python_version < '4.0'  and python_version >= '3.11'    # Python 3.11+
+ninja>=1.10.2    ; python_version < '3.11'                                 # Python <=3.10
+
+pybind11>=2.10.3 ; python_version < '4.0'  and python_version >= '3.11'    # Python 3.11+
+pybind11>=2.7.1  ; python_version < '3.11'                                 # Python <=3.10
+
+cmake>=3.25.0 ; python_version < '4.0'  and python_version >= '3.11'    # Python 3.11+
+cmake>=3.21.2  ; python_version < '3.11'                                 # Python <=3.10

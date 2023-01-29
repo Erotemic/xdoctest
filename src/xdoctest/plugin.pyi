@@ -40,10 +40,12 @@ class XDoctestItem(pytest.Item):
     obj: Incomplete
     fixture_request: Incomplete
 
-    def __init__(self,
-                 name: str,
-                 parent: Union[Any, None],
-                 example: xdoctest.doctest_example.DocTest = None) -> None:
+    def __init__(
+            self,
+            name: str,
+            parent: Union[Any, None],
+            example: Union[xdoctest.doctest_example.DocTest,
+                           None] = None) -> None:
         ...
 
     def setup(self) -> None:

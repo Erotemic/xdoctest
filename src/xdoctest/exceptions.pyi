@@ -1,3 +1,4 @@
+from typing import Union
 from typing import Any
 from typing import Any
 
@@ -8,15 +9,15 @@ class MalformedDocstr(Exception):
 
 class DoctestParseError(Exception):
     msg: str
-    string: str
-    info: Any
-    orig_ex: Exception
+    string: Union[str, None]
+    info: Union[Any, None]
+    orig_ex: Union[Exception, None]
 
     def __init__(self,
                  msg: str,
-                 string: str = None,
-                 info: Any = None,
-                 orig_ex: Exception = None) -> None:
+                 string: Union[str, None] = None,
+                 info: Union[Any, None] = None,
+                 orig_ex: Union[Exception, None] = None) -> None:
         ...
 
 
