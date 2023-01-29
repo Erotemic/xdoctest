@@ -212,10 +212,6 @@ if __name__ == '__main__':
         'Programming Language :: Python :: Implementation :: CPython',
     ]
     setupkw['keywords'] = 'xdoctest,doctest,test,docstr,pytest'
-    # https://codefellows.github.io/sea-python-401d4/lectures/python_packaging_1.html
-    # We use a key of an empty string to indicate that the directory we are
-    # pointing to should be considered the root. Then the value is src, telling
-    # setuptools to use that directory as the root of our source.
     setupkw['package_dir'] = {
         '': 'src',
     }
