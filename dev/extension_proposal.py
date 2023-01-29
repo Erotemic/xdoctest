@@ -79,4 +79,85 @@ doctest header.
 
 Again, the problem of distinguishing inputs / outputs persists.
 
+
+2023-01-27: New idea: backticks
+
+
+Syntax Idea #1: Use markdown with explicit python tags
+
+def foobar():
+    '''
+    Example:
+        ```python
+        x = 1
+        y = 2
+        print(x + y)
+        ```
+
+        ```output
+        3
+        ```
+
+    '''
+
+
+Syntax Idea #2: Use a simplified markdown tag that is reminicent of markdown
+
+def foobar():
+    '''
+    Example:
+        `python
+        x = 1
+        y = 2
+        print(x + y)
+
+        `output
+        3
+
+    '''
+
+
+Syntax Idea #3: Lead output with an xdoctest directive
+
+def foobar():
+    '''
+    Example:
+        # xdoctest: example
+        x = 1
+        y = 2
+        print(x + y)
+
+        # xdoctest: output
+        3
+    '''
+
+
+Shorter prefixes?
+
+def foobar():
+    '''
+    Example:
+        > x = 1
+        > y = 2
+        > print(x + y)
+        3
+    '''
+
+
+First line matters?
+def foobar():
+    '''
+    Example:
+
+        .. code:: python
+
+            x = 1
+            y = 2
+            print(x + y)
+
+        .. code:: output
+
+            3
+    '''
+
 """
