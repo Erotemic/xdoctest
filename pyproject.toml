@@ -18,6 +18,7 @@ description = "A rewrite of the builtin doctest module"
 url = "https://github.com/Erotemic/xdoctest"
 license = "Apache 2"
 dev_status = "stable"
+typed = true
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -29,6 +30,7 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     # Supported Python versions
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.8",
@@ -37,6 +39,9 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
     "Programming Language :: Python :: Implementation :: CPython",
 ]
+
+[tool.xcookie.setuptools]
+keywords = '"xdoctest,doctest,test,docstr,pytest"'
 
 [tool.xcookie.entry_points]
 # the pytest11 entry point makes the plugin available to pytest
@@ -50,8 +55,8 @@ console_scripts = [
 
 
 [tool.pytest.ini_options]
-addopts = "-p no:doctest --xdoctest --xdoctest-style=google --ignore-glob=setup.py --ignore-glob=dev"
-norecursedirs = ".git ignore build __pycache__ dev _skbuild"
+addopts = "-p no:doctest --xdoctest --xdoctest-style=google --ignore-glob=setup.py --ignore-glob=dev --ignore-glob=docs"
+norecursedirs = ".git ignore build __pycache__ dev _skbuild docs"
 filterwarnings = [ "default", "ignore:.*No cfgstr given in Cacher constructor or call.*:Warning", "ignore:.*Define the __nice__ method for.*:Warning", "ignore:.*private pytest class or function.*:Warning",]
 
 [tool.coverage.run]

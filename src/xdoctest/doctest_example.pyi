@@ -16,7 +16,7 @@ class DoctestConfig(dict):
     def __init__(self, *args, **kwargs) -> None:
         ...
 
-    def getvalue(self, key: str, given: Any = None) -> Any:
+    def getvalue(self, key: str, given: Union[Any, None] = None) -> Any:
         ...
 
 
@@ -80,22 +80,24 @@ class DocTest:
                      linenos: bool = True,
                      colored: Union[bool, None] = None,
                      want: bool = True,
-                     offset_linenos: bool = None,
+                     offset_linenos: Union[bool, None] = None,
                      prefix: bool = True) -> Generator[Any, None, None]:
         ...
 
     def format_src(self,
                    linenos: bool = True,
-                   colored: bool = None,
+                   colored: Union[bool, None] = None,
                    want: bool = True,
-                   offset_linenos: bool = None,
+                   offset_linenos: Union[bool, None] = None,
                    prefix: bool = True) -> str:
         ...
 
     def anything_ran(self) -> bool:
         ...
 
-    def run(self, verbose: int = None, on_error: str = None) -> Dict:
+    def run(self,
+            verbose: Union[int, None] = None,
+            on_error: Union[str, None] = None) -> Dict:
         ...
 
     @property

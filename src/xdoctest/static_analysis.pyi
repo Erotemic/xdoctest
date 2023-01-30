@@ -71,8 +71,9 @@ class TopLevelVisitor(ast.NodeVisitor):
         ...
 
 
-def parse_static_calldefs(source: str = None,
-                          fpath: str = None) -> Dict[str, CallDefNode]:
+def parse_static_calldefs(
+        source: Union[str, None] = None,
+        fpath: Union[str, None] = None) -> Dict[str, CallDefNode]:
     ...
 
 
@@ -82,8 +83,8 @@ def parse_calldefs(source: Incomplete | None = ...,
 
 
 def parse_static_value(key: str,
-                       source: str = None,
-                       fpath: str = None) -> object:
+                       source: Union[str, None] = None,
+                       fpath: Union[str, None] = None) -> object:
     ...
 
 

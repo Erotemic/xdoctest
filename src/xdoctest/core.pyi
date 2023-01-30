@@ -13,10 +13,10 @@ DOCTEST_STYLES: Incomplete
 
 def parse_freeform_docstr_examples(
     docstr: str,
-    callname: str = None,
-    modpath: Union[str, PathLike] = None,
+    callname: Union[str, None] = None,
+    modpath: Union[str, PathLike, None] = None,
     lineno: int = 1,
-    fpath: Union[str, PathLike] = None,
+    fpath: Union[str, PathLike, None] = None,
     asone: bool = True
 ) -> Generator[xdoctest.doctest_example.DocTest, None, Any]:
     ...
@@ -24,10 +24,10 @@ def parse_freeform_docstr_examples(
 
 def parse_google_docstr_examples(
     docstr: str,
-    callname: str = None,
-    modpath: Union[str, PathLike] = None,
+    callname: Union[str, None] = None,
+    modpath: Union[str, PathLike, None] = None,
     lineno: int = 1,
-    fpath: Union[str, PathLike] = None,
+    fpath: Union[str, PathLike, None] = None,
     eager_parse: bool = True
 ) -> Generator[xdoctest.doctest_example.DocTest, None, None]:
     ...
@@ -40,12 +40,12 @@ def parse_auto_docstr_examples(docstr, *args,
 
 def parse_docstr_examples(
     docstr: str,
-    callname: str = None,
-    modpath: Union[str, PathLike] = None,
+    callname: Union[str, None] = None,
+    modpath: Union[str, PathLike, None] = None,
     lineno: int = 1,
     style: str = 'auto',
-    fpath: Union[str, PathLike] = None,
-    parser_kw: dict = ...
+    fpath: Union[str, PathLike, None] = None,
+    parser_kw: Union[dict, None] = None
 ) -> Generator[xdoctest.doctest_example.DocTest, None, None]:
     ...
 

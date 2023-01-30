@@ -7,8 +7,8 @@ from _typeshed import Incomplete
 
 
 def is_modname_importable(modname: str,
-                          sys_path: list = None,
-                          exclude: list = None) -> bool:
+                          sys_path: Union[list, None] = None,
+                          exclude: Union[list, None] = None) -> bool:
     ...
 
 
@@ -54,7 +54,7 @@ def modpath_to_modname(modpath: str,
                        hide_init: bool = True,
                        hide_main: bool = False,
                        check: bool = True,
-                       relativeto: str = None) -> str:
+                       relativeto: Union[str, None] = None) -> str:
     ...
 
 

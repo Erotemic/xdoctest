@@ -527,9 +527,9 @@ class Directive(utils.NiceRepr):
         This is called by :func:`RuntimeState.update` to update itself
 
         Args:
-            argv (List[str], default=None):
+            argv (List[str] | None):
                 if specified, overwrite sys.argv
-            environ (Dict[str, str], default=None):
+            environ (Dict[str, str] | None):
                 if specified, overwrite os.environ
 
         Returns:
@@ -667,14 +667,15 @@ def _is_requires_satisfied(arg, argv=None, environ=None):
 
     Args:
         arg (str): condition code
-        argv (List[str]): cmdline if arg is cmd code usually ``sys.argv``
-        environ (Dict[str, str]): environment variables usually ``os.environ``
+        argv (List[str] | None): cmdline if arg is cmd code usually ``sys.argv``
+        environ (Dict[str, str] | None): environment variables usually ``os.environ``
 
     Returns:
         bool: flag - True if the requirement is met
 
     Example:
         >>> from xdoctest.directive import *  # NOQA
+        >>> from xdoctest.directive import _is_requires_satisfied
         >>> _is_requires_satisfied('PY2', argv=[])
         >>> _is_requires_satisfied('PY3', argv=[])
         >>> _is_requires_satisfied('cpython', argv=[])

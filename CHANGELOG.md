@@ -10,6 +10,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 
 * Binary tests are now only run on "full" installs to reduce minimal dependencies.
+* Support for Python 3.11
+* Minor typing fixes
 
 
 ## Version 1.1.0 - Released 2022-09-05

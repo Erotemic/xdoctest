@@ -26,8 +26,8 @@ def is_modname_importable(modname, sys_path=None, exclude=None):
 
     Args:
         modname (str): name of module to check
-        sys_path (list, default=None): if specified overrides ``sys.path``
-        exclude (list): list of directory paths. if specified prevents these
+        sys_path (list | None, default=None): if specified overrides ``sys.path``
+        exclude (list | None): list of directory paths. if specified prevents these
             directories from being searched.
 
     Returns:
@@ -859,7 +859,7 @@ def modpath_to_modname(modpath, hide_init=True, hide_main=False, check=True,
         hide_main (bool, default=False): removes the __main__ suffix
         check (bool, default=True): if False, does not raise an error if
             modpath is a dir and does not contain an __init__ file.
-        relativeto (str, default=None): if specified, all checks are ignored
+        relativeto (str | None, default=None): if specified, all checks are ignored
             and this is considered the path to the root module.
 
     TODO:
