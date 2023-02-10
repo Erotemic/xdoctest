@@ -1,9 +1,6 @@
-# -*- coding: utf-8 -*-
 """
 Utilities related to string manipulations
 """
-from __future__ import print_function, division, absolute_import, unicode_literals
-import six
 import math
 import textwrap
 import warnings
@@ -144,9 +141,9 @@ def ensure_unicode(text):
         >>> import codecs
         >>> assert (codecs.BOM_UTF8 + 'text»¿'.encode('utf8')).decode('utf8')
     """
-    if isinstance(text, six.text_type):
+    if isinstance(text, str):
         return text
-    elif isinstance(text, six.binary_type):
+    elif isinstance(text, bytes):
         return text.decode('utf8')
     else:  # nocover
         raise ValueError('unknown input type {!r}'.format(text))
@@ -263,7 +260,7 @@ def add_line_numbers(source, start=1, n_digits=None):
         2 b
         3 c
     """
-    was_string = isinstance(source, six.string_types)
+    was_string = isinstance(source, str)
     part_lines = source.splitlines() if was_string else source
 
     if n_digits is None:

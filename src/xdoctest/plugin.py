@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 The Pytest XDoctest Plugin
 --------------------------
@@ -15,7 +14,6 @@ this code is heavilly based on ``pytest/_pytest/doctest.py`` plugin file in
 https://github.com/pytest-dev/pytest
 
 """
-from __future__ import absolute_import, division, print_function
 import pytest
 from _pytest._code import code
 from _pytest import fixtures

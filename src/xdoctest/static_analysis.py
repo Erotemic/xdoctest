@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 """
 The core logic that allows for xdoctest to parse source statically
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 import sys
 from os.path import exists
 from os.path import isfile
@@ -11,7 +9,6 @@ from os.path import splitext
 import os
 import ast
 import re
-import six
 import tokenize
 from collections import deque, OrderedDict
 from xdoctest import utils
@@ -671,9 +668,6 @@ def parse_static_calldefs(source=None, fpath=None):
         >>> calldefs = parse_static_calldefs(fpath=fpath)
         >>> assert 'parse_static_calldefs' in calldefs
     """
-    if six.PY2:
-        fpath = fpath.replace('.pyc', '.py')
-
     if source is None:  # pragma: no branch
         try:
             with open(fpath, 'rb') as file_:
@@ -725,12 +719,8 @@ def _parse_static_node_value(node):
         values = map(_parse_static_node_value, node.values)
         value = OrderedDict(zip(keys, values))
         # value = dict(zip(keys, values))
-    elif six.PY3 and isinstance(node, (ast.NameConstant)):
+    elif isinstance(node, (ast.NameConstant)):
         value = node.value
-    elif (six.PY2 and isinstance(node, ast.Name) and
-          node.id in ['None', 'True', 'False']):
-        # disregard pathological python2 corner cases
-        value = {'None': None, 'True': True, 'False': False}[node.id]
     else:
         print(node.__dict__)
         raise TypeError('Cannot parse a static value from non-static node '
@@ -997,7 +987,7 @@ def extract_comments(source):
         >>> comments = list(extract_comments(source.splitlines()))
         >>> assert comments == ['# comment 1', '# comment 2']
     """
-    if isinstance(source, six.string_types):
+    if isinstance(source, str):
         lines = source.splitlines()
     else:
         lines = source
@@ -1055,7 +1045,7 @@ def _strip_hashtag_comments_and_newlines(source):
         >>> assert non_comments.count(chr(10)) == 10
         >>> assert non_comments.count('#') == 1
     """
-    if isinstance(source, six.string_types):
+    if isinstance(source, str):
         import io
         f = io.StringIO(source)
         readline = f.readline
@@ -1109,17 +1099,7 @@ def six_axt_parse(source_block, filename='<source_block>', compatible=True):
     Returns:
         ast.Module | types.CodeType
     """
-    # Note Python2.7 does not accept unicode variable names so this
-    # will fail (in 2.7) if source contains a unicode varname.
-    if compatible and six.PY2:
-        # In Python2.7 fix __future__ issues
-        import __future__
-        flags = ast.PyCF_ONLY_AST
-        flags |= __future__.print_function.compiler_flag
-        # flags |= __future__.print_function.unicode_literals
-        pt = compile(source_block, filename=filename, mode='exec', flags=flags)
-    else:
-        pt = ast.parse(source_block, filename=filename)
+    pt = ast.parse(source_block, filename=filename)
     return pt
 
 

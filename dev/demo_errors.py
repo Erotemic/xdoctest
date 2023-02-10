@@ -1,11 +1,9 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 This file contains doctests with errors. Executing xdoctest on this file will
 demo how xdoctest reoprts errors. (It can also be used / was created for
 debuging)
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 
 def demo1():

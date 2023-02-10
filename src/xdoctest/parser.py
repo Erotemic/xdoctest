@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 The XDoctest Parser
 -------------------
@@ -34,8 +33,6 @@ While I do believe this AST-based code is a significant improvement over the
 RE-based builtin doctest parser, I acknowledge that I'm not an AST expert and
 there is room for improvement here.
 """
-from __future__ import print_function, division, absolute_import, unicode_literals
-import six
 import ast
 import sys
 import re
@@ -53,7 +50,6 @@ INDENT_RE = re.compile(r'^([ ]*)(?=\S)', re.MULTILINE)
 
 # This issue was resolved in 3.8
 NEED_16806_WORKAROUND = sys.version_info[0:2] < (3, 8)
-PY2 = (sys.version_info.major == 2)
 
 
 class DoctestParser(object):
@@ -154,7 +150,7 @@ class DoctestParser(object):
         if sys.version_info.major == 2:  # nocover
             string = utils.ensure_unicode(string)
 
-        if not isinstance(string, six.string_types):
+        if not isinstance(string, str):
             raise TypeError('Expected string but got {!r}'.format(string))
 
         string = string.expandtabs()
@@ -605,15 +601,10 @@ class DoctestParser(object):
             mode_hint = 'exec'
         else:
             # Is the last statement evaluate-able?
-            if PY2:  # nocover
-                # Python 2 overhead
-                if isinstance(statement_nodes[-1], (ast.Expr, ast.Print)):
-                    mode_hint = 'eval'
-            else:
-                if isinstance(statement_nodes[-1], ast.Expr):
-                    # This should just be an Expr in python3
-                    # (todo: ensure this is true)
-                    mode_hint = 'eval'
+            if isinstance(statement_nodes[-1], ast.Expr):
+                # This should just be an Expr in python3
+                # (todo: ensure this is true)
+                mode_hint = 'eval'
 
         # WORKON_BACKWARDS_COMPAT_CONTINUE_EVAL:
         # Force doctests parts to evaluate in backwards compatible "single"
@@ -633,14 +624,9 @@ class DoctestParser(object):
                 return next(iterable)
             # We cannot eval a statement with a semicolon in it
             # Single should work.
-            if PY2:
-                if any(t[0] == tokenize.OP and t[1] == ';'
-                       for t in tokenize.generate_tokens(_readline)):
-                    mode_hint = 'single'
-            else:
-                if any(t.type == tokenize.OP and t.string == ';'
-                       for t in tokenize.generate_tokens(_readline)):
-                    mode_hint = 'single'
+            if any(t.type == tokenize.OP and t.string == ';'
+                   for t in tokenize.generate_tokens(_readline)):
+                mode_hint = 'single'
 
         return ps1_linenos, mode_hint
 

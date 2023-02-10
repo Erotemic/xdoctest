@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 The Native XDoctest Runner
 --------------------------
@@ -48,7 +47,6 @@ run the doctests as such:
     python -m xdoctest.runner list
 
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 from xdoctest import dynamic_analysis
 from xdoctest import core
 from xdoctest import doctest_example
@@ -405,7 +403,7 @@ def _convert_to_test_module(enabled_examples):
     dump_config = {
         'remove_import_star': True,
     }
-    from xdoctest import static_analysis as static
+    # from xdoctest import static_analysis as static
 
     module_lines = []
     for example in enabled_examples:

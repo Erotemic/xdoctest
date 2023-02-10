@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
 """
 Utilities for dynamically inspecting code
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 import inspect
 import os
 import types
-import six
 
 
 def parse_dynamic_calldefs(modpath_or_module):
@@ -180,27 +177,21 @@ def iter_module_doctestables(module):
         property,
     )
 
-    if six.PY2:
-        valid_class_types = (types.ClassType,  types.TypeType,)
-    else:
-        valid_class_types = six.class_types
-
     def _recurse(item, module):
         return is_defined_by_module(item, module)
 
-    #modpath = static.modpath_to_modname(module.__file__)
     for key, val in module.__dict__.items():
         if isinstance(val, valid_func_types):
             if not _recurse(val, module):
                 continue
             yield key, val
-        elif isinstance(val, valid_class_types):
+        elif isinstance(val, type):
             if not _recurse(val, module):
                 continue
             # Yield the class itself
             yield key, val
             # Yield methods of the class
-            for subkey, subval in six.iteritems(val.__dict__):
+            for subkey, subval in val.__dict__.items():
                 # Unbound methods are still typed as functions
                 if isinstance(subval, valid_func_types):
                     if not _recurse(subval, module):
@@ -215,13 +206,6 @@ def iter_module_doctestables(module):
                     else:
                         item = subval
                     yield key + '.' + subkey, item
-
-
-def _func_globals(func):
-    if six.PY2:
-        return getattr(func, 'func_globals')
-    else:
-        return getattr(func, '__globals__')
 
 
 def is_defined_by_module(item, module):
@@ -242,9 +226,9 @@ def is_defined_by_module(item, module):
         >>> item = dynamic_analysis.is_defined_by_module
         >>> module = dynamic_analysis
         >>> assert is_defined_by_module(item, module)
-        >>> item = dynamic_analysis.six
+        >>> item = dynamic_analysis.inspect
         >>> assert not is_defined_by_module(item, module)
-        >>> item = dynamic_analysis.six.print_
+        >>> item = dynamic_analysis.inspect.ismodule
         >>> assert not is_defined_by_module(item, module)
         >>> assert not is_defined_by_module(print, module)
         >>> # xdoctest: +REQUIRES(CPython)
@@ -261,7 +245,7 @@ def is_defined_by_module(item, module):
     target_modname = module.__name__
 
     # invalid_types = (int, float, list, tuple, set)
-    # if isinstance(item, invalid_types) or isinstance(item, six.string_type):
+    # if isinstance(item, invalid_types) or isinstance(item, str):
     #     raise TypeError('can only test definitions for classes and functions')
 
     flag = False
@@ -300,7 +284,7 @@ def is_defined_by_module(item, module):
                 flag = True
         if not flag:
             try:
-                item_modname = _func_globals(item)['__name__']
+                item_modname = item.__globals__['__name__']
                 if item_modname == target_modname:
                     flag = True
             except  AttributeError:

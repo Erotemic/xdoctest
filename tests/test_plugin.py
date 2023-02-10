@@ -1,10 +1,8 @@
-# encoding: utf-8
 """
 Adapted from the original `pytest/tests/test_doctest.py` module at:
     https://github.com/pytest-dev/pytest
     https://github.com/pytest-dev/pytest/blob/main/tests/test_doctest.py
 """
-from __future__ import print_function, division, absolute_import, unicode_literals
 import sys
 import _pytest._code
 from xdoctest.plugin import XDoctestItem, XDoctestModule, XDoctestTextfile
@@ -42,7 +40,6 @@ def explicit_testdir():
 
     Ignore:
         python -c codeblock "
-        from __future__ import absolute_import, division, print_function
         import subprocess, grp
         import imp, inspect, textwrap, pprint, json, tempfile, string, lzma, bz2, shutil
         import glob, time, struct, bisect, pdb, platform, atexit, shlex,
@@ -763,8 +760,6 @@ class TestXDoctest(object):
 
         """
         p = testdir.makepyfile(test_unicode_doctest_module="""
-            # -*- encoding: utf-8 -*-
-            from __future__ import unicode_literals
 
             def fix_bad_unicode(text):
                 '''

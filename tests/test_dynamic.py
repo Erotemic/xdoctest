@@ -183,15 +183,14 @@ def test_defined_by_module():
         print('Checking {} is defined by {}'.format(item, module.__name__))
         assert flag, '{} should be defined by {}'.format(item, module)
 
-    import six
-    # Six brings in items from other modules
+    import inspect
 
     items = [
-        six.moves.zip,
-        six.moves.range,
-        six.moves.StringIO,
+        inspect.re,
+        inspect.re.sub,
+        inspect.re.enum,
     ]
-    module = six
+    module = inspect
 
     for item in items:
         flag = dynamic.is_defined_by_module(item, module)
