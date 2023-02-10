@@ -5,6 +5,11 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## Version 1.1.2 - Unreleased
+
+### Changed
+* Removed dependency on six and got rid of old Python 2 logic
+
 ## Version 1.1.1 - Released 2023-01-29 
 
 ### Changed

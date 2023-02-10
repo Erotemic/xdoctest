@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 """
 Defines sentinel values for internal xdoctest usage
 """
-from __future__ import print_function, division, absolute_import, unicode_literals
 
 
 # Create the most singleton object ever to avoid reload issues

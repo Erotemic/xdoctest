@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
 """
 Simple storage container used to store a single executable part of a doctest
 example. Multiple parts are typically stored in a
 :class:`xdoctest.doctest_example.Doctest`, which manages execution of each
 part.
 """
-from __future__ import print_function, division, absolute_import, unicode_literals
 import math
 from xdoctest import utils
 from xdoctest import checker

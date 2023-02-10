@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import print_function, division, absolute_import, unicode_literals
 from os.path import join
 import xdoctest
 from xdoctest import core

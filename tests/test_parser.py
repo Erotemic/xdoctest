@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import print_function, division, absolute_import, unicode_literals
 import pytest
 from xdoctest import parser
 from xdoctest import utils
@@ -723,10 +721,6 @@ def test_gh_issue_25_parsing_failure():
 
 
 def test_parser_with_type_annot():
-    import six
-    if six.PY2:
-        pytest.skip('no type annot in py2')
-
     string = utils.codeblock(
         '''
         >>> def foo(x: str) -> None:

@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
-from __future__ import print_function, division, absolute_import, unicode_literals
 from os.path import join
-import six
 import warnings
 import pytest
 from xdoctest import runner
@@ -158,19 +155,15 @@ def test_runner_syntax_error():
     print(utils.indent(cap.text))
     print(']]]]]]]] # CAPTURED')
 
-    if six.PY2:
-        captext = utils.ensure_unicode(cap.text)
-    else:
-        captext = cap.text
+    captext = cap.text
 
-    if True or not six.PY2:  # Why does this have issues on the dashboards?
-        assert '1 run-time warnings' in captext
-        assert '2 parse-time warnings' in captext
+    assert '1 run-time warnings' in captext
+    assert '2 parse-time warnings' in captext
 
-        # Assert summary line
-        assert '3 warnings' in captext
-        assert '2 failed' in captext
-        assert '1 passed' in captext
+    # Assert summary line
+    assert '3 warnings' in captext
+    assert '2 failed' in captext
+    assert '1 passed' in captext
 
 
 def test_parse_doctset_error():

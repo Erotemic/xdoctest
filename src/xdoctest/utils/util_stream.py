@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Functions for capturing and redirecting IO streams.
 
@@ -9,9 +8,7 @@ The :class:`TeeStringIO` does the same thing but for arbitrary streams. It is
 how the former is implemented.
 
 """
-from __future__ import print_function, division, absolute_import, unicode_literals
 import sys
-import six
 import io
 
 
@@ -85,9 +82,6 @@ class TeeStringIO(io.StringIO):
         """
         if self.redirect is not None:
             self.redirect.write(msg)
-        if six.PY2:
-            from xdoctest.utils.util_str import ensure_unicode
-            msg = ensure_unicode(msg)
         return super(TeeStringIO, self).write(msg)
 
     def flush(self):  # nocover
@@ -122,7 +116,7 @@ class CaptureStdout(CaptureStream):
         ...     text = 'capture the heart ♥'
         ...     print(text)
         >>> print('dont capture look of disapproval ಠ_ಠ')
-        >>> assert isinstance(self.text, six.text_type)
+        >>> assert isinstance(self.text, str)
         >>> assert self.text == text + '\n', 'failed capture text'
 
     Example:

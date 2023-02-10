@@ -75,6 +75,8 @@ TODO
 
 - [ ] Customize directive.
 
+- [ ] Add SKIPIF directive
+
 Customized Requirements Design:
 
     * Allow user to specify a customized requirement on the CLI or environ.

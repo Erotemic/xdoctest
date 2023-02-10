@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Handles parsing of information out of google style docstrings
 
@@ -21,11 +20,9 @@ References:
     .. [GoogleStyleDocs1] https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google
     .. [GoogleStyleDocs2] http://www.sphinx-doc.org/en/stable/ext/example_google.html#example-google
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 import re
 import textwrap
 import collections
-import six
 from xdoctest import exceptions
 from xdoctest.utils.util_str import ensure_unicode
 
@@ -120,7 +117,7 @@ def split_google_docblocks(docstr):
         >>> print('offset = {!r}'.format(offset))
         >>> assert offset == 1
     """
-    if not isinstance(docstr, six.string_types):
+    if not isinstance(docstr, str):
         raise TypeError('Input docstr must be a string. Got {} instead'.format(
             type(docstr)))
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 demo_usage_with_logger.py
 

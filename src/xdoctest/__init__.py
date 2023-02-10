@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # :github_url: https://github.com/Erotemic/xdoctest
 '''
 
@@ -314,7 +313,7 @@ __autogen__ = '''
 mkinit xdoctest --nomods
 '''
 
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 
 # Expose only select submodules

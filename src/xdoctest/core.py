@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Core methods used by xdoctest runner and plugin code to statically extract
 doctests from a module or package.
@@ -30,11 +29,9 @@ The following is a glossary of terms and jargon used in this repo.
 * TODO - complete this list (Make an issue or PR if there is any term you don't
     immediately understand!).
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 import sys
 import textwrap
 import warnings
-import six
 import itertools as it
 import types
 from os.path import exists
@@ -180,7 +177,7 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
 
     def _start_ignoring(prev):
         return (special_skip_patterns_ and
-                isinstance(prev, six.string_types) and
+                isinstance(prev, str) and
                 prev.strip().lower().endswith(special_skip_patterns_))
 
     # parse into doctest and plaintext parts
@@ -194,7 +191,7 @@ def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
     ignoring = False
 
     for part in all_parts:
-        if isinstance(part, six.string_types):
+        if isinstance(part, str):
             # Part is a plaintext
             if asone:
                 # Lump all doctest parts into one example
@@ -440,9 +437,6 @@ def _rectify_to_modpath(modpath_or_name):
         raise TypeError('Expected a static module but got a dynamic one')
     modpath = util_import.modname_to_modpath(modpath_or_name)
     if modpath is None:
-        if six.PY2:
-            if modpath_or_name.endswith('.pyc'):
-                modpath_or_name = modpath_or_name[:-1]
         if exists(modpath_or_name):
             modpath = modpath_or_name
         else:
@@ -497,7 +491,7 @@ def package_calldefs(pkg_identifier, exclude=[], ignore_syntax_errors=True,
             pkgpath, with_pkg=True, with_libs=True))
 
     for module_identifier in identifiers:
-        if isinstance(module_identifier, six.string_types):
+        if isinstance(module_identifier, str):
             modpath = module_identifier
             modname = util_import.modpath_to_modname(modpath)
             if any(fnmatch(modname, pat) for pat in exclude):

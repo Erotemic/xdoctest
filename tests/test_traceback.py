@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Need to enhance the tracebacks to spit out something more useful
 """

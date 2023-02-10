@@ -1,11 +1,9 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 Provides a simple script for running module doctests.
 
 This should work even if the target module is unaware of xdoctest.
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 import sys
 
 
@@ -141,7 +139,7 @@ def main(argv=None):
                 except KeyError:
                     pass
         if exists('pytest.ini'):
-            from six.moves import configparser
+            import configparser
             parser = configparser.ConfigParser()
             parser.read('pytest.ini')
             try:

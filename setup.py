@@ -199,24 +199,24 @@ VERSION = parse_version(INIT_PATH)
 if __name__ == "__main__":
     setupkw = {}
 
-    setupkw["install_requires"] = parse_requirements("requirements/runtime.txt")
-    setupkw["extras_require"] = {
-        "all": parse_requirements("requirements.txt"),
-        "tests": parse_requirements("requirements/tests.txt"),
-        "optional": parse_requirements("requirements/optional.txt"),
-        "all-strict": parse_requirements("requirements.txt", versions="strict"),
-        "runtime-strict": parse_requirements(
-            "requirements/runtime.txt", versions="strict"
-        ),
-        "tests-strict": parse_requirements("requirements/tests.txt", versions="strict"),
-        "optional-strict": parse_requirements(
-            "requirements/optional.txt", versions="strict"
-        ),
-        'tests-binary': parse_requirements('requirements/tests-binary.txt'),
-        'tests-binary-strict': parse_requirements('requirements/tests-binary.txt', versions='strict'),
-        'colors': parse_requirements('requirements/colors.txt'),
-        'jupyter': parse_requirements('requirements/jupyter.txt'),
-    }
+    # setupkw["install_requires"] = parse_requirements("requirements/runtime.txt")
+    # setupkw["extras_require"] = {
+    #     "all": parse_requirements("requirements.txt"),
+    #     "tests": parse_requirements("requirements/tests.txt"),
+    #     "optional": parse_requirements("requirements/optional.txt"),
+    #     "all-strict": parse_requirements("requirements.txt", versions="strict"),
+    #     "runtime-strict": parse_requirements(
+    #         "requirements/runtime.txt", versions="strict"
+    #     ),
+    #     "tests-strict": parse_requirements("requirements/tests.txt", versions="strict"),
+    #     "optional-strict": parse_requirements(
+    #         "requirements/optional.txt", versions="strict"
+    #     ),
+    #     'tests-binary': parse_requirements('requirements/tests-binary.txt'),
+    #     'tests-binary-strict': parse_requirements('requirements/tests-binary.txt', versions='strict'),
+    #     'colors': parse_requirements('requirements/colors.txt'),
+    #     'jupyter': parse_requirements('requirements/jupyter.txt'),
+    # }
 
     setupkw["name"] = NAME
     setupkw["version"] = VERSION

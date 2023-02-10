@@ -77,7 +77,7 @@ exclude_lines = [
      "^ *raise",
      "^ *pass *$",
      "if _debug:",
-     "if __name__ == .__main__.:", ".*if six.PY2:",
+     "if __name__ == .__main__.:",
 ]
 omit = [
     "*/setup.py",

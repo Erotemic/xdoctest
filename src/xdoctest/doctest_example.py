@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
 """
 This module defines the main class that holds a DocTest example
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 import __future__
 from collections import OrderedDict
 import traceback
-import six
 import warnings
 import math
 import sys
@@ -539,7 +536,7 @@ class DocTest(object):
                         lineno=self.lineno, fpath=self.fpath)
             self._parts = parser.DoctestParser().parse(self.docsrc, info)
             self._parts = [p for p in self._parts
-                           if not isinstance(p, six.string_types)]
+                           if not isinstance(p, str)]
         # Ensure part numbers are given
         for partno, part in enumerate(self._parts):
             part.partno = partno
@@ -1291,7 +1288,7 @@ class DocTest(object):
     def _print_captured(self):
         out_text = ''.join([v for v in self.logged_stdout.values() if v])
         if out_text is not None:
-            assert isinstance(out_text, six.text_type), 'do not use ascii'
+            assert isinstance(out_text, str), 'do not use bytes'
         try:
             print(out_text)
         except UnicodeEncodeError:

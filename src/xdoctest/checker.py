@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Checks for got-vs-want statements
 
@@ -31,7 +30,6 @@ representation of expression-based "got-strings".
 
 
 """
-from __future__ import print_function, division, absolute_import, unicode_literals
 import re
 import difflib
 from xdoctest import utils
