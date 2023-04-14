@@ -1,7 +1,7 @@
 |GithubActions| |CircleCI| |Appveyor| |Codecov| |Pypi| |PypiDownloads| |ReadTheDocs|
 
 
-.. The large version wont work because github strips rst image rescaling. 
+.. The large version wont work because github strips rst image rescaling.
 .. image:: https://i.imgur.com/u0tYYxM.png
    :height: 100px
    :align: left
@@ -10,13 +10,13 @@
 Xdoctest - Execute doctests. A Python package for executing tests in
 documentation strings!
 
-What is a `doctest <https://en.wikipedia.org/wiki/Doctest>`__? 
+What is a `doctest <https://en.wikipedia.org/wiki/Doctest>`__?
 It is example code you write in a docstring!
-What is a `docstring <https://en.wikipedia.org/wiki/Docstring>`__? 
+What is a `docstring <https://en.wikipedia.org/wiki/Docstring>`__?
 Its a string you use as a comment! They get attached to Python functions and
 classes as metadata. They are often used to auto-generate documentation.
 Why is it cool?
-Because you can write tests while you code! 
+Because you can write tests while you code!
 
 Tests are good. Documentation is good. Examples are good.  Doctests have low
 boilerplate, you write them in the same file you write your code. It often can
@@ -40,7 +40,7 @@ no test at all).
             1411
         """
         # I wrote this function by first finding some interesting demodata
-        # then I wrote the body in IPython and copied it back in. 
+        # then I wrote the body in IPython and copied it back in.
         # Now I can re-use this test code I wrote in development as a test!
         # Covered Code is much easier to debug (we have a MWE)!
         result = config['outer'](map(config['inner'], data))
@@ -52,7 +52,7 @@ The problem? How do you run the code in your doctest?
 
 Xdoctest finds and executes your doctests for you.
 Just run ``xdoctest <path-to-my-module>``.
-It plugs into pytest to make it easy to run on a CI. Install and run 
+It plugs into pytest to make it easy to run on a CI. Install and run
 ``pytest --xdoctest``.
 
 
@@ -85,7 +85,7 @@ Installation: from pypi
 
 Xdoctest is distributed on pypi as a universal wheel and can be pip installed on
 Python 3.6+ (Python 2.7 and 3.4 / 3.5 support was removed in Version 1.1.0).
-Installations are tested on CPython and PyPy implementations. 
+Installations are tested on CPython and PyPy implementations.
 
 ::
 
@@ -95,7 +95,7 @@ Installations are tested on CPython and PyPy implementations.
 Distributions on pypi are signed with a GPG public key: ``D297D757``. If you
 care enough to check the gpg signature (hopefully pip will just do this in the
 future), you should also verify this agrees with the contents of
-``dev/public_gpg_key``. 
+``dev/public_gpg_key``.
 
 
 Usage: run your doctests
@@ -173,11 +173,11 @@ method, which can be placed in the ``__main__`` section of any module as such:
 .. code:: python
 
     if __name__ == '__main__':
-        import xdoctest 
+        import xdoctest
         xdoctest.doctest_module(__file__)
 
 This sets up the ability to invoke the ``xdoctest`` command line
-interface. ``python -m <modname> <command>``. 
+interface. ``python -m <modname> <command>``.
 
 However, it is typically prefered to just use the ``xdoctest`` executable and
 pass it the path to your file, or the name of an installed module. In this case
@@ -222,7 +222,7 @@ code:
         """
         return a + 1
 
-You could 
+You could
 
 * Use the command ``xdoctest -m mymod list`` to list the names of all functions with doctests
 * Use the command ``xdoctest -m mymod all`` to run all functions with doctests
@@ -234,14 +234,14 @@ Passing ``--help`` to either way of invoking the native runner will result in
 something similar to the following that outlines what other options are
 available:
 
-.. code:: 
+.. code::
 
     usage: xdoctest [-h] [--version] [-m MODNAME] [-c COMMAND] [--style {auto,google,freeform}] [--analysis {auto,static,dynamic}] [--durations DURATIONS] [--time]
                     [--colored COLORED] [--nocolor] [--offset] [--report {none,cdiff,ndiff,udiff,only_first_failure}] [--options OPTIONS] [--global-exec GLOBAL_EXEC]
                     [--verbose VERBOSE] [--quiet] [--silent]
                     [arg ...]
 
-    Xdoctest 1.0.1 - on Python - 3.9.9 (main, Jun 10 2022, 17:45:11) 
+    Xdoctest 1.0.1 - on Python - 3.9.9 (main, Jun 10 2022, 17:45:11)
     [GCC 11.2.0] - discover and run doctests within a python package
 
     positional arguments:
@@ -273,7 +273,7 @@ available:
       --verbose VERBOSE     Verbosity level. 0 is silent, 1 prints out test names, 2 additionally prints test stdout, 3 additionally prints test source (default: 3)
       --quiet               sets verbosity to 1
       --silent              sets verbosity to 0
-       
+
 
 Zero-args runner
 ^^^^^^^^^^^^^^^^
@@ -387,7 +387,7 @@ backwards-compatible) syntax:
 
         """
 
-Xdoctest Parsing Style 
+Xdoctest Parsing Style
 ----------------------
 
 There are currently two main doctest parsing styles: ``google`` and
@@ -407,11 +407,11 @@ Setting ``--style=freeform`` (or ``--xdoctest-style=freeform`` in pytest) enable
 freeform-style parsing.
 A freeform style doctest is any contiguous block of lines prefixed by ``>>>``.
 This is the original parsing style of the builtin doctest module. Each block is
-listed as its own test. 
+listed as its own test.
 
 By default Xdoctest sets ``--style=auto`` (or ``--xdoctest-style=auto`` in
 pytest) which will pull all google-style blocks out as single doctests, while
-still all other ``>>>`` prefixed code out as a freeform doctest. 
+still all other ``>>>`` prefixed code out as a freeform doctest.
 
 
 Notes On Got/Want Tests
@@ -479,8 +479,8 @@ If you would like a slightly more verbose output, try
 
 .. code:: bash
 
-    pytest -s --verbose --xdoctest-verbose=3 --xdoctest $(python -c 'import xdoctest, pathlib; print(pathlib.Path(xdoctest.__file__).parent)') 
-    
+    pytest -s --verbose --xdoctest-verbose=3 --xdoctest $(python -c 'import xdoctest, pathlib; print(pathlib.Path(xdoctest.__file__).parent)')
+
 
 If you ran these commands, the myriad of characters that flew across your
 screen are lots more examples of what you can do with doctests.

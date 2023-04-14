@@ -76,6 +76,9 @@ def parse_requirements(fname="requirements.txt", versions=False):
 
     Returns:
         List[str]: list of requirements items
+
+    CommandLine:
+        python -c "import setup, ubelt; print(ubelt.urepr(setup.parse_requirements()))"
     """
     require_fpath = fname
 
@@ -199,24 +202,22 @@ VERSION = parse_version(INIT_PATH)
 if __name__ == "__main__":
     setupkw = {}
 
-    # setupkw["install_requires"] = parse_requirements("requirements/runtime.txt")
-    # setupkw["extras_require"] = {
-    #     "all": parse_requirements("requirements.txt"),
-    #     "tests": parse_requirements("requirements/tests.txt"),
-    #     "optional": parse_requirements("requirements/optional.txt"),
-    #     "all-strict": parse_requirements("requirements.txt", versions="strict"),
-    #     "runtime-strict": parse_requirements(
-    #         "requirements/runtime.txt", versions="strict"
-    #     ),
-    #     "tests-strict": parse_requirements("requirements/tests.txt", versions="strict"),
-    #     "optional-strict": parse_requirements(
-    #         "requirements/optional.txt", versions="strict"
-    #     ),
-    #     'tests-binary': parse_requirements('requirements/tests-binary.txt'),
-    #     'tests-binary-strict': parse_requirements('requirements/tests-binary.txt', versions='strict'),
-    #     'colors': parse_requirements('requirements/colors.txt'),
-    #     'jupyter': parse_requirements('requirements/jupyter.txt'),
-    # }
+    setupkw["install_requires"] = parse_requirements(
+        "requirements/runtime.txt", versions="loose"
+    )
+    setupkw["extras_require"] = {
+        "all": parse_requirements("requirements.txt", versions="loose"),
+        "tests": parse_requirements("requirements/tests.txt", versions="loose"),
+        "optional": parse_requirements("requirements/optional.txt", versions="loose"),
+        "all-strict": parse_requirements("requirements.txt", versions="strict"),
+        "runtime-strict": parse_requirements(
+            "requirements/runtime.txt", versions="strict"
+        ),
+        "tests-strict": parse_requirements("requirements/tests.txt", versions="strict"),
+        "optional-strict": parse_requirements(
+            "requirements/optional.txt", versions="strict"
+        ),
+    }
 
     setupkw["name"] = NAME
     setupkw["version"] = VERSION
@@ -232,24 +233,23 @@ if __name__ == "__main__":
     setupkw["classifiers"] = [
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
+        "Topic :: Software Development :: Testing",
+        "Framework :: Pytest",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Utilities",
-        'Topic :: Software Development :: Testing',
-        'Framework :: Pytest',
         "License :: OSI Approved :: Apache Software License",
-        'Programming Language :: Python :: 3',
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
-        'Programming Language :: Python :: Implementation :: PyPy',
-        'Programming Language :: Python :: Implementation :: CPython',
+        "Programming Language :: Python :: Implementation :: PyPy",
+        "Programming Language :: Python :: Implementation :: CPython",
     ]
     setupkw["package_data"] = {"xdoctest": ["py.typed", "*.pyi"]}
     setupkw["package_dir"] = {
-        "": "src",
+        "": "./src",
     }
     setupkw["entry_points"] = {
         "console_scripts": [

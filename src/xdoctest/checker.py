@@ -146,10 +146,17 @@ def _strip_exception_details(msg):
 def extract_exc_want(want):
     """
     Args:
-        want (str):
+        want (str): the message supplied by the user
 
     Returns:
-        str:
+        str: the matchable exception part
+
+    Example:
+        extract_exc_want('''
+        Traceback (most recent call last):
+        bar
+        ''')
+
     """
     want_ = utils.codeblock(want)
     m = _EXCEPTION_RE.search(want_)

@@ -2,6 +2,7 @@
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 # Based on ~/code/xcookie/xcookie/rc/tests.yml.in
 # Now based on ~/code/xcookie/xcookie/builders/github_actions.py
+# See: https://github.com/Erotemic/xcookie
 
 name: PurePyCI
 
@@ -12,12 +13,17 @@ on:
 
 jobs:
   lint_job:
+    ##
+    # Run quick linting and typing checks.
+    # To disable all linting add "linter=false" to the xcookie config.
+    # To disable type checks add "notypes" to the xcookie tags.
+    ##
     runs-on: ubuntu-latest
     steps:
     - name: Checkout source
       uses: actions/checkout@v3
     - name: Set up Python 3.11 for linting
-      uses: actions/setup-python@v4.5.0
+      uses: actions/setup-python@v4.6.1
       with:
         python-version: '3.11'
     - name: Install dependencies
@@ -34,20 +40,24 @@ jobs:
         mypy --install-types --non-interactive ./src/xdoctest
         mypy ./src/xdoctest
   build_and_test_sdist:
+    ##
+    # Build the pure python package from source and test it in the
+    # same environment.
+    ##
     name: Build sdist
     runs-on: ubuntu-latest
     steps:
     - name: Checkout source
       uses: actions/checkout@v3
     - name: Set up Python 3.11
-      uses: actions/setup-python@v4.5.0
+      uses: actions/setup-python@v4.6.1
       with:
         python-version: '3.11'
     - name: Upgrade pip
       run: |-
         python -m pip install --upgrade pip
-        python -m pip install -r requirements/tests.txt
-        python -m pip install -r requirements/runtime.txt
+        python -m pip install --prefer-binary -r requirements/tests.txt
+        python -m pip install --prefer-binary -r requirements/runtime.txt
     - name: Build sdist
       shell: bash
       run: |-
@@ -70,7 +80,7 @@ jobs:
         # Get path to installed package
         MOD_DPATH=$(python -c "import xdoctest, os; print(os.path.dirname(xdoctest.__file__))")
         echo "MOD_DPATH = $MOD_DPATH"
-        python -m pytest --cov={self.mod_name} $MOD_DPATH ../tests
+        python -m pytest --verbose --cov={self.mod_name} $MOD_DPATH ../tests
         cd ..
     - name: Test full loose sdist
       run: |-
@@ -85,7 +95,7 @@ jobs:
         # Get path to installed package
         MOD_DPATH=$(python -c "import xdoctest, os; print(os.path.dirname(xdoctest.__file__))")
         echo "MOD_DPATH = $MOD_DPATH"
-        python -m pytest --cov={self.mod_name} $MOD_DPATH ../tests
+        python -m pytest --verbose --cov={self.mod_name} $MOD_DPATH ../tests
         cd ..
     - name: Upload sdist artifact
       uses: actions/upload-artifact@v3
@@ -93,6 +103,10 @@ jobs:
         name: wheels
         path: ./wheelhouse/*.tar.gz
   build_purepy_wheels:
+    ##
+    # Download and test the pure-python wheels that were build in the
+    # build_purepy_wheels and test them in this independent environment.
+    ##
     name: ${{ matrix.python-version }} on ${{ matrix.os }}, arch=${{ matrix.arch }} with ${{ matrix.install-extras }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -112,14 +126,13 @@ jobs:
       with:
         platforms: all
     - name: Setup Python
-      uses: actions/setup-python@v4.5.0
+      uses: actions/setup-python@v4.6.1
       with:
         python-version: ${{ matrix.python-version }}
     - name: Build pure wheel
       shell: bash
       run: |-
-        python -m pip install pip -U
-        python -m pip install setuptools>=0.8 build
+        python -m pip install setuptools>=0.8 wheel build
         python -m build --wheel --outdir wheelhouse
     - name: Show built files
       shell: bash
@@ -136,181 +149,194 @@ jobs:
     - build_purepy_wheels
     strategy:
       matrix:
+        # Xcookie generates an explicit list of environments that will be used
+        # for testing instead of using the more concise matrix notation.
         include:
         - python-version: '3.6'
+          install-extras: tests-strict,runtime-strict
           os: ubuntu-20.04
-          install-extras: tests-strict,runtime-strict
           arch: auto
         - python-version: '3.6'
+          install-extras: tests-strict,runtime-strict
           os: macOS-latest
-          install-extras: tests-strict,runtime-strict
           arch: auto
         - python-version: '3.6'
-          os: windows-latest
           install-extras: tests-strict,runtime-strict
+          os: windows-latest
           arch: auto
         - python-version: '3.11'
+          install-extras: tests-strict,runtime-strict,optional-strict
           os: ubuntu-latest
-          install-extras: tests-strict,runtime-strict,optional-strict
           arch: auto
         - python-version: '3.11'
+          install-extras: tests-strict,runtime-strict,optional-strict
           os: macOS-latest
-          install-extras: tests-strict,runtime-strict,optional-strict
           arch: auto
         - python-version: '3.11'
+          install-extras: tests-strict,runtime-strict,optional-strict
           os: windows-latest
-          install-extras: tests-strict,runtime-strict,optional-strict
           arch: auto
         - python-version: '3.11'
-          os: macOS-latest
           install-extras: tests
+          os: windows-latest
           arch: auto
         - python-version: '3.11'
-          os: windows-latest
           install-extras: tests
+          os: windows-latest
           arch: auto
         - python-version: '3.6'
-          os: ubuntu-20.04
           install-extras: tests,optional
+          os: windows-latest
           arch: auto
         - python-version: '3.7'
-          os: ubuntu-latest
           install-extras: tests,optional
+          os: windows-latest
           arch: auto
         - python-version: '3.8'
-          os: ubuntu-latest
           install-extras: tests,optional
+          os: windows-latest
           arch: auto
         - python-version: '3.9'
-          os: ubuntu-latest
           install-extras: tests,optional
+          os: windows-latest
           arch: auto
         - python-version: '3.10'
-          os: ubuntu-latest
           install-extras: tests,optional
+          os: windows-latest
           arch: auto
         - python-version: '3.11'
-          os: ubuntu-latest
           install-extras: tests,optional
+          os: windows-latest
+          arch: auto
+        - python-version: pypy-3.7
+          install-extras: tests,optional
+          os: windows-latest
           arch: auto
         - python-version: '3.6'
-          os: macOS-latest
           install-extras: tests,optional
+          os: windows-latest
           arch: auto
         - python-version: '3.7'
-          os: macOS-latest
           install-extras: tests,optional
+          os: windows-latest
           arch: auto
         - python-version: '3.8'
-          os: macOS-latest
           install-extras: tests,optional
+          os: windows-latest
           arch: auto
         - python-version: '3.9'
-          os: macOS-latest
           install-extras: tests,optional
+          os: windows-latest
           arch: auto
         - python-version: '3.10'
-          os: macOS-latest
           install-extras: tests,optional
+          os: windows-latest
           arch: auto
         - python-version: '3.11'
-          os: macOS-latest
           install-extras: tests,optional
+          os: windows-latest
+          arch: auto
+        - python-version: pypy-3.7
+          install-extras: tests,optional
+          os: windows-latest
           arch: auto
         - python-version: '3.6'
-          os: windows-latest
           install-extras: tests,optional
+          os: windows-latest
           arch: auto
         - python-version: '3.7'
-          os: windows-latest
           install-extras: tests,optional
+          os: windows-latest
           arch: auto
         - python-version: '3.8'
-          os: windows-latest
           install-extras: tests,optional
+          os: windows-latest
           arch: auto
         - python-version: '3.9'
-          os: windows-latest
           install-extras: tests,optional
+          os: windows-latest
           arch: auto
         - python-version: '3.10'
-          os: windows-latest
           install-extras: tests,optional
+          os: windows-latest
           arch: auto
         - python-version: '3.11'
+          install-extras: tests,optional
           os: windows-latest
-          install-extras: tests,optional
           arch: auto
         - python-version: pypy-3.7
-          os: ubuntu-latest
           install-extras: tests,optional
-          arch: auto
-        - python-version: pypy-3.7
-          os: macOS-latest
-          install-extras: tests,optional
-          arch: auto
-        - python-version: pypy-3.7
           os: windows-latest
+          arch: auto
+        - python-version: pypy-3.7
           install-extras: tests,optional
+          os: windows-latest
+          arch: auto
+        - python-version: pypy-3.7
+          install-extras: tests,optional
+          os: windows-latest
+          arch: auto
+        - python-version: pypy-3.7
+          install-extras: tests,optional
+          os: windows-latest
           arch: auto
     steps:
     - name: Checkout source
       uses: actions/checkout@v3
     - name: Enable MSVC 64bit
       uses: ilammy/msvc-dev-cmd@v1
-      if: matrix.os == 'windows-latest' # && ${{ contains(matrix.cibw_skip, '*-win32') }}
-    #- name: Enable MSVC 32bit
-    #  uses: ilammy/msvc-dev-cmd@v1
-    #  if: matrix.os == 'windows-latest' && ${{ contains(matrix.cibw_skip, '*-win_amd64') }}
-    #  with:
-    #    arch: x86
+      if: matrix.os == 'windows-latest'
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2
       if: runner.os == 'Linux' && matrix.arch != 'auto'
       with:
         platforms: all
     - name: Setup Python
-      uses: actions/setup-python@v4.5.0
+      uses: actions/setup-python@v4.6.1
       with:
         python-version: ${{ matrix.python-version }}
     - uses: actions/download-artifact@v3
-      name: Download wheels and sdist
+      name: Download wheels
       with:
         name: wheels
         path: wheelhouse
-    - name: Test wheel with ${{ matrix.install-extras }}
+    - name: Install wheel ${{ matrix.install-extras }}
       shell: bash
       env:
         INSTALL_EXTRAS: ${{ matrix.install-extras }}
-        CI_PYTHON_VERSION: py${{ matrix.python-version }}
       run: |-
         echo "Finding the path to the wheel"
-        ls -al wheelhouse
+        ls wheelhouse || echo "wheelhouse does not exist"
         echo "Installing helpers"
+        pip install setuptools>=0.8 setuptools_scm wheel build -U
         pip install tomli pkginfo
-        MOD_NAME=xdoctest
-        echo "MOD_NAME=$MOD_NAME"
-        WHEEL_FPATH=$(python -c "import pathlib; print(str(sorted(pathlib.Path('wheelhouse').glob('$MOD_NAME*.whl'))[-1]).replace(chr(92), chr(47)))")
-        echo "WHEEL_FPATH=$WHEEL_FPATH"
-        MOD_VERSION=$(python -c "from pkginfo import Wheel; print(Wheel('$WHEEL_FPATH').version)")
-        echo "MOD_VERSION=$MOD_VERSION"
-        echo "Install the wheel (ensureing we are using the version we just built)"
-        # NOTE: THE VERSION MUST BE NEWER THAN AN EXISTING PYPI VERSION OR THIS MAY FAIL
-        pip install --prefer-binary "$MOD_NAME[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
-        echo "Install finished. Creating a sandbox directory to test it"
-        WORKSPACE_DNAME="testdir_${CI_PYTHON_VERSION}_${GITHUB_RUN_ID}_${RUNNER_OS}"
+        export WHEEL_FPATH=$(python -c "import pathlib; print(str(sorted(pathlib.Path('wheelhouse').glob('xdoctest*.whl'))[-1]).replace(chr(92), chr(47)))")
+        export MOD_VERSION=$(python -c "from pkginfo import Wheel; print(Wheel('$WHEEL_FPATH').version)")
+        pip install --prefer-binary "xdoctest[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
+        echo "Install finished."
+    - name: Test wheel ${{ matrix.install-extras }}
+      shell: bash
+      env:
+        CI_PYTHON_VERSION: py${{ matrix.python-version }}
+      run: |-
+        echo "Creating test sandbox directory"
+        export WORKSPACE_DNAME="testdir_${CI_PYTHON_VERSION}_${GITHUB_RUN_ID}_${RUNNER_OS}"
         echo "WORKSPACE_DNAME=$WORKSPACE_DNAME"
         mkdir -p $WORKSPACE_DNAME
         echo "cd-ing into the workspace"
         cd $WORKSPACE_DNAME
         pwd
-        ls -al
-        pip freeze
+        ls -altr
         # Get the path to the installed package and run the tests
-        MOD_DPATH=$(python -c "import xdoctest, os; print(os.path.dirname(xdoctest.__file__))")
-        echo "MOD_DPATH = $MOD_DPATH"
-        echo "running the pytest command inside the workspace"
-        python -m pytest -p pytester -p no:doctest --xdoctest --cov-config ../pyproject.toml --cov-report term --cov="$MOD_NAME" "$MOD_DPATH" ../tests
+        export MOD_DPATH=$(python -c "import xdoctest, os; print(os.path.dirname(xdoctest.__file__))")
+        echo "
+        ---
+        MOD_DPATH = $MOD_DPATH
+        ---
+        running the pytest command inside the workspace
+        ---
+        "
+        python -m pytest --verbose -p pytester -p no:doctest --xdoctest --cov-config ../pyproject.toml --cov-report term --cov="xdoctest" "$MOD_DPATH" ../tests
         echo "pytest command finished, moving the coverage file to the repo root"
         ls -al
         # Move coverage file to a new name
@@ -323,19 +349,20 @@ jobs:
       run: |-
         echo '############ PWD'
         pwd
+        cp .wheelhouse/.coverage* . || true
         ls -al
         python -m pip install coverage[toml]
         echo '############ combine'
-        coverage combine .
+        coverage combine . || true
         echo '############ XML'
-        coverage xml -o ./tests/coverage.xml
-        echo '############ FIND'
-        find . -name .coverage.*
-        find . -name coverage.xml
+        coverage xml -o ./coverage.xml || true
+        echo '### The cwd should now have a coverage.xml'
+        ls -altr
+        pwd
     - uses: codecov/codecov-action@v3
       name: Codecov Upload
       with:
-        file: ./tests/coverage.xml
+        file: ./coverage.xml
   test_deploy:
     name: Uploading Test to PyPi
     runs-on: ubuntu-latest
@@ -358,7 +385,7 @@ jobs:
     - name: Sign and Publish
       env:
         TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
-        TWINE_USERNAME: ${{ secrets.TEST_TWINE_USERNAME }}
+        TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.TEST_TWINE_PASSWORD }}
         CI_SECRET: ${{ secrets.CI_SECRET }}
       run: |-
@@ -402,7 +429,7 @@ jobs:
     - name: Sign and Publish
       env:
         TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
-        TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
+        TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
         CI_SECRET: ${{ secrets.CI_SECRET }}
       run: |-
