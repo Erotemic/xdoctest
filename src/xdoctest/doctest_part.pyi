@@ -1,5 +1,4 @@
 from typing import List
-from typing import Union
 from xdoctest import directive
 
 __devnotes__: str
@@ -7,19 +6,19 @@ __devnotes__: str
 
 class DoctestPart:
     exec_lines: List[str]
-    want_lines: Union[List[str], None]
+    want_lines: List[str] | None
     line_offset: int
-    orig_lines: Union[List[str], None]
-    partno: Union[int, None]
+    orig_lines: List[str] | None
+    partno: int | None
     compile_mode: str
 
     def __init__(self,
                  exec_lines: List[str],
-                 want_lines: Union[List[str], None] = None,
+                 want_lines: List[str] | None = None,
                  line_offset: int = 0,
-                 orig_lines: Union[List[str], None] = None,
-                 directives: Union[list, None] = None,
-                 partno: Union[int, None] = None) -> None:
+                 orig_lines: List[str] | None = None,
+                 directives: list | None = None,
+                 partno: int | None = None) -> None:
         ...
 
     @property
@@ -58,15 +57,15 @@ class DoctestPart:
     def check(part,
               got_stdout: str,
               got_eval: str = ...,
-              runstate: Union[directive.RuntimeState, None] = None,
-              unmatched: Union[list, None] = None) -> None:
+              runstate: directive.RuntimeState | None = None,
+              unmatched: list | None = None) -> None:
         ...
 
     def format_part(self,
                     linenos: bool = True,
                     want: bool = True,
                     startline: int = 1,
-                    n_digits: Union[int, None] = None,
+                    n_digits: int | None = None,
                     colored: bool = False,
                     partnos: bool = False,
                     prefix: bool = True) -> str:

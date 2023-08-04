@@ -32,6 +32,10 @@ except ImportError:  # nocover
 #     with open(fpath, 'a') as file:
 #         file.write(str(text) + '\n')
 
+__docstubs__ = """
+import xdoctest.doctest_example
+"""
+
 
 ### WE SHALL NOW BE VERY NAUGHTY ###
 def monkey_patch_disable_normal_doctest():

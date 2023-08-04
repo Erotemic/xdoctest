@@ -1,4 +1,3 @@
-from typing import Union
 from typing import List
 from _typeshed import Incomplete
 
@@ -25,9 +24,9 @@ def highlight_code(text: str, lexer_name: str = 'python', **kwargs) -> str:
     ...
 
 
-def add_line_numbers(source: Union[str, List[str]],
+def add_line_numbers(source: str | List[str],
                      start: int = 1,
-                     n_digits: Union[int, None] = None) -> List[str] | str:
+                     n_digits: int | None = None) -> List[str] | str:
     ...
 
 

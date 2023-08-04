@@ -1,6 +1,3 @@
-from _typeshed import Incomplete
-
-
 class _NOT_EVAL_TYPE:
 
     def __new__(cls):
@@ -21,7 +18,7 @@ class _NOT_EVAL_TYPE:
     def __bool__(self):
         ...
 
-    __nonzero__: Incomplete
+    __nonzero__ = __bool__
 
 
 NOT_EVALED: _NOT_EVAL_TYPE

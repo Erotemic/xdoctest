@@ -1,4 +1,3 @@
-from typing import Union
 from os import PathLike
 import ast
 from _typeshed import Incomplete
@@ -25,12 +24,12 @@ class NotebookLoader:
         ...
 
 
-def import_notebook_from_path(ipynb_fpath: Union[str, PathLike],
+def import_notebook_from_path(ipynb_fpath: str | PathLike,
                               only_defs: bool = False):
     ...
 
 
-def execute_notebook(ipynb_fpath: Union[str, PathLike],
+def execute_notebook(ipynb_fpath: str | PathLike,
                      timeout: Incomplete | None = ...,
                      verbose: Incomplete | None = ...) -> dict:
     ...

@@ -1,14 +1,17 @@
 from typing import Any
-from typing import Union
 from os import PathLike
-from typing import Set
+from types import ModuleType
+from types import TracebackType
 from typing import Dict
+from collections import OrderedDict
+from typing import Set
 from typing import List
-from _typeshed import Incomplete
 from collections.abc import Generator
-from typing import Any
+
+from xdoctest.doctest_part import DoctestPart
 
 __devnotes__: str
+__docstubs__: str
 
 
 class DoctestConfig(dict):
@@ -16,7 +19,7 @@ class DoctestConfig(dict):
     def __init__(self, *args, **kwargs) -> None:
         ...
 
-    def getvalue(self, key: str, given: Union[Any, None] = None) -> Any:
+    def getvalue(self, key: str, given: Any | None = None) -> Any:
         ...
 
 
@@ -26,32 +29,32 @@ class DocTest:
     UNKNOWN_CALLNAME: str
     UNKNOWN_FPATH: str
     docsrc: str
-    modpath: Union[str, PathLike]
+    modpath: str | PathLike
     callname: str
     num: int
     lineno: int
     fpath: PathLike
-    block_type: Union[str, None]
+    block_type: str | None
     mode: str
-    config: Incomplete
-    module: Incomplete
-    modname: Incomplete
-    failed_tb_lineno: Incomplete
-    exc_info: Incomplete
-    failed_part: Incomplete
-    warn_list: Incomplete
-    logged_evals: Incomplete
-    logged_stdout: Incomplete
-    global_namespace: Incomplete
+    config: DoctestConfig
+    module: ModuleType | None
+    modname: str
+    failed_tb_lineno: int | None
+    exc_info: None | TracebackType
+    failed_part: None | DoctestPart
+    warn_list: list
+    logged_evals: OrderedDict
+    logged_stdout: OrderedDict
+    global_namespace: dict
 
     def __init__(self,
                  docsrc: str,
-                 modpath: Union[str, PathLike, None] = None,
-                 callname: Union[str, None] = None,
+                 modpath: str | PathLike | None = None,
+                 callname: str | None = None,
                  num: int = 0,
                  lineno: int = 1,
-                 fpath: Union[str, None] = None,
-                 block_type: Union[str, None] = None,
+                 fpath: str | None = None,
+                 block_type: str | None = None,
                  mode: str = 'pytest') -> None:
         ...
 
@@ -78,17 +81,17 @@ class DocTest:
 
     def format_parts(self,
                      linenos: bool = True,
-                     colored: Union[bool, None] = None,
+                     colored: bool | None = None,
                      want: bool = True,
-                     offset_linenos: Union[bool, None] = None,
+                     offset_linenos: bool | None = None,
                      prefix: bool = True) -> Generator[Any, None, None]:
         ...
 
     def format_src(self,
                    linenos: bool = True,
-                   colored: Union[bool, None] = None,
+                   colored: bool | None = None,
                    want: bool = True,
-                   offset_linenos: Union[bool, None] = None,
+                   offset_linenos: bool | None = None,
                    prefix: bool = True) -> str:
         ...
 
@@ -96,8 +99,8 @@ class DocTest:
         ...
 
     def run(self,
-            verbose: Union[int, None] = None,
-            on_error: Union[str, None] = None) -> Dict:
+            verbose: int | None = None,
+            on_error: str | None = None) -> Dict:
         ...
 
     @property

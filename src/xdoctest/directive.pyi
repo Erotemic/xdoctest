@@ -1,4 +1,3 @@
-from typing import Union
 from typing import Dict
 from collections import OrderedDict
 from typing import Any
@@ -9,7 +8,7 @@ from typing import Any, NamedTuple
 from xdoctest import utils
 
 
-def named(key, pattern):
+def named(key: str, pattern: str) -> str:
     ...
 
 
@@ -24,7 +23,7 @@ class Effect(NamedTuple):
 
 class RuntimeState(utils.NiceRepr):
 
-    def __init__(self, default_state: Union[None, dict] = None) -> None:
+    def __init__(self, default_state: None | dict = None) -> None:
         ...
 
     def to_dict(self) -> OrderedDict:
@@ -41,7 +40,7 @@ class RuntimeState(utils.NiceRepr):
 
     def set_report_style(self,
                          reportchoice: str,
-                         state: Union[None, Dict] = None) -> None:
+                         state: None | Dict = None) -> None:
         ...
 
     def update(self, directives: List[Directive]) -> None:
@@ -51,14 +50,14 @@ class RuntimeState(utils.NiceRepr):
 class Directive(utils.NiceRepr):
     name: str
     args: List[str]
-    inline: Union[bool, None]
+    inline: bool | None
     positive: bool
 
     def __init__(self,
                  name: str,
                  positive: bool = True,
                  args: List[str] = ...,
-                 inline: Union[bool, None] = None) -> None:
+                 inline: bool | None = None) -> None:
         ...
 
     @classmethod
@@ -74,8 +73,8 @@ class Directive(utils.NiceRepr):
         ...
 
     def effects(self,
-                argv: Union[List[str], None] = None,
-                environ: Union[Dict[str, str], None] = None) -> List[Effect]:
+                argv: List[str] | None = None,
+                environ: Dict[str, str] | None = None) -> List[Effect]:
         ...
 
 
@@ -85,5 +84,5 @@ DIRECTIVE_RE: Incomplete
 
 
 def parse_directive_optstr(optpart: str,
-                           inline: Union[None, bool] = None) -> Directive:
+                           inline: None | bool = None) -> Directive:
     ...

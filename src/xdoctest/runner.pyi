@@ -1,5 +1,4 @@
 from typing import Callable
-from typing import Union
 from types import ModuleType
 from typing import List
 from typing import Dict
@@ -23,14 +22,14 @@ def gather_doctests(doctest_identifiers,
     ...
 
 
-def doctest_module(module_identifier: Union[str, ModuleType, None] = None,
-                   command: Union[str, None] = None,
-                   argv: Union[List[str], None] = None,
+def doctest_module(module_identifier: str | ModuleType | None = None,
+                   command: str | None = None,
+                   argv: List[str] | None = None,
                    exclude: List[str] = ...,
                    style: str = 'auto',
-                   verbose: Union[int, None] = None,
-                   config: Union[Dict[str, object], None] = None,
-                   durations: Union[int, None] = None,
+                   verbose: int | None = None,
+                   config: Dict[str, object] | None = None,
+                   durations: int | None = None,
                    analysis: str = 'auto') -> Dict[str, Any]:
     ...
 

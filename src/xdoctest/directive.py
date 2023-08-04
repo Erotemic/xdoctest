@@ -162,7 +162,16 @@ from collections import namedtuple
 
 
 def named(key, pattern):
-    """ helper for regex """
+    """
+    helper for regex
+
+    Args:
+        key (str):
+        pattern (str):
+
+    Returns:
+        str
+    """
     return '(?P<{}>{})'.format(key, pattern)
 
 
@@ -376,10 +385,15 @@ class Directive(utils.NiceRepr):
     def __init__(self, name, positive=True, args=[], inline=None):
         """
         Args:
-            name (str):
-            positive (bool):
-            args (List[str]):
-            inline (bool | None): True if this is an inline directive
+            name (str): The name of the directive
+
+            positive (bool): if it is enabling / disabling
+
+            args (List[str]): arguments given to the directive
+
+            inline (bool | None):
+                True if this is an inline directive (i.e. only impacts a single
+                line)
         """
         self.name = name
         self.args = args
@@ -396,7 +410,7 @@ class Directive(utils.NiceRepr):
                 followups.
 
         Yields:
-            Directive: directive: the parsed directives
+            Directive: directive - the parsed directives
 
         Note:
             The original ``doctest`` module sometimes yielded false positives for a
@@ -530,9 +544,12 @@ class Directive(utils.NiceRepr):
 
         Args:
             argv (List[str] | None):
-                if specified, overwrite sys.argv
+                Command line the directive is interpreted in the context of.
+                If unspecified, uses ``sys.argv``.
+
             environ (Dict[str, str] | None):
-                if specified, overwrite os.environ
+                Environment variables the directive is interpreted in the
+                context of. If unspecified, uses ``os.environ``.
 
         Returns:
             List[Effect]: list of named tuples containing:
@@ -629,10 +646,10 @@ def _split_opstr(optstr):
     Simplified balanced paren logic to only split commas outside of parens
 
     Args:
-        opstr (str):
+        opstr (str): the command, which may contain more than one directive
 
     Returns:
-        List[str]
+        List[str]: individual directive optstrings
 
     Example:
         >>> optstr = '+FOO, REQUIRES(foo,bar), +ELLIPSIS'
@@ -792,6 +809,13 @@ _MODNAME_EXISTS_CACHE = {}
 
 
 def _module_exists(modname):
+    """
+    Args:
+        modname (str):
+
+    Returns:
+        bool
+    """
     if modname not in _MODNAME_EXISTS_CACHE:
         from xdoctest import static_analysis as static
         modpath = static.modname_to_modpath(modname)
@@ -800,6 +824,20 @@ def _module_exists(modname):
     exists_flag = _MODNAME_EXISTS_CACHE[modname]
     return exists_flag
 
+
+# __docstubs__ = '''
+# import re
+
+# if hasattr(re, 'Pattern'):
+#     RE_Pattern = re.Pattern
+# else:
+#     # sys.version_info[0:2] <= 3.6
+#     RE_Pattern = type(re.compile('.*'))
+
+# DIRECTIVE_RE: RE_Pattern
+# DIRECTIVE_PATTERNS: list
+# COMMANDS: list
+# '''
 
 COMMANDS = list(DEFAULT_RUNTIME_STATE.keys()) + [
     # Define extra commands that can resolve to a runtime state modification
@@ -825,7 +863,10 @@ def parse_directive_optstr(optpart, inline=None):
 
     Args:
         optpart (str):
+            the string corresponding to the operation
+
         inline (None | bool):
+            True if the directive only applies to a single line.
 
     Returns:
         Directive: the parsed directive

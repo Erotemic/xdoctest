@@ -28,12 +28,31 @@ HAS_UPDATED_LINENOS = sys.version_info[0] >= 3 and sys.version_info[1] >= 8
 class CallDefNode(object):
     """
     Attributes:
-        callname (str): the name of the "calldef"
-        doclineno (int): the line number (1 based) the docstring begins on
-        doclineno_end (int): the line number (1 based) the docstring ends on
+        lineno_end (None | int):
+            the line number the docstring ends on (if known)
     """
     def __init__(self, callname, lineno, docstr, doclineno, doclineno_end,
                  args=None):
+        """
+        Args:
+            callname (str):
+                the name of the item containing the docstring.
+
+            lineno (int):
+                the line number the item containing the docstring.
+
+            docstr (str):
+                the docstring itself
+
+            doclineno (int):
+                the line number (1 based) the docstring begins on
+
+            doclineno_end (int):
+                the line number (1 based) the docstring ends on
+
+            args (None | ast.arguments):
+                arguments from static analysis :class:`TopLevelVisitor`.
+        """
         self.callname = callname
         self.lineno = lineno
         self.docstr = docstr
@@ -43,6 +62,10 @@ class CallDefNode(object):
         self.args = args
 
     def __str__(self):
+        """
+        Returns:
+            str
+        """
         return '{}[{}:{}][{}]'.format(
             self.callname, self.lineno, self.lineno_end,
             self.doclineno)
@@ -59,6 +82,12 @@ class TopLevelVisitor(ast.NodeVisitor):
 
     CommandLine:
         python -m xdoctest.static_analysis TopLevelVisitor
+
+    Attributes:
+        calldefs (OrderedDict):
+        source (None | str):
+        sourcelines (None | List[str]):
+        assignments (list):
 
     Example:
         >>> from xdoctest.static_analysis import *  # NOQA

@@ -1,5 +1,4 @@
 import io
-import io
 from _typeshed import Incomplete
 
 

@@ -19,8 +19,13 @@ from xdoctest import global_state
 
 __devnotes__ = """
 TODO:
-    - [ ] Rename DocTest to Doctest?
-    - [ ] I dont like having "example" as a suffix to this modname, can we rename?
+    - [ ] Rename DocTest to Doctest? - Probably not, its been years.
+    - [ ] I dont like having "example" as a suffix to this modname, can we rename? - Probably not, its been years.
+"""
+
+
+__docstubs__ = """
+from xdoctest.doctest_part import DoctestPart
 """
 
 
@@ -197,6 +202,36 @@ class DocTest(object):
             Hint at what created / is running this doctest. This impacts
             how results are presented and what doctests are skipped.
             Can be "native" or "pytest". Defaults to "pytest".
+
+        config (DoctestConfig):
+            configuration for running / checking the doctest
+
+        module (ModuleType | None):
+            a reference to the module that contains the doctest
+
+        modname (str):
+            name of the module that contains the doctest.
+
+        failed_tb_lineno (int | None):
+            Line number a failure occurred on.
+
+        exc_info (None | TracebackType):
+            traceback of a failure if one occurred.
+
+        failed_part (None | DoctestPart):
+            the part containing the failure if one occurred.
+
+        warn_list (list):
+            from :func:`warnings.catch_warnings`
+
+        logged_evals (OrderedDict):
+            Mapping from part index to what they evaluated to (if anything)
+
+        logged_stdout (OrderedDict):
+            Mapping from part index to captured stdout.
+
+        global_namespace (dict):
+            globals visible to the doctest
 
     CommandLine:
         xdoctest -m xdoctest.doctest_example DocTest

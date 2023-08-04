@@ -1,6 +1,5 @@
 from typing import Any
 from typing import List
-from typing import Union
 import xdoctest
 from typing import Tuple
 from typing import Dict
@@ -8,7 +7,10 @@ import pytest
 from _pytest._code import code
 from _typeshed import Incomplete
 from collections.abc import Generator
-from typing import Any
+
+import xdoctest.doctest_example
+
+__docstubs__: str
 
 
 def monkey_patch_disable_normal_doctest():
@@ -43,9 +45,8 @@ class XDoctestItem(pytest.Item):
     def __init__(
             self,
             name: str,
-            parent: Union[Any, None],
-            example: Union[xdoctest.doctest_example.DocTest,
-                           None] = None) -> None:
+            parent: Any | None,
+            example: xdoctest.doctest_example.DocTest | None = None) -> None:
         ...
 
     def setup(self) -> None:
