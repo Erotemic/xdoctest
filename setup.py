@@ -217,6 +217,10 @@ if __name__ == "__main__":
         "optional-strict": parse_requirements(
             "requirements/optional.txt", versions="strict"
         ),
+        'tests-binary': parse_requirements('requirements/tests-binary.txt'),
+        'tests-binary-strict': parse_requirements('requirements/tests-binary.txt', versions='strict'),
+        'colors': parse_requirements('requirements/colors.txt'),
+        'jupyter': parse_requirements('requirements/jupyter.txt'),
     }
 
     setupkw["name"] = NAME
@@ -234,10 +238,11 @@ if __name__ == "__main__":
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Testing",
-        "Framework :: Pytest",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Utilities",
+        "Framework :: Pytest",
         "License :: OSI Approved :: Apache Software License",
+        "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
