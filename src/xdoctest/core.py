@@ -54,6 +54,10 @@ DOCTEST_STYLES = [
     # 'numpy',  # TODO
 ]
 
+__docstubs__ = """
+import xdoctest.doctest_example
+"""
+
 
 def parse_freeform_docstr_examples(docstr, callname=None, modpath=None,
                                    lineno=1, fpath=None, asone=True):

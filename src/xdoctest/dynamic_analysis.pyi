@@ -1,4 +1,3 @@
-from typing import Union
 from os import PathLike
 from types import ModuleType
 from typing import Dict
@@ -11,7 +10,7 @@ from typing import Any
 
 
 def parse_dynamic_calldefs(
-    modpath_or_module: Union[str, PathLike, ModuleType]
+    modpath_or_module: str | PathLike | ModuleType
 ) -> Dict[str, xdoctest.static_analysis.CallDefNode]:
     ...
 

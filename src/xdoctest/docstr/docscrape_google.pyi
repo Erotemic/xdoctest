@@ -1,7 +1,6 @@
 from typing import List
 from typing import Tuple
 from typing import Dict
-from typing import Union
 from _typeshed import Incomplete
 from collections.abc import Generator
 from typing import Any, NamedTuple
@@ -21,16 +20,16 @@ def parse_google_args(docstr: str) -> Generator[Dict[str, str], None, None]:
 
 
 def parse_google_returns(
-    docstr: str,
-    return_annot: Union[str, None] = None
+        docstr: str,
+        return_annot: str | None = None
 ) -> Generator[Dict[str, str], None, None]:
     ...
 
 
 def parse_google_retblock(
-    lines: str,
-    return_annot: Union[str,
-                        None] = None) -> Generator[Dict[str, str], None, Any]:
+        lines: str,
+        return_annot: str | None = None
+) -> Generator[Dict[str, str], None, Any]:
     ...
 
 

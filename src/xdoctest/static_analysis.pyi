@@ -1,9 +1,8 @@
-from typing import Union
 import ast
 from typing import Dict
+from collections import OrderedDict
 from typing import List
 import types
-import ast
 from _typeshed import Incomplete
 from collections.abc import Generator
 from typing import Any
@@ -14,36 +13,35 @@ HAS_UPDATED_LINENOS: Incomplete
 
 
 class CallDefNode:
+    lineno_end: None | int
     callname: str
+    lineno: int
+    docstr: str
     doclineno: int
     doclineno_end: int
-    lineno: Incomplete
-    docstr: Incomplete
-    lineno_end: Incomplete
-    args: Incomplete
+    args: None | ast.arguments
 
     def __init__(self,
-                 callname,
-                 lineno,
-                 docstr,
-                 doclineno,
-                 doclineno_end,
-                 args: Incomplete | None = ...) -> None:
+                 callname: str,
+                 lineno: int,
+                 docstr: str,
+                 doclineno: int,
+                 doclineno_end: int,
+                 args: None | ast.arguments = None) -> None:
         ...
 
 
 class TopLevelVisitor(ast.NodeVisitor):
+    calldefs: OrderedDict
+    source: None | str
+    sourcelines: None | List[str]
+    assignments: list
 
     @classmethod
     def parse(cls, source: str):
         ...
 
-    calldefs: Incomplete
-    source: Union[None, str]
-    sourcelines: Incomplete
-    assignments: Incomplete
-
-    def __init__(self, source: Union[None, str] = None) -> None:
+    def __init__(self, source: None | str = None) -> None:
         ...
 
     def syntax_tree(self) -> ast.Module:
@@ -71,9 +69,8 @@ class TopLevelVisitor(ast.NodeVisitor):
         ...
 
 
-def parse_static_calldefs(
-        source: Union[str, None] = None,
-        fpath: Union[str, None] = None) -> Dict[str, CallDefNode]:
+def parse_static_calldefs(source: str | None = None,
+                          fpath: str | None = None) -> Dict[str, CallDefNode]:
     ...
 
 
@@ -83,8 +80,8 @@ def parse_calldefs(source: Incomplete | None = ...,
 
 
 def parse_static_value(key: str,
-                       source: Union[str, None] = None,
-                       fpath: Union[str, None] = None) -> object:
+                       source: str | None = None,
+                       fpath: str | None = None) -> object:
     ...
 
 
@@ -104,8 +101,7 @@ def is_balanced_statement(lines: List[str],
     ...
 
 
-def extract_comments(
-        source: Union[str, List[str]]) -> Generator[Any, None, Any]:
+def extract_comments(source: str | List[str]) -> Generator[Any, None, Any]:
     ...
 
 

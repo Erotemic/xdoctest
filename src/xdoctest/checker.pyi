@@ -1,4 +1,3 @@
-from typing import Union
 import xdoctest
 from typing import Tuple
 from _typeshed import Incomplete
@@ -13,8 +12,7 @@ TRAILING_WS: Incomplete
 def check_got_vs_want(want: str,
                       got_stdout: str,
                       got_eval: str = ...,
-                      runstate: Union[xdoctest.directive.RuntimeState,
-                                      None] = None):
+                      runstate: xdoctest.directive.RuntimeState | None = None):
     ...
 
 
@@ -25,21 +23,21 @@ def extract_exc_want(want: str) -> str:
 def check_exception(
         exc_got: str,
         want: str,
-        runstate: Union[xdoctest.directive.RuntimeState, None] = None) -> bool:
+        runstate: xdoctest.directive.RuntimeState | None = None) -> bool:
     ...
 
 
 def check_output(
         got: str,
         want: str,
-        runstate: Union[xdoctest.directive.RuntimeState, None] = None) -> bool:
+        runstate: xdoctest.directive.RuntimeState | None = None) -> bool:
     ...
 
 
 def normalize(
     got: str,
     want: str,
-    runstate: Union[xdoctest.directive.RuntimeState, None] = None
+    runstate: xdoctest.directive.RuntimeState | None = None
 ) -> Tuple[str, str]:
     ...
 
@@ -59,15 +57,14 @@ class GotWantException(AssertionError):
         ...
 
     def output_difference(self,
-                          runstate: Union[xdoctest.directive.RuntimeState,
-                                          None] = None,
+                          runstate: xdoctest.directive.RuntimeState
+                          | None = None,
                           colored: bool = True) -> str:
         ...
 
     def output_repr_difference(
             self,
-            runstate: Union[xdoctest.directive.RuntimeState,
-                            None] = None) -> str:
+            runstate: xdoctest.directive.RuntimeState | None = None) -> str:
         ...
 
 
