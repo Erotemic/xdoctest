@@ -75,10 +75,10 @@ class TopLevelVisitor(ast.NodeVisitor):
     """
     Parses top-level function names and docstrings
 
-    For other visit_<classname> values see [MeetTheNodes]_.
+    For other ``visit_<classname>`` values see [MeetTheNodes]_.
 
     References:
-        ..[MeetTheNodes] http://greentreesnakes.readthedocs.io/en/latest/nodes.html
+        .. [MeetTheNodes] http://greentreesnakes.readthedocs.io/en/latest/nodes.html
 
     CommandLine:
         python -m xdoctest.static_analysis TopLevelVisitor
