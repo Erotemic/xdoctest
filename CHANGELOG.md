@@ -7,6 +7,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Version 1.1.2 - Unreleased
 
+### Removed
+* Dropped 3.6 and 3.7 support. Now supporting 3.8+ Use xdoctest<=1.1.2 for 3.6
+  or 3.7 support.
+
 ### Changed
 * Removed dependency on six and got rid of old Python 2 logic
 

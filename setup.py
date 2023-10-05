@@ -233,7 +233,7 @@ if __name__ == "__main__":
     setupkw["long_description_content_type"] = "text/x-rst"
     setupkw["license"] = "Apache 2"
     setupkw["packages"] = find_packages("./src")
-    setupkw["python_requires"] = ">=3.6"
+    setupkw["python_requires"] = ">=3.8"
     setupkw["classifiers"] = [
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
@@ -243,8 +243,6 @@ if __name__ == "__main__":
         "Framework :: Pytest",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
