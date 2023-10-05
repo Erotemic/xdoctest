@@ -5,10 +5,10 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Version 1.1.2 - Unreleased
+## Version 1.2.0 - Unreleased
 
 ### Removed
-* Dropped 3.6 and 3.7 support. Now supporting 3.8+ Use xdoctest<=1.1.2 for 3.6
+* Dropped 3.6 and 3.7 support. Now supporting 3.8+. Use xdoctest<=1.1.1 for 3.6
   or 3.7 support.
 
 ### Changed
