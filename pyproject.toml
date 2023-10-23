@@ -11,7 +11,7 @@ mod_name = "xdoctest"
 repo_name = "xdoctest"
 rel_mod_parent_dpath = "./src"
 os = [ "all", "win", "linux", "osx",]
-min_python = 3.6
+min_python = '3.6'
 author = "Jon Crall"
 author_email = "erotemic@gmail.com"
 description = "A rewrite of the builtin doctest module"
@@ -23,34 +23,35 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: Utilities",
     "Topic :: Software Development :: Testing",
+    "Topic :: Utilities",
     "Framework :: Pytest",
     # This should be interpreted as Apache License v2.0
     "License :: OSI Approved :: Apache Software License",
     # Supported Python versions
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: Implementation :: PyPy",
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 
 [tool.xcookie.setuptools]
-keywords = '"xdoctest,doctest,test,docstr,pytest"'
+keywords = 'xdoctest,doctest,test,docstr,pytest'
 
 [tool.xcookie.entry_points]
-# the pytest11 entry point makes the plugin available to pytest
-pytest11 = [
-    "xdoctest = xdoctest.plugin",
-]
 # the console_scripts entry point creates the xdoctest executable
 console_scripts = [
     "xdoctest = xdoctest.__main__:main",
+]
+# the pytest11 entry point makes the plugin available to pytest
+pytest11 = [
+    "xdoctest = xdoctest.plugin",
 ]
 
 

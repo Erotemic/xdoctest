@@ -237,8 +237,8 @@ if __name__ == "__main__":
     setupkw["classifiers"] = [
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
-        "Topic :: Software Development :: Testing",
         "Topic :: Software Development :: Libraries :: Python Modules",
+        "Topic :: Software Development :: Testing",
         "Topic :: Utilities",
         "Framework :: Pytest",
         "License :: OSI Approved :: Apache Software License",
@@ -249,6 +249,7 @@ if __name__ == "__main__":
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Programming Language :: Python :: Implementation :: CPython",
     ]
