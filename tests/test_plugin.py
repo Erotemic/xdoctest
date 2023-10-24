@@ -13,8 +13,10 @@ try:
 except ImportError:
     from distutils.version import LooseVersion
 
-PY36 = sys.version_info[:2] >= (3, 6)
-MODULE_NOT_FOUND_ERROR = 'ModuleNotFoundError' if PY36 else 'ImportError'
+IS_GE_PY306 = sys.version_info[:2] >= (3, 6)
+IS_GE_PY307 = sys.version_info[:2] >= (3, 7)
+
+MODULE_NOT_FOUND_ERROR = 'ModuleNotFoundError' if IS_GE_PY306 else 'ImportError'
 
 
 EXTRA_ARGS = ['-p', 'pytester', '-p', 'no:doctest', '--xdoctest-nocolor']
@@ -1221,7 +1223,7 @@ class TestXDoctestAutoUseFixtures(object):
 
     SCOPES = ['module', 'session', 'class', 'function']
 
-    def test_doctest_module_session_fixture(self, pytester):
+    def test_doctest_module_session_fixture(self, testdir):
         """
         Test that session fixtures are initialized for xdoctest modules (#768)
 
@@ -1229,7 +1231,7 @@ class TestXDoctestAutoUseFixtures(object):
         """
         # session fixture which changes some global data, which will
         # be accessed by doctests in a module
-        pytester.makeconftest(
+        testdir.makeconftest(
             """
             import pytest
             import sys
@@ -1242,7 +1244,7 @@ class TestXDoctestAutoUseFixtures(object):
                 del sys.pytest_session_data
         """
         )
-        pytester.makepyfile(
+        testdir.makepyfile(
             foo="""
             import sys
 
@@ -1257,7 +1259,7 @@ class TestXDoctestAutoUseFixtures(object):
               '''
         """
         )
-        result = pytester.runpytest("--xdoctest-modules", "-s")
+        result = testdir.runpytest("--xdoctest-modules", "-s")
         result.stdout.fnmatch_lines(["*2 passed*"])
 
     @pytest.mark.parametrize('scope', SCOPES)
