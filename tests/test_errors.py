@@ -102,6 +102,7 @@ def test_parse_syntax_error():
 def test_runner_syntax_error():
     """
         python tests/test_errors.py test_runner_syntax_error
+        pytest tests/test_errors.py -k test_runner_syntax_error
 
         xdoctest -m tests/test_errors.py test_runner_syntax_error
     """

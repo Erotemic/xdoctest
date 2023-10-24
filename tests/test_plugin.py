@@ -1222,7 +1222,10 @@ class TestXDoctestAutoUseFixtures(object):
     SCOPES = ['module', 'session', 'class', 'function']
 
     def test_doctest_module_session_fixture(self, testdir):
-        """Test that session fixtures are initialized for xdoctest modules (#768)
+        """
+        Test that session fixtures are initialized for xdoctest modules (#768)
+
+        pytest tests/test_plugin.py -k test_doctest_module_session_fixture
         """
         # session fixture which changes some global data, which will
         # be accessed by doctests in a module
