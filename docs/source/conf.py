@@ -547,7 +547,7 @@ class GoogleStyleDocstringProcessor:
         #     import xdev
         #     xdev.embed()
 
-        RENDER_IMAGES = 1
+        RENDER_IMAGES = 0
         if RENDER_IMAGES:
             # DEVELOPING
             if any('REQUIRES(--show)' in line for line in lines):
