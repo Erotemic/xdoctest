@@ -18,6 +18,10 @@ import sys
 import warnings
 
 
+HAS_CONSTANT_AST_NODE = sys.version_info[0] >= 3 and sys.version_info[1] >= 8
+ATTR_S_DEPRECATED = sys.version_info[0] >= 3 and sys.version_info[1] >= 12
+
+
 def is_modname_importable(modname, sys_path=None, exclude=None):
     """
     Determines if a modname is importable based on your current sys.path
@@ -403,6 +407,15 @@ def import_module_from_name(modname):
     return module
 
 
+def _isinstance_node_str(node):
+    """ Backwards compatability for <3.8 """
+    import ast
+    if HAS_CONSTANT_AST_NODE:
+        return isinstance(node, ast.Constant) and isinstance(node.value, str)
+    else:
+        return isinstance(node, ast.Str)
+
+
 def _parse_static_node_value(node):
     """
     Extract a constant value from a node if possible
@@ -412,8 +425,11 @@ def _parse_static_node_value(node):
     # TODO: ast.Constant for 3.8
     if isinstance(node, ast.Num):
         value = node.n
-    elif isinstance(node, ast.Str):
-        value = node.s
+    elif _isinstance_node_str(node):
+        if ATTR_S_DEPRECATED:
+            value = node.s
+        else:
+            value = node.value
     elif isinstance(node, ast.List):
         value = list(map(_parse_static_node_value, node.elts))
     elif isinstance(node, ast.Tuple):

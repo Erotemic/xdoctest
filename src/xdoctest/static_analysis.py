@@ -24,7 +24,7 @@ import platform
 PLAT_IMPL = platform.python_implementation()
 
 
-HAS_UPDATED_LINENOS = sys.version_info[0] >= 3 and sys.version_info[1] >= 8
+IS_PY_GE_308 = sys.version_info[0] >= 3 and sys.version_info[1] >= 8
 ATTR_S_DEPRECATED = sys.version_info[0] >= 3 and sys.version_info[1] >= 12
 
 
@@ -756,11 +756,8 @@ def _parse_static_node_value(node):
     # TODO: ast.Constant for 3.8
     if isinstance(node, ast.Num):
         value = node.n
-    elif isinstance(node, ast.Str):
-        if ATTR_S_DEPRECATED:
-            value = node.s
-        else:
-            value = node.value
+    elif (isinstance(node, ast.Constant) and isinstance(node.value, str) if IS_PY_GE_308 else isinstance(node, ast.Str)):
+        value = node.value if IS_PY_GE_308 else node.s
     elif isinstance(node, ast.List):
         value = list(map(_parse_static_node_value, node.elts))
     elif isinstance(node, ast.Tuple):
