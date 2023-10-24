@@ -39,7 +39,7 @@ debugpy>=1.0.0     ; python_version < '3.7' and python_version >= '3.6'    # Pyt
 
 # Needed for 3.10 tests
 # Needed for earlier versions of nbconvert
-ipython_genutils >= 0.2.0 ;                            python_version >= '3.6'    # Python 3.10+
+ipython_genutils >= 0.2.0 ;  python_version >= '3.6' and platform_python_implementation != "PyPy"    # Python 3.10+
 
 
 # For IPython
