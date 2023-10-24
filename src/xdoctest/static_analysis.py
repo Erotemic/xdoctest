@@ -295,7 +295,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         """
         if isinstance(node.test, ast.Compare):  # pragma: nobranch
             try:
-                if ATTR_S_DEPRECATED:
+                if IS_PY_GE_312:
                     if all([
                         isinstance(node.test.ops[0], ast.Eq),
                         node.test.left.id == '__name__',
@@ -398,7 +398,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         else:
             if PLAT_IMPL == 'PyPy':
                 startpos = docnode.lineno - 1
-                if ATTR_S_DEPRECATED:
+                if IS_PY_GE_312:
                     docstr = utils.ensure_unicode(docnode.value.value)
                 else:
                     docstr = utils.ensure_unicode(docnode.value.s)
@@ -415,7 +415,7 @@ class TopLevelVisitor(ast.NodeVisitor):
                 # TODO: fix in pypy
                 endpos = docnode.lineno - 1
 
-        if ATTR_S_DEPRECATED:
+        if IS_PY_GE_312:
             docstr = utils.ensure_unicode(docnode.value.value)
         else:
             docstr = utils.ensure_unicode(docnode.value.s)
