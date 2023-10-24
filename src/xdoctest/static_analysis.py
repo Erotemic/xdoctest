@@ -570,8 +570,10 @@ class TopLevelVisitor(ast.NodeVisitor):
             >>>     print('docnode = {!r}'.format(docnode))
             >>>     print('docnode.value = {!r}'.format(docnode.value))
             >>>     print('docnode.value.__dict__ = {!r}'.format(docnode.value.__dict__))
-            >>>     #print('docnode.value.s = {!r}'.format(docnode.value.s))
-            >>>     print('docnode.value.value = {!r}'.format(docnode.value.value))
+            >>>     if IS_PY_GE_312:
+            >>>         print('docnode.value.value = {!r}'.format(docnode.value.value))
+            >>>     else:
+            >>>         print('docnode.value.s = {!r}'.format(docnode.value.s))
             >>>     print('docnode.lineno = {!r}'.format(docnode.lineno))
             >>>     print('docnode.col_offset = {!r}'.format(docnode.col_offset))
             >>>     print('docnode = {!r}'.format(docnode))
