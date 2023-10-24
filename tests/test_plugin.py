@@ -1221,7 +1221,7 @@ class TestXDoctestAutoUseFixtures(object):
 
     SCOPES = ['module', 'session', 'class', 'function']
 
-    def test_doctest_module_session_fixture(self, testdir):
+    def test_doctest_module_session_fixture(self, pytester):
         """
         Test that session fixtures are initialized for xdoctest modules (#768)
 
@@ -1229,18 +1229,21 @@ class TestXDoctestAutoUseFixtures(object):
         """
         # session fixture which changes some global data, which will
         # be accessed by doctests in a module
-        testdir.makeconftest("""
+        pytester.makeconftest(
+            """
             import pytest
             import sys
 
-            @pytest.yield_fixture(autouse=True, scope='session')
+            @pytest.fixture(autouse=True, scope='session')
             def myfixture():
                 assert not hasattr(sys, 'pytest_session_data')
                 sys.pytest_session_data = 1
                 yield
                 del sys.pytest_session_data
-        """)
-        testdir.makepyfile(foo="""
+        """
+        )
+        pytester.makepyfile(
+            foo="""
             import sys
 
             def foo():
@@ -1252,9 +1255,10 @@ class TestXDoctestAutoUseFixtures(object):
               '''
               >>> assert sys.pytest_session_data == 1
               '''
-        """)
-        result = testdir.runpytest("--xdoctest-modules")
-        result.stdout.fnmatch_lines(['*2 passed*'])
+        """
+        )
+        result = pytester.runpytest("--xdoctest-modules", "-s")
+        result.stdout.fnmatch_lines(["*2 passed*"])
 
     @pytest.mark.parametrize('scope', SCOPES)
     @pytest.mark.parametrize('enable_doctest', [True, False])
