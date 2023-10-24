@@ -1,3 +1,5 @@
+#  type: ignore
+# Vendored from Python 3.11
 """Tokenization help for Python programs.
 
 tokenize(readline) is a generator that breaks a stream of bytes into

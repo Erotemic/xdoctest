@@ -17,15 +17,17 @@ from xdoctest.utils.util_import import (  # NOQA
     split_modpath, modname_to_modpath, is_modname_importable,
     modpath_to_modname)
 
-# import tokenize
-from xdoctest import _tokenize as tokenize
-
 import platform
 PLAT_IMPL = platform.python_implementation()
 
 
 IS_PY_GE_308 = sys.version_info[0] >= 3 and sys.version_info[1] >= 8
-ATTR_S_DEPRECATED = sys.version_info[0] >= 3 and sys.version_info[1] >= 12
+IS_PY_GE_312 = sys.version_info[0] >= 3 and sys.version_info[1] >= 12
+
+if IS_PY_GE_312:
+    from xdoctest import _tokenize as tokenize
+else:
+    import tokenize
 
 
 class CallDefNode(object):
