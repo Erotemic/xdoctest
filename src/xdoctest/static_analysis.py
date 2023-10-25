@@ -907,6 +907,36 @@ def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True,
                 break
 
 
+def _testing():
+    lines = ['def foo():', '', '    x = 1', 'assert True', '']
+    import codeop
+    lines = ['def foo():', '', '    x = 1', 'assert True']
+    text = '\n'.join(lines)
+    flag = codeop.compile_command(text, symbol="exec")
+
+    lines = [
+        '    got = self._docnode_line_workaround(docnode)',
+        '    want = wants[i]',
+        "    print('got = {!r}'.format(got))",
+        "    print('want = {!r}'.format(want))",
+        '    assert got == want',
+    ]
+    from xdoctest import static_analysis as static
+    text = '\n'.join(lines)
+    flag = codeop.compile_command(text, symbol="exec")
+    print(text)
+    compile(text, 'foo', 'exec')
+
+    lines = [
+        'for i, func_node in enumerate(func_nodes):',
+    ]
+    text = '\n'.join(lines)
+    flag = codeop.compile_command(text, symbol="exec")
+    print(flag)
+
+    static.is_balanced_statement(lines, only_tokens=False)
+
+
 def is_balanced_statement(lines, only_tokens=False, reraise=0):
     r"""
     Checks if the lines have balanced braces and quotes.
@@ -968,12 +998,12 @@ def is_balanced_statement(lines, only_tokens=False, reraise=0):
         >>> print('\n'.join(source_parts))
         >>> assert is_balanced_statement(source_parts)
 
-    Example:
-        >>> lines = ['try: raise Exception']
-        >>> is_balanced_statement(lines, only_tokens=1)
-        True
-        >>> is_balanced_statement(lines, only_tokens=0)
-        False
+    # Example:
+    #     >>> lines = ['try: raise Exception']
+    #     >>> is_balanced_statement(lines, only_tokens=1)
+    #     True
+    #     >>> is_balanced_statement(lines, only_tokens=0)
+    #     False
 
     Example:
         >>> # Cause a failure case on 3.12
@@ -1005,23 +1035,34 @@ def is_balanced_statement(lines, only_tokens=False, reraise=0):
                 raise
             return False
         raise
-    else:
-        # Note: trying to use ast.parse(block) will not work
-        # here because it breaks in try, except, else
-        if not only_tokens:
-            # The above test wont trigger for cases involving higher level
-            # python grammar. If we wish to test for these we will have to use
-            # an AST.
-            try:
-                text = '\n'.join(lines)
-                # from textwrap import dedent
-                # text = dedent(text)
-                six_axt_parse(text)
-            except SyntaxError:
-                if reraise:
-                    raise
-                return False
-        return True
+    # else:
+
+    if 0:
+        import codeop
+        text = '\n'.join(lines)
+        try:
+            flag = codeop.compile_command(text, symbol="exec")
+        except Exception:
+            return False
+        if flag is None:
+            return False
+
+    # Note: trying to use ast.parse(block) will not work
+    # here because it breaks in try, except, else
+    if not only_tokens:
+        # The above test wont trigger for cases involving higher level
+        # python grammar. If we wish to test for these we will have to use
+        # an AST.
+        try:
+            text = '\n'.join(lines)
+            # from textwrap import dedent
+            # text = dedent(text)
+            six_axt_parse(text)
+        except SyntaxError:
+            if reraise:
+                raise
+            return False
+    return True
 
 
 def extract_comments(source):

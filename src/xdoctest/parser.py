@@ -878,6 +878,12 @@ def _complete_source(line, state_indent, line_iter):
 
     This uses :func:`static.is_balanced_statement` to do the heavy lifting
 
+    TODO:
+        new strategy
+
+        * Consume lines until the current selection is valid, and the next
+          selection is not invalid.
+
     Example:
         >>> from xdoctest.parser import *  # NOQA
         >>> from xdoctest.parser import _complete_source
