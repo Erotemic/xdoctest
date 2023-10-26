@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Version 1.1.2 - Unreleased
 
+### Added
+* Partial support for 3.12. New f-string syntax is not supported yet.
+
 ### Changed
 * Removed dependency on six and got rid of old Python 2 logic
 
