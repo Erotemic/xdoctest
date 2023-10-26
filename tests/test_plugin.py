@@ -13,8 +13,10 @@ try:
 except ImportError:
     from distutils.version import LooseVersion
 
-PY36 = sys.version_info[:2] >= (3, 6)
-MODULE_NOT_FOUND_ERROR = 'ModuleNotFoundError' if PY36 else 'ImportError'
+IS_GE_PY306 = sys.version_info[:2] >= (3, 6)
+IS_GE_PY307 = sys.version_info[:2] >= (3, 7)
+
+MODULE_NOT_FOUND_ERROR = 'ModuleNotFoundError' if IS_GE_PY306 else 'ImportError'
 
 
 EXTRA_ARGS = ['-p', 'pytester', '-p', 'no:doctest', '--xdoctest-nocolor']
@@ -1222,22 +1224,28 @@ class TestXDoctestAutoUseFixtures(object):
     SCOPES = ['module', 'session', 'class', 'function']
 
     def test_doctest_module_session_fixture(self, testdir):
-        """Test that session fixtures are initialized for xdoctest modules (#768)
+        """
+        Test that session fixtures are initialized for xdoctest modules (#768)
+
+        pytest tests/test_plugin.py -k test_doctest_module_session_fixture
         """
         # session fixture which changes some global data, which will
         # be accessed by doctests in a module
-        testdir.makeconftest("""
+        testdir.makeconftest(
+            """
             import pytest
             import sys
 
-            @pytest.yield_fixture(autouse=True, scope='session')
+            @pytest.fixture(autouse=True, scope='session')
             def myfixture():
                 assert not hasattr(sys, 'pytest_session_data')
                 sys.pytest_session_data = 1
                 yield
                 del sys.pytest_session_data
-        """)
-        testdir.makepyfile(foo="""
+        """
+        )
+        testdir.makepyfile(
+            foo="""
             import sys
 
             def foo():
@@ -1249,9 +1257,10 @@ class TestXDoctestAutoUseFixtures(object):
               '''
               >>> assert sys.pytest_session_data == 1
               '''
-        """)
-        result = testdir.runpytest("--xdoctest-modules")
-        result.stdout.fnmatch_lines(['*2 passed*'])
+        """
+        )
+        result = testdir.runpytest("--xdoctest-modules", "-s")
+        result.stdout.fnmatch_lines(["*2 passed*"])
 
     @pytest.mark.parametrize('scope', SCOPES)
     @pytest.mark.parametrize('enable_doctest', [True, False])

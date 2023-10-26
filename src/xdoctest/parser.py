@@ -462,6 +462,7 @@ class DoctestParser(object):
             >>> assert mode_hint == 'eval'
 
         Example:
+            >>> from xdoctest.parser import *  # NOQA
             >>> self = DoctestParser()
             >>> source_lines = ['>>> x = [1, 2, ', '>>> 3, 4]', '>>> print(len(x))']
             >>> linenos, mode_hint = self._locate_ps1_linenos(source_lines)

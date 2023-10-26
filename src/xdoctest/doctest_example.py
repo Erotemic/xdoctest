@@ -614,6 +614,9 @@ class DocTest(object):
                         # https://www.python.org/dev/peps/pep-3134/#explicit-exception-chaining
                         new_exc.__cause__ = None
                         raise new_exc
+                else:
+                    if global_state.DEBUG_DOCTEST:
+                        print('Pre import success: self.module={}'.format(self.module))
 
     @staticmethod
     def _extract_future_flags(namespace):
@@ -790,6 +793,10 @@ class DocTest(object):
                             return summary
 
                     test_globals, compileflags = self._test_globals()
+
+                    if  DEBUG:
+                        print('Global names = {}'.format(sorted(test_globals.keys())))
+
                     global_exec = self.config.getvalue('global_exec')
                     if global_exec:
                         # Hack to make it easier to specify multi-line input on the CLI
@@ -837,7 +844,6 @@ class DocTest(object):
                             # can compared to a "want" statement.
                             # print('part.compile_mode = {!r}'.format(part.compile_mode))
                             if part.compile_mode == 'eval':
-                                # print('test_globals = {}'.format(sorted(test_globals.keys())))
                                 got_eval = eval(code, test_globals)
                             else:
                                 exec(code, test_globals)

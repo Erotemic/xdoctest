@@ -45,10 +45,12 @@ Notes:
             Set the Repository NAME: xdoctest
             Set the Repository URL: https://github.com/Erotemic/xdoctest
 
-        For gitlab you also need to setup an integrations and add gitlab
-        incoming webhook
+        For gitlab you also need to setup an integrations. Navigate to:
 
             https://readthedocs.org/dashboard/xdoctest/integrations/create/
+
+        Then add gitlab incoming webhook and copy the URL (make sure
+        you copy the real url and not the text so https is included).
 
         Then go to
 
@@ -177,6 +179,7 @@ intersphinx_mapping = {
     'xdoctest': ('https://xdoctest.readthedocs.io/en/latest/', None),
     'networkx': ('https://networkx.org/documentation/stable/', None),
     'scriptconfig': ('https://scriptconfig.readthedocs.io/en/latest/', None),
+    'rich': ('https://rich.readthedocs.io/en/latest/', None),
 
     'pytest': ('https://docs.pytest.org/en/latest/', None),
     # 'pytest._pytest.doctest': ('https://docs.pytest.org/en/latest/_modules/_pytest/doctest.html', None),
@@ -334,6 +337,8 @@ class PatchedPythonDomain(PythonDomain):
     """
     def resolve_xref(self, env, fromdocname, builder, typ, target, node, contnode):
         # TODO: can use this to resolve references nicely
+        if target.startswith('ub.'):
+            target = 'ubelt.' + target[3]
         if target.startswith('xdoc.'):
             target = 'xdoctest.' + target[3]
         return_value = super(PatchedPythonDomain, self).resolve_xref(

@@ -9,7 +9,6 @@ from os.path import splitext
 import os
 import ast
 import re
-import tokenize
 from collections import deque, OrderedDict
 from xdoctest import utils
 
@@ -22,7 +21,13 @@ import platform
 PLAT_IMPL = platform.python_implementation()
 
 
-HAS_UPDATED_LINENOS = sys.version_info[0] >= 3 and sys.version_info[1] >= 8
+IS_PY_GE_308 = sys.version_info[0] >= 3 and sys.version_info[1] >= 8
+IS_PY_GE_312 = sys.version_info[0] >= 3 and sys.version_info[1] >= 12
+
+if IS_PY_GE_312:
+    from xdoctest import _tokenize as tokenize
+else:
+    import tokenize
 
 
 class CallDefNode(object):
@@ -75,10 +80,10 @@ class TopLevelVisitor(ast.NodeVisitor):
     """
     Parses top-level function names and docstrings
 
-    For other visit_<classname> values see [MeetTheNodes]_.
+    For other ``visit_<classname>`` values see [MeetTheNodes]_.
 
     References:
-        ..[MeetTheNodes] http://greentreesnakes.readthedocs.io/en/latest/nodes.html
+        .. [MeetTheNodes] http://greentreesnakes.readthedocs.io/en/latest/nodes.html
 
     CommandLine:
         python -m xdoctest.static_analysis TopLevelVisitor
@@ -290,13 +295,22 @@ class TopLevelVisitor(ast.NodeVisitor):
         """
         if isinstance(node.test, ast.Compare):  # pragma: nobranch
             try:
-                if all([
-                    isinstance(node.test.ops[0], ast.Eq),
-                    node.test.left.id == '__name__',
-                    node.test.comparators[0].s == '__main__',
-                ]):
-                    # Ignore main block
-                    return
+                if IS_PY_GE_312:
+                    if all([
+                        isinstance(node.test.ops[0], ast.Eq),
+                        node.test.left.id == '__name__',
+                        node.test.comparators[0].value == '__main__',
+                    ]):
+                        # Ignore main block
+                        return
+                else:
+                    if all([
+                        isinstance(node.test.ops[0], ast.Eq),
+                        node.test.left.id == '__name__',
+                        node.test.comparators[0].s == '__main__',
+                    ]):
+                        # Ignore main block
+                        return
             except Exception:  # nocover
                 pass
         self.generic_visit(node)  # nocover
@@ -384,7 +398,10 @@ class TopLevelVisitor(ast.NodeVisitor):
         else:
             if PLAT_IMPL == 'PyPy':
                 startpos = docnode.lineno - 1
-                docstr = utils.ensure_unicode(docnode.value.s)
+                if IS_PY_GE_312:
+                    docstr = utils.ensure_unicode(docnode.value.value)
+                else:
+                    docstr = utils.ensure_unicode(docnode.value.s)
                 sourcelines = self.sourcelines
                 start, stop = self._find_docstr_endpos_workaround(docstr,
                                                                   sourcelines,
@@ -398,7 +415,10 @@ class TopLevelVisitor(ast.NodeVisitor):
                 # TODO: fix in pypy
                 endpos = docnode.lineno - 1
 
-        docstr = utils.ensure_unicode(docnode.value.s)
+        if IS_PY_GE_312:
+            docstr = utils.ensure_unicode(docnode.value.value)
+        else:
+            docstr = utils.ensure_unicode(docnode.value.s)
         sourcelines = self.sourcelines
         start, stop = self._find_docstr_startpos_workaround(docstr, sourcelines, endpos)
         # Convert 0-based line positions to 1-based line numbers
@@ -550,7 +570,10 @@ class TopLevelVisitor(ast.NodeVisitor):
             >>>     print('docnode = {!r}'.format(docnode))
             >>>     print('docnode.value = {!r}'.format(docnode.value))
             >>>     print('docnode.value.__dict__ = {!r}'.format(docnode.value.__dict__))
-            >>>     print('docnode.value.s = {!r}'.format(docnode.value.s))
+            >>>     if IS_PY_GE_312:
+            >>>         print('docnode.value.value = {!r}'.format(docnode.value.value))
+            >>>     else:
+            >>>         print('docnode.value.s = {!r}'.format(docnode.value.s))
             >>>     print('docnode.lineno = {!r}'.format(docnode.lineno))
             >>>     print('docnode.col_offset = {!r}'.format(docnode.col_offset))
             >>>     print('docnode = {!r}'.format(docnode))
@@ -737,8 +760,8 @@ def _parse_static_node_value(node):
     # TODO: ast.Constant for 3.8
     if isinstance(node, ast.Num):
         value = node.n
-    elif isinstance(node, ast.Str):
-        value = node.s
+    elif (isinstance(node, ast.Constant) and isinstance(node.value, str) if IS_PY_GE_308 else isinstance(node, ast.Str)):
+        value = node.value if IS_PY_GE_308 else node.s
     elif isinstance(node, ast.List):
         value = list(map(_parse_static_node_value, node.elts))
     elif isinstance(node, ast.Tuple):
@@ -895,12 +918,13 @@ def is_balanced_statement(lines, only_tokens=False, reraise=0):
         bool: True if the statement is balanced, otherwise False
 
     CommandLine:
-        xdoctest -m xdoctest.static_analysis is_balanced_statement
+        xdoctest -m xdoctest.static_analysis is_balanced_statement:0
 
     References:
         https://stackoverflow.com/questions/46061949/parse-until-complete
 
-    Doctest:
+    Example:
+        >>> from xdoctest.static_analysis import *  # NOQA
         >>> assert is_balanced_statement(['print(foobar)'])
         >>> assert is_balanced_statement(['foo = bar']) is True
         >>> assert is_balanced_statement(['foo = (']) is False
@@ -914,7 +938,7 @@ def is_balanced_statement(lines, only_tokens=False, reraise=0):
         >>> lines = ['def foo():', '', '    x = 1', 'assert True', '']
         >>> assert is_balanced_statement(lines)
 
-    Doctest:
+    Example:
         >>> from xdoctest.static_analysis import *
         >>> source_parts = [
         >>>     'setup(',
@@ -944,11 +968,18 @@ def is_balanced_statement(lines, only_tokens=False, reraise=0):
         >>> print('\n'.join(source_parts))
         >>> assert is_balanced_statement(source_parts)
 
-    Doctest:
+    Example:
         >>> lines = ['try: raise Exception']
         >>> is_balanced_statement(lines, only_tokens=1)
         True
         >>> is_balanced_statement(lines, only_tokens=0)
+        False
+
+    Example:
+        >>> # Cause a failure case on 3.12
+        >>> from xdoctest.static_analysis import *
+        >>> lines = ['3, 4]', 'print(len(x))']
+        >>> is_balanced_statement(lines, only_tokens=1)
         False
     """
     # Only iterate through non-empty lines otherwise tokenize will stop short
@@ -961,7 +992,8 @@ def is_balanced_statement(lines, only_tokens=False, reraise=0):
             pass
     except tokenize.TokenError as ex:
         message = ex.args[0]
-        if message.startswith('EOF in multi-line'):
+        # First case is Python <= 3.11, Second case is >= 3.12
+        if message.startswith(('EOF in multi-line', 'unexpected EOF in multi-line')):
             if reraise:
                 raise
             return False

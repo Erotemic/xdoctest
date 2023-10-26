@@ -1,15 +1,17 @@
 # See ~/local/tools/supported_python_versions_pip.py for helper script
-# python ~/local/tools/supported_python_versions_pip.py jupyter_client
-# python ~/local/tools/supported_python_versions_pip.py nbconvert
-# python ~/local/tools/supported_python_versions_pip.py jupyter_core
-# python ~/local/tools/supported_python_versions_pip.py IPython
-# python ~/local/tools/supported_python_versions_pip.py debugpy
-# python ~/local/tools/supported_python_versions_pip.py jedi
-# python ~/local/tools/supported_python_versions_pip.py attrs
-# python ~/local/tools/supported_python_versions_pip.py ipython_genutils
+# xdev availpkg jupyter_client
+# xdev availpkg nbconvert
+# xdev availpkg jupyter_core
+# xdev availpkg IPython
+# xdev availpkg debugpy
+# xdev availpkg jedi
+# xdev availpkg attrs
+# xdev availpkg ipython_genutils
 
 
-nbconvert>=6.0.0;  python_version >= '3.6.0' and platform_python_implementation != "PyPy"  # Python 3.6+
+nbconvert>=6.1.0;  python_version >= '3.7.0' and platform_python_implementation != "PyPy"  # Python 3.7+
+nbconvert>=6.0.0;  python_version < '3.7.0' and python_version >= '3.6.0' and platform_python_implementation != "PyPy"  # Python 3.6
+
 # For nbconvert
 jinja2>=3.0.0   ; python_version >= '3.6' and platform_python_implementation != "PyPy"  # Python 3.6+
 
@@ -22,8 +24,10 @@ IPython>=7.23.1    ;                            python_version >= '3.7'    # Pyt
 IPython>=7.10.0    ; python_version < '3.7' and python_version >= '3.6'    # Python 3.6
 
 
-ipykernel>=6.0.0     ;                            python_version >= '3.7'    # Python 3.7+
-ipykernel>=5.2.0     ; python_version < '3.7' and python_version >= '3.6'    # Python 3.6
+# Requires psutil? Breaking on pypy windows?
+ipykernel>=6.11.0    ; python_version < '4.0'  and python_version >= '3.12' and (platform_system!="Windows" or platform_python_implementation != "PyPy")   # Python 3.12+
+ipykernel>=6.0.0     ; python_version < '3.12' and python_version >= '3.7' and (platform_system!="Windows" or platform_python_implementation != "PyPy")   # Python 3.7-3.11
+ipykernel>=5.2.0     ; python_version < '3.7' and python_version >= '3.6' and (platform_system!="Windows" or platform_python_implementation != "PyPy")   # Python 3.6
 
 
 # For IPython-kernel
@@ -35,7 +39,8 @@ debugpy>=1.0.0     ; python_version < '3.7' and python_version >= '3.6'    # Pyt
 
 
 # Needed for 3.10 tests
-ipython_genutils >= 0.2.0 ;                            python_version >= '3.10'    # Python 3.10+
+# Needed for earlier versions of nbconvert
+ipython_genutils >= 0.2.0 ;  python_version >= '3.6' and platform_python_implementation != "PyPy"    # Python 3.10+
 
 
 # For IPython
