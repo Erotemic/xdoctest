@@ -11,12 +11,13 @@ Terms and definitions:
         global / local variable context.
 
     PS1:
-        The original meaning is "Prompt String 1". In the context of xdoctest,
-        instead of referring to the prompt prefix, we use PS1 to refer to a
-        line that starts a "logical block" of code. In the original doctest
-        module these all had to be prefixed with ">>>". In xdoctest the prefix
-        is used to simply denote the code is part of a doctest. It does not
-        necessarily mean a new "logical block" is starting.
+        The original meaning is "Prompt String 1". For details see:
+        [SE32096]_ [BashPS1]_ [CustomPrompt]_ [GeekPrompt]_.  In the context of
+        xdoctest, instead of referring to the prompt prefix, we use PS1 to
+        refer to a line that starts a "logical block" of code. In the original
+        doctest module these all had to be prefixed with ">>>". In xdoctest the
+        prefix is used to simply denote the code is part of a doctest. It does
+        not necessarily mean a new "logical block" is starting.
 
     PS2:
         The original meaning is "Prompt String 2". In the context of xdoctest,
@@ -32,6 +33,13 @@ Terms and definitions:
 While I do believe this AST-based code is a significant improvement over the
 RE-based builtin doctest parser, I acknowledge that I'm not an AST expert and
 there is room for improvement here.
+
+
+References:
+    .. [SE32096] https://unix.stackexchange.com/questions/32096/why-is-bashs-prompt-variable-called-ps1
+    .. [BashPS1] https://www.gnu.org/savannah-checkouts/gnu/bash/manual/bash.html#index-PS1
+    .. [CustomPrompt] https://wiki.archlinux.org/title/Bash/Prompt_customization
+    .. [GeekPrompt] https://web.archive.org/web/20230824025647/https://www.thegeekstuff.com/2008/09/bash-shell-take-control-of-ps1-ps2-ps3-ps4-and-prompt_command/
 """
 import ast
 import sys
