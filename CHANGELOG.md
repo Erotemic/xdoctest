@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Version 1.1.3 - 
 
+### Fixed
+* `modname_to_modpath` now handles cases where editable packages have modules where the name is different than the package.
+
 
 ## Version 1.1.2 - Released 2023-010-25 
 
