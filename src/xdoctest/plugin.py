@@ -19,11 +19,18 @@ from _pytest._code import code
 from _pytest import fixtures
 
 try:
-    from packaging.version import parse as parse_version
-    _PYTEST_IS_GE_620 = parse_version(pytest.__version__) >= parse_version('6.2.0')
+    from packaging.version import parse as Version
 except ImportError:  # nocover
-    from distutils.version import LooseVersion
-    _PYTEST_IS_GE_620 = LooseVersion(pytest.__version__) >= LooseVersion('6.2.0')
+    from distutils.version import LooseVersion as Version
+
+_PYTEST_IS_GE_620 = Version(pytest.__version__) >= Version('6.2.0')
+_PYTEST_IS_GE_800 = Version(pytest.__version__) >= Version('8.0.0')
+
+
+if _PYTEST_IS_GE_800:
+    from typing import Dict
+    from _pytest.fixtures import TopRequest
+
 
 # def print(text):
 #     """ Hack so we can get stdout when debugging the plugin file """
@@ -185,33 +192,77 @@ class ReprFailXDoctest(code.TerminalRepr):
 
 
 class XDoctestItem(pytest.Item):
-    def __init__(self, name, parent, example=None):
+    def __init__(self,
+                 name,
+                 parent,
+                 runner=None,
+                 dtest=None):
         """
         Args:
             name (str):
             parent (Any | None):
-            example (xdoctest.doctest_example.DocTest):
+            dtest (xdoctest.doctest_example.DocTest):
         """
         super(XDoctestItem, self).__init__(name, parent)
         self.cls = XDoctestItem
-        self.example = example
+        self.dtest = dtest
         self.obj = None
-        self.fixture_request = None
+        if _PYTEST_IS_GE_800:
+            # Stuff needed for fixture support in pytest > 8.0.
+            fm = self.session._fixturemanager
+            fixtureinfo = fm.getfixtureinfo(node=self, func=None, cls=None)
+            self._fixtureinfo = fixtureinfo
+            self.fixturenames = fixtureinfo.names_closure
+            self._initrequest()
+        else:
+            self.fixture_request = None
+
+    if _PYTEST_IS_GE_800:
+        @classmethod
+        def from_parent(  # type: ignore
+            cls,
+            parent,
+            name,
+            runner=None,
+            dtest=None,
+        ):
+            # incompatible signature due to imposed limits on subclass
+            """The public named constructor."""
+            return super().from_parent(name=name, parent=parent, runner=runner, dtest=dtest)
+
+    @property
+    def example(self):
+        """
+        Backwards compatability with older pytest versions
+        """
+        return self.dtest
+
+    def _initrequest(self) -> None:
+        assert _PYTEST_IS_GE_800
+        self.funcargs: Dict[str, object] = {}
+        self._request = TopRequest(self, _ispytest=True)  # type: ignore[arg-type]
 
     def setup(self):
-        if self.example is not None:
-            self.fixture_request = _setup_fixtures(self)
-            global_namespace = dict(getfixture=self.fixture_request.getfixturevalue)
-            for name, value in self.fixture_request.getfixturevalue('xdoctest_namespace').items():
-                global_namespace[name] = value
-            self.example.global_namespace.update(global_namespace)
+        if _PYTEST_IS_GE_800:
+            self._request._fillfixtures()
+            globs = dict(getfixture=self._request.getfixturevalue)
+            for name, value in self._request.getfixturevalue("xdoctest_namespace").items():
+                globs[name] = value
+            self.dtest.globs.update(globs)
+        else:
+            if self.dtest is not None:
+                self.fixture_request = _setup_fixtures(self)
+                global_namespace = dict(getfixture=self.fixture_request.getfixturevalue)
+                for name, value in self.fixture_request.getfixturevalue('xdoctest_namespace').items():
+                    global_namespace[name] = value
+                self.dtest.global_namespace.update(global_namespace)
 
     def runtest(self):
-        if self.example.is_disabled(pytest=True):
+        if self.dtest.is_disabled(pytest=True):
             pytest.skip('doctest encountered global skip directive')
-        # verbose = self.example.config['verbose']
-        self.example.run(on_error='raise')
-        if not self.example.anything_ran():
+        # verbose = self.dtest.config['verbose']
+        self.dtest.run(on_error='raise')
+        if not self.dtest.anything_ran():
             pytest.skip('doctest is empty or all parts were skipped')
 
     def repr_failure(self, excinfo):
@@ -222,13 +273,13 @@ class XDoctestItem(pytest.Item):
         # Returns:
         #     ReprFailXDoctest | str | _pytest._code.code.TerminalRepr:
         """
-        example = self.example
-        if example.exc_info is not None:
-            lineno = example.failed_lineno()
-            type = example.exc_info[0]
+        dtest = self.dtest
+        if dtest.exc_info is not None:
+            lineno = dtest.failed_lineno()
+            type = dtest.exc_info[0]
             message = type.__name__
-            reprlocation = code.ReprFileLocation(example.fpath, lineno, message)
-            lines = example.repr_failure()
+            reprlocation = code.ReprFileLocation(dtest.fpath, lineno, message)
+            lines = dtest.repr_failure()
 
             return ReprFailXDoctest(reprlocation, lines)
         else:
@@ -239,7 +290,7 @@ class XDoctestItem(pytest.Item):
         Returns:
             Tuple[str, int, str]
         """
-        return self.fspath, self.example.lineno, "[xdoctest] %s" % self.name
+        return self.fspath, self.dtest.lineno, "[xdoctest] %s" % self.name
 
 
 class _XDoctestBase(pytest.Module):
@@ -282,15 +333,15 @@ class XDoctestTextfile(_XDoctestBase):
         _example_iter = core.parse_docstr_examples(
             text, name, fpath=filename, style=style)
 
-        for example in _example_iter:
-            example.global_namespace.update(global_namespace)
-            example.config.update(self._examp_conf)
+        for dtest in _example_iter:
+            dtest.global_namespace.update(global_namespace)
+            dtest.config.update(self._examp_conf)
             if hasattr(XDoctestItem, 'from_parent'):
                 yield XDoctestItem.from_parent(
-                    self, name=name, example=example)
+                    self, name=name, dtest=dtest)
             else:
                 # direct construction is deprecated
-                yield XDoctestItem(name, self, example)
+                yield XDoctestItem(name, self, dtest=dtest)
 
 
 class XDoctestModule(_XDoctestBase):
@@ -311,15 +362,15 @@ class XDoctestModule(_XDoctestBase):
             else:
                 raise
 
-        for example in examples:
-            example.config.update(self._examp_conf)
-            name = example.unique_callname
+        for dtest in examples:
+            dtest.config.update(self._examp_conf)
+            name = dtest.unique_callname
             if hasattr(XDoctestItem, 'from_parent'):
                 yield XDoctestItem.from_parent(
-                    self, name=name, example=example)
+                    self, name=name, dtest=dtest)
             else:
                 # direct construction is deprecated
-                yield XDoctestItem(name, self, example)
+                yield XDoctestItem(name, self, dtest=dtest)
 
 
 def _setup_fixtures(xdoctest_item):

@@ -453,7 +453,7 @@ class Directive(utils.NiceRepr):
             >>> # xdoctest: +REQUIRES(module:pytest)
             >>> text = '# xdoctest: does_not_exist, skip'
             >>> import pytest
-            >>> with pytest.warns(None) as record:
+            >>> with pytest.warns(Warning) as record:
             >>>     print(', '.join(list(map(str, Directive.extract(text)))))
             <Directive(+SKIP)>
 
