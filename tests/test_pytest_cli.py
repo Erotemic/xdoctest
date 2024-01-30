@@ -33,6 +33,7 @@ def test_simple_pytest_cli():
             """
         ''')
     temp_module = util_misc.TempModule(module_text)
+    temp_module.print_contents()
     modpath = temp_module.modpath
 
     info = cmd(sys.executable + ' -m pytest --xdoctest ' + modpath)
@@ -71,6 +72,13 @@ def test_simple_pytest_import_error_cli():
         ''')
     temp_module = util_misc.TempModule(module_text, modname='imperr_test_mod')
     temp_module.print_contents()
+
+    if sys.platform.startswith('win'):
+        info = cmd('(dir 2>&1 *`|echo CMD);&<# rem #>echo PowerShell')
+        print(f'info={info}')
+        info = cmd(f'dir {temp_module.dpath}')
+        print(f'info={info}')
+
     command = sys.executable + ' -m pytest -v -s --xdoctest-verbose=3 --xdoctest-supress-import-errors --xdoctest ' + temp_module.dpath
     print('-- PRINT COMMAND 1:')
     print(command)

@@ -58,10 +58,15 @@ class TempModule(object):
         For debugging on windows
         """
         import pathlib
+        import os
         print(f'--- <TempModule {self!r}> ---')
         print(f'self.modname={self.modname!r}')
         print(f'self.dpath={self.dpath!r}')
         print(f'self.modpath={self.modpath!r}')
+        dpath_exists1 = os.path.exists(self.dpath)
+        modpath_exists1 = os.path.exists(self.modpath)
+        print(f'dpath_exists1={dpath_exists1}')
+        print(f'modpath_exists1={modpath_exists1}')
         dpath = pathlib.Path(self.dpath)
         print(f'dpath={dpath}')
         dpath_exists = dpath.exists()
