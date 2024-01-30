@@ -34,8 +34,20 @@ class TempDir(object):
 
     def ensure(self):
         import tempfile
+        import sys
         if not self.dpath:
-            self.dpath = tempfile.mkdtemp()
+            dpath = tempfile.mkdtemp()
+            if sys.platform.startswith('win32'):
+                # Force a long path
+                # References:
+                # https://stackoverflow.com/questions/11420689/how-to-get-long-file-system-path-from-python-on-windows
+                from ctypes import create_unicode_buffer, windll
+                BUFFER_SIZE = 500
+                buffer = create_unicode_buffer(BUFFER_SIZE)
+                get_long_path_name = windll.kernel32.GetLongPathNameW
+                get_long_path_name(dpath, buffer, BUFFER_SIZE)
+                dpath = buffer.value
+            self.dpath = dpath
         return self.dpath
 
     def cleanup(self):
