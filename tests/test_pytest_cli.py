@@ -70,6 +70,7 @@ def test_simple_pytest_import_error_cli():
             """
         ''')
     temp_module = util_misc.TempModule(module_text, modname='imperr_test_mod')
+    temp_module.print_contents()
     command = sys.executable + ' -m pytest -v -s --xdoctest-verbose=3 --xdoctest-supress-import-errors --xdoctest ' + temp_module.dpath
     print('-- PRINT COMMAND 1:')
     print(command)
