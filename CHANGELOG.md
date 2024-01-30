@@ -4,7 +4,7 @@ We are currently working on porting this changelog to the specifications in
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Version 1.1.3 - 
+## Version 1.1.3 - Released 2024-01-30 
 
 ### Fixed
 * `modname_to_modpath` now handles cases where editable packages have modules where the name is different than the package.
@@ -12,7 +12,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Fixed deprecated usage of `ast.Num`
 
 
-## Version 1.1.2 - Released 2023-010-25 
+## Version 1.1.2 - Released 2023-10-25 
 
 ### Added
 * Partial support for 3.12. New f-string syntax is not supported yet.
