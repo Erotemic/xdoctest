@@ -53,6 +53,32 @@ class TempModule(object):
         with open(self.modpath, 'w') as file:
             file.write(module_text)
 
+    def print_contents(self):
+        """
+        For debugging on windows
+        """
+        import pathlib
+        import os
+        print(f'--- <TempModule {self!r}> ---')
+        print(f'self.modname={self.modname!r}')
+        print(f'self.dpath={self.dpath!r}')
+        print(f'self.modpath={self.modpath!r}')
+        dpath_exists1 = os.path.exists(self.dpath)
+        modpath_exists1 = os.path.exists(self.modpath)
+        print(f'dpath_exists1={dpath_exists1}')
+        print(f'modpath_exists1={modpath_exists1}')
+        dpath = pathlib.Path(self.dpath)
+        print(f'dpath={dpath}')
+        dpath_exists = dpath.exists()
+        print(f'dpath_exists={dpath_exists!r}')
+        modpath = pathlib.Path(self.modpath)
+        print(f'modpath={modpath!r}')
+        modpath_exists = modpath.exists()
+        print(f'modpath_exists={modpath_exists!r}')
+        modpath_contents = modpath.read_text()
+        print(f'modpath_contents={modpath_contents!r}')
+        print(f'--- </TempModule {self!r}> ---')
+
 
 def _run_case(source, style='auto'):
     """

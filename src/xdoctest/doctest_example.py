@@ -971,6 +971,13 @@ class DocTest(object):
         return summary
 
     @property
+    def globs(self):
+        """
+        Alias for ``global_namespace`` for pytest 8.0 compatability
+        """
+        return self.global_namespace
+
+    @property
     def cmdline(self):
         """
         A cli-instruction that can be used to execute *this* doctest.
