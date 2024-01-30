@@ -36,7 +36,12 @@ def test_simple_pytest_cli():
     modpath = temp_module.modpath
 
     info = cmd(sys.executable + ' -m pytest --xdoctest ' + modpath)
+    print('COMMAND OUT:')
     print(info['out'])
+    print('COMMAND ERR:')
+    print(info['err'])
+    print('COMMAND RET:')
+    print(info['ret'])
     assert info['ret'] == 0
 
 
@@ -47,6 +52,7 @@ def test_simple_pytest_import_error_cli():
 
     CommandLine:
         xdoctest ~/code/xdoctest/tests/test_pytest_cli.py test_simple_pytest_import_error_cli
+        pytest ~/code/xdoctest/tests/test_pytest_cli.py -k test_simple_pytest_import_error_cli -s
     """
     module_text = utils.codeblock(
         '''
@@ -65,30 +71,32 @@ def test_simple_pytest_import_error_cli():
         ''')
     temp_module = util_misc.TempModule(module_text, modname='imperr_test_mod')
     command = sys.executable + ' -m pytest -v -s --xdoctest-verbose=3 --xdoctest-supress-import-errors --xdoctest ' + temp_module.dpath
+    print('-- PRINT COMMAND 1:')
     print(command)
-    print('--')
+    print('-- RUN COMMAND 1:')
     info = cmd(command)
-    print('--')
-    # print('info = {}'.format(info))
+    print('-- COMMAND OUTPUT 1:')
     print(info['out'])
     # We patched doctest_example so it no longer outputs this in the traceback
     assert 'util_import' not in info['out']
-    print(info['out'])
+    print('-- COMMAND RETURN CODE 1:')
+    print(info['ret'])
     # Note: flaky changes the return code from 1 to 3, so test non-zero
     assert info['ret'] != 0
 
     # Remove the supress import error flag and now we should get the traceback
     temp_module = util_misc.TempModule(module_text, modname='imperr_test_mod')
     command = sys.executable + ' -m pytest -v -s --xdoctest-verbose=3 --xdoctest ' + temp_module.dpath
+    print('-- PRINT COMMAND 2:')
     print(command)
-    print('--')
+    print('-- RUN COMMAND 2:')
     info = cmd(command)
-    print('--')
-    # print('info = {}'.format(info))
+    print('-- COMMAND OUTPUT 2:')
     print(info['out'])
     # We patched doctest_example so it no longer outputs this in the traceback
     assert 'util_import' in info['out']
-    print(info['out'])
+    print('-- COMMAND RETURN CODE 2:')
+    print(info['ret'])
     # Note: flaky changes the return code from 1 to 3, so test non-zero
     assert info['ret'] != 0
 
