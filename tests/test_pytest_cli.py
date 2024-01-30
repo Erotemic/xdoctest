@@ -76,8 +76,16 @@ def test_simple_pytest_import_error_cli():
     if sys.platform.startswith('win'):
         info = cmd('(dir 2>&1 *`|echo CMD);&<# rem #>echo PowerShell')
         print(f'info={info}')
+        print(info['out'])
         info = cmd(f'dir {temp_module.dpath}')
         print(f'info={info}')
+        print(info['out'])
+        info = cmd(f'{sys.executable} {temp_module.modpath}')
+        print(f'info={info}')
+        print(info['out'])
+        info = cmd(f'{sys.executable} "{temp_module.modpath}"')
+        print(f'info={info}')
+        print(info['out'])
 
     command = sys.executable + ' -m pytest -v -s --xdoctest-verbose=3 --xdoctest-supress-import-errors --xdoctest ' + temp_module.dpath
     print('-- PRINT COMMAND 1:')
