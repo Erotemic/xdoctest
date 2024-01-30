@@ -15,7 +15,7 @@ def cmd(command):
     info = {
         'proc': proc,
         'out': out,
-        'test_doctest_in_notebook.ipynberr': err,
+        'err': err,
         'ret': ret,
     }
     return info
