@@ -326,6 +326,7 @@ jobs:
         export WHEEL_FPATH=$(python -c "import pathlib; print(str(sorted(pathlib.Path('wheelhouse').glob('xdoctest*.whl'))[-1]).replace(chr(92), chr(47)))")
         export MOD_VERSION=$(python -c "from pkginfo import Wheel; print(Wheel('$WHEEL_FPATH').version)")
         pip install --prefer-binary "xdoctest[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
+        pip install git+https://github.com/nicoddemus/pytest@11895-short-path-win
         echo "Install finished."
     - name: Test wheel ${{ matrix.install-extras }}
       shell: bash
