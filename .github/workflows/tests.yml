@@ -149,6 +149,7 @@ jobs:
     needs:
     - build_purepy_wheels
     strategy:
+      fail-fast: false
       matrix:
         # Xcookie generates an explicit list of environments that will be used
         # for testing instead of using the more concise matrix notation.
