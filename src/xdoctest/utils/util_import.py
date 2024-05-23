@@ -62,34 +62,6 @@ def _importlib_import_modpath(modpath):  # nocover
     return module
 
 
-def _pkgutil_modname_to_modpath(modname):  # nocover
-    """
-    faster version of :func:`_syspath_modname_to_modpath` using builtin python
-    mechanisms, but unfortunately it doesn't play nice with pytest.
-
-    Args:
-        modname (str): the module name.
-
-    Example:
-        >>> # xdoctest: +SKIP
-        >>> modname = 'xdoctest.static_analysis'
-        >>> _pkgutil_modname_to_modpath(modname)
-        ...static_analysis.py
-        >>> # xdoctest: +REQUIRES(CPython)
-        >>> _pkgutil_modname_to_modpath('_ctypes')
-        ..._ctypes...
-
-    Ignore:
-        >>> _pkgutil_modname_to_modpath('cv2')
-    """
-    import pkgutil
-    loader = pkgutil.find_loader(modname)
-    if loader is None:
-        raise Exception('No module named {} in the PYTHONPATH'.format(modname))
-    modpath = loader.get_filename().replace('.pyc', '.py')
-    return modpath
-
-
 class PythonPathContext(object):
     """
     Context for temporarily adding a dir to the PYTHONPATH.
@@ -320,8 +292,8 @@ def import_module_from_path(modpath, index=-1):
         >>> assert module.testvar == 1
 
     Example:
-        >>> import pytest
         >>> # xdoctest: +SKIP("ubelt dependency")
+        >>> import pytest
         >>> with pytest.raises(IOError):
         >>>     ub.import_module_from_path('does-not-exist')
         >>> with pytest.raises(IOError):
@@ -704,17 +676,21 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
             # break with pytest anymore? Nope, pytest still doesn't work right
             # with it.
             for finder_fpath in new_editable_finder_paths:
-                mapping = _static_parse('MAPPING', finder_fpath)
                 try:
-                    target = dirname(mapping[_pkg_name])
-                except KeyError:
+                    mapping = _static_parse('MAPPING', finder_fpath)
+                except AttributeError:
                     ...
                 else:
-                    if not exclude or normalize(target) not in real_exclude:  # pragma: nobranch
-                        modpath = check_dpath(target)
-                        if modpath:  # pragma: nobranch
-                            found_modpath = modpath
-                            break
+                    try:
+                        target = dirname(mapping[_pkg_name])
+                    except KeyError:
+                        ...
+                    else:
+                        if not exclude or normalize(target) not in real_exclude:  # pragma: nobranch
+                            modpath = check_dpath(target)
+                            if modpath:  # pragma: nobranch
+                                found_modpath = modpath
+                                break
             if found_modpath is not None:
                 break
 
@@ -767,6 +743,51 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
     return found_modpath
 
 
+def _importlib_modname_to_modpath(modname):  # nocover
+    import importlib.util
+    spec = importlib.util.find_spec(modname)
+    print(f'spec={spec}')
+    modpath = spec.origin.replace('.pyc', '.py')
+    return modpath
+
+
+def _pkgutil_modname_to_modpath(modname):  # nocover
+    """
+    faster version of :func:`_syspath_modname_to_modpath` using builtin python
+    mechanisms, but unfortunately it doesn't play nice with pytest.
+
+    Note:
+        pkgutil.find_loader is deprecated in 3.12 and removed in 3.14
+
+    Args:
+        modname (str): the module name.
+
+    Example:
+        >>> # xdoctest: +SKIP
+        >>> modname = 'xdoctest.static_analysis'
+        >>> _pkgutil_modname_to_modpath(modname)
+        ...static_analysis.py
+        >>> # xdoctest: +REQUIRES(CPython)
+        >>> _pkgutil_modname_to_modpath('_ctypes')
+        ..._ctypes...
+
+    Ignore:
+        >>> _pkgutil_modname_to_modpath('cv2')
+    """
+    import pkgutil
+    loader = pkgutil.find_loader(modname)
+    if loader is None:
+        raise Exception('No module named {} in the PYTHONPATH'.format(modname))
+    try:
+        modpath = loader.get_filename().replace('.pyc', '.py')
+    except Exception:
+        print('Issue in _pkgutil_modname_to_modpath')
+        print(f'loader = {loader!r}')
+        print(f'modname = {modname!r}')
+        raise
+    return modpath
+
+
 def modname_to_modpath(modname, hide_init=True, hide_main=False, sys_path=None):
     """
     Finds the path to a python module from its name.
@@ -808,7 +829,18 @@ def modname_to_modpath(modname, hide_init=True, hide_main=False, sys_path=None):
         >>> modpath = basename(modname_to_modpath('_ctypes'))
         >>> assert 'ctypes' in modpath
     """
-    modpath = _syspath_modname_to_modpath(modname, sys_path)
+    if hide_main or sys_path:
+        modpath = _syspath_modname_to_modpath(modname, sys_path)
+    else:
+        # import xdev
+        # with xdev.embed_on_exception_context:
+        # try:
+        #     modpath = _importlib_modname_to_modpath(modname)
+        # except Exception:
+        #     modpath = _syspath_modname_to_modpath(modname, sys_path)
+        # modpath = _pkgutil_modname_to_modpath(modname, sys_path)
+        modpath = _syspath_modname_to_modpath(modname, sys_path)
+
     if modpath is None:
         return None
 

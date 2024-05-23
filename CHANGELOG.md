@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Version 1.1.4 - Unreleased
 
+### Fixed
+* Working around a `modname_to_modpath` issue.
+
 
 ## Version 1.1.3 - Released 2024-01-30 
 
