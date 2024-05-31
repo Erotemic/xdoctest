@@ -5,7 +5,10 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Version 1.1.4 - Unreleased
+## Version 1.1.5 - Unreleased
+
+
+## Version 1.1.4 - Released 2024-05-31
 
 ### Fixed
 * Working around a `modname_to_modpath` issue.
