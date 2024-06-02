@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Version 1.1.5 - Unreleased
 
+### Changed
+* Minor modification to `xdoctest --version-info` and exposed it in CLI help.
+
 
 ## Version 1.1.4 - Released 2024-05-31
 
