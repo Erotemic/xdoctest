@@ -3,7 +3,7 @@
 def interative_test_xdev_embed():
     """
     CommandLine:
-        xdoctest -m dev/interactive_embed_tests.py interative_test_xdev_embed
+        xdoctest -m dev/demo/interactive_embed_tests.py interative_test_xdev_embed
 
     Example:
         >>> interative_test_xdev_embed()
@@ -16,7 +16,7 @@ def interative_test_xdev_embed():
 def interative_test_ipdb_embed():
     """
     CommandLine:
-        xdoctest -m dev/interactive_embed_tests.py interative_test_ipdb_embed
+        xdoctest -m dev/demo/interactive_embed_tests.py interative_test_ipdb_embed
 
     Example:
         >>> interative_test_ipdb_embed()

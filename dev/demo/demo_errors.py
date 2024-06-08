@@ -9,7 +9,7 @@ debuging)
 def demo1():
     """
     CommandLine:
-        xdoctest -m ~/code/xdoctest/dev/demo_errors.py demo1
+        xdoctest -m ~/code/xdoctest/dev/demo/demo_errors.py demo1
 
     Example:
         >>> raise Exception('demo1')
@@ -20,7 +20,7 @@ def demo1():
 def demo2():
     """
     CommandLine:
-        xdoctest -m ~/code/xdoctest/dev/demo_errors.py demo2
+        xdoctest -m ~/code/xdoctest/dev/demo/demo_errors.py demo2
 
     Example:
         >>> print('error on different line')
@@ -32,7 +32,7 @@ def demo2():
 def demo3():
     """
     CommandLine:
-        xdoctest -m ~/code/xdoctest/dev/demo_errors.py demo3
+        xdoctest -m ~/code/xdoctest/dev/demo/demo_errors.py demo3
 
     Example:
         >>> print('demo5')
@@ -44,7 +44,7 @@ def demo3():
 class Demo5(object):
     """
     CommandLine:
-        xdoctest -m ~/code/xdoctest/dev/demo_errors.py Demo5
+        xdoctest -m ~/code/xdoctest/dev/demo/demo_errors.py Demo5
 
     Example:
         >>> raise Exception
@@ -52,7 +52,7 @@ class Demo5(object):
     def demo5(self):
         """
         CommandLine:
-            xdoctest -m ~/code/xdoctest/dev/demo_errors.py Demo5.demo5
+            xdoctest -m ~/code/xdoctest/dev/demo/demo_errors.py Demo5.demo5
 
         Example:
             >>> raise Exception
@@ -100,7 +100,7 @@ def demo_runtime_warning():
 if __name__ == '__main__':
     """
     CommandLine:
-        python ~/code/xdoctest/dev/demo_errors.py all
+        python ~/code/xdoctest/dev/demo/demo_errors.py all
     """
     import xdoctest
     xdoctest.doctest_module(__file__)
