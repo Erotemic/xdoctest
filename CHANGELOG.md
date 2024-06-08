@@ -11,7 +11,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Fixed passing of `flags` as keyword argument to `re.sub` for python 3.13 compliance.
 
 
-## Version 1.1.5 - Released 2024-06-08
+## Version 1.1.5 - Released 2024-06-07
 
 ### Changed
 * Minor modification to `xdoctest --version-info` and exposed it in CLI help.
