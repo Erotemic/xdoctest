@@ -27,8 +27,8 @@ def main(argv=None):
         argv = sys.argv
 
     version_info = {
-        'version': xdoctest.__version__,
         'sys_version': sys.version,
+        'version': xdoctest.__version__,
     }
 
     if '--version' in argv:
@@ -36,8 +36,9 @@ def main(argv=None):
         return 0
 
     if '--version-info' in argv:
-        for key, value in sorted(version_info.items()):
-            print('{} = {}'.format(key, value))
+        print('sys_version = {}'.format(version_info['sys_version']))
+        print('file = {}'.format(__file__))
+        print('version = {}'.format(version_info['version']))
         return 0
 
     import argparse
@@ -69,7 +70,8 @@ def main(argv=None):
             If the `--command` key / value pair is unspecified, the first
             positional argument is used as the command.
             '''))
-    parser.add_argument('--version', action='store_true', help='Display version info and quit')
+    parser.add_argument('--version', action='store_true', help='Display version and quit')
+    parser.add_argument('--version-info', action='store_true', help='Display version and other info and quit')
 
     # The bulk of the argparse CLI is defined in the doctest example
     from xdoctest import doctest_example

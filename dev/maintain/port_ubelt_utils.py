@@ -65,6 +65,6 @@ def _autogen_xdoctest_utils():
 if __name__ == '__main__':
     """
     CommandLine:
-        python ~/code/xdoctest/dev/port_ubelt_utils.py
+        python ~/code/xdoctest/dev/maintain/port_ubelt_utils.py
     """
     _autogen_xdoctest_utils()

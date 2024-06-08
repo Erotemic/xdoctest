@@ -6,13 +6,13 @@ Script to demo a workaround to [Issue111]_.
 
 CommandLine:
     # Run with xdoctest runner
-    xdoctest ~/code/xdoctest/dev/demo_usage_with_logger.py
+    xdoctest ~/code/xdoctest/dev/demo/demo_usage_with_logger.py
 
     # Run with pytest runner
-    pytest -s --xdoctest --xdoctest-verbose=3 ~/code/xdoctest/dev/demo_usage_with_logger.py
+    pytest -s --xdoctest --xdoctest-verbose=3 ~/code/xdoctest/dev/demo/demo_usage_with_logger.py
 
     # Run with builtin main
-    python ~/code/xdoctest/dev/demo_usage_with_logger.py
+    python ~/code/xdoctest/dev/demo/demo_usage_with_logger.py
 
 References:
     .. [Issue111] https://github.com/Erotemic/xdoctest/issues/111

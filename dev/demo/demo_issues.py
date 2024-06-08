@@ -21,16 +21,16 @@ def demo():
 
         # Correctly reports skipped (although an only skipped test report
         # should probably be yellow)
-        xdoctest -m dev/demo_issues.py demo_requires_skips_all_v1
+        xdoctest -m dev/demo/demo_issues.py demo_requires_skips_all_v1
 
         # Incorrectly reports success
-        xdoctest -m dev/demo_issues.py demo_requires_skips_all_v2
+        xdoctest -m dev/demo/demo_issues.py demo_requires_skips_all_v2
 
         # Correctly reports success
-        xdoctest -m dev/demo_issues.py demo_requires_skips_all_v2 --cliflag
+        xdoctest -m dev/demo/demo_issues.py demo_requires_skips_all_v2 --cliflag
 
         # Correctly reports success
-        xdoctest -m dev/demo_issues.py demo_requires_skips_all_v1 --cliflag
+        xdoctest -m dev/demo/demo_issues.py demo_requires_skips_all_v1 --cliflag
     """
 
     # Programatic reproduction (notice the first one also reports itself in
@@ -40,7 +40,7 @@ def demo():
     xdoctest.doctest_callable(demo_requires_skips_all_v2)
 
     import sys, ubelt
-    sys.path.append(ubelt.expandpath('~/code/xdoctest/dev'))
+    sys.path.append(ubelt.expandpath('~/code/xdoctest/dev/demo'))
     import demo_issues
 
     # Correctly reports skipped
