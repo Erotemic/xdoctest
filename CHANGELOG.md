@@ -5,13 +5,16 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Version 1.1.5 - Unreleased
+## Version 1.1.6 - Unreleased
+
+
+## Version 1.1.5 - Released 2024-06-07
 
 ### Changed
 * Minor modification to `xdoctest --version-info` and exposed it in CLI help.
 
 ### Fixed
-* `ub.modname_to_modpath` fixed in cases where editable installs use type annotations in their MAPPING definition.
+* `modname_to_modpath` fixed in cases where editable installs use type annotations in their MAPPING definition.
 
 
 ## Version 1.1.4 - Released 2024-05-31
