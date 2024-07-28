@@ -1,5 +1,10 @@
 """
 Statically ports utilities from ubelt needed by xdoctest.
+
+Similar Scripts:
+    ~/code/xdoctest/dev/maintain/port_ubelt_utils.py
+    ~/code/mkinit/dev/maintain/port_ubelt_code.py
+    ~/code/line_profiler/dev/maintain/port_utilities.py
 """
 
 
