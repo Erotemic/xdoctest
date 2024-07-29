@@ -634,7 +634,7 @@ def remove_blankline_marker(text):
         '\n{marker}', '{marker}']).format(
             marker=BLANKLINE_MARKER, pos_lb=pos_lb)
     # blankline_pattern = r'(?<=\n)[ ]*{}\n?'.format(re.escape(BLANKLINE_MARKER))
-    new_text = re.sub(blankline_pattern, '\n', text, re.MULTILINE)
+    new_text = re.sub(blankline_pattern, '\n', text, flags=re.MULTILINE)
     return new_text
 
 
