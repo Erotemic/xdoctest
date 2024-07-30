@@ -2,12 +2,16 @@
 This module defines the main class that holds a DocTest example
 """
 import __future__
+import asyncio
+import ast
 from collections import OrderedDict
 import traceback
 import warnings
 import math
 import sys
 import re
+import types
+from inspect import CO_COROUTINE
 from xdoctest import utils
 from xdoctest import directive
 from xdoctest import constants
@@ -668,6 +672,7 @@ class DocTest(object):
         # force print function and division futures
         compileflags |= __future__.print_function.compiler_flag
         compileflags |= __future__.division.compiler_flag
+        compileflags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
         return test_globals, compileflags
 
     def anything_ran(self):
@@ -721,6 +726,11 @@ class DocTest(object):
         #     runstate['SKIP'] = True
 
         needs_capture = True
+        try:
+            asyncio.get_running_loop()
+            is_running_in_loop = True
+        except RuntimeError:
+            is_running_in_loop = False
 
         DEBUG = global_state.DEBUG_DOCTEST
 
@@ -843,7 +853,17 @@ class DocTest(object):
                             # expect it to return an object with a repr that
                             # can compared to a "want" statement.
                             # print('part.compile_mode = {!r}'.format(part.compile_mode))
-                            if part.compile_mode == 'eval':
+                            if code.co_flags & CO_COROUTINE == CO_COROUTINE:
+                                if is_running_in_loop:
+                                    raise exceptions.DoctestTopLevelAwaitInRunningLoopError(
+                                        "Cannot run top-level await doctests from within a running event loop: %s",
+                                        part.orig_lines
+                                        )
+                                if part.compile_mode == 'eval':
+                                    got_eval = asyncio.run(eval(code, test_globals))
+                                else:
+                                    asyncio.run(eval(code, test_globals))
+                            elif part.compile_mode == 'eval':
                                 got_eval = eval(code, test_globals)
                             else:
                                 exec(code, test_globals)
@@ -890,7 +910,7 @@ class DocTest(object):
                     if verbose > 0:
                         print('Test gracefully exists on: ex={}'.format(ex))
                     break
-                except checker.GotWantException:
+                except (checker.GotWantException, exceptions.DoctestTopLevelAwaitInRunningLoopError):
                     # When the "got", doesn't match the "want"
                     self.exc_info = sys.exc_info()
                     if on_error == 'raise':
@@ -1038,7 +1058,7 @@ class DocTest(object):
                 return 0
             ex_type, ex_value, tb = self.exc_info
             offset = self.failed_part.line_offset
-            if isinstance(ex_value, checker.ExtractGotReprException):
+            if isinstance(ex_value, (checker.ExtractGotReprException, exceptions.DoctestTopLevelAwaitInRunningLoopError)):
                 # Return the line of the "got" expression
                 offset += self.failed_part.n_exec_lines
             elif isinstance(ex_value, checker.GotWantException):

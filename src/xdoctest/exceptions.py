@@ -10,6 +10,11 @@ class MalformedDocstr(Exception):
     """
     pass
 
+class DoctestTopLevelAwaitInRunningLoopError(Exception):
+    """
+    Exception raised when the docstring uses a top level await and the test is
+    already running in an event loop.
+    """
 
 class DoctestParseError(Exception):
     """
