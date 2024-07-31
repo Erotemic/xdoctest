@@ -5,3 +5,4 @@ xdoctest.docstr.docscrape\_numpy module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:

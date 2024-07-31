@@ -1,7 +1,8 @@
-xdoctest.runner module
+xdoctest.parser module
 ======================
 
-.. automodule:: xdoctest.runner
+.. automodule:: xdoctest.parser
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:

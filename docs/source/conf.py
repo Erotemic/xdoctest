@@ -17,7 +17,7 @@ Notes:
     # need to edit the conf.py
 
     cd ~/code/xdoctest/docs
-    sphinx-apidoc --private --separate -f -o ~/code/xdoctest/docs/source/auto ~/code/xdoctest/src/xdoctest '_tokenize.py'
+    sphinx-apidoc --private --separate --force --output-dir ~/code/xdoctest/docs/source/auto ~/code/xdoctest/src/xdoctest '_tokenize.py'
 
     # Note: the module should importable before running this
     # (e.g. install it in developer mode or munge the PYTHONPATH)

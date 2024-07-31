@@ -5,3 +5,4 @@ xdoctest.utils.util\_mixins module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:

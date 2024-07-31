@@ -1,7 +1,8 @@
-xdoctest.core module
+xdoctest.demo module
 ====================
 
-.. automodule:: xdoctest.core
+.. automodule:: xdoctest.demo
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
