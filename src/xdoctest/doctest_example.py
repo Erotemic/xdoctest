@@ -499,7 +499,7 @@ class DocTest(object):
             offset_linenos (bool): if True offset line numbers to agree with
                 their position in the source text file (default False).
 
-            prefix (bool): if False, exclude the doctest `>>> ` prefix
+            prefix (bool): if False, exclude the doctest ``>>> `` prefix
 
         Returns:
             str

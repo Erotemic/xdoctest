@@ -5,3 +5,4 @@ xdoctest.global\_state module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:

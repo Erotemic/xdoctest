@@ -5,3 +5,4 @@ xdoctest.directive module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:

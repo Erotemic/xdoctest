@@ -16,6 +16,8 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
+   xdoctest.__main__
+   xdoctest._tokenize
    xdoctest.checker
    xdoctest.constants
    xdoctest.core
@@ -38,3 +40,4 @@ Module contents
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:

@@ -5,29 +5,19 @@ doctests from a module or package.
 
 The following is a glossary of terms and jargon used in this repo.
 
-* callname - the name of a callable function, method, class etc... e.g.
-  ``myfunc``, ``MyClass``, or ``MyClass.some_method``.
+* callname - the name of a callable function, method, class etc... e.g.  ``myfunc``, ``MyClass``, or ``MyClass.some_method``.
 
-* got / want - a test that produces stdout or a value to check. Whatever is
-  produced is what you "got" and whatever is expected is what you "want".
-  See :mod:`xdoctest.checker` for more details.
+* got / want - a test that produces stdout or a value to check. Whatever is produced is what you "got" and whatever is expected is what you "want".  See :mod:`xdoctest.checker` for more details.
 
-* directives - special in-doctest comments that change the behavior of the
-  doctests at runtime. See :mod:`xdoctest.directive` for more details.
+* directives - special in-doctest comments that change the behavior of the doctests at runtime. See :mod:`xdoctest.directive` for more details.
 
-* chevrons - the three cheverons (``>>> ``) or right angle brakets are the
-    standard prefix for a doctest, also referred to as a PS1 line in the
-    parser.
+* chevrons - the three cheverons (``>>> ``) or right angle brakets are the standard prefix for a doctest, also referred to as a PS1 line in the parser.
 
 * zero-args - a function that can be called without any arguments.
 
-* freeform style - This is the term used to refer to a doctest that could be
-    anywhere in the docstring. The alternative are structured doctests where
-    they are only expected in known positions like in "Example blocks" for
-    google and numpy style docstrings.
+* freeform style - This is the term used to refer to a doctest that could be anywhere in the docstring. The alternative are structured doctests where they are only expected in known positions like in "Example blocks" for google and numpy style docstrings.
 
-* TODO - complete this list (Make an issue or PR if there is any term you don't
-    immediately understand!).
+* TODO - complete this list (Make an issue or PR if there is any term you don't immediately understand!).
 """
 import sys
 import textwrap

@@ -14,21 +14,23 @@ either the contents of standard out the value of an expression itself.
 
 A doctest that uses stdout might look like this
 
->>> print('We expect this exact string')
-We expect this exact string
+.. code:: python
+
+    >>> print('We expect this exact string')
+    We expect this exact string
 
 A doctest that uses a raw expression might look like this
 
->>> def foo():
->>>     return 3
->>> foo()
-3
+.. code:: python
+
+    >>> def foo():
+    >>>     return 3
+    >>> foo()
+    3
 
 In most cases it is best to use stdout to write your got-want tests because it
 is easier to control strings sent to stdout than it is to control the
 representation of expression-based "got-strings".
-
-
 """
 import re
 import difflib

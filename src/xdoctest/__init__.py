@@ -1,8 +1,8 @@
 # :github_url: https://github.com/Erotemic/xdoctest
 '''
 
-.. The large version wont work because github strips rst image rescaling. https://i.imgur.com/AcWVroL.png
-.. image:: https://camo.githubusercontent.com/505298c88719d26f35794319bbc39a522e674314/68747470733a2f2f692e696d6775722e636f6d2f7530745959784d2e706e67
+.. The large version wont work because github strips rst image rescaling. https://i.imgur.com/u0tYYxM.png
+.. image:: https://i.imgur.com/u0tYYxM.png
    :height: 100px
    :align: left
 
@@ -56,8 +56,9 @@ the pattern of test driven development.
 Getting Started 0:  Installation
 --------------------------------
 
-First ensure that you have :doc:`Python installed <../../installing_python>` and
-ideally are in a virtual environment. Install xdoctest using the pip.
+First ensure that you have
+:doc:`Python installed <../manual/installing_python>` and ideally are in a
+virtual environment. Install xdoctest using the pip.
 
 .. code:: bash
 
@@ -94,7 +95,6 @@ Consider the following implementation the Fibonacci function.
              a, b = b, a+b
          print()
 
-
 We can add a "doctest" in the "docstring" as both an example and a test of the
 code. All we have to do is prefix the doctest code with three right chevrons
 `` >>> ``. We can also use xdoctest directives to control the flow of doctest
@@ -127,10 +127,9 @@ Interestingly because this documentation is written in the
 ``xdoctest/__init__.py`` file, which is a Python file, that means we can write
 doctests in it.  If you have xdoctest installed, you can use the xdoctest cli
 to execute the following code:  ``xdoctest -m xdoctest.__init__ __doc__:0``.
-Also notice that the previous code prefixed with ``>>> `` is skipped due to the
-xdoctest ``SKIP`` :doc:`directive<xdoctest.directive>`. For more information on
-directives see :doc:`the docs for the xdoctest directive
-module<xdoctest.directive>`.
+Also notice that the previous doctest is skipped due to the SKIP directive.
+For more information on directives see
+:doc:`the docs for the xdoctest directive module<auto/xdoctest.directive>`.
 
 
 .. code:: python
@@ -305,7 +304,7 @@ screen are lots more examples of what you can do with doctests.
 
 
 You can also run doctests
-:doc:`inside Jupyter Notebooks <../xdoc_with_jupyter>`.
+:doc:`inside Jupyter Notebooks <../manual/xdoc_with_jupyter>`.
 '''
 
 

@@ -5,3 +5,4 @@ xdoctest.utils.util\_import module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:

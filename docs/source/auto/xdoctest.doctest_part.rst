@@ -5,3 +5,4 @@ xdoctest.doctest\_part module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:

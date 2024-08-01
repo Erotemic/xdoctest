@@ -5,3 +5,4 @@ xdoctest.docstr.docscrape\_google module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
