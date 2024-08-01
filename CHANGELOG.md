@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## Version 1.2.0 - Unreleased
 
 
+### Removed
+* Dropped 3.6 and 3.7 support. Now supporting 3.6+ Use xdoctest<=1.1.6 for 3.6 or 3.7 support.
+
+
 ## Version 1.1.6 - Released 2024-08-01
 
 ### Fixed

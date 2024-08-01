@@ -84,7 +84,7 @@ Installation: from pypi
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 Xdoctest is distributed on pypi as a universal wheel and can be pip installed on
-Python 3.6+ (Python 2.7 and 3.4 / 3.5 support was removed in Version 1.1.0).
+Python 3.8+ (Python 2.7 and 3.4 / 3.5 support was removed in Version 1.1.0, 3.6 / 3.7 support was removed in Version 1.2.0).
 Installations are tested on CPython and PyPy implementations.
 
 ::
