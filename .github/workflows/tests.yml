@@ -157,15 +157,15 @@ jobs:
         # Xcookie generates an explicit list of environments that will be used
         # for testing instead of using the more concise matrix notation.
         include:
-        - python-version: '3.6'
+        - python-version: '3.8'
           install-extras: tests-strict,runtime-strict
-          os: ubuntu-20.04
+          os: ubuntu-latest
           arch: auto
-        - python-version: '3.6'
+        - python-version: '3.8'
           install-extras: tests-strict,runtime-strict
-          os: macos-13
+          os: macOS-latest
           arch: auto
-        - python-version: '3.6'
+        - python-version: '3.8'
           install-extras: tests-strict,runtime-strict
           os: windows-latest
           arch: auto
@@ -188,14 +188,6 @@ jobs:
         - python-version: '3.12'
           install-extras: tests
           os: windows-latest
-          arch: auto
-        - python-version: '3.6'
-          install-extras: tests,optional
-          os: ubuntu-20.04
-          arch: auto
-        - python-version: '3.7'
-          install-extras: tests,optional
-          os: ubuntu-latest
           arch: auto
         - python-version: '3.8'
           install-extras: tests,optional
@@ -221,14 +213,6 @@ jobs:
           install-extras: tests,optional
           os: ubuntu-latest
           arch: auto
-        - python-version: '3.6'
-          install-extras: tests,optional
-          os: macos-13
-          arch: auto
-        - python-version: '3.7'
-          install-extras: tests,optional
-          os: macos-13
-          arch: auto
         - python-version: '3.8'
           install-extras: tests,optional
           os: macOS-latest
@@ -252,14 +236,6 @@ jobs:
         - python-version: pypy-3.9
           install-extras: tests,optional
           os: macOS-latest
-          arch: auto
-        - python-version: '3.6'
-          install-extras: tests,optional
-          os: windows-latest
-          arch: auto
-        - python-version: '3.7'
-          install-extras: tests,optional
-          os: windows-latest
           arch: auto
         - python-version: '3.8'
           install-extras: tests,optional
@@ -378,8 +354,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && ! startsWith(github.event.ref, 'refs/tags') && ! startsWith(github.event.ref, 'refs/heads/release')
     needs:
-    - build_purepy_wheels
     - build_and_test_sdist
+    - build_purepy_wheels
     steps:
     - name: Checkout source
       uses: actions/checkout@v4.1.1
@@ -452,8 +428,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (startsWith(github.event.ref, 'refs/tags') || startsWith(github.event.ref, 'refs/heads/release'))
     needs:
-    - build_purepy_wheels
     - build_and_test_sdist
+    - build_purepy_wheels
     steps:
     - name: Checkout source
       uses: actions/checkout@v4.1.1

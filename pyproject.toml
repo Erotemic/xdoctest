@@ -11,7 +11,7 @@ mod_name = "xdoctest"
 repo_name = "xdoctest"
 rel_mod_parent_dpath = "./src"
 os = [ "all", "win", "linux", "osx",]
-min_python = '3.6'
+min_python = '3.8'
 author = "Jon Crall"
 author_email = "erotemic@gmail.com"
 description = "A rewrite of the builtin doctest module"
@@ -30,8 +30,6 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     # Supported Python versions
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",

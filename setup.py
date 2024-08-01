@@ -207,8 +207,15 @@ if __name__ == "__main__":
     )
     setupkw["extras_require"] = {
         "all": parse_requirements("requirements.txt", versions="loose"),
+        "runtime": parse_requirements("requirements/runtime.txt", versions="loose"),
         "tests": parse_requirements("requirements/tests.txt", versions="loose"),
         "optional": parse_requirements("requirements/optional.txt", versions="loose"),
+        "colors": parse_requirements("requirements/colors.txt", versions="loose"),
+        "docs": parse_requirements("requirements/docs.txt", versions="loose"),
+        "jupyter": parse_requirements("requirements/jupyter.txt", versions="loose"),
+        "tests-binary": parse_requirements(
+            "requirements/tests-binary.txt", versions="loose"
+        ),
         "all-strict": parse_requirements("requirements.txt", versions="strict"),
         "runtime-strict": parse_requirements(
             "requirements/runtime.txt", versions="strict"
@@ -217,12 +224,17 @@ if __name__ == "__main__":
         "optional-strict": parse_requirements(
             "requirements/optional.txt", versions="strict"
         ),
-        'tests-binary': parse_requirements('requirements/tests-binary.txt'),
-        'tests-binary-strict': parse_requirements('requirements/tests-binary.txt', versions='strict'),
-        'colors': parse_requirements('requirements/colors.txt'),
-        'jupyter': parse_requirements('requirements/jupyter.txt'),
+        "colors-strict": parse_requirements(
+            "requirements/colors.txt", versions="strict"
+        ),
+        "docs-strict": parse_requirements("requirements/docs.txt", versions="strict"),
+        "jupyter-strict": parse_requirements(
+            "requirements/jupyter.txt", versions="strict"
+        ),
+        "tests-binary-strict": parse_requirements(
+            "requirements/tests-binary.txt", versions="strict"
+        ),
     }
-
     setupkw["name"] = NAME
     setupkw["version"] = VERSION
     setupkw["author"] = "Jon Crall"
@@ -233,18 +245,16 @@ if __name__ == "__main__":
     setupkw["long_description_content_type"] = "text/x-rst"
     setupkw["license"] = "Apache 2"
     setupkw["packages"] = find_packages("./src")
-    setupkw["python_requires"] = ">=3.6"
+    setupkw["python_requires"] = ">=3.8"
     setupkw["classifiers"] = [
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Libraries :: Python Modules",
-        "Topic :: Software Development :: Testing",
         "Topic :: Utilities",
-        "Framework :: Pytest",
         "License :: OSI Approved :: Apache Software License",
+        "Topic :: Software Development :: Testing",
+        "Framework :: Pytest",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
