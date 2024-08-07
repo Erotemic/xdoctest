@@ -296,7 +296,7 @@ jobs:
         echo "$WHEEL_FPATH=WHEEL_FPATH"
         echo "$INSTALL_EXTRAS=INSTALL_EXTRAS"
         echo "$MOD_VERSION=MOD_VERSION"
-        pip install --prefer-binary "$WHEEL_FPATH[$INSTALL_EXTRAS]"
+        pip install --prefer-binary "xdoctest[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
         echo "Install finished."
     - name: Test wheel ${{ matrix.install-extras }}
       shell: bash
