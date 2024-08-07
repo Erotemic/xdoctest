@@ -6,9 +6,10 @@
 
 .. toctree::
    :maxdepth: 8
-   :caption: Package Layout
 
-   auto/xdoctest
+   Package layout <auto/xdoctest>
+   manual/xdoc_with_jupyter
+   manual/async_doctest
 
 
 Indices and tables

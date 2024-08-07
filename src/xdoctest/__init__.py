@@ -326,8 +326,9 @@ from xdoctest import utils
 from xdoctest import docstr
 from xdoctest.runner import (doctest_module, doctest_callable,)
 from xdoctest.exceptions import (DoctestParseError, ExitTestException,
-                                 MalformedDocstr,)
+                                 MalformedDocstr, DoctestTopLevelAwaitInRunningLoopError)
 
 __all__ = ['DoctestParseError', 'ExitTestException', 'MalformedDocstr',
+           'DoctestTopLevelAwaitInRunningLoopError',
            'doctest_module', 'doctest_callable', 'utils', 'docstr',
            '__version__']

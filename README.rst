@@ -328,6 +328,7 @@ The main enhancements ``xdoctest`` offers over ``doctest`` are:
    stdout, both are checked, and the test will pass if either matches.
 6. Ouptut from multiple sequential print statements can now be checked by
    a single "got" statement. (new in 0.4.0).
+7. Examples can include `async code at the top level <https://xdoctest.readthedocs.io/en/latest/manual/async_doctest.html>`__.
 
 See code in ``dev/_compare/demo_enhancements.py`` for a demo that illustrates
 several of these enhancements. This demo shows cases where ``xdoctest`` works

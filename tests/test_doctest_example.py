@@ -1,4 +1,5 @@
 from xdoctest import doctest_example
+from xdoctest import exceptions
 from xdoctest import utils
 from xdoctest import constants
 from xdoctest import checker
@@ -261,6 +262,110 @@ def test_want_error_msg_failure():
     with pytest.raises(checker.GotWantException):
         self.run(on_error='raise')
 
+def test_await():
+    """
+    python tests/test_doctest_example.py test_await
+    pytest tests/test_doctest_example.py::test_await
+    """
+    string = utils.codeblock(
+        '''
+        >>> import asyncio
+        >>> res = await asyncio.sleep(0, result="slept")
+        >>> print(res)
+        slept
+        ''')
+    self = doctest_example.DocTest(docsrc=string)
+    result = self.run(on_error='raise')
+    assert result['passed']
+
+def test_async_for():
+    """
+    python tests/test_doctest_example.py test_await
+    pytest tests/test_doctest_example.py::test_await
+    """
+    string = utils.codeblock(
+        '''
+        >>> async def test_gen():
+        >>>     yield 5
+        >>>     yield 6
+        >>> async for i in test_gen():
+        >>>     print(i)
+        5
+        6
+        ''')
+    self = doctest_example.DocTest(docsrc=string)
+    result = self.run(on_error='raise')
+    assert result['passed']
+
+def test_async_with():
+    """
+    python tests/test_doctest_example.py test_await
+    pytest tests/test_doctest_example.py::test_await
+    """
+    string = utils.codeblock(
+        '''
+        >>> from contextlib import asynccontextmanager
+        >>> import asyncio
+        >>> @asynccontextmanager
+        >>> async def gen():
+        >>>     try:
+        >>>         yield 1
+        >>>     finally:
+        >>>         await asyncio.sleep(0)
+        >>> async with gen() as res:
+        >>>     print(res)
+        1
+        ''')
+    self = doctest_example.DocTest(docsrc=string)
+    result = self.run(on_error='raise')
+    assert result['passed']
+
+def test_await_in_running_loop():
+    """
+    python tests/test_doctest_example.py test_await
+    pytest tests/test_doctest_example.py::test_await
+    """
+    string = utils.codeblock(
+        '''
+        >>> import asyncio
+        >>> res = await asyncio.sleep(0, result="slept")
+        >>> print(res)
+        slept
+        ''')
+    import asyncio
+    import pytest
+    self = doctest_example.DocTest(docsrc=string)
+    async def run_in_loop(doctest, on_error, verbose=None):
+        return doctest.run(on_error=on_error, verbose=verbose)
+
+    with pytest.raises(exceptions.DoctestTopLevelAwaitInRunningLoopError):
+        asyncio.run(run_in_loop(self, 'raise'))
+
+    self = doctest_example.DocTest(docsrc=string)
+    res = asyncio.run(run_in_loop(self, 'return', verbose=3))
+
+    assert res['failed']
+    assert self.repr_failure()
+
+
+
+def test_async_def():
+    """
+    python tests/test_doctest_example.py test_await
+    pytest tests/test_doctest_example.py::test_await
+    """
+    string = utils.codeblock(
+        '''
+        >>> import asyncio
+        >>> async def run_async():
+        >>>     return await asyncio.sleep(0, result="slept")
+        >>> res = asyncio.run(run_async())
+        >>> print(res)
+        slept
+        ''')
+    self = doctest_example.DocTest(docsrc=string)
+    result = self.run(on_error='raise')
+    assert result['passed']
 
 if __name__ == '__main__':
     """
