@@ -262,6 +262,7 @@ def test_want_error_msg_failure():
     with pytest.raises(checker.GotWantException):
         self.run(on_error='raise')
 
+
 def test_await():
     """
     python tests/test_doctest_example.py test_await
@@ -277,6 +278,7 @@ def test_await():
     self = doctest_example.DocTest(docsrc=string)
     result = self.run(on_error='raise')
     assert result['passed']
+
 
 def test_async_for():
     """
@@ -296,6 +298,7 @@ def test_async_for():
     self = doctest_example.DocTest(docsrc=string)
     result = self.run(on_error='raise')
     assert result['passed']
+
 
 def test_async_with():
     """
@@ -319,6 +322,7 @@ def test_async_with():
     self = doctest_example.DocTest(docsrc=string)
     result = self.run(on_error='raise')
     assert result['passed']
+
 
 def test_await_in_running_loop():
     """
@@ -346,7 +350,6 @@ def test_await_in_running_loop():
 
     assert res['failed']
     assert self.repr_failure()
-
 
 
 def test_async_def():

@@ -276,7 +276,6 @@ class DocTest(object):
             block_type (str | None):
             mode (str):
         """
-        import types
         # if we know the google block type it is recorded
         self.block_type = block_type
 

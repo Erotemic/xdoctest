@@ -8,13 +8,14 @@ class MalformedDocstr(Exception):
     Exception raised when the docstring itself does not conform to the expected
     style (e.g. google / numpy).
     """
-    pass
+
 
 class DoctestTopLevelAwaitInRunningLoopError(Exception):
     """
     Exception raised when the docstring uses a top level await and the test is
     already running in an event loop.
     """
+
 
 class DoctestParseError(Exception):
     """
@@ -43,7 +44,6 @@ class IncompleteParseError(SyntaxError):
     """
     Used when something goes wrong in the xdoctest parser
     """
-    pass
 
 try:
     import _pytest
