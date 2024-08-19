@@ -909,7 +909,14 @@ class DocTest(object):
                     if verbose > 0:
                         print('Test gracefully exists on: ex={}'.format(ex))
                     break
-                except (checker.GotWantException, exceptions.DoctestTopLevelAwaitInRunningLoopError):
+                except exceptions.DoctestTopLevelAwaitInRunningLoopError:
+                    # When we try to run a doctest with await, but there is
+                    # already a running event loop.
+                    self.exc_info = sys.exc_info()
+                    if on_error == 'raise':
+                        raise
+                    break
+                except checker.GotWantException:
                     # When the "got", doesn't match the "want"
                     self.exc_info = sys.exc_info()
                     if on_error == 'raise':
