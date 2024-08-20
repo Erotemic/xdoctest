@@ -4,7 +4,7 @@ from typing import Any
 class MalformedDocstr(Exception):
     ...
 
-class DoctestTopLevelAwaitInRunningLoopError(Exception):
+class ExistingEventLoopError(Exception):
     ...
 
 class DoctestParseError(Exception):

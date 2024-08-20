@@ -10,7 +10,7 @@ class MalformedDocstr(Exception):
     """
 
 
-class DoctestTopLevelAwaitInRunningLoopError(Exception):
+class ExistingEventLoopError(Exception):
     """
     Exception raised when the docstring uses a top level await and the test is
     already running in an event loop.

@@ -342,7 +342,7 @@ def test_await_in_running_loop():
     async def run_in_loop(doctest, on_error, verbose=None):
         return doctest.run(on_error=on_error, verbose=verbose)
 
-    with pytest.raises(exceptions.DoctestTopLevelAwaitInRunningLoopError):
+    with pytest.raises(exceptions.ExistingEventLoopError):
         asyncio.run(run_in_loop(self, 'raise'))
 
     self = doctest_example.DocTest(docsrc=string)

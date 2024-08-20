@@ -854,7 +854,7 @@ class DocTest(object):
                             # print('part.compile_mode = {!r}'.format(part.compile_mode))
                             if code.co_flags & CO_COROUTINE == CO_COROUTINE:
                                 if is_running_in_loop:
-                                    raise exceptions.DoctestTopLevelAwaitInRunningLoopError(
+                                    raise exceptions.ExistingEventLoopError(
                                         "Cannot run top-level await doctests from within a running event loop: %s",
                                         part.orig_lines
                                         )
@@ -909,7 +909,7 @@ class DocTest(object):
                     if verbose > 0:
                         print('Test gracefully exists on: ex={}'.format(ex))
                     break
-                except exceptions.DoctestTopLevelAwaitInRunningLoopError:
+                except exceptions.ExistingEventLoopError:
                     # When we try to run a doctest with await, but there is
                     # already a running event loop.
                     self.exc_info = sys.exc_info()
@@ -1064,7 +1064,7 @@ class DocTest(object):
                 return 0
             ex_type, ex_value, tb = self.exc_info
             offset = self.failed_part.line_offset
-            if isinstance(ex_value, (checker.ExtractGotReprException, exceptions.DoctestTopLevelAwaitInRunningLoopError)):
+            if isinstance(ex_value, (checker.ExtractGotReprException, exceptions.ExistingEventLoopError)):
                 # Return the line of the "got" expression
                 offset += self.failed_part.n_exec_lines
             elif isinstance(ex_value, checker.GotWantException):
