@@ -4,6 +4,8 @@ from typing import Any
 class MalformedDocstr(Exception):
     ...
 
+class ExistingEventLoopError(Exception):
+    ...
 
 class DoctestParseError(Exception):
     msg: str
