@@ -3,6 +3,6 @@ sphinx-autobuild >= 2021.3.14
 sphinx_rtd_theme >= 1.0.0
 sphinxcontrib-napoleon >= 0.7
 sphinx-autoapi >= 1.8.4
-Pygments >= 2.9.0
+Pygments >= 2.15.1
 myst_parser >= 0.18.0
 sphinx-reredirects >= 0.0.1

@@ -10,4 +10,4 @@ pybind11>=2.10.3 ; python_version < '4.0'  and python_version >= '3.11'    # Pyt
 pybind11>=2.7.1  ; python_version < '3.11'                                 # Python <=3.10
 
 cmake>=3.25.0 ; python_version < '4.0'  and python_version >= '3.11'    # Python 3.11+
-cmake>=3.21.2  ; python_version < '3.11'                                 # Python <=3.10
+cmake>=3.21.2 ; python_version < '3.11'                                 # Python <=3.10
