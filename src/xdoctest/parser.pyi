@@ -17,5 +17,5 @@ class DoctestParser:
             self,
             string: str,
             info: dict | None = None
-    ) -> List[xdoctest.doctest_part.DoctestPart]:
+    ) -> List[xdoctest.doctest_part.DoctestPart | str]:
         ...

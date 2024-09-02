@@ -101,20 +101,39 @@ class DoctestParser(object):
         self.simulate_repl = simulate_repl
 
     def parse(self, string, info=None):
-        """
+        r"""
         Divide the given string into examples and interleaving text.
 
         Args:
-            string (str): string representing the doctest
+            string (str): The docstring that may contain one or more doctests.
             info (dict | None): info about where the string came from in case of an
                 error
 
         Returns:
-            List[xdoctest.doctest_part.DoctestPart]:
-                a list of `DoctestPart` objects
+            List[xdoctest.doctest_part.DoctestPart | str]:
+                a list of `DoctestPart` objects and intervening text in the
+                input docstring.
 
         CommandLine:
             python -m xdoctest.parser DoctestParser.parse
+
+        Example:
+            >>> docstr = '''
+            >>>     A simple docstring contains text followed by an example.
+            >>>     >>> numbers = [1, 2, 3, 4]
+            >>>     >>> thirds = [x / 3 for x in numbers]
+            >>>     >>> print(thirds)
+            >>>     [0.33  0.66  1  1.33]
+            >>> '''
+            >>> from xdoctest import parser
+            >>> self = parser.DoctestParser()
+            >>> results = self.parse(docstr)
+            >>> assert len(results) == 3
+            >>> for index, result in enumerate(results):
+            >>>     print(f'results[{index}] = {result!r}')
+            results[0] = '\nA simple docstring contains text followed by an example.'
+            results[1] = <DoctestPart(ln 2, src="numbers ...", want=None) at ...>
+            results[2] = <DoctestPart(ln 4, src="print(th...", want="[0.33  0...") at ...>
 
         Example:
             >>> s = 'I am a dummy example with two parts'
