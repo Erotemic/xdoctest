@@ -8,7 +8,7 @@ from os.path import normpath
 import shutil
 
 
-class TempDir(object):
+class TempDir:
     """
     Context for creating and cleaning up temporary files. Used in testing.
 

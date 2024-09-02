@@ -60,7 +60,7 @@ INDENT_RE = re.compile(r'^([ ]*)(?=\S)', re.MULTILINE)
 NEED_16806_WORKAROUND = sys.version_info[0:2] < (3, 8)
 
 
-class DoctestParser(object):
+class DoctestParser:
     r"""
     Breaks docstrings into parts using the `parse` method.
 

@@ -20,7 +20,7 @@ def test_pathological_property_case():
                     return x
             return Foo()
 
-        class Test(object):
+        class Test:
             @property
             def test(self):
                 """

@@ -6,7 +6,7 @@ import random
 from .util_path import TempDir
 
 
-class TempDoctest(object):
+class TempDoctest:
     """
     Creates a temporary file containing a module-level doctest for testing
 
@@ -30,7 +30,7 @@ class TempDoctest(object):
             file.write("'''\n%s'''" % self.docstr)
 
 
-class TempModule(object):
+class TempModule:
     """
     Creates a temporary directory with a python module.
 

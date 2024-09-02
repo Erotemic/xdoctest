@@ -18,7 +18,7 @@ TODO:
 """
 
 
-class DoctestPart(object):
+class DoctestPart:
     """
     The result of parsing that represents a "logical block" of code.
     If a want statement is defined, it is stored here.

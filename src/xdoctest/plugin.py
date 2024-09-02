@@ -297,7 +297,7 @@ class _XDoctestBase(pytest.Module):
 
     def _prepare_internal_config(self):
 
-        class NamespaceLike(object):
+        class NamespaceLike:
             def __init__(self, config):
                 self.config = config
             def __getitem__(self, attr):
