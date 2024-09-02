@@ -56,10 +56,6 @@ from xdoctest import global_state
 INDENT_RE = re.compile(r'^([ ]*)(?=\S)', re.MULTILINE)
 
 
-# This issue was resolved in 3.8
-NEED_16806_WORKAROUND = sys.version_info[0:2] < (3, 8)
-
-
 class DoctestParser:
     r"""
     Breaks docstrings into parts using the `parse` method.
@@ -608,11 +604,6 @@ class DoctestParser:
                     lineno = node.lineno - 1
                 ps1_linenos.append(lineno)
 
-        # NEED_16806_WORKAROUND = 1
-        if NEED_16806_WORKAROUND:  # pragma: nobranch
-            ps1_linenos = self._workaround_16806(
-                ps1_linenos, exec_source_lines)
-
         # Respect any line explicitly defined as PS2 (via its prefix)
         ps2_linenos = {
             x for x, p in enumerate(source_lines) if p[:4] != '>>> '
@@ -657,58 +648,6 @@ class DoctestParser:
                 mode_hint = 'single'
 
         return ps1_linenos, mode_hint
-
-    @staticmethod
-    def _workaround_16806(ps1_linenos, exec_source_lines):
-        """
-        workaround for python issue 16806 (https://bugs.python.org/issue16806)
-
-        This issue causes the AST to report line numbers for multiline strings
-        as the line they end on. The correct behavior is to report the line
-        they start on. Given a list of line numbers and the original source
-        code, this workaround fixes any line number that points from the end of
-        a multiline string to point to the start of it instead.
-
-        Args:
-            ps1_linenos (List[int]): AST provided line numbers that begin
-                statements and may be Python Issue #16806.
-            exec_source_lines (List[str]): code referenced by ps1_linenos
-
-        Returns:
-            List[int]: new_ps1_lines
-                Fixed `ps1_linenos` where multiline strings now point to the
-                line where they begin.
-
-        Note:
-            A patch for this issue exists
-            `<https://github.com/python/cpython/pull/1800>`_. This workaround
-            is a idempotent (i.e. a no-op) when line numbers are correct, so
-            nothing should break when this bug is fixed.
-
-            Starting from the end look at consecutive pairs of indices to
-            inspect the statement it corresponds to.  (the first statement goes
-            from ps1_linenos[-1] to the end of the line list.
-
-        Example:
-            >>> ps1_linenos = [0, 2, 3]
-            >>> exec_source_lines = ["x = 1", "y = '''foo", " bar'''", "pass"]
-            >>> DoctestParser._workaround_16806(ps1_linenos, exec_source_lines)
-            [0, 1, 3]
-        """
-        new_ps1_lines = []
-        b = len(exec_source_lines)
-        for a in ps1_linenos[::-1]:
-            # the position of `b` is correct, but `a` may be wrong
-            # is_balanced_statement will be False iff `a` is wrong.
-            while not static.is_balanced_statement(exec_source_lines[a:b], only_tokens=True):
-                # shift `a` down until it becomes correct
-                a -= 1
-            # push the new correct value back into the list
-            new_ps1_lines.append(a)
-            # set the end position of the next string to be `a` , note, because
-            # this `a` is correct, the next `b` is must also be correct.
-            b = a
-        return new_ps1_lines[::-1]
 
     def _label_docsrc_lines(self, string):
         """
