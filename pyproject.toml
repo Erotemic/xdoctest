@@ -19,6 +19,7 @@ url = "https://github.com/Erotemic/xdoctest"
 license = "Apache 2"
 dev_status = "stable"
 typed = true
+skip_autogen = ["MANIFEST.in"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
