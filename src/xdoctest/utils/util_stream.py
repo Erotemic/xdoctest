@@ -93,7 +93,7 @@ class TeeStringIO(io.StringIO):
         return super(TeeStringIO, self).flush()
 
 
-class CaptureStream(object):
+class CaptureStream:
     """
     Generic class for capturing streaming output from stdout or stderr
     """

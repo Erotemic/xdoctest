@@ -13,7 +13,7 @@ is_defined_by_module = dynamic.is_defined_by_module
 TopLevelVisitor = static.TopLevelVisitor
 
 
-class SimpleDescriptor(object):
+class SimpleDescriptor:
     def __init__(self):
         self.value = 0
 
@@ -24,7 +24,7 @@ class SimpleDescriptor(object):
         self.value = float(value)
 
 
-class SimpleClass(object):
+class SimpleClass:
     """
     Example:
         >>> pass

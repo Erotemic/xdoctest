@@ -32,7 +32,7 @@ def myfunc():
     return 123
 
 
-class MyClass(object):
+class MyClass:
     """
     Example:
         >>> self = MyClass.demo()

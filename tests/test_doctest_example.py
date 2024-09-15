@@ -43,7 +43,7 @@ def test_continue_ambiguity():
     """
     string = utils.codeblock(
         '''
-        >>> class Lowerer(object):
+        >>> class Lowerer:
         ...     def __init__(self):
         ...         self.cache = LRI()
         ...
@@ -62,7 +62,7 @@ def test_contination_want_ambiguity():
     """
     string = utils.codeblock(
         '''
-        >>> class Lowerer(object):
+        >>> class Lowerer:
         ...     def __init__(self):
         ...         self.cache = LRI()
         ...

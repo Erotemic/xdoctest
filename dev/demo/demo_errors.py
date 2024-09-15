@@ -41,7 +41,7 @@ def demo3():
     pass
 
 
-class Demo5(object):
+class Demo5:
     """
     CommandLine:
         xdoctest -m ~/code/xdoctest/dev/demo/demo_errors.py Demo5

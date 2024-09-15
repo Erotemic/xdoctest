@@ -7,24 +7,19 @@
 # xdev availpkg attrs
 # xdev availpkg ipython_genutils
 
-
 nbconvert>=6.1.0;  python_version >= '3.7.0' and platform_python_implementation != "PyPy"  # Python 3.7+
 nbconvert>=6.0.0;  python_version < '3.7.0' and python_version >= '3.6.0' and platform_python_implementation != "PyPy"  # Python 3.6
 
 # For nbconvert
 jinja2>=3.0.0   ; python_version >= '3.6' and platform_python_implementation != "PyPy"  # Python 3.6+
 
-
 jupyter_client>=7.0.0 
 
-
 IPython>=7.23.1 
-
 
 # Requires psutil? Breaking on pypy windows?
 ipykernel>=6.11.0    ; python_version < '4.0'  and python_version >= '3.12' and (platform_system!="Windows" or platform_python_implementation != "PyPy")   # Python 3.12+
 ipykernel>=6.0.0     ; python_version < '3.12' and python_version >= '3.7' and (platform_system!="Windows" or platform_python_implementation != "PyPy")   # Python 3.7-3.11
-
 
 # For IPython-kernel
 debugpy>=1.6.0     ;                            python_version >= '3.10'    # Python 3.10+
@@ -35,7 +30,6 @@ debugpy>=1.0.0     ; python_version < '3.9' and python_version >= '3.8'    # Pyt
 # Needed for earlier versions of nbconvert
 ipython_genutils >= 0.2.0 ;  python_version >= '3.6' and platform_python_implementation != "PyPy"    # Python 3.10+
 
-
 # For IPython
 jedi>=0.16  
 
@@ -43,6 +37,3 @@ attrs>=19.2.0
 
 # For jupyter-client
 jupyter_core >= 4.7.0
-
-# For jupyter-core
-# pywin32>=1.0; platform_system=="Windows" and python_version >= '3.6' and platform_python_implementation != "PyPy"

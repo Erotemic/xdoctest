@@ -199,7 +199,7 @@ def test_extract_got_exception():
 
     source = utils.codeblock(
         '''
-        class MyObj(object):
+        class MyObj:
             """
             Example:
                 >>> a = MyObj()

@@ -30,7 +30,7 @@ def test_mod_lineno():
         modpath = join(dpath, 'test_mod_lineno.py')
         source = utils.codeblock(
             '''
-            class Fun(object):  #1
+            class Fun:  #1
                 @property
                 def test(self):
                     """         # 4

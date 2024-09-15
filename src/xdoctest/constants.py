@@ -5,7 +5,7 @@ Defines sentinel values for internal xdoctest usage
 
 # Create the most singleton object ever to avoid reload issues
 # this is based on ubelt.NoParam, which has more docs on how this works
-class _NOT_EVAL_TYPE(object):
+class _NOT_EVAL_TYPE:
     """
     This is a singleton object used as a sentinel value.  The value of
     :data:`NoParam` is robust to reloading, pickling, and copying.  See

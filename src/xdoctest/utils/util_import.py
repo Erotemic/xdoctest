@@ -93,7 +93,7 @@ def _pkgutil_modname_to_modpath(modname):  # nocover
     return modpath
 
 
-class PythonPathContext(object):
+class PythonPathContext:
     """
     Context for temporarily adding a dir to the PYTHONPATH.
 

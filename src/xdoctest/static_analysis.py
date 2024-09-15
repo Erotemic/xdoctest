@@ -30,7 +30,7 @@ else:
     import tokenize
 
 
-class CallDefNode(object):
+class CallDefNode:
     """
     Attributes:
         lineno_end (None | int):
@@ -105,7 +105,7 @@ class TopLevelVisitor(ast.NodeVisitor):
                         pass
                 def bar():
                     pass
-                class Spam(object):
+                class Spam:
                     def eggs(self):
                         pass
                     @staticmethod

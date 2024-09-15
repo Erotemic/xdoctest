@@ -87,7 +87,7 @@ class CellDeleter(ast.NodeTransformer):
         return None
 
 
-class NotebookLoader(object):
+class NotebookLoader:
     """ Module Loader for Jupyter Notebooks. """
 
     default_options = {

@@ -11,7 +11,7 @@ def test_properties():
     """
     text = _run_case(utils.codeblock(
         '''
-        class Test(object):
+        class Test:
             @property
             def test(self):
                 """
@@ -30,7 +30,7 @@ def test_properties():
 
     text = _run_case(utils.codeblock(
         '''
-        class Test(object):
+        class Test:
             @property
             def test(self):
                 """
@@ -45,7 +45,7 @@ def test_properties():
 
     text = _run_case(utils.codeblock(
         '''
-        class Test(object):
+        class Test:
             @property
             def test(self):
                 """
@@ -69,7 +69,7 @@ def test_properties():
 
     text = _run_case(utils.codeblock(
         '''
-        class Test(object):
+        class Test:
             @property
             def test(self):
                 return 3.14
@@ -87,7 +87,7 @@ def test_properties():
 
     text = _run_case(utils.codeblock(
         '''
-        class Test(object):
+        class Test:
             @property
             def test(self):
                 return 3.14

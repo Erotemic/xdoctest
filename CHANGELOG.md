@@ -7,6 +7,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Version 1.2.1 - Unreleased
 
+### Changed
+* Removed `16806_WORKAROUND` as it is not longer needed for Python 3.8+
+
+### Fixed
+* Fixed incorrect return type in docstrings
+
 
 ## Version 1.2.0 - Released 2024-08-20
 
@@ -14,7 +20,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Support for top level awaits in async code examples.
 
 ### Removed
-* Dropped 3.6 and 3.7 support. Now supporting 3.6+ Use xdoctest<=1.1.6 for 3.6 or 3.7 support.
+* Dropped 3.6 and 3.7 support. Now supporting 3.8+ Use xdoctest<=1.1.6 for 3.6 or 3.7 support.
 
 
 ## Version 1.1.6 - Released 2024-08-01

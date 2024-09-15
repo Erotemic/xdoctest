@@ -3,7 +3,7 @@ Port of NiceRepr from ubelt.util_mixins
 """
 
 
-class NiceRepr(object):
+class NiceRepr:
     """
     Defines `__str__` and `__repr__` in terms of `__nice__` function
     Classes that inherit `NiceRepr` must define `__nice__`

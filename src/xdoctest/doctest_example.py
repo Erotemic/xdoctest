@@ -170,7 +170,7 @@ class DoctestConfig(dict):
             return given
 
 
-class DocTest(object):
+class DocTest:
     """
     Holds information necessary to execute and verify a doctest
 

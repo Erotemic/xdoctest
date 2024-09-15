@@ -38,7 +38,7 @@ def test_lineno():
             """
             multiline 1-1-0 """
 
-        class Spam(object):
+        class Spam:
             """ multiline 0-2-1
             ---
             """
@@ -67,7 +67,7 @@ def test_lineno():
 def test_mod_lineno2():
     source = utils.codeblock(
         '''
-        class Fun(object):  #1
+        class Fun:  #1
             @property
             def test(self):
                 """         # 4

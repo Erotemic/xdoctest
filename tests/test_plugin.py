@@ -119,7 +119,7 @@ def explicit_testdir():
     return testdir
 
 
-class TestXDoctest(object):
+class TestXDoctest:
 
     def test_collect_testtextfile(self, testdir):
         """
@@ -355,7 +355,7 @@ class TestXDoctest(object):
         """
         testdir.tmpdir.join('hello.py').write(_pytest._code.Source(utils.codeblock(
             """
-            class Fun(object):
+            class Fun:
                 @property
                 def test(self):
                     '''
@@ -385,7 +385,7 @@ class TestXDoctest(object):
         """
         testdir.tmpdir.join('hello.py').write(_pytest._code.Source(utils.codeblock(
             """
-            class Fun(object):
+            class Fun:
                 @property
                 def test(self):
                     '''
@@ -418,7 +418,7 @@ class TestXDoctest(object):
         """
         testdir.tmpdir.join('hello.py').write(_pytest._code.Source(utils.codeblock(
             """
-            class Fun(object):
+            class Fun:
                 @property
                 def test(self):
                     '''
@@ -454,7 +454,7 @@ class TestXDoctest(object):
         """
         testdir.tmpdir.join('hello.py').write(_pytest._code.Source(utils.codeblock(
             """
-            class Fun(object):
+            class Fun:
                 @property
                 def test(self):
                     '''
@@ -694,7 +694,7 @@ class TestXDoctest(object):
             doctest_optionflags = ELLIPSIS NORMALIZE_WHITESPACE
         """)
         p = testdir.makepyfile("""
-            class MyClass(object):
+            class MyClass:
                 '''
                 >>> a = "foo    "
                 >>> print(a)
@@ -924,7 +924,7 @@ class TestXDoctest(object):
                    for line in result.stdout.lines)
 
 
-class TestXDoctestModuleLevel(object):
+class TestXDoctestModuleLevel:
 
     def test_doctestmodule(self, testdir):
         """
@@ -1022,7 +1022,7 @@ class TestXDoctestModuleLevel(object):
             assert items[0].parent is items[1].parent
 
 
-class TestLiterals(object):
+class TestLiterals:
 
     @pytest.mark.parametrize('config_mode', ['ini', 'comment'])
     @pytest.mark.skip('bytes are not supported yet')
@@ -1113,7 +1113,7 @@ class TestLiterals(object):
         reprec.assertoutcome(passed=passed, failed=int(not passed))
 
 
-class TestXDoctestSkips(object):
+class TestXDoctestSkips:
     """
     If all examples in a xdoctest are skipped due to the SKIP option, then
     the tests should be SKIPPED rather than PASSED. (#957)
@@ -1219,7 +1219,7 @@ class TestXDoctestSkips(object):
         reprec.assertoutcome(passed=0, skipped=0)
 
 
-class TestXDoctestAutoUseFixtures(object):
+class TestXDoctestAutoUseFixtures:
 
     SCOPES = ['module', 'session', 'class', 'function']
 
@@ -1351,7 +1351,7 @@ class TestXDoctestAutoUseFixtures(object):
 
 
 @pytest.mark.skip
-class TestXDoctestNamespaceFixture(object):
+class TestXDoctestNamespaceFixture:
     """
     Not sure why these tests wont work
 
@@ -1411,7 +1411,7 @@ class TestXDoctestNamespaceFixture(object):
         reprec.assertoutcome(passed=1)
 
 
-class TestXDoctestReportingOption(object):
+class TestXDoctestReportingOption:
 
     def _run_doctest_report(self, testdir, format):
         testdir.makepyfile("""
@@ -1505,7 +1505,7 @@ class TestXDoctestReportingOption(object):
         ])
 
 
-class Disabled(object):
+class Disabled:
 
     def test_docstring_context_around_error(self, testdir):
         """Test that we show some context before the actual line of a failing
@@ -1561,7 +1561,7 @@ class Disabled(object):
             pytest tests/test_plugin.py::TestXDoctest::test_doctest_linedata_missing
         """
         testdir.tmpdir.join('hello.py').write(_pytest._code.Source("""
-            class Fun(object):
+            class Fun:
                 @property
                 def test(self):
                     '''
@@ -1620,7 +1620,7 @@ class Disabled(object):
             pytest tests/test_plugin.py::TestXDoctest::test_doctestmodule_two_tests_one_fail
         """
         p = testdir.makepyfile("""
-            class MyClass(object):
+            class MyClass:
                 def bad_meth(self):
                     '''
                     >>> magic = 42
@@ -1643,7 +1643,7 @@ class Disabled(object):
             doctest_optionflags = ELLIPSIS
         """)
         p = testdir.makepyfile("""
-            class MyClass(object):
+            class MyClass:
                 '''
                 >>> a = "foo    "
                 >>> print(a)

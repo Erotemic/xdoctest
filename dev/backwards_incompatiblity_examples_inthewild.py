@@ -10,7 +10,7 @@
 #     Note, if we put a # after the empty line, the code still breaks, so that is
 #     something we can/should fix.
 
-#     >>> class NamesFilter(object):
+#     >>> class NamesFilter:
 #     ...    def __init__(self, allowed):
 #     ...        self._allowed = allowed
 #     ...
