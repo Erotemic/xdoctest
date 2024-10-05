@@ -98,7 +98,7 @@ jobs:
         echo "MOD_DPATH = $MOD_DPATH"
         python -m pytest --verbose --cov=xdoctest $MOD_DPATH ../tests
         cd ..
-    - uses: actions/upload-artifact@v4.3.1
+    - uses: actions/upload-artifact@v4.4.0
       name: Upload sdist artifact
       with:
         name: sdist_wheels
@@ -116,7 +116,7 @@ jobs:
         os:
         - ubuntu-latest
         python-version:
-        - '3.12'
+        - 3.13.0-rc.2
         arch:
         - auto
     steps:
@@ -140,7 +140,7 @@ jobs:
     - name: Show built files
       shell: bash
       run: ls -la wheelhouse
-    - uses: actions/upload-artifact@v4.3.1
+    - uses: actions/upload-artifact@v4.4.0
       name: Upload wheels artifact
       with:
         name: wheels-${{ matrix.os }}-${{ matrix.arch }}
@@ -169,23 +169,23 @@ jobs:
           install-extras: tests-strict,runtime-strict
           os: windows-latest
           arch: auto
-        - python-version: '3.12'
+        - python-version: 3.13.0-rc.2
           install-extras: tests-strict,runtime-strict,optional-strict
           os: ubuntu-latest
           arch: auto
-        - python-version: '3.12'
+        - python-version: 3.13.0-rc.2
           install-extras: tests-strict,runtime-strict,optional-strict
           os: macOS-latest
           arch: auto
-        - python-version: '3.12'
+        - python-version: 3.13.0-rc.2
           install-extras: tests-strict,runtime-strict,optional-strict
           os: windows-latest
           arch: auto
-        - python-version: '3.12'
+        - python-version: 3.13.0-rc.2
           install-extras: tests
           os: macOS-latest
           arch: auto
-        - python-version: '3.12'
+        - python-version: 3.13.0-rc.2
           install-extras: tests
           os: windows-latest
           arch: auto
@@ -206,6 +206,10 @@ jobs:
           os: ubuntu-latest
           arch: auto
         - python-version: '3.12'
+          install-extras: tests,optional
+          os: ubuntu-latest
+          arch: auto
+        - python-version: 3.13.0-rc.2
           install-extras: tests,optional
           os: ubuntu-latest
           arch: auto
@@ -233,6 +237,10 @@ jobs:
           install-extras: tests,optional
           os: macOS-latest
           arch: auto
+        - python-version: 3.13.0-rc.2
+          install-extras: tests,optional
+          os: macOS-latest
+          arch: auto
         - python-version: pypy-3.9
           install-extras: tests,optional
           os: macOS-latest
@@ -254,6 +262,10 @@ jobs:
           os: windows-latest
           arch: auto
         - python-version: '3.12'
+          install-extras: tests,optional
+          os: windows-latest
+          arch: auto
+        - python-version: 3.13.0-rc.2
           install-extras: tests,optional
           os: windows-latest
           arch: auto
@@ -276,7 +288,7 @@ jobs:
       uses: actions/setup-python@v5.1.1
       with:
         python-version: ${{ matrix.python-version }}
-    - uses: actions/download-artifact@v4.1.2
+    - uses: actions/download-artifact@v4.1.8
       name: Download wheels
       with:
         pattern: wheels-*
@@ -372,13 +384,13 @@ jobs:
     steps:
     - name: Checkout source
       uses: actions/checkout@v4.1.1
-    - uses: actions/download-artifact@v4.1.2
+    - uses: actions/download-artifact@v4.1.8
       name: Download wheels
       with:
         pattern: wheels-*
         merge-multiple: true
         path: wheelhouse
-    - uses: actions/download-artifact@v4.1.2
+    - uses: actions/download-artifact@v4.1.8
       name: Download sdist
       with:
         name: sdist_wheels
@@ -427,7 +439,7 @@ jobs:
         ots stamp wheelhouse/*.whl wheelhouse/*.tar.gz wheelhouse/*.asc
         ls -la wheelhouse
         twine upload --username __token__ --password "$TWINE_PASSWORD" --repository-url "$TWINE_REPOSITORY_URL" wheelhouse/*.whl wheelhouse/*.tar.gz --skip-existing --verbose || { echo "failed to twine upload" ; exit 1; }
-    - uses: actions/upload-artifact@v4.3.1
+    - uses: actions/upload-artifact@v4.4.0
       name: Upload deploy artifacts
       with:
         name: deploy_artifacts
@@ -447,13 +459,13 @@ jobs:
     steps:
     - name: Checkout source
       uses: actions/checkout@v4.1.1
-    - uses: actions/download-artifact@v4.1.2
+    - uses: actions/download-artifact@v4.1.8
       name: Download wheels
       with:
         pattern: wheels-*
         merge-multiple: true
         path: wheelhouse
-    - uses: actions/download-artifact@v4.1.2
+    - uses: actions/download-artifact@v4.1.8
       name: Download sdist
       with:
         name: sdist_wheels
@@ -502,7 +514,7 @@ jobs:
         ots stamp wheelhouse/*.whl wheelhouse/*.tar.gz wheelhouse/*.asc
         ls -la wheelhouse
         twine upload --username __token__ --password "$TWINE_PASSWORD" --repository-url "$TWINE_REPOSITORY_URL" wheelhouse/*.whl wheelhouse/*.tar.gz --skip-existing --verbose || { echo "failed to twine upload" ; exit 1; }
-    - uses: actions/upload-artifact@v4.3.1
+    - uses: actions/upload-artifact@v4.4.0
       name: Upload deploy artifacts
       with:
         name: deploy_artifacts
@@ -523,7 +535,7 @@ jobs:
     steps:
     - name: Checkout source
       uses: actions/checkout@v4.1.1
-    - uses: actions/download-artifact@v4.1.2
+    - uses: actions/download-artifact@v4.1.8
       name: Download artifacts
       with:
         name: deploy_artifacts
