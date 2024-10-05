@@ -42,7 +42,8 @@ no test at all).
         # I wrote this function by first finding some interesting demodata
         # then I wrote the body in IPython and copied it back in.
         # Now I can re-use this test code I wrote in development as a test!
-        # Covered Code is much easier to debug (we have a MWE)!
+        # Covered Code is much easier to debug.
+        # We have a Minimal Working Example (MWE)!
         result = config['outer'](map(config['inner'], data))
         return result
 
