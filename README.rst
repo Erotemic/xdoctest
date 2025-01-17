@@ -42,7 +42,8 @@ no test at all).
         # I wrote this function by first finding some interesting demodata
         # then I wrote the body in IPython and copied it back in.
         # Now I can re-use this test code I wrote in development as a test!
-        # Covered Code is much easier to debug (we have a MWE)!
+        # Covered Code is much easier to debug.
+        # We have a Minimal Working Example (MWE)!
         result = config['outer'](map(config['inner'], data))
         return result
 
@@ -92,10 +93,11 @@ Installations are tested on CPython and PyPy implementations.
     pip install xdoctest
 
 
-Distributions on pypi are signed with a GPG public key: ``D297D757``. If you
-care enough to check the gpg signature (hopefully pip will just do this in the
-future), you should also verify this agrees with the contents of
-``dev/public_gpg_key``.
+
+Github releases are signed with a GPG public key: ``59A34380`` (note: this
+incorrectly was listed as ``D297D757`` for before 2024-11-15, which was an
+older CI signing key). If you care enough to check the gpg signature, you
+should also verify this agrees with the contents of ``dev/public_gpg_key``.
 
 
 Usage: run your doctests
