@@ -43,6 +43,8 @@ def static_parse(varname, fpath):
     try:
         value = visitor.static_value
     except AttributeError:
+        import warnings
+        
         value = "Unknown {}".format(varname)
         warnings.warn(value)
     return value
