@@ -429,7 +429,14 @@ def _rectify_to_modpath(modpath_or_name):
     """ if modpath_or_name is a name, statically converts it to a path """
     if isinstance(modpath_or_name, types.ModuleType):
         raise TypeError('Expected a static module but got a dynamic one')
-    modpath = util_import.modname_to_modpath(modpath_or_name)
+
+    # NOTE: running modname_to_modpath is a bottleneck in pytest collect Using
+    # a quick heuristic to bypass it: if the module name has '/' in it, is is
+    # very likely a path.
+    if '/' in modpath_or_name or '\\' in modpath_or_name:
+        modpath = None
+    else:
+        modpath = util_import.modname_to_modpath(modpath_or_name)
     if modpath is None:
         if exists(modpath_or_name):
             modpath = modpath_or_name

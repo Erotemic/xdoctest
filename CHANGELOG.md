@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 * Removed `16806_WORKAROUND` as it is not longer needed for Python 3.8+
+* Improved speed (~6x) of doctest collection when running in pytest
 
 ### Fixed
 * Fixed incorrect return type in docstrings
