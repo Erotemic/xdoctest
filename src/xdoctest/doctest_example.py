@@ -736,6 +736,9 @@ class DocTest:
         # Use the same capture object for all parts in the test
         cap = utils.CaptureStdout(suppress=self._suppressed_stdout,
                                   enabled=needs_capture)
+
+        # NOTE: this will prevent any custom handling of warnings
+        # See: https://github.com/Erotemic/xdoctest/issues/169
         with warnings.catch_warnings(record=True) as self.warn_list:
             for partx, part in enumerate(self._parts):
 
