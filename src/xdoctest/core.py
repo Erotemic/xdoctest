@@ -19,7 +19,6 @@ The following is a glossary of terms and jargon used in this repo.
 
 * TODO - complete this list (Make an issue or PR if there is any term you don't immediately understand!).
 """
-import sys
 import textwrap
 import warnings
 import itertools as it
@@ -429,7 +428,14 @@ def _rectify_to_modpath(modpath_or_name):
     """ if modpath_or_name is a name, statically converts it to a path """
     if isinstance(modpath_or_name, types.ModuleType):
         raise TypeError('Expected a static module but got a dynamic one')
-    modpath = util_import.modname_to_modpath(modpath_or_name)
+
+    # NOTE: running modname_to_modpath is a bottleneck in pytest collect Using
+    # a quick heuristic to bypass it: if the module name has '/' in it, is is
+    # very likely a path.
+    if '/' in modpath_or_name or '\\' in modpath_or_name:
+        modpath = None
+    else:
+        modpath = util_import.modname_to_modpath(modpath_or_name)
     if modpath is None:
         if exists(modpath_or_name):
             modpath = modpath_or_name
@@ -528,26 +534,6 @@ def parse_calldefs(module_identifier, analysis='auto'):
         Dict[str, xdoctest.static_analysis.CallDefNode]:
             the mapping of callnames-to-calldefs within the module.
     """
-    # backwards compatibility hacks
-    if '--allow-xdoc-dynamic' in sys.argv:
-        from xdoctest.utils import util_deprecation
-        util_deprecation.schedule_deprecation(
-            modname='xdoctest',
-            name='--allow-xdoc-dynamic', type='CLI flag',
-            migration='use --analysis=auto instead',
-            deprecate='1.0.0', error='1.1.0', remove='1.2.0'
-        )
-        analysis = 'auto'
-    if '--xdoc-force-dynamic' in sys.argv:
-        from xdoctest.utils import util_deprecation
-        util_deprecation.schedule_deprecation(
-            modname='xdoctest',
-            name='--xdoc-force-dynamic', type='CLI flag',
-            migration='use --analysis=dynamic instead',
-            deprecate='1.0.0', error='1.1.0', remove='1.2.0'
-        )
-        analysis = 'dynamic'
-
     if isinstance(module_identifier, types.ModuleType):
         # identifier is a live module
         need_dynamic = True
