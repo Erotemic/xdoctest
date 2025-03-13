@@ -432,9 +432,6 @@ def import_module_from_name(modname):
     return module
 
 
-IS_PY_GE_308 = ((sys.version_info[0] >= 3) and (sys.version_info[1] >= 8))
-
-
 def _parse_static_node_value(node):
     """
     Extract a constant value from a node if possible
@@ -442,10 +439,10 @@ def _parse_static_node_value(node):
     import ast
     from collections import OrderedDict
     import numbers
-    if (isinstance(node, ast.Constant) and isinstance(node.value, numbers.Number) if IS_PY_GE_308 else isinstance(node, ast.Num)):
-        value = node.value if IS_PY_GE_308 else node.n
-    elif (isinstance(node, ast.Constant) and isinstance(node.value, str) if IS_PY_GE_308 else isinstance(node, ast.Str)):
-        value = node.value if IS_PY_GE_308 else node.s
+    if isinstance(node, ast.Constant) and isinstance(node.value, numbers.Number):
+        value = node.value
+    elif isinstance(node, ast.Constant) and isinstance(node.value, str):
+        value = node.value
     elif isinstance(node, ast.List):
         value = list(map(_parse_static_node_value, node.elts))
     elif isinstance(node, ast.Tuple):

@@ -1,17 +1,7 @@
-# xdev availpkg jupyter_client
-# xdev availpkg nbconvert
-# xdev availpkg jupyter_core
-# xdev availpkg IPython
-# xdev availpkg debugpy
-# xdev availpkg jedi
-# xdev availpkg attrs
-# xdev availpkg ipython_genutils
-
 nbconvert>=6.1.0;  python_version >= '3.7.0' and platform_python_implementation != "PyPy"  # Python 3.7+
-nbconvert>=6.0.0;  python_version < '3.7.0' and python_version >= '3.6.0' and platform_python_implementation != "PyPy"  # Python 3.6
 
 # For nbconvert
-jinja2>=3.0.0   ; python_version >= '3.6' and platform_python_implementation != "PyPy"  # Python 3.6+
+jinja2>=3.0.0   ; platform_python_implementation != "PyPy"  # Python 3.6+
 
 jupyter_client>=7.0.0 
 
@@ -28,7 +18,7 @@ debugpy>=1.0.0     ; python_version < '3.9' and python_version >= '3.8'    # Pyt
 
 # Needed for 3.10 tests
 # Needed for earlier versions of nbconvert
-ipython_genutils >= 0.2.0 ;  python_version >= '3.6' and platform_python_implementation != "PyPy"    # Python 3.10+
+ipython_genutils >= 0.2.0 ;  platform_python_implementation != "PyPy"    # Python 3.10+
 
 # For IPython
 jedi>=0.16  

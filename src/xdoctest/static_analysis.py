@@ -21,7 +21,6 @@ import platform
 PLAT_IMPL = platform.python_implementation()
 
 
-IS_PY_GE_308 = sys.version_info[0] >= 3 and sys.version_info[1] >= 8
 IS_PY_GE_312 = sys.version_info[0] >= 3 and sys.version_info[1] >= 12
 
 if IS_PY_GE_312:
@@ -228,6 +227,7 @@ class TopLevelVisitor(ast.NodeVisitor):
                         # callname = callname + '.fset'
                         return
 
+        # TODO: Is this still necessary in modern Python versions?
         lineno = self._workaround_func_lineno(node)
         docstr, doclineno, doclineno_end = self._get_docstring(node)
         calldef = CallDefNode(callname, lineno, docstr, doclineno,
@@ -758,10 +758,10 @@ def _parse_static_node_value(node):
     Extract a constant value from a node if possible
     """
     import numbers
-    if (isinstance(node, ast.Constant) and isinstance(node.value, numbers.Number) if IS_PY_GE_308 else isinstance(node, ast.Num)):
-        value = node.value if IS_PY_GE_308 else node.n
-    elif (isinstance(node, ast.Constant) and isinstance(node.value, str) if IS_PY_GE_308 else isinstance(node, ast.Str)):
-        value = node.value if IS_PY_GE_308 else node.s
+    if (isinstance(node, ast.Constant) and isinstance(node.value, numbers.Number)):
+        value = node.value
+    elif (isinstance(node, ast.Constant) and isinstance(node.value, str)):
+        value = node.value
     elif isinstance(node, ast.List):
         value = list(map(_parse_static_node_value, node.elts))
     elif isinstance(node, ast.Tuple):
