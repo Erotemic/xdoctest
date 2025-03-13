@@ -19,7 +19,6 @@ The following is a glossary of terms and jargon used in this repo.
 
 * TODO - complete this list (Make an issue or PR if there is any term you don't immediately understand!).
 """
-import sys
 import textwrap
 import warnings
 import itertools as it
@@ -535,26 +534,6 @@ def parse_calldefs(module_identifier, analysis='auto'):
         Dict[str, xdoctest.static_analysis.CallDefNode]:
             the mapping of callnames-to-calldefs within the module.
     """
-    # backwards compatibility hacks
-    if '--allow-xdoc-dynamic' in sys.argv:
-        from xdoctest.utils import util_deprecation
-        util_deprecation.schedule_deprecation(
-            modname='xdoctest',
-            name='--allow-xdoc-dynamic', type='CLI flag',
-            migration='use --analysis=auto instead',
-            deprecate='1.0.0', error='1.1.0', remove='1.2.0'
-        )
-        analysis = 'auto'
-    if '--xdoc-force-dynamic' in sys.argv:
-        from xdoctest.utils import util_deprecation
-        util_deprecation.schedule_deprecation(
-            modname='xdoctest',
-            name='--xdoc-force-dynamic', type='CLI flag',
-            migration='use --analysis=dynamic instead',
-            deprecate='1.0.0', error='1.1.0', remove='1.2.0'
-        )
-        analysis = 'dynamic'
-
     if isinstance(module_identifier, types.ModuleType):
         # identifier is a live module
         need_dynamic = True
