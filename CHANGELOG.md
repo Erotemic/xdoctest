@@ -14,6 +14,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 * Fixed incorrect return type in docstrings
+* The doctest parser no longer expand tabs to spaces
 
 
 ## Version 1.2.0 - Released 2024-08-20

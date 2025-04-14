@@ -734,6 +734,20 @@ def test_parser_with_type_annot():
     assert len(parts) == 1
 
 
+def test_parse_tabs():
+    tab = '\t'
+    string = utils.codeblock(
+        f'''
+        >>> text = "tab{tab}sep{tab}val"
+        ''')
+    self = parser.DoctestParser()
+    from xdoctest import global_state
+    global_state.DEBUG_PARSER = 3
+    parts = self.parse(string)
+    doctest_part = parts[0]
+    assert tab in doctest_part.source
+
+
 if __name__ == '__main__':
     """
     CommandLine:
