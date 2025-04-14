@@ -370,6 +370,31 @@ def test_async_def():
     result = self.run(on_error='raise')
     assert result['passed']
 
+
+def test_tabs_in_doctest():
+    """
+    pytest tests/test_doctest_example.py::test_tabs_in_doctest
+    """
+    from xdoctest import utils
+    from xdoctest import doctest_example
+    tab = '\t'
+    assert ord(tab) == 9
+    string = utils.codeblock(
+        f'''
+        >>> text = "tab{tab}sep{tab}val"
+        >>> print(repr(text))
+        >>> assert chr(9) in text
+        >>> assert ord("{tab}") == 9
+        ''')
+    self = doctest_example.DocTest(docsrc=string)
+
+    # This was ok in version 1.2.0
+    assert tab in self.docsrc
+
+    # Failed in 1.2.0
+    result = self.run(on_error='raise', verbose=3)
+    assert result['passed']
+
 if __name__ == '__main__':
     """
     CommandLine:

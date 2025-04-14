@@ -176,7 +176,6 @@ class DoctestParser:
         if not isinstance(string, str):
             raise TypeError('Expected string but got {!r}'.format(string))
 
-        string = string.expandtabs()
         # If all lines begin with the same indentation, then strip it.
         min_indent = _min_indentation(string)
         if min_indent > 0:
