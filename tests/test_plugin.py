@@ -3,6 +3,7 @@ Adapted from the original `pytest/tests/test_doctest.py` module at:
     https://github.com/pytest-dev/pytest
     https://github.com/pytest-dev/pytest/blob/main/tests/test_doctest.py
 """
+import shlex
 import sys
 import _pytest._code
 from xdoctest.plugin import XDoctestItem, XDoctestModule, XDoctestTextfile
@@ -117,6 +118,83 @@ def explicit_testdir():
     # from _pytest.compat import _setup_collect_fakemodule
     # _setup_collect_fakemodule()
     return testdir
+
+
+class TestXDoctestActivation:
+    @pytest.mark.parametrize(('flags', 'load'),
+                             [('', False),
+                              ('--xdoc', True),
+                              ('--doctest-modules', False),
+                              ('--doctest-modules --xdoctest', True)])
+    def test_xdoctest_cli_activation(self, pytester, flags, load):
+        """
+        Activate `xdoctest` via command-line arguments.
+
+        CommandLine:
+            pytest tests/test_plugin.py::TestXDoctestActivation::\
+test_xdoctest_cli_activation
+        """
+        self._check_activation(pytester, flags, load)
+
+    def test_xdoctest_config_activation(self, pytester):
+        """
+        Activate `xdoctest` via config file.
+
+        CommandLine:
+            pytest tests/test_plugin.py::TestXDoctestActivation::\
+test_xdoctest_config_activation
+        """
+        pytester.makepyprojecttoml('''
+        [tool.pytest.ini_options]
+        addopts = '--xdoctest'
+        ''')
+        self._check_activation(pytester, '', True)
+
+    def test_xdoctest_explicit_suppression(self, pytester):
+        """
+        Deactivate `xdoctest` via explictly unloading the plugin on the
+        command line.
+
+        CommandLine:
+            pytest tests/test_plugin.py::TestXDoctestActivation::\
+test_xdoctest_explicit_suppression
+        """
+        pdt_namespace_before = self._get_pytest_doctest_module_dict()
+        try:
+            with pytest.raises(pytest.UsageError):
+                # Can't parse the `--xdoc` flag with `xdoctest` disabled
+                self._check_activation(pytester, '--xdoc -p no:xdoctest', False)
+        finally:
+            # Check that `_pytest.doctest` is untouched
+            pdt_namespace_after = self._get_pytest_doctest_module_dict()
+            assert pdt_namespace_before == pdt_namespace_after
+
+    def _check_activation(self, pytester, flags, load):
+        """
+        Check that the ``flags`` result in :py:mod:`xdoctest.plugin`
+        being ``load``-ed if true and not loaded if false.  Also check
+        that it leaves :py:mod:`_pytest.doctest` untouched.
+        """
+        pdt_namespace_before = self._get_pytest_doctest_module_dict()
+        try:
+            config = pytester.parseconfigure(*shlex.split(flags))
+            manager = config.pluginmanager
+            # If the plugin is not active, it unsets itself
+            assert (manager.get_plugin('xdoctest') is not None) == load
+            # Otherwise, it unsets other doctest plugins
+            if not load:
+                return
+            assert manager.get_plugin('doctest') is None
+        finally:
+            # Also check that `_pytest.doctest` is untouched
+            pdt_namespace_after = self._get_pytest_doctest_module_dict()
+            assert pdt_namespace_before == pdt_namespace_after
+
+    @staticmethod
+    def _get_pytest_doctest_module_dict():
+        from _pytest import doctest
+
+        return dict(vars(doctest))
 
 
 class TestXDoctest:

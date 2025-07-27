@@ -17,6 +17,10 @@ def monkey_patch_disable_normal_doctest():
     ...
 
 
+def pytest_configure(config: pytest.Config) -> Generator[None, None, None]:
+    ...
+
+
 def pytest_addoption(parser):
     ...
 
