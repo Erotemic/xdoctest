@@ -16,14 +16,15 @@ Notes:
 
     # need to edit the conf.py
 
+    # Remove any old auto docs folder and regenerate it.
+    rm -rf ~/code/xdoctest/docs/source/auto
     cd ~/code/xdoctest/docs
     sphinx-apidoc --private --separate --force --output-dir ~/code/xdoctest/docs/source/auto ~/code/xdoctest/src/xdoctest '_tokenize.py'
+    git add source/auto/*.rst
 
     # Note: the module should importable before running this
     # (e.g. install it in developer mode or munge the PYTHONPATH)
     make html
-
-    git add source/auto/*.rst
 
     Also:
         To turn on PR checks
@@ -83,6 +84,7 @@ Notes:
                 push events,
                 tag push events,
                 merge request events
+                release events
 
             Click the "Add webhook" button.
 
