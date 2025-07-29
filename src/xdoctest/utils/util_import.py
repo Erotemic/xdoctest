@@ -435,6 +435,12 @@ def import_module_from_name(modname):
 def _parse_static_node_value(node):
     """
     Extract a constant value from a node if possible
+
+    Args:
+        node (ast.AST): input node
+
+    Returns:
+        Any: parsed value
     """
     import ast
     from collections import OrderedDict
@@ -451,11 +457,9 @@ def _parse_static_node_value(node):
         keys = map(_parse_static_node_value, node.keys)
         values = map(_parse_static_node_value, node.values)
         value = OrderedDict(zip(keys, values))
-        # value = dict(zip(keys, values))
-    elif isinstance(node, (ast.NameConstant)):
+    elif isinstance(node, ast.Constant):
         value = node.value
     else:
-        print(node.__dict__)
         raise TypeError('Cannot parse a static value from non-static node '
                         'of type: {!r}'.format(type(node)))
     return value
