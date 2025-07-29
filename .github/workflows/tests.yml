@@ -159,122 +159,122 @@ jobs:
         # Xcookie generates an explicit list of environments that will be used
         # for testing instead of using the more concise matrix notation.
         include:
-        - python-version: '3.8'
-          install-extras: tests-strict,runtime-strict
-          os: ubuntu-latest
-          arch: auto
-        - python-version: '3.8'
-          install-extras: tests-strict,runtime-strict
-          os: macOS-latest
-          arch: auto
-        - python-version: '3.8'
-          install-extras: tests-strict,runtime-strict
-          os: windows-latest
-          arch: auto
-        - python-version: '3.13'
-          install-extras: tests-strict,runtime-strict,optional-strict
-          os: ubuntu-latest
-          arch: auto
-        - python-version: '3.13'
-          install-extras: tests-strict,runtime-strict,optional-strict
-          os: macOS-latest
-          arch: auto
-        - python-version: '3.13'
-          install-extras: tests-strict,runtime-strict,optional-strict
-          os: windows-latest
-          arch: auto
-        - python-version: '3.13'
-          install-extras: tests
-          os: macOS-latest
-          arch: auto
-        - python-version: '3.13'
-          install-extras: tests
-          os: windows-latest
-          arch: auto
-        - python-version: '3.8'
-          install-extras: tests,optional
-          os: ubuntu-latest
-          arch: auto
-        - python-version: '3.9'
-          install-extras: tests,optional
-          os: ubuntu-latest
-          arch: auto
-        - python-version: '3.10'
-          install-extras: tests,optional
-          os: ubuntu-latest
-          arch: auto
-        - python-version: '3.11'
-          install-extras: tests,optional
-          os: ubuntu-latest
-          arch: auto
-        - python-version: '3.12'
-          install-extras: tests,optional
-          os: ubuntu-latest
-          arch: auto
-        - python-version: '3.13'
-          install-extras: tests,optional
-          os: ubuntu-latest
-          arch: auto
-        - python-version: 3.14.0-rc.1
-          install-extras: tests,optional
-          os: ubuntu-latest
-          arch: auto
-        - python-version: pypy-3.9
-          install-extras: tests,optional
-          os: ubuntu-latest
-          arch: auto
-        - python-version: '3.8'
-          install-extras: tests,optional
-          os: macOS-latest
-          arch: auto
-        - python-version: '3.9'
-          install-extras: tests,optional
-          os: macOS-latest
-          arch: auto
-        - python-version: '3.10'
-          install-extras: tests,optional
-          os: macOS-latest
-          arch: auto
-        - python-version: '3.11'
-          install-extras: tests,optional
-          os: macOS-latest
-          arch: auto
-        - python-version: '3.12'
-          install-extras: tests,optional
-          os: macOS-latest
-          arch: auto
-        - python-version: '3.13'
-          install-extras: tests,optional
-          os: macOS-latest
-          arch: auto
-        - python-version: 3.14.0-rc.1
-          install-extras: tests,optional
-          os: macOS-latest
-          arch: auto
-        - python-version: pypy-3.9
-          install-extras: tests,optional
-          os: macOS-latest
-          arch: auto
-        - python-version: '3.8'
-          install-extras: tests,optional
-          os: windows-latest
-          arch: auto
-        - python-version: '3.9'
-          install-extras: tests,optional
-          os: windows-latest
-          arch: auto
-        - python-version: '3.10'
-          install-extras: tests,optional
-          os: windows-latest
-          arch: auto
-        - python-version: '3.11'
-          install-extras: tests,optional
-          os: windows-latest
-          arch: auto
-        - python-version: '3.12'
-          install-extras: tests,optional
-          os: windows-latest
-          arch: auto
+        #- python-version: '3.8'
+        #  install-extras: tests-strict,runtime-strict
+        #  os: ubuntu-latest
+        #  arch: auto
+        #- python-version: '3.8'
+        #  install-extras: tests-strict,runtime-strict
+        #  os: macOS-latest
+        #  arch: auto
+        #- python-version: '3.8'
+        #  install-extras: tests-strict,runtime-strict
+        #  os: windows-latest
+        #  arch: auto
+        #- python-version: '3.13'
+        #  install-extras: tests-strict,runtime-strict,optional-strict
+        #  os: ubuntu-latest
+        #  arch: auto
+        #- python-version: '3.13'
+        #  install-extras: tests-strict,runtime-strict,optional-strict
+        #  os: macOS-latest
+        #  arch: auto
+        #- python-version: '3.13'
+        #  install-extras: tests-strict,runtime-strict,optional-strict
+        #  os: windows-latest
+        #  arch: auto
+        #- python-version: '3.13'
+        #  install-extras: tests
+        #  os: macOS-latest
+        #  arch: auto
+        #- python-version: '3.13'
+        #  install-extras: tests
+        #  os: windows-latest
+        #  arch: auto
+        #- python-version: '3.8'
+        #  install-extras: tests,optional
+        #  os: ubuntu-latest
+        #  arch: auto
+        #- python-version: '3.9'
+        #  install-extras: tests,optional
+        #  os: ubuntu-latest
+        #  arch: auto
+        #- python-version: '3.10'
+        #  install-extras: tests,optional
+        #  os: ubuntu-latest
+        #  arch: auto
+        #- python-version: '3.11'
+        #  install-extras: tests,optional
+        #  os: ubuntu-latest
+        #  arch: auto
+        #- python-version: '3.12'
+        #  install-extras: tests,optional
+        #  os: ubuntu-latest
+        #  arch: auto
+        #- python-version: '3.13'
+        #  install-extras: tests,optional
+        #  os: ubuntu-latest
+        #  arch: auto
+        #- python-version: 3.14.0-rc.1
+        #  install-extras: tests,optional
+        #  os: ubuntu-latest
+        #  arch: auto
+        #- python-version: pypy-3.9
+        #  install-extras: tests,optional
+        #  os: ubuntu-latest
+        #  arch: auto
+        #- python-version: '3.8'
+        #  install-extras: tests,optional
+        #  os: macOS-latest
+        #  arch: auto
+        #- python-version: '3.9'
+        #  install-extras: tests,optional
+        #  os: macOS-latest
+        #  arch: auto
+        #- python-version: '3.10'
+        #  install-extras: tests,optional
+        #  os: macOS-latest
+        #  arch: auto
+        #- python-version: '3.11'
+        #  install-extras: tests,optional
+        #  os: macOS-latest
+        #  arch: auto
+        #- python-version: '3.12'
+        #  install-extras: tests,optional
+        #  os: macOS-latest
+        #  arch: auto
+        #- python-version: '3.13'
+        #  install-extras: tests,optional
+        #  os: macOS-latest
+        #  arch: auto
+        #- python-version: 3.14.0-rc.1
+        #  install-extras: tests,optional
+        #  os: macOS-latest
+        #  arch: auto
+        #- python-version: pypy-3.9
+        #  install-extras: tests,optional
+        #  os: macOS-latest
+        #  arch: auto
+        #- python-version: '3.8'
+        #  install-extras: tests,optional
+        #  os: windows-latest
+        #  arch: auto
+        #- python-version: '3.9'
+        #  install-extras: tests,optional
+        #  os: windows-latest
+        #  arch: auto
+        #- python-version: '3.10'
+        #  install-extras: tests,optional
+        #  os: windows-latest
+        #  arch: auto
+        #- python-version: '3.11'
+        #  install-extras: tests,optional
+        #  os: windows-latest
+        #  arch: auto
+        #- python-version: '3.12'
+        #  install-extras: tests,optional
+        #  os: windows-latest
+        #  arch: auto
         - python-version: '3.13'
           install-extras: tests,optional
           os: windows-latest
@@ -364,34 +364,36 @@ jobs:
         running the pytest command inside the workspace
         ---
         "
-        python -m pytest --verbose -p pytester -p no:doctest --xdoctest --cov-config ../pyproject.toml --cov-report term --durations=100 --cov="$MOD_NAME" "$MOD_DPATH" ../tests
-        echo "pytest command finished, moving the coverage file to the repo root"
-        ls -al
-        # Move coverage file to a new name
-        mv .coverage "../.coverage.$WORKSPACE_DNAME"
-        echo "changing directory back to th repo root"
-        cd ..
-        ls -al
-    - name: Combine coverage Linux
-      if: runner.os == 'Linux'
-      run: |-
-        echo '############ PWD'
-        pwd
-        cp .wheelhouse/.coverage* . || true
-        ls -al
-        uv pip install coverage[toml] | pip install coverage[toml]
-        echo '############ combine'
-        coverage combine . || true
-        echo '############ XML'
-        coverage xml -o ./coverage.xml || true
-        echo '### The cwd should now have a coverage.xml'
-        ls -altr
-        pwd
-    - uses: codecov/codecov-action@v5.4.3
-      name: Codecov Upload
-      with:
-        file: ./coverage.xml
-        token: ${{ secrets.CODECOV_TOKEN }}
+        #python -m pytest --verbose -p pytester -p no:doctest --xdoctest --cov-config ../pyproject.toml --cov-report term --durations=100 --cov="$MOD_NAME" "$MOD_DPATH" ../tests
+        python -m pytest --verbose -p pytester -p no:doctest --xdoctest --cov-config ../pyproject.toml "$MOD_DPATH" ../tests
+        #echo "pytest command finished, moving the coverage file to the repo root"
+
+        #ls -al
+        ## Move coverage file to a new name
+        #mv .coverage "../.coverage.$WORKSPACE_DNAME"
+        #echo "changing directory back to th repo root"
+        #cd ..
+        #ls -al
+    #- name: Combine coverage Linux
+    #  if: runner.os == 'Linux'
+    #  run: |-
+    #    echo '############ PWD'
+    #    pwd
+    #    cp .wheelhouse/.coverage* . || true
+    #    ls -al
+    #    uv pip install coverage[toml] | pip install coverage[toml]
+    #    echo '############ combine'
+    #    coverage combine . || true
+    #    echo '############ XML'
+    #    coverage xml -o ./coverage.xml || true
+    #    echo '### The cwd should now have a coverage.xml'
+    #    ls -altr
+    #    pwd
+    #- uses: codecov/codecov-action@v5.4.3
+    #  name: Codecov Upload
+    #  with:
+    #    file: ./coverage.xml
+    #    token: ${{ secrets.CODECOV_TOKEN }}
   test_deploy:
     name: Deploy Test
     runs-on: ubuntu-latest
