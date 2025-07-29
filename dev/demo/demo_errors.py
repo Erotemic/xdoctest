@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """
 This file contains doctests with errors. Executing xdoctest on this file will
-demo how xdoctest reoprts errors. (It can also be used / was created for
-debuging)
+demo how xdoctest reports errors. (It can also be used / was created for
+debugging)
 """
 
 

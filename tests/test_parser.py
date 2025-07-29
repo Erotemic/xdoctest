@@ -427,7 +427,7 @@ def test_nonbalanced_statement():
     string = utils.codeblock(
         '''
         >>> x = [
-        # ] this braket is to make my editor happy and is does not effect the test
+        # ] this bracket is to make my editor happy and is does not effect the test
         ''').splitlines()[0]
 
     self = parser.DoctestParser()

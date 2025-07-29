@@ -372,7 +372,7 @@ def normalize(got, want, runstate=None):
 
     def visible_text(lines):
         # TODO: backspaces
-        # Any lines that end with only a carrage return are erased
+        # Any lines that end with only a carriage return are erased
         return [line for line in lines if not line.endswith('\r')]
 
     # Remove terminal colors

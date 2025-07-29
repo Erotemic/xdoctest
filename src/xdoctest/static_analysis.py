@@ -616,7 +616,7 @@ class TopLevelVisitor(ast.NodeVisitor):
             pattern = re.escape(trip) + r'\s*#.*$'
             # Assuming the multiline string is using `trip` as the triple quote
             # format, then the first instance of that pattern must terminate
-            # the string literal. Afterwords the only valid characters are
+            # the string literal. Afterwards the only valid characters are
             # whitespace and comments. Anything after the comment can be
             # ignored. The above pattern will match the first triple quote it
             # sees, and then will remove any trailing comments.
@@ -1126,7 +1126,7 @@ def _strip_hashtag_comments_and_newlines(source):
         """
         Consecutive newlines are dropped and trailing whitespace
 
-        Adapated from: https://github.com/mitogen-hq/mitogen/blob/master/mitogen/minify.py#L65
+        Adapted from: https://github.com/mitogen-hq/mitogen/blob/master/mitogen/minify.py#L65
         """
         prev_typ = None
         prev_end_col = 0

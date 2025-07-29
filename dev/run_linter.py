@@ -16,7 +16,7 @@ def main():
         'E301',  # expected 1 blank line, found 0
         'E305',  # expected 1 blank line after class / func
         'E306',  # expected 1 blank line before func
-        #'E402',  # moduel import not at top
+        #'E402',  # module import not at top
         'E501',  # line length > 79
         'W602',  # Old reraise syntax
         'E266',  # too many leading '#' for block comment

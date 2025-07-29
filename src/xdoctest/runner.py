@@ -386,7 +386,7 @@ def _auto_disable_failing_tests_hook(context):
             indent = failed_line[:num_indent_chars]
             endl = '\n'  # is there a case we use a different line end?
             new_line = ''.join([indent, '>>> # xdoctest: +SKIP', endl])
-            # Dont insert the same line twice, its failing for some othe reason
+            # Dont insert the same line twice, its failing for some other reason
             # Probably a pre-import
             if failed_line != new_line:
                 lines.insert(line_idx, new_line)

@@ -11,7 +11,7 @@ The following is a glossary of terms and jargon used in this repo.
 
 * directives - special in-doctest comments that change the behavior of the doctests at runtime. See :mod:`xdoctest.directive` for more details.
 
-* chevrons - the three cheverons (``>>> ``) or right angle brakets are the standard prefix for a doctest, also referred to as a PS1 line in the parser.
+* chevrons - the three cheverons (``>>> ``) or right angle brackets are the standard prefix for a doctest, also referred to as a PS1 line in the parser.
 
 * zero-args - a function that can be called without any arguments.
 
