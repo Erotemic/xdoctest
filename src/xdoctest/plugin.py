@@ -32,6 +32,10 @@ if _PYTEST_IS_GE_800:
     from _pytest.fixtures import TopRequest
 
 
+# Ban-list: extend if other plugins are known to break `xdoctest`
+_INCOMPATIBLE_PLUGINS = frozenset({'doctest'})
+
+
 # def print(text):
 #     """ Hack so we can get stdout when debugging the plugin file """
 #     import os
@@ -44,34 +48,14 @@ import xdoctest.doctest_example
 """
 
 
-### WE SHALL NOW BE VERY NAUGHTY ###
-def monkey_patch_disable_normal_doctest():
-    """
-    The doctest plugin captures tests even if it is disabled. This causes
-    conflicts with this package. Thus, we monkey-patch ``_pytest.doctest`` to
-    prevent it from collecting anything. Perhaps there is a less terrible way
-    to do this.
-    """
-    import sys
-    from _pytest import doctest
-    # Only perform the monkey patch if it is clear the xdoctest plugin is
-    # wanted instead of the standard _pytest.doctest pluginn
-    if '--doctest-modules' not in sys.argv:
-        if '--xdoctest-modules' in sys.argv or '--xdoctest' in sys.argv or '--xdoc' in sys.argv:
-            # overwriting the collect function will cripple _pytest.doctest and
-            # prevent conflicts with this module.
-            def pytest_collect_file(path, parent):
-                return None
-            # Not sure why, but _is_doctest seems to be called even when
-            # pytest_collect_file is monkey patched out
-            def _is_doctest(config, path, parent):
-                return False
-            doctest.pytest_collect_file = pytest_collect_file
-            doctest._is_doctest = _is_doctest
-
-
-monkey_patch_disable_normal_doctest()
-### THE NAUGHTINESS MUST NOW CEASE ###
+def pytest_configure(config):
+    manager = config.pluginmanager
+    all_plugins = {manager.get_name(plugin): plugin
+                   for plugin in manager.get_plugins()}
+    # If we're using `xdoctest`, unregister plugins on the ban-list
+    if getattr(config.option, 'xdoctestmodules', False):
+        for incompatible in _INCOMPATIBLE_PLUGINS.intersection(all_plugins):
+            manager.unregister(all_plugins[incompatible])
 
 
 def pytest_addoption(parser):
