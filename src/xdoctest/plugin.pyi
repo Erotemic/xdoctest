@@ -13,10 +13,6 @@ import xdoctest.doctest_example
 __docstubs__: str
 
 
-def monkey_patch_disable_normal_doctest():
-    ...
-
-
 def pytest_configure(config: pytest.Config) -> Generator[None, None, None]:
     ...
 

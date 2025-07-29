@@ -35,6 +35,10 @@ if _PYTEST_IS_GE_800:
     from _pytest.fixtures import TopRequest
 
 
+# Ban-list: extend if other plugins are known to break `xdoctest`
+_INCOMPATIBLE_PLUGINS = frozenset({'doctest'})
+
+
 # def print(text):
 #     """ Hack so we can get stdout when debugging the plugin file """
 #     import os
@@ -47,92 +51,14 @@ import xdoctest.doctest_example
 """
 
 
-def monkey_patch_disable_normal_doctest():
-    """
-    The doctest plugin captures tests even if it is disabled. This causes
-    conflicts with this package. Thus, we monkey-patch ``_pytest.doctest`` to
-    prevent it from collecting anything. Perhaps there is a less terrible way
-    to do this.
-
-    Note:
-        * Legacy and deprecated function.
-        * The monkey-patching of `_pytest.doctest` is destructive --
-          the original values of the overwritten attributes are not
-          preserved nor restored.
-    """
-    # XXX: should we delete this outright?
-    import sys
-    from _pytest import doctest
-    # Only perform the monkey patch if it is clear the xdoctest plugin is
-    # wanted instead of the standard _pytest.doctest pluginn
-    if '--doctest-modules' not in sys.argv:
-        if '--xdoctest-modules' in sys.argv or '--xdoctest' in sys.argv or '--xdoc' in sys.argv:
-            # overwriting the collect function will cripple _pytest.doctest and
-            # prevent conflicts with this module.
-            def pytest_collect_file(path, parent):
-                return None
-            # Not sure why, but _is_doctest seems to be called even when
-            # pytest_collect_file is monkey patched out
-            def _is_doctest(config, path, parent):
-                return False
-            doctest.pytest_collect_file = pytest_collect_file
-            doctest._is_doctest = _is_doctest
-
-
 def pytest_configure(config):
-    def get_dunder(obj, attr: str) -> Union[str, None]:
-        try:
-            module = obj.__module__
-        except AttributeError:
-            return None
-        if isinstance(module, str) and module:
-            return module
-        return None
-
-    # XXX: should we simplify `plugin_uses_xdoctest()`?
-
-    def plugin_uses_xdoctest(plugin) -> bool:
-        # Check the `.__[qual]name__` of plugin where available
-        for attr in '__qualname__', '__name__':
-            name = get_dunder(plugin, attr)
-            if not name:
-                continue
-            if 'xdoctest' in name:
-                return True
-        # Check the module defining `plugin` (if a class, function,
-        # etc.)
-        module = get_dunder(plugin, '__module__')
-        if module:
-            if 'xdoctest' in module:
-                return True
-            try:
-                if plugin_uses_xdoctest(import_module(module)):
-                    return True
-            except (ValueError, ImportError):
-                pass
-        # Finally, check the module of all the object members
-        try:
-            member_modules = {get_dunder(value, '__module__')
-                              for _, value in getmembers(plugin)}
-        except Exception:
-            member_modules = set()
-        return any('xdoctest' in module for module in member_modules - {None})
-
     manager = config.pluginmanager
     all_plugins = {manager.get_name(plugin): plugin
                    for plugin in manager.get_plugins()}
-    doctest_plugins = {name: plugin for name, plugin in all_plugins.items()
-                       if 'doctest' in name}
-    # Are we using `xdoctest`? If not, unregister this plugin
-    if not getattr(config.option, 'xdoctestmodules', False):
-        if 'xdoctest' in doctest_plugins:
-            manager.unregister(doctest_plugins['xdoctest'])
-        return
-    # If yes, unregister all the doctest-related plugins which don't
-    # have to do with `xdoctest`
-    for name, plugin in doctest_plugins.items():
-        if not plugin_uses_xdoctest(plugin):
-            manager.unregister(plugin)
+    # If we're using `xdoctest`, unregister plugins on the ban-list
+    if getattr(config.option, 'xdoctestmodules', False):
+        for incompatible in _INCOMPATIBLE_PLUGINS.intersection(all_plugins):
+            manager.unregister(all_plugins[incompatible])
 
 
 def pytest_addoption(parser):
