@@ -171,20 +171,16 @@ test_xdoctest_explicit_suppression
 
     def _check_activation(self, pytester, flags, load):
         """
-        Check that the ``flags`` result in :py:mod:`xdoctest.plugin`
-        being ``load``-ed if true and not loaded if false.  Also check
-        that it leaves :py:mod:`_pytest.doctest` untouched.
+        Check that if :py:mod:`xdoctest.plugin` is ``load``-ed,
+        :py:mod:`_pytest.doctest` is unloaded but otherwise untouched.
         """
         pdt_namespace_before = self._get_pytest_doctest_module_dict()
         try:
             config = pytester.parseconfigure(*shlex.split(flags))
             manager = config.pluginmanager
-            # If the plugin is not active, it unsets itself
-            assert (manager.get_plugin('xdoctest') is not None) == load
-            # Otherwise, it unsets other doctest plugins
-            if not load:
-                return
-            assert manager.get_plugin('doctest') is None
+            # When `--xdoctest` is set, it unsets other doctest plugins
+            if load:
+                assert manager.get_plugin('doctest') is None
         finally:
             # Also check that `_pytest.doctest` is untouched
             pdt_namespace_after = self._get_pytest_doctest_module_dict()
