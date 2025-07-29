@@ -333,21 +333,7 @@ jobs:
             fpath = '$WHEEL_FPATH'
             cls = Wheel if fpath.endswith('.whl') else SDist
             item = cls(fpath)
-            if item.version is None:
-                import re
-                # This is very fragile
-                fname = pathlib.Path(fpath).name
-                match = re.match(r'^([^-]+)-([^-]+)(.whl|.tar.gz)$', fname)
-                bs = chr(92)
-                pat = '([0-9]+' + bs + '.[0-9]+' + bs + '.[0-9]+)'
-                import re
-                # Not sure why version is None in 3.6 and 3.7
-                match = re.search(pat, fname)
-                assert match is not None
-                version = match.groups()[0]
-                print(version)
-            else:
-                print(item.version)
+            print(item.version)
         ")
         echo "WHEEL_FPATH=$WHEEL_FPATH"
         echo "INSTALL_EXTRAS=$INSTALL_EXTRAS"
