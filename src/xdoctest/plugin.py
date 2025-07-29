@@ -14,9 +14,6 @@ this code is heavilly based on ``pytest/_pytest/doctest.py`` plugin file in
 https://github.com/pytest-dev/pytest
 
 """
-from importlib import import_module
-from inspect import getmembers
-from typing import Union
 import pytest
 from _pytest._code import code
 from _pytest import fixtures
