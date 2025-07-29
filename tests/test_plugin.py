@@ -126,7 +126,7 @@ class TestXDoctestActivation:
                               ('--xdoc', True),
                               ('--doctest-modules', False),
                               ('--doctest-modules --xdoctest', True)])
-    def test_xdoctest_cli_activation(self, pytester, flags, load):
+    def test_xdoctest_cli_activation(self, request, flags, load):
         """
         Activate `xdoctest` via command-line arguments.
 
@@ -134,9 +134,9 @@ class TestXDoctestActivation:
             pytest tests/test_plugin.py::TestXDoctestActivation::\
 test_xdoctest_cli_activation
         """
-        self._check_activation(pytester, flags, load)
+        self._check_activation(request, flags, load)
 
-    def test_xdoctest_config_activation(self, pytester):
+    def test_xdoctest_config_activation(self, request):
         """
         Activate `xdoctest` via config file.
 
@@ -144,13 +144,13 @@ test_xdoctest_cli_activation
             pytest tests/test_plugin.py::TestXDoctestActivation::\
 test_xdoctest_config_activation
         """
-        pytester.makepyprojecttoml('''
-        [tool.pytest.ini_options]
+        self._get_tester(request).makeini('''
+        [pytest]
         addopts = '--xdoctest'
         ''')
-        self._check_activation(pytester, '', True)
+        self._check_activation(request, '', True)
 
-    def test_xdoctest_explicit_suppression(self, pytester):
+    def test_xdoctest_explicit_suppression(self, request):
         """
         Deactivate `xdoctest` via explictly unloading the plugin on the
         command line.
@@ -163,20 +163,22 @@ test_xdoctest_explicit_suppression
         try:
             with pytest.raises(pytest.UsageError):
                 # Can't parse the `--xdoc` flag with `xdoctest` disabled
-                self._check_activation(pytester, '--xdoc -p no:xdoctest', False)
+                self._check_activation(request, '--xdoc -p no:xdoctest', False)
         finally:
             # Check that `_pytest.doctest` is untouched
             pdt_namespace_after = self._get_pytest_doctest_module_dict()
             assert pdt_namespace_before == pdt_namespace_after
 
-    def _check_activation(self, pytester, flags, load):
+    def _check_activation(self, request, flags, load):
         """
         Check that if :py:mod:`xdoctest.plugin` is ``load``-ed,
         :py:mod:`_pytest.doctest` is unloaded but otherwise untouched.
         """
         pdt_namespace_before = self._get_pytest_doctest_module_dict()
         try:
-            config = pytester.parseconfigure(*shlex.split(flags))
+            config = (self
+                      ._get_tester(request)
+                      .parseconfigure(*shlex.split(flags)))
             manager = config.pluginmanager
             # When `--xdoctest` is set, it unsets other doctest plugins
             if load:
@@ -185,6 +187,18 @@ test_xdoctest_explicit_suppression
             # Also check that `_pytest.doctest` is untouched
             pdt_namespace_after = self._get_pytest_doctest_module_dict()
             assert pdt_namespace_before == pdt_namespace_after
+
+    @staticmethod
+    def _get_tester(request):
+        try:
+            from pytest import FixtureLookupError
+        except ImportError:  # Version < 6.0
+            from _pytest.fixtures import FixtureLookupError
+
+        try:
+            return request.getfixturevalue('pytester')
+        except FixtureLookupError:
+            return request.getfixturevalue('testdir')
 
     @staticmethod
     def _get_pytest_doctest_module_dict():
