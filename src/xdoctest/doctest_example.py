@@ -113,6 +113,7 @@ class DoctestConfig(dict):
                                  help='Default directive flags for doctests')),
             (['--global-exec'], dict(type=str, default=None, dest='global_exec',
                                      help='Custom Python code to execute before every test')),
+            # FIXME: this has a spelling error
             (['--supress-import-errors'], dict(dest='supress_import_errors', action='store_true',
                                                default=self['supress_import_errors'],
                                                help='Removes tracebacks from errors in implicit imports')),
