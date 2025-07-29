@@ -217,7 +217,7 @@ class XDoctestItem(pytest.Item):
     @property
     def example(self):
         """
-        Backwards compatability with older pytest versions
+        Backwards compatibility with older pytest versions
         """
         return self.dtest
 

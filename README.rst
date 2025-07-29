@@ -41,7 +41,7 @@ no test at all).
         """
         # I wrote this function by first finding some interesting demodata
         # then I wrote the body in IPython and copied it back in.
-        # Now I can re-use this test code I wrote in development as a test!
+        # Now I can reuse this test code I wrote in development as a test!
         # Covered Code is much easier to debug.
         # We have a Minimal Working Example (MWE)!
         result = config['outer'](map(config['inner'], data))
@@ -181,7 +181,7 @@ method, which can be placed in the ``__main__`` section of any module as such:
 This sets up the ability to invoke the ``xdoctest`` command line
 interface. ``python -m <modname> <command>``.
 
-However, it is typically prefered to just use the ``xdoctest`` executable and
+However, it is typically preferred to just use the ``xdoctest`` executable and
 pass it the path to your file, or the name of an installed module. In this case
 it is invoked like ``xdoctest -m <modname> <command>``.
 
@@ -328,14 +328,14 @@ The main enhancements ``xdoctest`` offers over ``doctest`` are:
    to perform checks in code that might write to stdout.
 5. If your test has a "want" statement and ends with both a value and
    stdout, both are checked, and the test will pass if either matches.
-6. Ouptut from multiple sequential print statements can now be checked by
+6. Output from multiple sequential print statements can now be checked by
    a single "got" statement. (new in 0.4.0).
 7. Examples can include `async code at the top level <https://xdoctest.readthedocs.io/en/latest/manual/async_doctest.html>`__.
 
 See code in ``dev/_compare/demo_enhancements.py`` for a demo that illustrates
 several of these enhancements. This demo shows cases where ``xdoctest`` works
 but ``doctest`` fails. As of version 0.9.1, there are no known syntax backwards
-incompatability. Please submit an issue if you can find any backwards
+incompatibility. Please submit an issue if you can find any backwards
 incompatible cases.
 
 

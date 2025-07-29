@@ -9,7 +9,7 @@ def parse_rst_codeblocks(fpath):
     fpath = ub.expandpath('$HOME/code/xdoctest/README.rst')
     """
 
-    # Proably a better way to to this
+    # Probably a better way to to this
 
     with open(fpath, 'r') as file:
         text = file.read()
