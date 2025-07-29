@@ -11,6 +11,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Removed `16806_WORKAROUND` as it is not longer needed for Python 3.8+
 * Removed deprecated --xdoc-force-dynamic and --allow-xdoc-dynamic flags
 * Improved speed (~6x) of doctest collection when running in pytest
+* Uses pytest plugin system to disable stdlib doctest instead of monkey patching.
 
 ### Fixed
 * Fixed incorrect return type in docstrings
