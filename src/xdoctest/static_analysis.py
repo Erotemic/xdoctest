@@ -21,7 +21,10 @@ import platform
 PLAT_IMPL = platform.python_implementation()
 
 
-IS_PY_GE_312 = sys.version_info[0] >= 3 and sys.version_info[1] >= 12
+IS_PY_GE_312 = sys.version_info[0:2] >= (3, 12)
+IS_PY_GE_308 = sys.version_info[0:2] >= (3, 8)  # type: bool
+IS_PY_LT_314 = sys.version_info[0:2] < (3, 14)  # type: bool
+
 
 if IS_PY_GE_312:
     from xdoctest import _tokenize as tokenize
@@ -771,7 +774,7 @@ def _parse_static_node_value(node):
         values = map(_parse_static_node_value, node.values)
         value = OrderedDict(zip(keys, values))
         # value = dict(zip(keys, values))
-    elif isinstance(node, (ast.NameConstant)):
+    elif IS_PY_LT_314 and isinstance(node, (ast.NameConstant)):
         value = node.value
     else:
         print(node.__dict__)
