@@ -1082,7 +1082,7 @@ class DocTest:
     @property
     def globs(self):
         """
-        Alias for ``global_namespace`` for pytest 8.0 compatability
+        Alias for ``global_namespace`` for pytest 8.0 compatibility
         """
         return self.global_namespace
 

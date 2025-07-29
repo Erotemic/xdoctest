@@ -33,7 +33,7 @@ def demo():
         xdoctest -m dev/demo/demo_issues.py demo_requires_skips_all_v1 --cliflag
     """
 
-    # Programatic reproduction (notice the first one also reports itself in
+    # Programmatic reproduction (notice the first one also reports itself in
     # pytest mode which is also wrong)
     import xdoctest
     xdoctest.doctest_callable(demo_requires_skips_all_v1)

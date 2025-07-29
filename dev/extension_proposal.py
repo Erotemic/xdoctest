@@ -25,7 +25,7 @@ Example:
 I see two disadvantages.
 
 First, even the editors that do support doctest highlights wont support this new
-style off the bat, but it does make the darn things a lot eaiser to type and
+style off the bat, but it does make the darn things a lot easier to type and
 work with without special editor extensions (like the ones I use in vimtk).
 
 Second, it is hard to distinguish code inputs from expected got/want output,
