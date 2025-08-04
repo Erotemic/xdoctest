@@ -71,6 +71,8 @@ jobs:
         ls -al wheelhouse
         python -m uv pip install wheelhouse/xdoctest*.tar.gz -v
     - name: Test minimal loose sdist
+      env:
+        PYTHONFAULTHANDLER=1
       run: |-
         pwd
         ls -al
@@ -85,6 +87,8 @@ jobs:
         python -X faulthandler -m pytest --verbose --cov=xdoctest $MOD_DPATH ../tests
         cd ..
     - name: Test full loose sdist
+      env:
+        PYTHONFAULTHANDLER=1
       run: |-
         pwd
         ls -al
