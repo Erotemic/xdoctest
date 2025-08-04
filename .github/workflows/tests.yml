@@ -373,7 +373,13 @@ jobs:
         ---
         "
         #python -m pytest --verbose -p pytester -p no:doctest --xdoctest --cov-config ../pyproject.toml --cov-report term --durations=100 --cov="$MOD_NAME" "$MOD_DPATH" ../tests
+        #
+        echo "DO FIRST RUN OF PYTEST"
+        python -X faulthandler -X dev -m pytest "$MOD_DPATH" ../tests
+        echo "FIRST RUN OF PYTEST FINISHED"
+        echo "DO SECOND RUN OF PYTEST"
         python -m pytest --setup-show --log-cli-level=DEBUG -s -vv -p pytester -p no:doctest --xdoctest --cov-config ../pyproject.toml "$MOD_DPATH" ../tests
+        echo "SECOND RUN OF PYTEST FINISHED"
         #echo "pytest command finished, moving the coverage file to the repo root"
 
         #ls -al
