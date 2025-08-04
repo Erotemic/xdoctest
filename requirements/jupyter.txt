@@ -26,4 +26,4 @@ jedi>=0.16
 attrs>=19.2.0
 
 # For jupyter-client
-jupyter_core >= 4.7.0
+# jupyter_core >= 4.7.0
