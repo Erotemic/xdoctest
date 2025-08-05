@@ -5,7 +5,7 @@ jinja2>=3.0.0   ; platform_python_implementation != "PyPy"  # Python 3.6+
 
 jupyter_client>=7.0.0 
 
-# IPython>=7.23.1 
+IPython>=7.23.1 
 
 # Requires psutil? Breaking on pypy windows?
 ipykernel>=6.11.0    ; python_version < '4.0'  and python_version >= '3.12' and (platform_system!="Windows" or platform_python_implementation != "PyPy")   # Python 3.12+
