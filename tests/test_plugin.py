@@ -152,7 +152,7 @@ test_xdoctest_config_activation
 
     def test_xdoctest_explicit_suppression(self, request):
         """
-        Deactivate `xdoctest` via explictly unloading the plugin on the
+        Deactivate `xdoctest` via explicitly unloading the plugin on the
         command line.
 
         CommandLine:

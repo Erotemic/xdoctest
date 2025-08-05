@@ -18,8 +18,7 @@ def parse_version(fpath):
 
 def static_parse(varname, fpath):
     """
-    Statically parse the a constant variable from a python file.
-    Raise an error if the variable is not a constant.
+    Statically parse the a constant variable from a python file
     """
     import ast
 
@@ -30,13 +29,13 @@ def static_parse(varname, fpath):
     pt = ast.parse(sourcecode)
 
     class StaticVisitor(ast.NodeVisitor):
-        def visit_Assign(self, node: ast.Assign):
+        def visit_Assign(self, node):
             for target in node.targets:
                 if getattr(target, "id", None) == varname:
-                    value: ast.expr = node.value
-                    if not isinstance(value, ast.Constant):
-                        raise ValueError("variable {!r} is not a constant".format(varname))
-                    self.static_value = value.value
+                    try:
+                        self.static_value = node.value.value
+                    except AttributeError:
+                        self.static_value = node.value.s
 
     visitor = StaticVisitor()
     visitor.visit(pt)
@@ -74,7 +73,7 @@ def parse_requirements(fname="requirements.txt", versions=False):
 
     Args:
         fname (str): path to requirements file
-        versions (bool | str, default=False):
+        versions (bool | str):
             If true include version specs.
             If strict, then pin to the minimum version.
 
@@ -110,7 +109,7 @@ def parse_requirements(fname="requirements.txt", versions=False):
                 info["package"] = line.split("#egg=")[1]
             else:
                 if "--find-links" in line:
-                    # setuptools doesnt seem to handle find links
+                    # setuptools does not seem to handle find links
                     line = line.split("--find-links")[0]
                 if ";" in line:
                     pkgpart, platpart = line.split(";")
@@ -163,7 +162,8 @@ def parse_requirements(fname="requirements.txt", versions=False):
                     if plat_deps is not None:
                         parts.append(";" + plat_deps)
                 item = "".join(parts)
-                yield item
+                if item:
+                    yield item
 
     packages = list(gen_packages_items())
     return packages
@@ -202,7 +202,6 @@ def parse_requirements(fname="requirements.txt", versions=False):
 NAME = "xdoctest"
 INIT_PATH = "src/xdoctest/__init__.py"
 VERSION = parse_version(INIT_PATH)
-
 if __name__ == "__main__":
     setupkw = {}
 
@@ -264,10 +263,15 @@ if __name__ == "__main__":
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Programming Language :: Python :: Implementation :: CPython",
+        "Programming Language :: Python :: 3.14",
     ]
-    setupkw["package_data"] = {"xdoctest": ["py.typed", "*.pyi"]}
+    setupkw["package_data"] = {
+        "": ["requirements/*.txt"],
+        "xdoctest": ["py.typed", "*.pyi"],
+    }
     setupkw["package_dir"] = {
         "": "./src",
     }

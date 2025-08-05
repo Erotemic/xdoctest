@@ -101,7 +101,7 @@ def test_simple_pytest_import_error_cli():
     # Note: flaky changes the return code from 1 to 3, so test non-zero
     assert info['ret'] != 0
 
-    # Remove the supress import error flag and now we should get the traceback
+    # Remove the suppress import error flag and now we should get the traceback
     temp_module = util_misc.TempModule(module_text, modname='imperr_test_mod')
     command = sys.executable + ' -m pytest -v -s --xdoctest-verbose=3 --xdoctest ' + temp_module.dpath
     print('-- PRINT COMMAND 2:')

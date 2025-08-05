@@ -1,10 +1,10 @@
-Installing Python 
+Installing Python
 =================
 
 Before you can use xdoctest, you must have Python installed. Its also best
 practice to be in a `virtual environment <https://realpython.com/effective-python-environment/>`_.
-If you are a Python beginner, then I would recommend setting up a 
-`conda <https://docs.conda.io/en/latest/>`_ environment. 
+If you are a Python beginner, then I would recommend setting up a
+`conda <https://docs.conda.io/en/latest/>`_ environment.
 
 
 On Linux, I typically use this end-to-end script for installing conda,
@@ -27,7 +27,7 @@ creating, and activating a virtual environment.
         echo "Downloaded file does not match hash! DO NOT CONTINUE!"
         exit 1;
     fi
-    chmod +x $CONDA_INSTALL_SCRIPT 
+    chmod +x $CONDA_INSTALL_SCRIPT
 
     # Install miniconda to user local directory
     _CONDA_ROOT=$HOME/.local/conda
@@ -35,10 +35,10 @@ creating, and activating a virtual environment.
     # Activate the basic conda environment
     source $_CONDA_ROOT/etc/profile.d/conda.sh
     # Update the base and create a virtual environment named py38
-    conda update --name base conda --yes 
-    conda create --name py38 python=3.8 --yes 
+    conda update --name base conda --yes
+    conda create --name py38 python=3.8 --yes
 
-    # Activate your vitualenv
+    # Activate your virtualenv
     # I recommend doing something similar in your ~/.bashrc
     source $_CONDA_ROOT/etc/profile.d/conda.sh
     conda activate py38
@@ -59,8 +59,8 @@ virtual environment whenever you start a new bash shell.
     fi
 
 
-For other operating systems, see the official documentation to install conda 
-`on Windows <https://docs.conda.io/projects/conda/en/latest/user-guide/install/windows.html>`_ or 
+For other operating systems, see the official documentation to install conda
+`on Windows <https://docs.conda.io/projects/conda/en/latest/user-guide/install/windows.html>`_ or
 `on MacOS <https://docs.conda.io/projects/conda/en/latest/user-guide/install/macos.html>`_.
 
-Once conda is installed the commands for `managing conda virtual environments <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#>`_ are roughly the same across platforms. 
+Once conda is installed the commands for `managing conda virtual environments <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#>`_ are roughly the same across platforms.
