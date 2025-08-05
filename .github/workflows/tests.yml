@@ -40,74 +40,74 @@ jobs:
         pip install -r requirements/runtime.txt
         mypy --install-types --non-interactive ./src/xdoctest
         mypy ./src/xdoctest
-  #build_and_test_sdist:
-  #  ##
-  #  # Build the pure python package from source and test it in the
-  #  # same environment.
-  #  ##
-  #  name: Build sdist
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #  - name: Checkout source
-  #    uses: actions/checkout@v4.2.2
-  #  - name: Set up Python 3.13
-  #    uses: actions/setup-python@v5.6.0
-  #    with:
-  #      python-version: '3.13'
-  #  - name: Upgrade pip
-  #    run: |-
-  #      python -m pip install pip uv -U
-  #      python -m uv pip install -r requirements/tests.txt
-  #      python -m uv pip install -r requirements/runtime.txt
-  #  - name: Build sdist
-  #    shell: bash
-  #    run: |-
-  #      python -m pip install pip uv -U
-  #      python -m uv pip install setuptools>=0.8 wheel build twine
-  #      python -m build --sdist --outdir wheelhouse
-  #      python -m twine check ./wheelhouse/xdoctest*.tar.gz
-  #  - name: Install sdist
-  #    run: |-
-  #      ls -al wheelhouse
-  #      python -m uv pip install wheelhouse/xdoctest*.tar.gz -v
-  #  - name: Test minimal loose sdist
-  #    env:
-  #      PYTHONFAULTHANDLER: 1
-  #    run: |-
-  #      pwd
-  #      ls -al
-  #      # Run in a sandboxed directory
-  #      WORKSPACE_DNAME="testsrcdir_minimal_${CI_PYTHON_VERSION}_${GITHUB_RUN_ID}_${RUNNER_OS}"
-  #      mkdir -p $WORKSPACE_DNAME
-  #      cd $WORKSPACE_DNAME
-  #      # Run the tests
-  #      # Get path to installed package
-  #      MOD_DPATH=$(python -c "import xdoctest, os; print(os.path.dirname(xdoctest.__file__))")
-  #      echo "MOD_DPATH = $MOD_DPATH"
-  #      python -X faulthandler -m pytest --verbose --cov=xdoctest $MOD_DPATH ../tests
-  #      cd ..
-  #  - name: Test full loose sdist
-  #    env:
-  #      PYTHONFAULTHANDLER: 1
-  #    run: |-
-  #      pwd
-  #      ls -al
-  #      true
-  #      # Run in a sandboxed directory
-  #      WORKSPACE_DNAME="testsrcdir_full_${CI_PYTHON_VERSION}_${GITHUB_RUN_ID}_${RUNNER_OS}"
-  #      mkdir -p $WORKSPACE_DNAME
-  #      cd $WORKSPACE_DNAME
-  #      # Run the tests
-  #      # Get path to installed package
-  #      MOD_DPATH=$(python -c "import xdoctest, os; print(os.path.dirname(xdoctest.__file__))")
-  #      echo "MOD_DPATH = $MOD_DPATH"
-  #      python -X faulthandler -m pytest --verbose --cov=xdoctest $MOD_DPATH ../tests
-  #      cd ..
-  #  - uses: actions/upload-artifact@v4.4.0
-  #    name: Upload sdist artifact
-  #    with:
-  #      name: sdist_wheels
-  #      path: ./wheelhouse/xdoctest*.tar.gz
+  build_and_test_sdist:
+    ##
+    # Build the pure python package from source and test it in the
+    # same environment.
+    ##
+    name: Build sdist
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v4.2.2
+    - name: Set up Python 3.13
+      uses: actions/setup-python@v5.6.0
+      with:
+        python-version: '3.13'
+    - name: Upgrade pip
+      run: |-
+        python -m pip install pip uv -U
+        python -m uv pip install -r requirements/tests.txt
+        python -m uv pip install -r requirements/runtime.txt
+    - name: Build sdist
+      shell: bash
+      run: |-
+        python -m pip install pip uv -U
+        python -m uv pip install setuptools>=0.8 wheel build twine
+        python -m build --sdist --outdir wheelhouse
+        python -m twine check ./wheelhouse/xdoctest*.tar.gz
+    - name: Install sdist
+      run: |-
+        ls -al wheelhouse
+        python -m uv pip install wheelhouse/xdoctest*.tar.gz -v
+    - name: Test minimal loose sdist
+      env:
+        PYTHONFAULTHANDLER: 1
+      run: |-
+        pwd
+        ls -al
+        # Run in a sandboxed directory
+        WORKSPACE_DNAME="testsrcdir_minimal_${CI_PYTHON_VERSION}_${GITHUB_RUN_ID}_${RUNNER_OS}"
+        mkdir -p $WORKSPACE_DNAME
+        cd $WORKSPACE_DNAME
+        # Run the tests
+        # Get path to installed package
+        MOD_DPATH=$(python -c "import xdoctest, os; print(os.path.dirname(xdoctest.__file__))")
+        echo "MOD_DPATH = $MOD_DPATH"
+        python -X faulthandler -m pytest --verbose --cov=xdoctest $MOD_DPATH ../tests
+        cd ..
+    - name: Test full loose sdist
+      env:
+        PYTHONFAULTHANDLER: 1
+      run: |-
+        pwd
+        ls -al
+        true
+        # Run in a sandboxed directory
+        WORKSPACE_DNAME="testsrcdir_full_${CI_PYTHON_VERSION}_${GITHUB_RUN_ID}_${RUNNER_OS}"
+        mkdir -p $WORKSPACE_DNAME
+        cd $WORKSPACE_DNAME
+        # Run the tests
+        # Get path to installed package
+        MOD_DPATH=$(python -c "import xdoctest, os; print(os.path.dirname(xdoctest.__file__))")
+        echo "MOD_DPATH = $MOD_DPATH"
+        python -X faulthandler -m pytest --verbose --cov=xdoctest $MOD_DPATH ../tests
+        cd ..
+    - uses: actions/upload-artifact@v4.4.0
+      name: Upload sdist artifact
+      with:
+        name: sdist_wheels
+        path: ./wheelhouse/xdoctest*.tar.gz
   build_purepy_wheels:
     ##
     # Download and test the pure-python wheels that were build in the
