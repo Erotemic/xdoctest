@@ -372,16 +372,18 @@ jobs:
         running the pytest command inside the workspace
         ---
         "
-        echo "DO FIRST RUN OF PYTEST"
+        echo "RUN PYTEST WITHOUT NOTEBOOK"
         python -X faulthandler -X dev -m pytest -k "not notebook" "$MOD_DPATH" ../tests
+        echo "FINISH RUN PYTEST WITHOUT NOTEBOOK"
 
-        echo "FIRST RUN OF PYTEST FINISHED"
+        echo "RUN PYTEST WITH ONLY NOTEBOOK"
+        python -X faulthandler -X dev -m pytest -k "notebook" "$MOD_DPATH" ../tests
+        echo "FINISH RUN PYTEST WITH ONLY NOTEBOOK"
 
-        echo "DO SECOND RUN OF PYTEST"
 
+        echo "DO MAIN RUN OF PYTEST"
         python -m pytest --setup-show --log-cli-level=DEBUG -s -vv -p pytester -p no:doctest --xdoctest --cov-config ../pyproject.toml "$MOD_DPATH" ../tests
-
-        echo "SECOND RUN OF PYTEST FINISHED"
+        echo "FINISHED MAIN RUN OF PYTEST"
         #echo "pytest command finished, moving the coverage file to the repo root"
 
         #ls -al
