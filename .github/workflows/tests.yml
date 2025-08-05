@@ -376,10 +376,9 @@ jobs:
         python -X faulthandler -X dev -m pytest -k "not notebook" "$MOD_DPATH" ../tests
         echo "FINISH RUN PYTEST WITHOUT NOTEBOOK"
 
-        echo "RUN PYTEST WITH ONLY NOTEBOOK"
-        python -X faulthandler -X dev -m pytest -k "notebook" "$MOD_DPATH" ../tests
-        echo "FINISH RUN PYTEST WITH ONLY NOTEBOOK"
-
+        echo "RUN PYTEST WITH ONE NOTEBOOK TEST"
+        python -X faulthandler -X dev -m pytest --setup-show --log-cli-level=DEBUG -s -vv -k "test_xdoctest_inside_notebook" "$MOD_DPATH" ../tests
+        echo "FINISH RUN PYTEST WITH ONE NOTEBOOK TEST"
 
         echo "DO MAIN RUN OF PYTEST"
         python -m pytest --setup-show --log-cli-level=DEBUG -s -vv -p pytester -p no:doctest --xdoctest --cov-config ../pyproject.toml "$MOD_DPATH" ../tests
