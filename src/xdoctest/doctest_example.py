@@ -682,6 +682,37 @@ class DocTest:
         # If everything was skipped, then there will be no stdout
         return len(self.logged_stdout) > 0
 
+    # see asyncio.runners._cancel_all_tasks()
+    def _cancel_all_asyncio_tasks(self, loop):
+        to_cancel = asyncio.all_tasks(loop)
+        if not to_cancel:
+            return
+        for task in to_cancel:
+            task.cancel()
+        loop.run_until_complete(asyncio.gather(*to_cancel, return_exceptions=True))
+        for task in to_cancel:
+            if task.cancelled():
+                continue
+            if task.exception() is not None:
+                loop.call_exception_handler({
+                    'message': 'unhandled exception during asyncio.run() shutdown',
+                    'exception': task.exception(),
+                    'task': task,
+                })
+
+    # see asyncio.runners.Runner.close()
+    def _shutdown_asyncio_event_loop(self, loop):
+        try:
+            self._cancel_all_asyncio_tasks(loop)
+            loop.run_until_complete(loop.shutdown_asyncgens())
+            if sys.version_info >= (3, 12):
+                loop.run_until_complete(loop.shutdown_default_executor(300))
+            elif sys.version_info >= (3, 9):
+                loop.run_until_complete(loop.shutdown_default_executor())
+        finally:
+            asyncio.set_event_loop(None)
+            loop.close()
+
     def run(self, verbose=None, on_error=None):
         """
         Executes the doctest, checks the results, reports the outcome.
@@ -877,18 +908,8 @@ class DocTest:
                                     asyncio_loop.run_until_complete(coro())
                             else:
                                 if asyncio_loop is not None:
-                                    # see asyncio/runners.py; unlike the standard implementation,
-                                    # it does not cancel all tasks
-                                    try:
-                                        asyncio_loop.run_until_complete(asyncio_loop.shutdown_asyncgens())
-                                        if sys.version_info >= (3, 12):
-                                            asyncio_loop.run_until_complete(asyncio_loop.shutdown_default_executor(300))
-                                        elif sys.version_info >= (3, 9):
-                                            asyncio_loop.run_until_complete(asyncio_loop.shutdown_default_executor())
-                                    finally:
-                                        asyncio.set_event_loop(None)
-                                        asyncio_loop.close()
-                                        asyncio_loop = None
+                                    self._shutdown_asyncio_event_loop(asyncio_loop)
+                                    asyncio_loop = None
                                 if is_coroutine:
                                     if is_running_in_loop:
                                         raise exceptions.ExistingEventLoopError(
@@ -1018,18 +1039,8 @@ class DocTest:
                     self.logged_stdout[partx] = cap.text
 
         if asyncio_loop is not None:
-            # see asyncio/runners.py; unlike the standard implementation,
-            # it does not cancel all tasks
-            try:
-                asyncio_loop.run_until_complete(asyncio_loop.shutdown_asyncgens())
-                if sys.version_info >= (3, 12):
-                    asyncio_loop.run_until_complete(asyncio_loop.shutdown_default_executor(300))
-                elif sys.version_info >= (3, 9):
-                    asyncio_loop.run_until_complete(asyncio_loop.shutdown_default_executor())
-            finally:
-                asyncio.set_event_loop(None)
-                asyncio_loop.close()
-                asyncio_loop = None
+            self._shutdown_asyncio_event_loop(asyncio_loop)
+            asyncio_loop = None
 
         if self.exc_info is None:
             self.failed_part = None
