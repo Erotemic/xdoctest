@@ -877,9 +877,18 @@ class DocTest:
                                     asyncio_loop.run_until_complete(coro())
                             else:
                                 if asyncio_loop is not None:
-                                    asyncio.set_event_loop(None)
-                                    asyncio_loop.close()
-                                    asyncio_loop = None
+                                    # see asyncio/runners.py; unlike the standard implementation,
+                                    # it does not cancel all tasks
+                                    try:
+                                        asyncio_loop.run_until_complete(asyncio_loop.shutdown_asyncgens())
+                                        if sys.version_info >= (3, 12):
+                                            asyncio_loop.run_until_complete(asyncio_loop.shutdown_default_executor(300))
+                                        elif sys.version_info >= (3, 9):
+                                            asyncio_loop.run_until_complete(asyncio_loop.shutdown_default_executor())
+                                    finally:
+                                        asyncio.set_event_loop(None)
+                                        asyncio_loop.close()
+                                        asyncio_loop = None
                                 if is_coroutine:
                                     if is_running_in_loop:
                                         raise exceptions.ExistingEventLoopError(
@@ -1009,9 +1018,18 @@ class DocTest:
                     self.logged_stdout[partx] = cap.text
 
         if asyncio_loop is not None:
-            asyncio.set_event_loop(None)
-            asyncio_loop.close()
-            asyncio_loop = None
+            # see asyncio/runners.py; unlike the standard implementation,
+            # it does not cancel all tasks
+            try:
+                asyncio_loop.run_until_complete(asyncio_loop.shutdown_asyncgens())
+                if sys.version_info >= (3, 12):
+                    asyncio_loop.run_until_complete(asyncio_loop.shutdown_default_executor(300))
+                elif sys.version_info >= (3, 9):
+                    asyncio_loop.run_until_complete(asyncio_loop.shutdown_default_executor())
+            finally:
+                asyncio.set_event_loop(None)
+                asyncio_loop.close()
+                asyncio_loop = None
 
         if self.exc_info is None:
             self.failed_part = None
