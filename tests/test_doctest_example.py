@@ -282,8 +282,8 @@ def test_await():
 
 def test_async_for():
     """
-    python tests/test_doctest_example.py test_await
-    pytest tests/test_doctest_example.py::test_await
+    python tests/test_doctest_example.py test_async_for
+    pytest tests/test_doctest_example.py::test_async_for
     """
     string = utils.codeblock(
         '''
@@ -302,8 +302,8 @@ def test_async_for():
 
 def test_async_with():
     """
-    python tests/test_doctest_example.py test_await
-    pytest tests/test_doctest_example.py::test_await
+    python tests/test_doctest_example.py test_async_with
+    pytest tests/test_doctest_example.py::test_async_with
     """
     string = utils.codeblock(
         '''
@@ -326,8 +326,8 @@ def test_async_with():
 
 def test_await_in_running_loop():
     """
-    python tests/test_doctest_example.py test_await
-    pytest tests/test_doctest_example.py::test_await
+    python tests/test_doctest_example.py test_await_in_running_loop
+    pytest tests/test_doctest_example.py::test_await_in_running_loop
     """
     string = utils.codeblock(
         '''
@@ -354,8 +354,8 @@ def test_await_in_running_loop():
 
 def test_async_def():
     """
-    python tests/test_doctest_example.py test_await
-    pytest tests/test_doctest_example.py::test_await
+    python tests/test_doctest_example.py test_async_def
+    pytest tests/test_doctest_example.py::test_async_def
     """
     string = utils.codeblock(
         '''
