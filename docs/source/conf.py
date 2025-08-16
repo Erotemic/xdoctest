@@ -173,6 +173,7 @@ extensions = [
     'sphinx.ext.imgconverter',  # For building latexpdf
     'sphinx.ext.githubpages',
     # 'sphinxcontrib.redirects',
+    'sphinxcontrib.jquery',  # Fix for search
     'sphinx_reredirects',
 ]
 
@@ -195,6 +196,9 @@ autosummary_mock_imports = [
     'geowatch.tasks.depth_pcd.model',
     'geowatch.tasks.cold.export_change_map',
 ]
+
+autodoc_default_options = {  # Document callable classes
+    'special-members': '__call__'}
 
 autodoc_member_order = 'bysource'
 autoclass_content = 'both'
