@@ -324,6 +324,34 @@ def test_async_with():
     assert result['passed']
 
 
+def test_async_directive():
+    """
+    python tests/test_doctest_example.py test_async_directive
+    pytest tests/test_doctest_example.py::test_async_directive
+    """
+    string = utils.codeblock(
+        '''
+        >>> # xdoctest: +ASYNC
+        >>> from contextlib import suppress
+        >>> import asyncio
+        >>> task = asyncio.create_task(asyncio.sleep(0, result="slept"))
+        >>> print(await task)
+        slept
+        >>> # xdoctest: -ASYNC
+        >>> loop = None
+        >>> with suppress(RuntimeError):
+        >>>     loop = asyncio.get_running_loop()
+        >>> print(loop is not None)
+        False
+        >>> loop = asyncio.get_running_loop()  # xdoctest: +ASYNC
+        >>> print(loop is not None)
+        True
+        ''')
+    self = doctest_example.DocTest(docsrc=string)
+    result = self.run(on_error='raise')
+    assert result['passed']
+
+
 def test_await_in_running_loop():
     """
     python tests/test_doctest_example.py test_await_in_running_loop
