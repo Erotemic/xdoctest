@@ -199,9 +199,9 @@ DEFAULT_RUNTIME_STATE = {
     'REPORT_NDIFF': False,
     'REPORT_UDIFF': True,
 
-    # Doctests will be run in an asyncio event loop while this is True. Note
-    # that the code block with top-level awaits will be run in an asyncio event
-    # loop in any case.
+    # If True, all doctests in this context are run in the same event loop.
+    # Otherwise, async doctest blocks are run in independent event loops
+    # and only if a top-level await exists. New in 1.3.0
     'ASYNC': False,
 
     # Doctests will be skipped while this is True, note that test only run
