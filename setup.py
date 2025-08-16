@@ -214,7 +214,6 @@ if __name__ == "__main__":
         "runtime": parse_requirements("requirements/runtime.txt", versions="loose"),
         "tests": parse_requirements("requirements/tests.txt", versions="loose"),
         "optional": parse_requirements("requirements/optional.txt", versions="loose"),
-        "async": parse_requirements("requirements/async.txt", versions="loose"),
         "colors": parse_requirements("requirements/colors.txt", versions="loose"),
         "docs": parse_requirements("requirements/docs.txt", versions="loose"),
         "jupyter": parse_requirements("requirements/jupyter.txt", versions="loose"),

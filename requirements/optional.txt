@@ -1,4 +1,3 @@
--r async.txt
 -r colors.txt
 -r jupyter.txt
 

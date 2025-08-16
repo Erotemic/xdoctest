@@ -682,18 +682,6 @@ class DocTest:
         # If everything was skipped, then there will be no stdout
         return len(self.logged_stdout) > 0
 
-    async def _run_async(self, parent):
-        value = None
-        while True:
-            items = parent.switch(value)
-            if items is None:
-                return
-            code, test_globals, is_coroutine = items
-            if is_coroutine:
-                value = await eval(code, test_globals)
-            else:
-                value = eval(code, test_globals)
-
     def run(self, verbose=None, on_error=None):
         """
         Executes the doctest, checks the results, reports the outcome.
@@ -742,7 +730,7 @@ class DocTest:
             is_running_in_loop = True
         except RuntimeError:
             is_running_in_loop = False
-        asyncio_greenlet = None
+        asyncio_loop = None
 
         DEBUG = global_state.DEBUG_DOCTEST
 
@@ -875,18 +863,23 @@ class DocTest:
                                         "Cannot run async doctests from within a running event loop: %s",
                                         part.orig_lines
                                         )
-                                if asyncio_greenlet is None:
-                                    import greenlet
-                                    asyncio_greenlet = greenlet.greenlet(asyncio.run)
-                                    asyncio_greenlet.switch(self._run_async(greenlet.getcurrent()))
+                                if asyncio_loop is None:
+                                    asyncio_loop = asyncio.new_event_loop()
+                                    asyncio.set_event_loop(asyncio_loop)
+                                async def coro():
+                                    if is_coroutine:
+                                        return await eval(code, test_globals)
+                                    else:
+                                        return eval(code, test_globals)
                                 if part.compile_mode == 'eval':
-                                    got_eval = asyncio_greenlet.switch(code, test_globals, is_coroutine)
+                                    got_eval = asyncio_loop.run_until_complete(coro())
                                 else:
-                                    asyncio_greenlet.switch(code, test_globals, is_coroutine)
+                                    asyncio_loop.run_until_complete(coro())
                             else:
-                                if asyncio_greenlet is not None:
-                                    asyncio_greenlet.switch(None)
-                                    asyncio_greenlet = None
+                                if asyncio_loop is not None:
+                                    asyncio.set_event_loop(None)
+                                    asyncio_loop.close()
+                                    asyncio_loop = None
                                 if is_coroutine:
                                     if is_running_in_loop:
                                         raise exceptions.ExistingEventLoopError(
@@ -1015,9 +1008,10 @@ class DocTest:
                     self.logged_evals[partx] = got_eval
                     self.logged_stdout[partx] = cap.text
 
-        if asyncio_greenlet is not None:
-            asyncio_greenlet.switch(None)
-            asyncio_greenlet = None
+        if asyncio_loop is not None:
+            asyncio.set_event_loop(None)
+            asyncio_loop.close()
+            asyncio_loop = None
 
         if self.exc_info is None:
             self.failed_part = None
