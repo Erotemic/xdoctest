@@ -1056,12 +1056,12 @@ class DocTest:
                     self.logged_evals[partx] = got_eval
                     self.logged_stdout[partx] = cap.text
 
-        if asyncio_loop is not None:
-            # shutdown the asyncio event loop (no exception)
-            try:
-                self._shutdown_asyncio_event_loop(asyncio_loop)
-            finally:
-                asyncio_loop = None
+            if asyncio_loop is not None:
+                # shutdown the asyncio event loop (no exception)
+                try:
+                    self._shutdown_asyncio_event_loop(asyncio_loop)
+                finally:
+                    asyncio_loop = None
 
         if self.exc_info is None:
             self.failed_part = None
