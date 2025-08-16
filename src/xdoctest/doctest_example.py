@@ -712,6 +712,7 @@ class DocTest:
         finally:
             asyncio.set_event_loop(None)
             loop.close()
+            loop = None
 
     def run(self, verbose=None, on_error=None):
         """
@@ -908,8 +909,11 @@ class DocTest:
                                     asyncio_loop.run_until_complete(coro())
                             else:
                                 if asyncio_loop is not None:
-                                    self._shutdown_asyncio_event_loop(asyncio_loop)
-                                    asyncio_loop = None
+                                    # shutdown the asyncio event loop (context exit)
+                                    try:
+                                        self._shutdown_asyncio_event_loop(asyncio_loop)
+                                    finally:
+                                        asyncio_loop = None
                                 if is_coroutine:
                                     if is_running_in_loop:
                                         raise exceptions.ExistingEventLoopError(
@@ -939,7 +943,21 @@ class DocTest:
                             want = part.want
                             checker.check_exception(exc_got, want, runstate)
                         else:
+                            if asyncio_loop is not None:
+                                # shutdown the asyncio event loop (exception)
+                                try:
+                                    self._shutdown_asyncio_event_loop(asyncio_loop)
+                                finally:
+                                    asyncio_loop = None
                             raise
+                    except BaseException:
+                        if asyncio_loop is not None:
+                            # shutdown the asyncio event loop (base exception)
+                            try:
+                                self._shutdown_asyncio_event_loop(asyncio_loop)
+                            finally:
+                                asyncio_loop = None
+                        raise
                     else:
                         """
                         TODO:
@@ -1039,8 +1057,11 @@ class DocTest:
                     self.logged_stdout[partx] = cap.text
 
         if asyncio_loop is not None:
-            self._shutdown_asyncio_event_loop(asyncio_loop)
-            asyncio_loop = None
+            # shutdown the asyncio event loop (no exception)
+            try:
+                self._shutdown_asyncio_event_loop(asyncio_loop)
+            finally:
+                asyncio_loop = None
 
         if self.exc_info is None:
             self.failed_part = None
