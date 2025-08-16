@@ -324,28 +324,38 @@ def test_async_with():
     assert result['passed']
 
 
-def test_async_directive():
+def test_async_future_without_directive():
     """
-    python tests/test_doctest_example.py test_async_directive
-    pytest tests/test_doctest_example.py::test_async_directive
+    python tests/test_doctest_example.py test_async_future_without_directive
+    pytest tests/test_doctest_example.py::test_async_future_without_directive
+    """
+    string = utils.codeblock(
+        '''
+        >>> from contextlib import suppress
+        >>> import asyncio
+        >>> future = asyncio.get_running_loop().create_future()
+        >>> future.set_result("ok")
+        >>> print(await future)
+        ok
+        ''')
+    self = doctest_example.DocTest(docsrc=string)
+    result = self.run(on_error='return')
+    assert result['failed']
+
+
+def test_async_future_with_directive():
+    """
+    python tests/test_doctest_example.py test_async_future_with_directive
+    pytest tests/test_doctest_example.py::test_async_future_with_directive
     """
     string = utils.codeblock(
         '''
         >>> # xdoctest: +ASYNC
-        >>> from contextlib import suppress
         >>> import asyncio
-        >>> task = asyncio.create_task(asyncio.sleep(0, result="slept"))
-        >>> print(await task)
-        slept
-        >>> # xdoctest: -ASYNC
-        >>> loop = None
-        >>> with suppress(RuntimeError):
-        >>>     loop = asyncio.get_running_loop()
-        >>> print(loop is not None)
-        False
-        >>> loop = asyncio.get_running_loop()  # xdoctest: +ASYNC
-        >>> print(loop is not None)
-        True
+        >>> future = asyncio.get_running_loop().create_future()
+        >>> future.set_result("ok")
+        >>> print(await future)
+        ok
         ''')
     self = doctest_example.DocTest(docsrc=string)
     result = self.run(on_error='raise')
