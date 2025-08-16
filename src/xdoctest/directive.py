@@ -37,6 +37,8 @@ The basic directives and their defaults are as follows:
 
     * ``REPORT_UDIFF``: True,
 
+    * ``ASYNC``: False,
+
     * ``SKIP``: False
 
 Use ``-`` to disable a directive that is enabled by default, e.g.
@@ -197,6 +199,11 @@ DEFAULT_RUNTIME_STATE = {
     'REPORT_NDIFF': False,
     'REPORT_UDIFF': True,
 
+    # Doctests will be run in an asyncio event loop while this is True. Note
+    # that the code block with top-level awaits will be run in an asyncio event
+    # loop in any case.
+    'ASYNC': False,
+
     # Doctests will be skipped while this is True, note that test only run
     # if this is False and REQUIRES is empty.
     'SKIP': False,
@@ -246,6 +253,7 @@ class RuntimeState(utils.NiceRepr):
         >>> # xdoc: +IGNORE_WHITESPACE
         >>> print(str(RuntimeState()))
         <RuntimeState({
+            ASYNC: False,
             DONT_ACCEPT_BLANKLINE: False,
             ELLIPSIS: True,
             IGNORE_EXCEPTION_DETAIL: False,

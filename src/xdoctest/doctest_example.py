@@ -682,7 +682,46 @@ class DocTest:
         # If everything was skipped, then there will be no stdout
         return len(self.logged_stdout) > 0
 
-    async def _run(self, verbose, on_error):
+    async def _run_async(self, parent):
+        value = None
+        while True:
+            items = parent.switch(value)
+            if items is None:
+                return
+            code, test_globals, is_coroutine = items
+            if is_coroutine:
+                value = await eval(code, test_globals)
+            else:
+                value = eval(code, test_globals)
+
+    def run(self, verbose=None, on_error=None):
+        """
+        Executes the doctest, checks the results, reports the outcome.
+
+        Args:
+            verbose (int): verbosity level
+            on_error (str): can be 'raise' or 'return'
+
+        Returns:
+            Dict : summary
+        """
+        on_error = self.config.getvalue('on_error', on_error)
+        verbose = self.config.getvalue('verbose', verbose)
+        if on_error not in {'raise', 'return'}:
+            raise KeyError(on_error)
+
+        self._parse()  # parse out parts if we have not already done so
+        self._pre_run(verbose)
+
+        # Prepare for actual test run
+        self.logged_evals.clear()
+        self.logged_stdout.clear()
+        self._unmatched_stdout = []
+
+        self._skipped_parts = []
+        self.exc_info = None
+        self._suppressed_stdout = verbose <= 1
+
         # Initialize a new runtime state
         default_state = self.config['default_runtime_state']
         runstate = self._runstate = directive.RuntimeState(default_state)
@@ -698,7 +737,12 @@ class DocTest:
         #     runstate['SKIP'] = True
 
         needs_capture = True
-        yield_was_made = False
+        try:
+            asyncio.get_running_loop()
+            is_running_in_loop = True
+        except RuntimeError:
+            is_running_in_loop = False
+        asyncio_greenlet = None
 
         DEBUG = global_state.DEBUG_DOCTEST
 
@@ -824,33 +868,39 @@ class DocTest:
                             # expect it to return an object with a repr that
                             # can compared to a "want" statement.
                             # print('part.compile_mode = {!r}'.format(part.compile_mode))
-                            if code.co_flags & CO_COROUTINE == CO_COROUTINE:
-                                if not yield_was_made:
-                                    # A trick for yielding to run(). If there
-                                    # is already a running event loop, True
-                                    # will be sent and we will interrupt
-                                    # execution. Otherwise, execution will
-                                    # continue in the context of asyncio.run()
-                                    # and None will be sent.
-                                    @types.coroutine
-                                    def running_in_loop():
-                                        return (yield)
-
-                                    is_running_in_loop = await running_in_loop()
+                            is_coroutine = code.co_flags & CO_COROUTINE == CO_COROUTINE
+                            if runstate['ASYNC']:
+                                if is_running_in_loop:
+                                    raise exceptions.ExistingEventLoopError(
+                                        "Cannot run async doctests from within a running event loop: %s",
+                                        part.orig_lines
+                                        )
+                                if asyncio_greenlet is None:
+                                    import greenlet
+                                    asyncio_greenlet = greenlet.greenlet(asyncio.run)
+                                    asyncio_greenlet.switch(self._run_async(greenlet.getcurrent()))
+                                if part.compile_mode == 'eval':
+                                    got_eval = asyncio_greenlet.switch(code, test_globals, is_coroutine)
+                                else:
+                                    asyncio_greenlet.switch(code, test_globals, is_coroutine)
+                            else:
+                                if asyncio_greenlet is not None:
+                                    asyncio_greenlet.switch(None)
+                                    asyncio_greenlet = None
+                                if is_coroutine:
                                     if is_running_in_loop:
                                         raise exceptions.ExistingEventLoopError(
                                             "Cannot run top-level await doctests from within a running event loop: %s",
                                             part.orig_lines
                                             )
-                                    yield_was_made = True
-                                if part.compile_mode == 'eval':
-                                    got_eval = await eval(code, test_globals)
+                                    if part.compile_mode == 'eval':
+                                        got_eval = asyncio.run(eval(code, test_globals))
+                                    else:
+                                        asyncio.run(eval(code, test_globals))
+                                elif part.compile_mode == 'eval':
+                                    got_eval = eval(code, test_globals)
                                 else:
-                                    await eval(code, test_globals)
-                            elif part.compile_mode == 'eval':
-                                got_eval = eval(code, test_globals)
-                            else:
-                                exec(code, test_globals)
+                                    exec(code, test_globals)
 
                         # Record any standard output and "got_eval" produced by
                         # this doctest_part.
@@ -965,55 +1015,9 @@ class DocTest:
                     self.logged_evals[partx] = got_eval
                     self.logged_stdout[partx] = cap.text
 
-    def run(self, verbose=None, on_error=None):
-        """
-        Executes the doctest, checks the results, reports the outcome.
-
-        Args:
-            verbose (int): verbosity level
-            on_error (str): can be 'raise' or 'return'
-
-        Returns:
-            Dict : summary
-        """
-        on_error = self.config.getvalue('on_error', on_error)
-        verbose = self.config.getvalue('verbose', verbose)
-        if on_error not in {'raise', 'return'}:
-            raise KeyError(on_error)
-
-        self._parse()  # parse out parts if we have not already done so
-        self._pre_run(verbose)
-
-        # Prepare for actual test run
-        self.logged_evals.clear()
-        self.logged_stdout.clear()
-        self._unmatched_stdout = []
-
-        self._skipped_parts = []
-        self.exc_info = None
-        self._suppressed_stdout = verbose <= 1
-
-        # Run with asyncio support
-        coro = self._run(verbose, on_error)
-        try:
-            coro.send(None)
-        except StopIteration:  # run is complete
-            pass
-        else:  # got CO_COROUTINE
-            try:
-                asyncio.get_running_loop()
-            except RuntimeError:
-                is_running_in_loop = False
-            else:
-                is_running_in_loop = True
-
-            if is_running_in_loop:
-                try:
-                    coro.send(True)  # pass is_running_in_loop to the coro
-                except StopIteration:  # run is complete
-                    pass
-            else:
-                asyncio.run(coro)  # run all remaining code in an asyncio loop
+        if asyncio_greenlet is not None:
+            asyncio_greenlet.switch(None)
+            asyncio_greenlet = None
 
         if self.exc_info is None:
             self.failed_part = None
