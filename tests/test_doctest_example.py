@@ -331,7 +331,6 @@ def test_async_future_without_directive():
     """
     string = utils.codeblock(
         '''
-        >>> from contextlib import suppress
         >>> import asyncio
         >>> future = asyncio.get_running_loop().create_future()
         >>> future.set_result("ok")
