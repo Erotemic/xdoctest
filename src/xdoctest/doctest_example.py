@@ -938,18 +938,15 @@ class DocTest:
                                         )
                                 if asyncio_runner is None:
                                     asyncio_runner = _create_asyncio_runner()
-                                if is_coroutine:
-                                    if part.compile_mode == 'eval':
-                                        got_eval = asyncio_runner.run(eval(code, test_globals))
+                                async def corofunc():
+                                    if is_coroutine:
+                                        return await eval(code, test_globals)
                                     else:
-                                        asyncio_runner.run(eval(code, test_globals))
-                                else:
-                                    async def corofunc():
                                         return eval(code, test_globals)
-                                    if part.compile_mode == 'eval':
-                                        got_eval = asyncio_runner.run(corofunc())
-                                    else:
-                                        asyncio_runner.run(corofunc())
+                                if part.compile_mode == 'eval':
+                                    got_eval = asyncio_runner.run(corofunc())
+                                else:
+                                    asyncio_runner.run(corofunc())
                             else:
                                 # close the asyncio runner (context exit)
                                 if asyncio_runner is not None:
@@ -962,11 +959,16 @@ class DocTest:
                                             part.orig_lines
                                             )
                                     asyncio_runner = _create_asyncio_runner()
+                                    async def corofunc():
+                                        if is_coroutine:
+                                            return await eval(code, test_globals)
+                                        else:
+                                            return eval(code, test_globals)
                                     try:
                                         if part.compile_mode == 'eval':
-                                            got_eval = asyncio_runner.run(eval(code, test_globals))
+                                            got_eval = asyncio_runner.run(corofunc())
                                         else:
-                                            asyncio_runner.run(eval(code, test_globals))
+                                            asyncio_runner.run(corofunc())
                                     finally:
                                         try:
                                             asyncio_runner.close()
