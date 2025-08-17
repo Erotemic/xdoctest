@@ -282,8 +282,8 @@ def test_await():
 
 def test_async_for():
     """
-    python tests/test_doctest_example.py test_await
-    pytest tests/test_doctest_example.py::test_await
+    python tests/test_doctest_example.py test_async_for
+    pytest tests/test_doctest_example.py::test_async_for
     """
     string = utils.codeblock(
         '''
@@ -302,8 +302,8 @@ def test_async_for():
 
 def test_async_with():
     """
-    python tests/test_doctest_example.py test_await
-    pytest tests/test_doctest_example.py::test_await
+    python tests/test_doctest_example.py test_async_with
+    pytest tests/test_doctest_example.py::test_async_with
     """
     string = utils.codeblock(
         '''
@@ -324,10 +324,47 @@ def test_async_with():
     assert result['passed']
 
 
+def test_async_future_without_directive():
+    """
+    python tests/test_doctest_example.py test_async_future_without_directive
+    pytest tests/test_doctest_example.py::test_async_future_without_directive
+    """
+    string = utils.codeblock(
+        '''
+        >>> import asyncio
+        >>> future = asyncio.get_running_loop().create_future()
+        >>> future.set_result("ok")
+        >>> print(await future)
+        ok
+        ''')
+    self = doctest_example.DocTest(docsrc=string)
+    result = self.run(on_error='return')
+    assert result['failed']
+
+
+def test_async_future_with_directive():
+    """
+    python tests/test_doctest_example.py test_async_future_with_directive
+    pytest tests/test_doctest_example.py::test_async_future_with_directive
+    """
+    string = utils.codeblock(
+        '''
+        >>> # xdoctest: +ASYNC
+        >>> import asyncio
+        >>> future = asyncio.get_running_loop().create_future()
+        >>> future.set_result("ok")
+        >>> print(await future)
+        ok
+        ''')
+    self = doctest_example.DocTest(docsrc=string)
+    result = self.run(on_error='raise')
+    assert result['passed']
+
+
 def test_await_in_running_loop():
     """
-    python tests/test_doctest_example.py test_await
-    pytest tests/test_doctest_example.py::test_await
+    python tests/test_doctest_example.py test_await_in_running_loop
+    pytest tests/test_doctest_example.py::test_await_in_running_loop
     """
     string = utils.codeblock(
         '''
@@ -354,8 +391,8 @@ def test_await_in_running_loop():
 
 def test_async_def():
     """
-    python tests/test_doctest_example.py test_await
-    pytest tests/test_doctest_example.py::test_await
+    python tests/test_doctest_example.py test_async_def
+    pytest tests/test_doctest_example.py::test_async_def
     """
     string = utils.codeblock(
         '''
