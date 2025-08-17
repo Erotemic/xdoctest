@@ -933,8 +933,10 @@ class DocTest:
                             if not runstate['ASYNC']:
                                 # close the asyncio runner (context exit)
                                 if asyncio_runner is not None:
-                                    asyncio_runner.close()
-                                    asyncio_runner = None
+                                    try:
+                                        asyncio_runner.close()
+                                    finally:
+                                        asyncio_runner = None
                             if is_coroutine or runstate['ASYNC']:
                                 if is_running_in_loop:
                                     raise exceptions.ExistingEventLoopError(
