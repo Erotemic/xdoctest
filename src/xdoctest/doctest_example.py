@@ -802,8 +802,8 @@ class DocTest:
         #     runstate['SKIP'] = True
 
         needs_capture = True
-        is_running_in_loop = _asyncio_running()
         asyncio_runner = None
+        is_running_in_loop = _asyncio_running()
 
         DEBUG = global_state.DEBUG_DOCTEST
 
