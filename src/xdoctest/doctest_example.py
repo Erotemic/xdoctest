@@ -962,19 +962,21 @@ class DocTest:
                                         exec(code, test_globals)
                             except BaseException:
                                 # close the asyncio runner (exception)
-                                if asyncio_runner is not None:
-                                    try:
-                                        asyncio_runner.close()
-                                    finally:
-                                        asyncio_runner = None
+                                if not runstate['ASYNC'] or not part.want:
+                                    if asyncio_runner is not None:
+                                        try:
+                                            asyncio_runner.close()
+                                        finally:
+                                            asyncio_runner = None
                                 raise
-                            if not runstate['ASYNC']:
-                                # close the asyncio runner (top-level await)
-                                if asyncio_runner is not None:
-                                    try:
-                                        asyncio_runner.close()
-                                    finally:
-                                        asyncio_runner = None
+                            else:
+                                if not runstate['ASYNC']:
+                                    # close the asyncio runner (top-level await)
+                                    if asyncio_runner is not None:
+                                        try:
+                                            asyncio_runner.close()
+                                        finally:
+                                            asyncio_runner = None
 
                         # Record any standard output and "got_eval" produced by
                         # this doctest_part.
