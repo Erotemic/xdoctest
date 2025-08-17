@@ -930,7 +930,12 @@ class DocTest:
                             # can compared to a "want" statement.
                             # print('part.compile_mode = {!r}'.format(part.compile_mode))
                             is_coroutine = code.co_flags & CO_COROUTINE == CO_COROUTINE
-                            if runstate['ASYNC']:
+                            if not runstate['ASYNC']:
+                                # close the asyncio runner (context exit)
+                                if asyncio_runner is not None:
+                                    asyncio_runner.close()
+                                    asyncio_runner = None
+                            if is_coroutine or runstate['ASYNC']:
                                 if is_running_in_loop:
                                     raise exceptions.ExistingEventLoopError(
                                         "Cannot run async doctests from within a running event loop: %s",
@@ -947,34 +952,15 @@ class DocTest:
                                     got_eval = asyncio_runner.run(corofunc())
                                 else:
                                     asyncio_runner.run(corofunc())
-                            else:
-                                # close the asyncio runner (context exit)
-                                if asyncio_runner is not None:
-                                    asyncio_runner.close()
-                                    asyncio_runner = None
-                                if is_coroutine:
-                                    if is_running_in_loop:
-                                        raise exceptions.ExistingEventLoopError(
-                                            "Cannot run top-level await doctests from within a running event loop: %s",
-                                            part.orig_lines
-                                            )
-                                    asyncio_runner = _create_asyncio_runner()
-                                    async def corofunc():
-                                        if is_coroutine:
-                                            return await eval(code, test_globals)
-                                        else:
-                                            return eval(code, test_globals)
-                                    try:
-                                        if part.compile_mode == 'eval':
-                                            got_eval = asyncio_runner.run(corofunc())
-                                        else:
-                                            asyncio_runner.run(corofunc())
-                                    finally:
+                                if not runstate['ASYNC']:
+                                    # close the asyncio runner (top-level await)
+                                    if asyncio_runner is not None:
                                         try:
                                             asyncio_runner.close()
                                         finally:
                                             asyncio_runner = None
-                                elif part.compile_mode == 'eval':
+                            else:
+                                if part.compile_mode == 'eval':
                                     got_eval = eval(code, test_globals)
                                 else:
                                     exec(code, test_globals)
@@ -984,6 +970,12 @@ class DocTest:
                         self.logged_evals[partx] = got_eval
                         self.logged_stdout[partx] = cap.text
                     except Exception:
+                        # close the asyncio runner (exception)
+                        if asyncio_runner is not None:
+                            try:
+                                asyncio_runner.close()
+                            finally:
+                                asyncio_runner = None
                         if part.want:
                             # A failure may be expected if the traceback
                             # matches the part's want statement.
@@ -993,12 +985,6 @@ class DocTest:
                             want = part.want
                             checker.check_exception(exc_got, want, runstate)
                         else:
-                            # close the asyncio runner (exception)
-                            if asyncio_runner is not None:
-                                try:
-                                    asyncio_runner.close()
-                                finally:
-                                    asyncio_runner = None
                             raise
                     except BaseException:
                         # close the asyncio runner (base exception)
