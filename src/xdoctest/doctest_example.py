@@ -938,12 +938,12 @@ class DocTest:
                                     else:
                                         asyncio_runner.run(eval(code, test_globals))
                                 else:
-                                    async def coro():
+                                    async def corofunc():
                                         return eval(code, test_globals)
                                     if part.compile_mode == 'eval':
-                                        got_eval = asyncio_runner.run(coro())
+                                        got_eval = asyncio_runner.run(corofunc())
                                     else:
-                                        asyncio_runner.run(coro())
+                                        asyncio_runner.run(corofunc())
                             else:
                                 # close the asyncio runner (context exit)
                                 if asyncio_runner is not None:
