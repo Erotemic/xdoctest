@@ -2,7 +2,6 @@
 This module defines the main class that holds a DocTest example
 """
 import __future__
-import asyncio
 import ast
 from collections import OrderedDict
 import traceback
@@ -31,6 +30,77 @@ TODO:
 __docstubs__ = """
 from xdoctest.doctest_part import DoctestPart
 """
+
+
+def _asyncio_running():
+    if "asyncio" in sys.modules:
+        import asyncio
+
+        return asyncio._get_running_loop() is not None
+
+    return False
+
+
+def _create_asyncio_runner():
+    global _create_asyncio_runner  # for rebinding
+
+    if sys.version_info >= (3, 11):
+        from asyncio import Runner as _create_asyncio_runner
+
+        return _create_asyncio_runner()
+
+    import asyncio
+
+    # see asyncio.runners.Runner
+    class Runner:
+        def __init__(self):
+            self._loop = None
+
+        def run(self, coro):
+            """Run code in the embedded event loop."""
+            if asyncio._get_running_loop() is not None:
+                msg = "Runner.run() cannot be called from a running event loop"
+                raise RuntimeError(msg)
+            self._loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self._loop)
+            return self._loop.run_until_complete(coro)
+
+        def close(self):
+            """Shutdown and close event loop."""
+            loop = self._loop
+            if loop is None:
+                return
+            try:
+                _cancel_all_tasks(loop)
+                loop.run_until_complete(loop.shutdown_asyncgens())
+                if sys.version_info >= (3, 9):
+                    loop.run_until_complete(loop.shutdown_default_executor())
+            finally:
+                asyncio.set_event_loop(None)
+                loop.close()
+                self._loop = None
+
+    # see asyncio.runners._cancel_all_tasks
+    def _cancel_all_tasks(loop):
+        to_cancel = asyncio.all_tasks(loop)
+        if not to_cancel:
+            return
+        for task in to_cancel:
+            task.cancel()
+        loop.run_until_complete(asyncio.gather(*to_cancel, return_exceptions=True))
+        for task in to_cancel:
+            if task.cancelled():
+                continue
+            if task.exception() is not None:
+                loop.call_exception_handler({
+                    'message': 'unhandled exception during asyncio.run() shutdown',
+                    'exception': task.exception(),
+                    'task': task,
+                })
+
+    _create_asyncio_runner = Runner
+
+    return _create_asyncio_runner()
 
 
 class DoctestConfig(dict):
@@ -683,38 +753,6 @@ class DocTest:
         # If everything was skipped, then there will be no stdout
         return len(self.logged_stdout) > 0
 
-    # see asyncio.runners._cancel_all_tasks()
-    def _cancel_all_asyncio_tasks(self, loop):
-        to_cancel = asyncio.all_tasks(loop)
-        if not to_cancel:
-            return
-        for task in to_cancel:
-            task.cancel()
-        loop.run_until_complete(asyncio.gather(*to_cancel, return_exceptions=True))
-        for task in to_cancel:
-            if task.cancelled():
-                continue
-            if task.exception() is not None:
-                loop.call_exception_handler({
-                    'message': 'unhandled exception during asyncio.run() shutdown',
-                    'exception': task.exception(),
-                    'task': task,
-                })
-
-    # see asyncio.runners.Runner.close()
-    def _shutdown_asyncio_event_loop(self, loop):
-        try:
-            self._cancel_all_asyncio_tasks(loop)
-            loop.run_until_complete(loop.shutdown_asyncgens())
-            if sys.version_info >= (3, 12):
-                loop.run_until_complete(loop.shutdown_default_executor(300))
-            elif sys.version_info >= (3, 9):
-                loop.run_until_complete(loop.shutdown_default_executor())
-        finally:
-            asyncio.set_event_loop(None)
-            loop.close()
-            loop = None
-
     def run(self, verbose=None, on_error=None):
         """
         Executes the doctest, checks the results, reports the outcome.
@@ -758,12 +796,8 @@ class DocTest:
         #     runstate['SKIP'] = True
 
         needs_capture = True
-        try:
-            asyncio.get_running_loop()
-            is_running_in_loop = True
-        except RuntimeError:
-            is_running_in_loop = False
-        asyncio_loop = None
+        is_running_in_loop = _asyncio_running()
+        asyncio_runner = None
 
         DEBUG = global_state.DEBUG_DOCTEST
 
@@ -896,35 +930,42 @@ class DocTest:
                                         "Cannot run async doctests from within a running event loop: %s",
                                         part.orig_lines
                                         )
-                                if asyncio_loop is None:
-                                    asyncio_loop = asyncio.new_event_loop()
-                                    asyncio.set_event_loop(asyncio_loop)
-                                async def coro():
-                                    if is_coroutine:
-                                        return await eval(code, test_globals)
+                                if asyncio_runner is None:
+                                    asyncio_runner = _create_asyncio_runner()
+                                if is_coroutine:
+                                    if part.compile_mode == 'eval':
+                                        got_eval = asyncio_runner.run(eval(code, test_globals))
                                     else:
-                                        return eval(code, test_globals)
-                                if part.compile_mode == 'eval':
-                                    got_eval = asyncio_loop.run_until_complete(coro())
+                                        asyncio_runner.run(eval(code, test_globals))
                                 else:
-                                    asyncio_loop.run_until_complete(coro())
+                                    async def coro():
+                                        return eval(code, test_globals)
+                                    if part.compile_mode == 'eval':
+                                        got_eval = asyncio_runner.run(coro())
+                                    else:
+                                        asyncio_runner.run(coro())
                             else:
-                                if asyncio_loop is not None:
-                                    # shutdown the asyncio event loop (context exit)
-                                    try:
-                                        self._shutdown_asyncio_event_loop(asyncio_loop)
-                                    finally:
-                                        asyncio_loop = None
+                                # close the asyncio runner (context exit)
+                                if asyncio_runner is not None:
+                                    asyncio_runner.close()
+                                    asyncio_runner = None
                                 if is_coroutine:
                                     if is_running_in_loop:
                                         raise exceptions.ExistingEventLoopError(
                                             "Cannot run top-level await doctests from within a running event loop: %s",
                                             part.orig_lines
                                             )
-                                    if part.compile_mode == 'eval':
-                                        got_eval = asyncio.run(eval(code, test_globals))
-                                    else:
-                                        asyncio.run(eval(code, test_globals))
+                                    asyncio_runner = _create_asyncio_runner()
+                                    try:
+                                        if part.compile_mode == 'eval':
+                                            got_eval = asyncio_runner.run(eval(code, test_globals))
+                                        else:
+                                            asyncio_runner.run(eval(code, test_globals))
+                                    finally:
+                                        try:
+                                            asyncio_runner.close()
+                                        finally:
+                                            asyncio_runner = None
                                 elif part.compile_mode == 'eval':
                                     got_eval = eval(code, test_globals)
                                 else:
@@ -944,20 +985,20 @@ class DocTest:
                             want = part.want
                             checker.check_exception(exc_got, want, runstate)
                         else:
-                            if asyncio_loop is not None:
-                                # shutdown the asyncio event loop (exception)
+                            # close the asyncio runner (exception)
+                            if asyncio_runner is not None:
                                 try:
-                                    self._shutdown_asyncio_event_loop(asyncio_loop)
+                                    asyncio_runner.close()
                                 finally:
-                                    asyncio_loop = None
+                                    asyncio_runner = None
                             raise
                     except BaseException:
-                        if asyncio_loop is not None:
-                            # shutdown the asyncio event loop (base exception)
+                        # close the asyncio runner (base exception)
+                        if asyncio_runner is not None:
                             try:
-                                self._shutdown_asyncio_event_loop(asyncio_loop)
+                                asyncio_runner.close()
                             finally:
-                                asyncio_loop = None
+                                asyncio_runner = None
                         raise
                     else:
                         """
@@ -1057,12 +1098,12 @@ class DocTest:
                     self.logged_evals[partx] = got_eval
                     self.logged_stdout[partx] = cap.text
 
-            if asyncio_loop is not None:
-                # shutdown the asyncio event loop (no exception)
+            # close the asyncio runner (no exception)
+            if asyncio_runner is not None:
                 try:
-                    self._shutdown_asyncio_event_loop(asyncio_loop)
+                    asyncio_runner.close()
                 finally:
-                    asyncio_loop = None
+                    asyncio_runner = None
 
         if self.exc_info is None:
             self.failed_part = None
