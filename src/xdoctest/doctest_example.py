@@ -36,7 +36,12 @@ def _asyncio_running():
     if "asyncio" in sys.modules:
         import asyncio
 
-        return asyncio._get_running_loop() is not None
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:  # no running event loop
+            loop = None
+
+        return loop is not None
 
     return False
 
