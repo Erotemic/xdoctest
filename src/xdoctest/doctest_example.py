@@ -986,11 +986,20 @@ class DocTest:
                         if part.want:
                             # A failure may be expected if the traceback
                             # matches the part's want statement.
-                            exception = sys.exc_info()
-                            traceback.format_exception_only(*exception[:2])
-                            exc_got = traceback.format_exception_only(*exception[:2])[-1]
-                            want = part.want
-                            checker.check_exception(exc_got, want, runstate)
+                            try:
+                                exception = sys.exc_info()
+                                traceback.format_exception_only(*exception[:2])
+                                exc_got = traceback.format_exception_only(*exception[:2])[-1]
+                                want = part.want
+                                checker.check_exception(exc_got, want, runstate)
+                            except BaseException:
+                                # close the asyncio runner (checker exception)
+                                if asyncio_runner is not None:
+                                    try:
+                                        asyncio_runner.close()
+                                    finally:
+                                        asyncio_runner = None
+                                raise
                         else:
                             raise
                     else:
