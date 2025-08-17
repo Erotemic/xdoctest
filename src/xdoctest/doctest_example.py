@@ -918,13 +918,6 @@ class DocTest:
                     # if on_error == 'raise':
                     #     raise
                 try:
-                    if not runstate['ASYNC']:
-                        # close the asyncio runner (context exit)
-                        if asyncio_runner is not None:
-                            try:
-                                asyncio_runner.close()
-                            finally:
-                                asyncio_runner = None
                     # Execute the doctest code
                     try:
                         # NOTE: For code passed to eval or exec, there is no
@@ -936,41 +929,58 @@ class DocTest:
                             # expect it to return an object with a repr that
                             # can compared to a "want" statement.
                             # print('part.compile_mode = {!r}'.format(part.compile_mode))
-                            is_coroutine = code.co_flags & CO_COROUTINE == CO_COROUTINE
-                            if is_coroutine or runstate['ASYNC']:
-                                if is_running_in_loop:
-                                    raise exceptions.ExistingEventLoopError(
-                                        "Cannot run async doctests from within a running event loop: %s",
-                                        part.orig_lines
-                                        )
-                                if asyncio_runner is None:
-                                    asyncio_runner = _create_asyncio_runner()
-                                async def corofunc():
-                                    if is_coroutine:
-                                        return await eval(code, test_globals)
+                            if not runstate['ASYNC']:
+                                # close the asyncio runner (context exit)
+                                if asyncio_runner is not None:
+                                    try:
+                                        asyncio_runner.close()
+                                    finally:
+                                        asyncio_runner = None
+                            try:
+                                is_coroutine = code.co_flags & CO_COROUTINE == CO_COROUTINE
+                                if is_coroutine or runstate['ASYNC']:
+                                    if is_running_in_loop:
+                                        raise exceptions.ExistingEventLoopError(
+                                            "Cannot run async doctests from within a running event loop: %s",
+                                            part.orig_lines
+                                            )
+                                    if asyncio_runner is None:
+                                        asyncio_runner = _create_asyncio_runner()
+                                    async def corofunc():
+                                        if is_coroutine:
+                                            return await eval(code, test_globals)
+                                        else:
+                                            return eval(code, test_globals)
+                                    if part.compile_mode == 'eval':
+                                        got_eval = asyncio_runner.run(corofunc())
                                     else:
-                                        return eval(code, test_globals)
-                                if part.compile_mode == 'eval':
-                                    got_eval = asyncio_runner.run(corofunc())
+                                        asyncio_runner.run(corofunc())
                                 else:
-                                    asyncio_runner.run(corofunc())
-                            else:
-                                if part.compile_mode == 'eval':
-                                    got_eval = eval(code, test_globals)
-                                else:
-                                    exec(code, test_globals)
+                                    if part.compile_mode == 'eval':
+                                        got_eval = eval(code, test_globals)
+                                    else:
+                                        exec(code, test_globals)
+                            except BaseException:
+                                # close the asyncio runner (exception)
+                                if asyncio_runner is not None:
+                                    try:
+                                        asyncio_runner.close()
+                                    finally:
+                                        asyncio_runner = None
+                                raise
+                            if not runstate['ASYNC']:
+                                # close the asyncio runner (top-level await)
+                                if asyncio_runner is not None:
+                                    try:
+                                        asyncio_runner.close()
+                                    finally:
+                                        asyncio_runner = None
 
                         # Record any standard output and "got_eval" produced by
                         # this doctest_part.
                         self.logged_evals[partx] = got_eval
                         self.logged_stdout[partx] = cap.text
                     except Exception:
-                        # close the asyncio runner (exception)
-                        if asyncio_runner is not None:
-                            try:
-                                asyncio_runner.close()
-                            finally:
-                                asyncio_runner = None
                         if part.want:
                             # A failure may be expected if the traceback
                             # matches the part's want statement.
@@ -981,22 +991,7 @@ class DocTest:
                             checker.check_exception(exc_got, want, runstate)
                         else:
                             raise
-                    except BaseException:
-                        # close the asyncio runner (base exception)
-                        if asyncio_runner is not None:
-                            try:
-                                asyncio_runner.close()
-                            finally:
-                                asyncio_runner = None
-                        raise
                     else:
-                        if not runstate['ASYNC']:
-                            # close the asyncio runner (top-level await)
-                            if asyncio_runner is not None:
-                                try:
-                                    asyncio_runner.close()
-                                finally:
-                                    asyncio_runner = None
                         """
                         TODO:
                             [ ] - Delay got-want failure until the end of the
