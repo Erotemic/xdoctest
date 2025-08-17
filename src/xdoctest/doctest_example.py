@@ -61,8 +61,9 @@ def _create_asyncio_runner():
             if asyncio._get_running_loop() is not None:
                 msg = "Runner.run() cannot be called from a running event loop"
                 raise RuntimeError(msg)
-            self._loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(self._loop)
+            if self._loop is None:
+                self._loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(self._loop)
             return self._loop.run_until_complete(coro)
 
         def close(self):
