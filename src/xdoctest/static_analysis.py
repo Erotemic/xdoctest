@@ -21,7 +21,10 @@ import platform
 PLAT_IMPL = platform.python_implementation()
 
 
-IS_PY_GE_312 = sys.version_info[0] >= 3 and sys.version_info[1] >= 12
+IS_PY_GE_312 = sys.version_info[0:2] >= (3, 12)
+IS_PY_GE_308 = sys.version_info[0:2] >= (3, 8)  # type: bool
+IS_PY_LT_314 = sys.version_info[0:2] < (3, 14)  # type: bool
+
 
 if IS_PY_GE_312:
     from xdoctest import _tokenize as tokenize
@@ -613,7 +616,7 @@ class TopLevelVisitor(ast.NodeVisitor):
             pattern = re.escape(trip) + r'\s*#.*$'
             # Assuming the multiline string is using `trip` as the triple quote
             # format, then the first instance of that pattern must terminate
-            # the string literal. Afterwords the only valid characters are
+            # the string literal. Afterwards the only valid characters are
             # whitespace and comments. Anything after the comment can be
             # ignored. The above pattern will match the first triple quote it
             # sees, and then will remove any trailing comments.
@@ -771,7 +774,9 @@ def _parse_static_node_value(node):
         values = map(_parse_static_node_value, node.values)
         value = OrderedDict(zip(keys, values))
         # value = dict(zip(keys, values))
-    elif isinstance(node, (ast.NameConstant)):
+    elif IS_PY_LT_314 and isinstance(node, (ast.NameConstant)):
+        value = node.value
+    elif isinstance(node, ast.Constant):
         value = node.value
     else:
         print(node.__dict__)
@@ -1123,7 +1128,7 @@ def _strip_hashtag_comments_and_newlines(source):
         """
         Consecutive newlines are dropped and trailing whitespace
 
-        Adapated from: https://github.com/mitogen-hq/mitogen/blob/master/mitogen/minify.py#L65
+        Adapted from: https://github.com/mitogen-hq/mitogen/blob/master/mitogen/minify.py#L65
         """
         prev_typ = None
         prev_end_col = 0

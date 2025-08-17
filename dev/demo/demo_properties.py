@@ -22,7 +22,7 @@ def my_deleter_func(self):
 
 # Use the property decorator directly with normal call syntax
 # Note properties --- like most other decorators --- return new function
-# objects and do not change the underlying function object. Hense we can still
+# objects and do not change the underlying function object. Hence we can still
 # print the original functions and see how they are assigned to the fset / fget
 # / fdel attributes of the returned property object.
 my_getter_prop = property(my_getter_func)

@@ -322,7 +322,7 @@ def parse_google_returns(docstr, return_annot=None):
 
 def parse_google_retblock(lines, return_annot=None):
     r"""
-    Parse information out of a returns or yeilds block.
+    Parse information out of a returns or yields block.
 
     A returns or yeids block should be formatted as one or more
     ``'{type}:{description}'`` strings. The description can occupy multiple
