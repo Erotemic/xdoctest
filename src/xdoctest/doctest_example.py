@@ -918,25 +918,24 @@ class DocTest:
                     # if on_error == 'raise':
                     #     raise
                 try:
-                    # Execute the doctest code
                     try:
-                        # NOTE: For code passed to eval or exec, there is no
-                        # difference between locals and globals. Only pass in
-                        # one dict, otherwise there is weird behavior
-                        with cap:
-                            # We can execute each part using exec or eval.  If
-                            # a doctest part has `compile_mode=eval` we
-                            # expect it to return an object with a repr that
-                            # can compared to a "want" statement.
-                            # print('part.compile_mode = {!r}'.format(part.compile_mode))
+                        # close the asyncio runner (context exit)
+                        if asyncio_runner is not None and not runstate['ASYNC']:
                             try:
-                                if not runstate['ASYNC']:
-                                    # close the asyncio runner (context exit)
-                                    if asyncio_runner is not None:
-                                        try:
-                                            asyncio_runner.close()
-                                        finally:
-                                            asyncio_runner = None
+                                asyncio_runner.close()
+                            finally:
+                                asyncio_runner = None
+                        # Execute the doctest code
+                        try:
+                            # NOTE: For code passed to eval or exec, there is no
+                            # difference between locals and globals. Only pass in
+                            # one dict, otherwise there is weird behavior
+                            with cap:
+                                # We can execute each part using exec or eval.  If
+                                # a doctest part has `compile_mode=eval` we
+                                # expect it to return an object with a repr that
+                                # can compared to a "want" statement.
+                                # print('part.compile_mode = {!r}'.format(part.compile_mode))
                                 is_coroutine = code.co_flags & CO_COROUTINE == CO_COROUTINE
                                 if is_coroutine or runstate['ASYNC']:
                                     if is_running_in_loop:
@@ -960,66 +959,55 @@ class DocTest:
                                         got_eval = eval(code, test_globals)
                                     else:
                                         exec(code, test_globals)
-                            except BaseException:
-                                if not runstate['ASYNC'] or not part.want:
-                                    # close the asyncio runner (exception)
-                                    if asyncio_runner is not None:
-                                        try:
-                                            asyncio_runner.close()
-                                        finally:
-                                            asyncio_runner = None
-                                raise
-                            else:
-                                if not runstate['ASYNC']:
-                                    # close the asyncio runner (top-level await)
-                                    if asyncio_runner is not None:
-                                        try:
-                                            asyncio_runner.close()
-                                        finally:
-                                            asyncio_runner = None
 
-                        # Record any standard output and "got_eval" produced by
-                        # this doctest_part.
-                        self.logged_evals[partx] = got_eval
-                        self.logged_stdout[partx] = cap.text
-                    except Exception:
-                        if part.want:
-                            # A failure may be expected if the traceback
-                            # matches the part's want statement.
-                            try:
+                            # Record any standard output and "got_eval" produced by
+                            # this doctest_part.
+                            self.logged_evals[partx] = got_eval
+                            self.logged_stdout[partx] = cap.text
+                        except Exception:
+                            if part.want:
+                                # A failure may be expected if the traceback
+                                # matches the part's want statement.
                                 exception = sys.exc_info()
                                 traceback.format_exception_only(*exception[:2])
                                 exc_got = traceback.format_exception_only(*exception[:2])[-1]
                                 want = part.want
                                 checker.check_exception(exc_got, want, runstate)
-                            except BaseException:
-                                # close the asyncio runner (checker exception)
-                                if asyncio_runner is not None:
-                                    try:
-                                        asyncio_runner.close()
-                                    finally:
-                                        asyncio_runner = None
+                            else:
                                 raise
                         else:
-                            raise
+                            """
+                            TODO:
+                                [ ] - Delay got-want failure until the end of the
+                                doctest. Allow the rest of the code to run.  If
+                                multiple errors occur, show them both.
+                            """
+                            if part.want:
+                                got_stdout = cap.text
+                                if not runstate['IGNORE_WANT']:
+                                    part.check(got_stdout, got_eval, runstate,
+                                               unmatched=self._unmatched_stdout)
+                                # Clear unmatched output when a check passes
+                                self._unmatched_stdout = []
+                            else:
+                                # If a part doesnt have a want allow its output to
+                                # be matched by the next part.
+                                self._unmatched_stdout.append(cap.text)
+                    except BaseException:
+                        # close the asyncio runner (base exception)
+                        if asyncio_runner is not None:
+                            try:
+                                asyncio_runner.close()
+                            finally:
+                                asyncio_runner = None
+                        raise
                     else:
-                        """
-                        TODO:
-                            [ ] - Delay got-want failure until the end of the
-                            doctest. Allow the rest of the code to run.  If
-                            multiple errors occur, show them both.
-                        """
-                        if part.want:
-                            got_stdout = cap.text
-                            if not runstate['IGNORE_WANT']:
-                                part.check(got_stdout, got_eval, runstate,
-                                           unmatched=self._unmatched_stdout)
-                            # Clear unmatched output when a check passes
-                            self._unmatched_stdout = []
-                        else:
-                            # If a part doesnt have a want allow its output to
-                            # be matched by the next part.
-                            self._unmatched_stdout.append(cap.text)
+                        # close the asyncio runner (top-level await)
+                        if asyncio_runner is not None and not runstate['ASYNC']:
+                            try:
+                                asyncio_runner.close()
+                            finally:
+                                asyncio_runner = None
 
                 # Handle anything that could go wrong
                 except KeyboardInterrupt:  # nocover
