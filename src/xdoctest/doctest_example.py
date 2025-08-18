@@ -32,83 +32,6 @@ from xdoctest.doctest_part import DoctestPart
 """
 
 
-def _asyncio_running():
-    if "asyncio" in sys.modules:
-        import asyncio
-
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:  # no running event loop
-            loop = None
-
-        return loop is not None
-
-    return False
-
-
-def _create_asyncio_runner():
-    global _create_asyncio_runner  # for rebinding
-
-    if sys.version_info >= (3, 11):
-        from asyncio import Runner as _create_asyncio_runner
-
-        return _create_asyncio_runner()
-
-    import asyncio
-
-    # see asyncio.runners.Runner
-    class Runner:
-        def __init__(self):
-            self._loop = None
-
-        def run(self, coro):
-            """Run code in the embedded event loop."""
-            if asyncio._get_running_loop() is not None:
-                msg = "Runner.run() cannot be called from a running event loop"
-                raise RuntimeError(msg)
-            if self._loop is None:
-                self._loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(self._loop)
-            return self._loop.run_until_complete(coro)
-
-        def close(self):
-            """Shutdown and close event loop."""
-            loop = self._loop
-            if loop is None:
-                return
-            try:
-                _cancel_all_tasks(loop)
-                loop.run_until_complete(loop.shutdown_asyncgens())
-                if sys.version_info >= (3, 9):
-                    loop.run_until_complete(loop.shutdown_default_executor())
-            finally:
-                asyncio.set_event_loop(None)
-                loop.close()
-                self._loop = None
-
-    # see asyncio.runners._cancel_all_tasks
-    def _cancel_all_tasks(loop):
-        to_cancel = asyncio.all_tasks(loop)
-        if not to_cancel:
-            return
-        for task in to_cancel:
-            task.cancel()
-        loop.run_until_complete(asyncio.gather(*to_cancel, return_exceptions=True))
-        for task in to_cancel:
-            if task.cancelled():
-                continue
-            if task.exception() is not None:
-                loop.call_exception_handler({
-                    'message': 'unhandled exception during asyncio.run() shutdown',
-                    'exception': task.exception(),
-                    'task': task,
-                })
-
-    _create_asyncio_runner = Runner
-
-    return _create_asyncio_runner()
-
-
 class DoctestConfig(dict):
     """
     Doctest configuration
@@ -803,7 +726,7 @@ class DocTest:
 
         needs_capture = True
         asyncio_runner = None
-        is_running_in_loop = _asyncio_running()
+        is_running_in_loop = utils.util_asyncio.running()
 
         DEBUG = global_state.DEBUG_DOCTEST
 
@@ -944,7 +867,7 @@ class DocTest:
                                             part.orig_lines
                                             )
                                     if asyncio_runner is None:
-                                        asyncio_runner = _create_asyncio_runner()
+                                        asyncio_runner = utils.util_asyncio.Runner()
                                     async def corofunc():
                                         if is_coroutine:
                                             return await eval(code, test_globals)
