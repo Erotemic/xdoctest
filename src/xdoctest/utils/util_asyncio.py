@@ -13,7 +13,32 @@ class FallbackRunner:
         self._loop = None
 
     def run(self, coro):
-        """Run code in the embedded event loop."""
+        """
+        Run code in the embedded event loop.
+
+        Example:
+            >>> import asyncio
+            >>> async def test():
+            >>>     return asyncio.sleep(0, result='slept')
+            >>> runner = FallbackRunner()
+            >>> try:
+            >>>     task = runner.run(test())
+            >>>     result = runner.run(task)
+            >>> finally:
+            >>>     runner.close()
+            >>> result
+            'slept'
+
+        Example:
+            >>> import asyncio
+            >>> runner = FallbackRunner()
+            >>> try:
+            >>>     runner.run(asyncio.sleep(0))  # xdoctest: +ASYNC
+            >>> finally:
+            >>>     runner.close()
+            Traceback (most recent call last):
+            RuntimeError: Runner.run() cannot be called from a running event loop
+        """
         if running():
             msg = 'Runner.run() cannot be called from a running event loop'
             raise RuntimeError(msg)
@@ -23,7 +48,59 @@ class FallbackRunner:
         return self._loop.run_until_complete(coro)
 
     def close(self):
-        """Shutdown and close event loop."""
+        """
+        Shutdown and close event loop.
+
+        Example:
+            >>> import asyncio
+            >>> runner = FallbackRunner()
+            >>> try:
+            >>>     runner.run(asyncio.sleep(0))
+            >>> finally:
+            >>>     runner.close()
+            >>> runner.close()  # must be no-op
+
+        Example:
+            >>> import asyncio
+            >>> async def main():
+            >>>     global task  # avoid disappearing
+            >>>     task = asyncio.create_task(asyncio.sleep(3600))
+            >>>     await asyncio.sleep(0)  # start the task
+            >>> runner = FallbackRunner()
+            >>> try:
+            >>>     runner.run(main())
+            >>> finally:
+            >>>     runner.close()
+            >>> task.cancelled()
+            True
+
+        Example:
+            >>> import asyncio
+            >>> def handler(loop, context):
+            >>>     global exc_context
+            >>>     exc_context = context
+            >>> async def test():
+            >>>     asyncio.get_running_loop().set_exception_handler(handler)
+            >>>     try:
+            >>>         await asyncio.sleep(3600)
+            >>>     except asyncio.CancelledError:
+            >>>         1 // 0  # raise ZeroDivisionError
+            >>> async def main():
+            >>>     global task  # avoid disappearing
+            >>>     task = asyncio.create_task(test())
+            >>>     await asyncio.sleep(0)  # start the task
+            >>> runner = FallbackRunner()
+            >>> try:
+            >>>     runner.run(main())
+            >>> finally:
+            >>>     runner.close()
+            >>> exc_context['message']
+            'unhandled exception during asyncio.run() shutdown'
+            >>> isinstance(exc_context['exception'], ZeroDivisionError)
+            True
+            >>> exc_context['task'] is task
+            True
+        """
         loop = self._loop
         if loop is None:
             return
@@ -58,7 +135,15 @@ def _cancel_all_tasks(loop):
 
 
 def running():
-    """Return :data:`True` if there is a running event loop."""
+    """
+    Return :data:`True` if there is a running event loop.
+
+    Example:
+        >>> running()  # xdoctest: +ASYNC
+        True
+        >>> running()  # xdoctest: -ASYNC
+        False
+    """
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:  # no running event loop
