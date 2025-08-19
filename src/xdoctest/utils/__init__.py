@@ -7,6 +7,7 @@ This __init__ file is generated using mkinit:
 
     mkinit xdoctest.utils
 """
+from xdoctest.utils import util_asyncio
 from xdoctest.utils import util_import
 from xdoctest.utils import util_misc
 from xdoctest.utils import util_mixins
