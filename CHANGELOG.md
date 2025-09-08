@@ -13,6 +13,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 * New `ASYNC` basic directive to hold the asyncio event loop in any section of
   code. Useful for multitasking tests.
+* Support for 3.14
 
 ### Changed
 * Removed `16806_WORKAROUND` as it is not longer needed for Python 3.8+
