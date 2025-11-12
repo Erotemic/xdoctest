@@ -294,7 +294,9 @@ jobs:
       uses: actions/checkout@v4.2.2
     - name: Enable MSVC 64bit
       uses: ilammy/msvc-dev-cmd@v1
-      if: matrix.os == 'windows-latest'
+      if: ${{ startsWith(matrix.os, 'windows-') }}
+      with:
+        arch: ${{ contains(matrix.os, 'arm') && 'arm64' || 'x64' }}
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3.0.0
       if: runner.os == 'Linux' && matrix.arch != 'auto'
@@ -343,7 +345,7 @@ jobs:
         echo "INSTALL_EXTRAS=$INSTALL_EXTRAS"
         echo "UV_RESOLUTION=$UV_RESOLUTION"
         echo "MOD_VERSION=$MOD_VERSION"
-        python -m uv pip install --prerelease=allow "xdoctest[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
+        python -m uv pip install "xdoctest[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
         echo "Install finished."
     - name: Test wheel ${{ matrix.install-extras }}
       shell: bash
