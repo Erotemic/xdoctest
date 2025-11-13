@@ -563,11 +563,50 @@ class DoctestParser:
                 return intervals
             intervals = balanced_intervals(lines)
             interval_starts = {t[0] for t in intervals}
+
+            def _indent(line):
+                return line[:len(line) - len(line.lstrip())]
+
+            def _infer_comment_indent(idx, line):
+                """Infer the indentation a placeholder comment statement
+                should have.
+
+                In regular Python, comments may ignore indentation rules,
+                but once we replace the comment with a statement we must honor
+                the expected indentation to avoid `IndentationError`.  When a
+                comment is missing indentation, try to infer it from the next
+                relevant line in the doctest.
+                """
+                indent = _indent(line)
+                stripped = line.lstrip()
+                if indent or not stripped.startswith('#'):
+                    return indent
+
+                # Look ahead for the next non-comment line to determine the
+                # indentation level this block expects.  Only adopt it if it is
+                # more indented than the current comment, which prevents
+                # top-level comments from being modified.
+                base_len = len(indent)
+                for look_ahead in range(idx + 1, len(lines)):
+                    look_line = lines[look_ahead]
+                    look_stripped = look_line.strip()
+                    if not look_stripped:
+                        continue
+                    if look_stripped.startswith('#'):
+                        continue
+                    look_indent = _indent(look_line)
+                    if len(look_indent) > base_len:
+                        return look_indent
+                    break
+                return indent
+
             for i, line in enumerate(lines):
-                if i in interval_starts and line.startswith('#'):
+                stripped = line.lstrip()
+                if i in interval_starts and stripped.startswith('#'):
+                    indent = _infer_comment_indent(i, line)
                     # Replace any comment that is not within an interval with a
                     # statement, so ast.parse will record its line number
-                    yield '_._ = None'
+                    yield indent + '_._ = None'
                 else:
                     yield line
 

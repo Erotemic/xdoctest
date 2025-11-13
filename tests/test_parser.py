@@ -368,6 +368,32 @@ def test_parse_comment():
     assert parts[0].source.strip().startswith('#')
 
 
+def test_parse_comment_with_inconsistent_indent():
+    """Comments that ignore indentation should still parse."""
+    string = utils.codeblock(
+        '''
+        >>> class MyClass:
+        >>> # comment separating members
+        >>>     def method1(self):
+        >>>         ...
+        >>> # another separator
+        >>>     def method2(self):
+        >>>         ...
+        >>> # end comment
+        >>> self = MyClass()
+        '''
+    )
+    self = parser.DoctestParser()
+    source_lines = string.split('\n')[:]
+    linenos, mode_hint = self._locate_ps1_linenos(source_lines)
+    assert linenos[0] == 0
+    assert mode_hint == 'exec'
+    parts = self.parse(string)
+    # Ensure the comment lines were preserved in the resulting doctest part
+    assert any('# comment' in '\n'.join(part.orig_lines)
+               for part in parts)
+
+
 def test_text_after_want():
     string = utils.codeblock('''
         Example:
