@@ -251,11 +251,10 @@ if __name__ == "__main__":
     setupkw["packages"] = find_packages("./src")
     setupkw["python_requires"] = ">=3.8"
     setupkw["classifiers"] = [
-        "Development Status :: 5 - Production/Stable",
+        "Development Status :: 6 - Mature",
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Utilities",
-        "License :: OSI Approved :: Apache Software License",
         "Topic :: Software Development :: Testing",
         "Framework :: Pytest",
         "Programming Language :: Python :: 3",
@@ -264,6 +263,8 @@ if __name__ == "__main__":
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Programming Language :: Python :: Implementation :: CPython",
     ]
