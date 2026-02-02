@@ -101,6 +101,16 @@ def pytest_addoption(parser):
                     choices=['static', 'dynamic', 'auto'],
                     dest='xdoctest_analysis')
 
+    group.addoption('--xdoctest-write-outputs', '--xdoc-write-outputs',
+                    action='store_true', default=False,
+                    help='Write captured outputs back to source files',
+                    dest='xdoctest_write_outputs')
+
+    group.addoption('--xdoctest-fill-missing-wants', '--xdoc-fill-missing-wants',
+                    action='store_true', default=False,
+                    help='When used with --xdoctest-write-outputs, also add missing want statements',
+                    dest='xdoctest_fill_missing_wants')
+
     from xdoctest import doctest_example
     doctest_example.DoctestConfig()._update_argparse_cli(
         group.addoption, prefix=['xdoctest', 'xdoc'],
