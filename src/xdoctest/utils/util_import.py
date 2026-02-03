@@ -25,7 +25,7 @@ def is_modname_importable(modname, sys_path=None, exclude=None):
 
     Args:
         modname (str): name of module to check
-        sys_path (list | None, default=None): if specified overrides ``sys.path``
+        sys_path (list | None): if specified overrides ``sys.path``
         exclude (list | None): list of directory paths. if specified prevents these
             directories from being searched.
 
@@ -62,34 +62,42 @@ def _importlib_import_modpath(modpath):  # nocover
     return module
 
 
-def _pkgutil_modname_to_modpath(modname):  # nocover
+def _importlib_modname_to_modpath(modname):  # nocover
     """
-    faster version of :func:`_syspath_modname_to_modpath` using builtin python
-    mechanisms, but unfortunately it doesn't play nice with pytest.
-
-    Note:
-        pkgutil.find_loader is deprecated in 3.12 and removed in 3.14
+    faster version of :func:`_syspath_modname_to_modpath` using builtin
+    python mechanisms, but unfortunately it doesn't play nice with pytest.
 
     Args:
         modname (str): the module name.
 
+    Note:
+        This has a side effect when you import subpckages, it forces the parent
+        package itself to import!
+
     Example:
         >>> # xdoctest: +SKIP
         >>> modname = 'xdoctest.static_analysis'
-        >>> _pkgutil_modname_to_modpath(modname)
+        >>> _importlib_modname_to_modpath(modname)
         ...static_analysis.py
         >>> # xdoctest: +REQUIRES(CPython)
-        >>> _pkgutil_modname_to_modpath('_ctypes')
+        >>> _importlib_modname_to_modpath('_ctypes')
         ..._ctypes...
 
     Ignore:
-        >>> _pkgutil_modname_to_modpath('cv2')
+        >>> _importlib_modname_to_modpath('cv2')
+        >>> import timerit
+        >>> for _ in timerit(label='ours'):
+        >>>     _syspath_modname_to_modpath('xdoctest.static_analysis')
+        >>> for _ in timerit(label='importlib'):
+        >>>     _importlib_modname_to_modpath('xdoctest.static_analysis')
+        Timed ours for: 10 loops, best of 5
+            time per loop: best=20.237 ms, mean=20.244 ± 0.0 ms
+        Timed stdlib for: 445407 loops, best of 5
+            time per loop: best=387.000 ns, mean=424.680 ± 19.7 ns
     """
-    import pkgutil
-    loader = pkgutil.find_loader(modname)
-    if loader is None:
-        raise Exception('No module named {} in the PYTHONPATH'.format(modname))
-    modpath = loader.get_filename().replace('.pyc', '.py')
+    import importlib.util
+    spec = importlib.util.find_spec(modname)
+    modpath = spec.origin.replace('.pyc', '.py')  # is pyc replace needed anymore?
     return modpath
 
 
@@ -369,8 +377,6 @@ def import_module_from_path(modpath, index=-1):
                         modname=modname,
                         archivepath=archivepath,
                         ex=ex)
-                    print(text)
-                    # raise
                     raise Exception(text)
 
                 return module
@@ -407,48 +413,36 @@ def import_module_from_name(modname):
         >>> import sys
         >>> modname_list = [
         >>>     'pickletools',
-        >>>     'lib2to3.fixes.fix_apply',
+        >>>     'email.mime.text',
         >>> ]
         >>> #assert not any(m in sys.modules for m in modname_list)
         >>> modules = [ub.import_module_from_name(modname) for modname in modname_list]
         >>> assert [m.__name__ for m in modules] == modname_list
         >>> assert all(m in sys.modules for m in modname_list)
     """
-    if True:
-        # See if this fixes the Docker issue we saw but were unable to
-        # reproduce on another environment. Either way its better to use the
-        # standard importlib implementation than the one I wrote a long time
-        # ago.
-        import importlib
-        module = importlib.import_module(modname)
-    else:  # nocover
-        # The __import__ statement is weird
-        if '.' in modname:
-            fromlist = modname.split('.')[-1]
-            fromlist_ = list(map(str, fromlist))  # needs to be ascii for python2.7
-            module = __import__(modname, {}, {}, fromlist_, 0)
-        else:
-            module = __import__(modname, {}, {}, [], 0)
+    # Modern python has a stdlib solution for this.
+    import importlib
+    module = importlib.import_module(modname)
     return module
+
+
+IS_PY_LT_314 = (sys.version_info[0:2] < (3, 14))
+
+
+IS_PY_GE_308 = (sys.version_info[0:2] >= (3, 8))
 
 
 def _parse_static_node_value(node):
     """
     Extract a constant value from a node if possible
-
-    Args:
-        node (ast.AST): input node
-
-    Returns:
-        Any: parsed value
     """
     import ast
     from collections import OrderedDict
     import numbers
-    if isinstance(node, ast.Constant) and isinstance(node.value, numbers.Number):
-        value = node.value
-    elif isinstance(node, ast.Constant) and isinstance(node.value, str):
-        value = node.value
+    if (isinstance(node, ast.Constant) and isinstance(node.value, numbers.Number) if IS_PY_GE_308 else isinstance(node, ast.Num)):
+        value = node.value if IS_PY_GE_308 else node.n
+    elif (isinstance(node, ast.Constant) and isinstance(node.value, str) if IS_PY_GE_308 else isinstance(node, ast.Str)):
+        value = node.value if IS_PY_GE_308 else node.s
     elif isinstance(node, ast.List):
         value = list(map(_parse_static_node_value, node.elts))
     elif isinstance(node, ast.Tuple):
@@ -457,7 +451,10 @@ def _parse_static_node_value(node):
         keys = map(_parse_static_node_value, node.keys)
         values = map(_parse_static_node_value, node.values)
         value = OrderedDict(zip(keys, values))
-    elif isinstance(node, ast.Constant):
+        # value = dict(zip(keys, values))
+    elif IS_PY_LT_314 and isinstance(node, (ast.NameConstant)):  # nocover
+        value = node.value
+    elif isinstance(node, ast.Constant):  # nocover
         value = node.value
     else:
         raise TypeError('Cannot parse a static value from non-static node '
@@ -658,19 +655,22 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
     if sys_path is None:
         sys_path = sys.path
 
+    def _normalize(p):
+        if sys.platform.startswith('win32'):  # nocover
+            return realpath(p).lower()
+        else:
+            return realpath(p)
+
     # the empty string in sys.path indicates cwd. Change this to a '.'
     candidate_dpaths = ['.' if p == '' else p for p in sys_path]
 
     if exclude:
-        def normalize(p):
-            if sys.platform.startswith('win32'):  # nocover
-                return realpath(p).lower()
-            else:
-                return realpath(p)
         # Keep only the paths not in exclude
-        real_exclude = {normalize(p) for p in exclude}
+        real_exclude = {_normalize(p) for p in exclude}
         candidate_dpaths = [p for p in candidate_dpaths
-                            if normalize(p) not in real_exclude]
+                            if _normalize(p) not in real_exclude]
+    else:
+        real_exclude = set()
 
     def check_dpath(dpath):
         # Check for directory-based modules (has precedence over files)
@@ -706,6 +706,39 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
     _editable_fname_finder_py_pat = '__editable___*_*finder.py'
 
     found_modpath = None
+
+    def _iter_editable_mapping_targets(mapping):
+        """Yield candidate target roots extracted from editable metadata."""
+
+        # Newer editable installs sometimes store multiple keys for a single
+        # project (``pkg``, ``pkg-name``, ``package.module``).  We build a list of
+        # the most common aliases derived from both the package *and* module
+        # names and walk through each possibility before falling back to a
+        # normalised comparison.  That lets us keep the resolver permissive
+        # without assuming a specific key layout from setuptools.
+
+        def _unique_append(seq, item):
+            if item and item not in seq:
+                seq.append(item)
+
+        candidate_keys = []
+        _unique_append(candidate_keys, _pkg_name)
+        _unique_append(candidate_keys, _pkg_name_hypen)
+        _unique_append(candidate_keys, _pkg_name_hypen.replace('-', '_'))
+        _unique_append(candidate_keys, modname)
+        _unique_append(candidate_keys, modname.replace('.', '-'))
+        _unique_append(candidate_keys, modname.replace('.', '_'))
+
+        for key in candidate_keys:
+            if key in mapping:
+                yield mapping[key]
+
+        normalized_candidates = {key.replace('-', '_') for key in candidate_keys}
+        for key, value in mapping.items():
+            # Some installers only differ by dash / underscore usage, so we do a
+            # second pass with that lightweight normalization to catch those.
+            if key.replace('-', '_') in normalized_candidates:
+                yield value
     for dpath in candidate_dpaths:
         modpath = check_dpath(dpath)
         if modpath:
@@ -727,22 +760,43 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
             # ultimately be good. Hopefully the new standards mean it does not
             # break with pytest anymore? Nope, pytest still doesn't work right
             # with it.
+            finder_base = None
             for finder_fpath in new_editable_finder_paths:
                 try:
                     mapping = _static_parse('MAPPING', finder_fpath)
                 except AttributeError:
                     ...
                 else:
-                    try:
-                        target = dirname(mapping[_pkg_name])
-                    except KeyError:
-                        ...
-                    else:
-                        if not exclude or normalize(target) not in real_exclude:  # pragma: nobranch
-                            modpath = check_dpath(target)
-                            if modpath:  # pragma: nobranch
-                                found_modpath = modpath
-                                break
+                    finder_base = finder_base or dirname(finder_fpath)
+                    # Each finder can include relative paths (especially for
+                    # ``src`` layouts).  Normalise those relative to the finder
+                    # file first, then probe both the leaf path and its parent
+                    # to cover ``package/__init__.py`` as well as
+                    # ``package/__init__.py``-less structures.
+                    for mapping_target in _iter_editable_mapping_targets(mapping):
+                        if mapping_target is None:
+                            continue
+                        target = os.fspath(mapping_target)
+                        if not os.path.isabs(target) and finder_base:
+                            target = join(finder_base, target)
+                        candidate_roots = []
+                        if isfile(target):
+                            candidate_roots.append(dirname(target))
+                        else:
+                            candidate_roots.append(target)
+                            candidate_roots.append(dirname(target))
+                        for target_root in candidate_roots:
+                            if not target_root:
+                                continue
+                            if not real_exclude or _normalize(target_root) not in real_exclude:  # pragma: nobranch
+                                modpath = check_dpath(target_root)
+                                if modpath:  # pragma: nobranch
+                                    found_modpath = modpath
+                                    break
+                        if found_modpath is not None:
+                            break
+                    if found_modpath is not None:
+                        break
             if found_modpath is not None:
                 break
 
@@ -756,11 +810,24 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
             for editable_pth in new_editable_pth_paths:
                 editable_pth = pathlib.Path(editable_pth)
                 target = editable_pth.read_text().strip().split('\n')[-1]
-                if not exclude or normalize(target) not in real_exclude:
-                    modpath = check_dpath(target)
-                    if modpath:  # pragma: nobranch
-                        found_modpath = modpath
-                        break
+                if not os.path.isabs(target):
+                    target = join(dpath, target)
+                candidate_roots = []
+                if isdir(target):
+                    candidate_roots.append(target)
+                    candidate_roots.append(dirname(target))
+                else:
+                    candidate_roots.append(dirname(target))
+                for candidate_root in candidate_roots:
+                    if not candidate_root:
+                        continue
+                    if not real_exclude or _normalize(candidate_root) not in real_exclude:
+                        modpath = check_dpath(candidate_root)
+                        if modpath:  # pragma: nobranch
+                            found_modpath = modpath
+                            break
+                if found_modpath is not None:
+                    break
             if found_modpath is not None:
                 break
 
@@ -786,7 +853,9 @@ def _syspath_modname_to_modpath(modname, sys_path=None, exclude=None):
             # The docs state there should only be one line, but I see two.
             with open(linkpath, 'r') as file:
                 target = file.readline().strip()
-            if not exclude or normalize(target) not in real_exclude:
+            if not isdir(target):
+                target = dirname(target)
+            if not real_exclude or _normalize(target) not in real_exclude:
                 modpath = check_dpath(target)
                 if modpath:
                     found_modpath = modpath
@@ -845,7 +914,6 @@ def modname_to_modpath(modname, hide_init=True, hide_main=False, sys_path=None):
         #     modpath = _importlib_modname_to_modpath(modname)
         # except Exception:
         #     modpath = _syspath_modname_to_modpath(modname, sys_path)
-        # modpath = _pkgutil_modname_to_modpath(modname, sys_path)
         modpath = _syspath_modname_to_modpath(modname, sys_path)
 
     if modpath is None:

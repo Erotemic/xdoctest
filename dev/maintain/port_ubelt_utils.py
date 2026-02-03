@@ -19,7 +19,7 @@ def _autogen_xdoctest_utils():
     lib.add_dynamic(util_import.modname_to_modpath)
     lib.add_dynamic(util_import.import_module_from_name)
     lib.add_dynamic(util_import.import_module_from_path)
-    lib.add_dynamic(util_import._pkgutil_modname_to_modpath)
+    lib.add_dynamic(util_import._importlib_modname_to_modpath)
     lib.add_dynamic(util_import._importlib_import_modpath)
     lib.add_dynamic(util_import.is_modname_importable)
 
