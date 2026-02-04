@@ -1,7 +1,7 @@
 from os import PathLike
 from types import ModuleType
 from typing import Dict
-import xdoctest
+import xdoctest.static_analysis
 from types import FrameType
 from typing import Callable
 from typing import Tuple
