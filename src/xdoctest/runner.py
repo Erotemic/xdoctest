@@ -454,6 +454,15 @@ def _strip_ansi_codes(text):
 
     Returns:
         str: Text with ANSI codes removed
+
+    Example:
+        >>> # Test with ANSI color codes
+        >>> text = '\x1b[31mred text\x1b[0m'
+        >>> _strip_ansi_codes(text)
+        'red text'
+        >>> # Test with no ANSI codes
+        >>> _strip_ansi_codes('plain text')
+        'plain text'
     """
     import re
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
@@ -495,6 +504,22 @@ def _format_want_lines(output_text, indentation):
 
     Returns:
         List[str]: Formatted lines ready to write to file
+
+    Example:
+        >>> # Test basic formatting
+        >>> lines = _format_want_lines('hello\\nworld', '    ')
+        >>> len(lines)
+        2
+        >>> lines[0]
+        '    hello\\n'
+        >>> lines[1]
+        '    world\\n'
+        >>> # Test with blank lines
+        >>> lines = _format_want_lines('line1\\n\\nline3', '    ')
+        >>> len(lines)
+        3
+        >>> lines[1]
+        '    <BLANKLINE>\\n'
     """
     if not output_text:
         return []
