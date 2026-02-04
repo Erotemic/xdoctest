@@ -375,3 +375,77 @@ def test_indentation_at_various_levels(create_test_file, test_content, expected_
     test_line = test_lines[0]
     indent_count = len(test_line) - len(test_line.lstrip())
     assert indent_count == expected_spaces
+
+
+def test_write_outputs_with_eval_none(create_test_file):
+    """
+    Test write-outputs with expressions that evaluate to None.
+
+    Note: Currently, when an expression evaluates to None with no stdout,
+    the output is treated as empty and not written. This is a known limitation.
+    """
+    test_content = '''
+        def example():
+            """
+            Example:
+                >>> None
+                wrong
+            """
+            pass
+    '''
+    test_file = create_test_file(test_content)
+
+    xdoctest.doctest_module(
+        str(test_file), command="all", config={"write_outputs": True}
+    )
+
+    # File should remain unchanged because got_eval=None is treated as no output
+    assert test_file.read_text() == textwrap.dedent(test_content)
+
+
+def test_write_outputs_empty_output(create_test_file):
+    """
+    Test that statements with no output don't modify the file when output is empty.
+    """
+    test_content = '''
+        def example():
+            """
+            Example:
+                >>> x = 5
+                wrong output
+            """
+            pass
+    '''
+    test_file = create_test_file(test_content)
+
+    xdoctest.doctest_module(
+        str(test_file), command="all", config={"write_outputs": True}
+    )
+
+    # When got output is empty (""), formatted_lines will be empty
+    # so _compute_part_modification returns None and file is unchanged
+    assert test_file.read_text() == textwrap.dedent(test_content)
+
+
+def test_fill_missing_wants_no_output(create_test_file):
+    """
+    Test that --fill-missing-wants doesn't add wants for statements with no output.
+    """
+    test_content = '''
+        def example():
+            """
+            Example:
+                >>> x = 5
+            """
+            pass
+    '''
+    test_file = create_test_file(test_content)
+
+    xdoctest.doctest_module(
+        str(test_file),
+        command="all",
+        config={"write_outputs": True, "fill_missing_wants": True},
+    )
+
+    # Should not add output for assignment statements
+    assert test_file.read_text() == textwrap.dedent(test_content)
