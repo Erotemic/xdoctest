@@ -8,6 +8,8 @@ from collections.abc import Generator
 from typing import Any
 
 import xdoctest.doctest_example
+import xdoctest.static_analysis
+
 
 DOCTEST_STYLES: Incomplete
 __docstubs__: str
