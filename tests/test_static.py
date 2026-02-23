@@ -127,6 +127,23 @@ def test_mod_lineno2():
     assert calldefs['decor4'].doclineno_end == 38
 
 
+def test_async_function_docstr_collection():
+    source = utils.codeblock(
+        '''
+        async def b():
+            """
+            >>> b()
+            2
+            """
+            return 1
+        ''')
+
+    self = static.TopLevelVisitor.parse(source)
+    assert 'b' in self.calldefs
+    assert self.calldefs['b'].doclineno == 2
+    assert self.calldefs['b'].doclineno_end == 5
+
+
 if __name__ == '__main__':
     """
     CommandLine:
