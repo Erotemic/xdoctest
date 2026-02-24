@@ -56,6 +56,9 @@ class TopLevelVisitor(ast.NodeVisitor):
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         ...
 
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        ...
+
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         ...
 

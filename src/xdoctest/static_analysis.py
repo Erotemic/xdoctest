@@ -239,6 +239,13 @@ class TopLevelVisitor(ast.NodeVisitor):
 
         self._finish_queue.append(calldef)
 
+    def visit_AsyncFunctionDef(self, node):
+        """
+        Args:
+            node (ast.AsyncFunctionDef):
+        """
+        self.visit_FunctionDef(node)
+
     def visit_ClassDef(self, node):
         """
         Args:

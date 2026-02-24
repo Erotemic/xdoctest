@@ -596,6 +596,40 @@ def test_semicolon_line():
     status = example.run(verbose=0)
     assert status['passed']
 
+def test_collect_async_function_doctest():
+    with utils.TempDir() as temp:
+        dpath = temp.dpath
+        modpath = join(dpath, 'test_collect_async_function_doctest.py')
+        source = utils.codeblock(
+            '''
+            """
+            >>> 1 + 0
+            1
+            """
+
+
+            def a():
+                """
+                >>> a()
+                1
+                """
+                return 1
+
+
+            async def b():
+                """
+                >>> b()
+                2
+                """
+                return 1
+            ''')
+        with open(modpath, 'w') as file:
+            file.write(source)
+
+        doctests = list(core.parse_doctestables(modpath, style='freeform'))
+        callnames = {test.callname for test in doctests}
+        assert callnames == {'__doc__', 'a', 'b'}
+
 
 if __name__ == '__main__':
     """
@@ -606,3 +640,4 @@ if __name__ == '__main__':
     """
     import xdoctest  # NOQA
     xdoctest.doctest_module(__file__)
+
