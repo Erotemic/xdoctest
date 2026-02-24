@@ -20,6 +20,7 @@ References:
     .. [GoogleStyleDocs1] https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google
     .. [GoogleStyleDocs2] http://www.sphinx-doc.org/en/stable/ext/example_google.html#example-google
 """
+
 import re
 import textwrap
 import collections
@@ -118,11 +119,12 @@ def split_google_docblocks(docstr):
         >>> assert offset == 1
     """
     if not isinstance(docstr, str):
-        raise TypeError('Input docstr must be a string. Got {} instead'.format(
-            type(docstr)))
+        raise TypeError(
+            'Input docstr must be a string. Got {} instead'.format(type(docstr))
+        )
 
     def get_indentation(line_):
-        """ returns number of preceding spaces """
+        """returns number of preceding spaces"""
         return len(line_) - len(line_.lstrip())
 
     # Parse out initial documentation lines
@@ -198,7 +200,9 @@ def split_google_docblocks(docstr):
         ['Todo'],
     ]
     # Map aliased tags to a canonical name (the first item in the group).
-    tag_aliases = dict([(item, group[0]) for group in tag_groups for item in group])
+    tag_aliases = dict(
+        [(item, group[0]) for group in tag_groups for item in group]
+    )
     # Allow for single or double colon (support for pytorch)
     tag_pattern = '^' + '(' + '|'.join(tag_aliases.keys()) + ') *::? *$'
 
@@ -216,7 +220,7 @@ def split_google_docblocks(docstr):
                 indent_increase = true_indent[line_num + 1] > base_indent
                 indent_zero = line_len[line_num + 1] == 0
                 matches_tag = re.match(tag_pattern, docstr_lines[line_num + 1])
-                if (indent_increase or indent_zero or matches_tag):
+                if indent_increase or indent_zero or matches_tag:
                     group_id += 1
                     in_tag = True
             else:
@@ -398,6 +402,7 @@ def parse_google_retblock(lines, return_annot=None):
             final_desc = ' '.join([p for p in retdict['desc'] if p])
             retdict['desc'] = final_desc
             return retdict
+
         retdict = None
         noindent_pat = re.compile(r'^[^\s]')
         for line in lines.split('\n'):
@@ -425,6 +430,7 @@ def parse_google_retblock(lines, return_annot=None):
                     USE_TYPE_HACK = 1
                     if USE_TYPE_HACK:
                         import ast
+
                         try:
                             ast.parse(line.strip())
                         except Exception:
@@ -496,14 +502,19 @@ def parse_google_argblock(lines, clean_desc=True):
         >>> assert len(argdict_list) == len(line_list) - 5
         >>> assert argdict_list[1]['desc'] == 'a description with a newline'
     """
+
     def named(key, pattern):
         return '(?P<{}>{})'.format(key, pattern)
+
     def optional(pattern):
         return '({})?'.format(pattern)
+
     def positive_lookahead(pattern):
         return '(?={})'.format(pattern)
+
     def regex_or(patterns):
         return '({})'.format('|'.join(patterns))
+
     whitespace = r'\s*'
     endofstr = r'\Z'
 

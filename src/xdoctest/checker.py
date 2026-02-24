@@ -32,22 +32,24 @@ In most cases it is best to use stdout to write your got-want tests because it
 is easier to control strings sent to stdout than it is to control the
 representation of expression-based "got-strings".
 """
+
 import re
 import difflib
 from xdoctest import utils
 from xdoctest import constants
 from xdoctest import directive
 
-unicode_literal_re = re.compile(r"(\W|^)[uU]([rR]?[\'\"])", re.UNICODE)
-bytes_literal_re = re.compile(r"(\W|^)[bB]([rR]?[\'\"])", re.UNICODE)
+unicode_literal_re = re.compile(r'(\W|^)[uU]([rR]?[\'\"])', re.UNICODE)
+bytes_literal_re = re.compile(r'(\W|^)[bB]([rR]?[\'\"])', re.UNICODE)
 
 BLANKLINE_MARKER = '<BLANKLINE>'
 ELLIPSIS_MARKER = '...'
 
-TRAILING_WS = re.compile(r"[ \t]*$", re.UNICODE | re.MULTILINE)
+TRAILING_WS = re.compile(r'[ \t]*$', re.UNICODE | re.MULTILINE)
 
 
-_EXCEPTION_RE = re.compile(r"""
+_EXCEPTION_RE = re.compile(
+    r"""
     # Grab the traceback header.  Different versions of Python have
     # said different things on the first traceback line.
     ^(?P<hdr> Traceback\ \(
@@ -58,11 +60,14 @@ _EXCEPTION_RE = re.compile(r"""
     \s* $                # toss trailing whitespace on the header.
     (?P<stack> .*?)      # don't blink: absorb stuff until...
     ^ (?P<msg> \w+ .*)   #     a line *starts* with alphanum.
-    """, re.VERBOSE | re.MULTILINE | re.DOTALL)
+    """,
+    re.VERBOSE | re.MULTILINE | re.DOTALL,
+)
 
 
-def check_got_vs_want(want, got_stdout, got_eval=constants.NOT_EVALED,
-                      runstate=None):
+def check_got_vs_want(
+    want, got_stdout, got_eval=constants.NOT_EVALED, runstate=None
+):
     """
     Determines to check against either got_stdout or got_eval, and then does
     the comparison.
@@ -90,7 +95,12 @@ def check_got_vs_want(want, got_stdout, got_eval=constants.NOT_EVALED,
             try:
                 got = repr(got_eval)
             except Exception as ex:
-                raise ExtractGotReprException('Error calling repr for {}. Caused by: {!r}'.format(type(got_eval), ex), ex)
+                raise ExtractGotReprException(
+                    'Error calling repr for {}. Caused by: {!r}'.format(
+                        type(got_eval), ex
+                    ),
+                    ex,
+                )
             flag = check_output(got, want, runstate)
         else:
             # If there was eval and stdout, defer to stdout
@@ -131,7 +141,7 @@ def _strip_exception_details(msg):
 
     start, end = 0, len(msg)
     # The exception name must appear on the first line.
-    i = msg.find("\n")
+    i = msg.find('\n')
     if i >= 0:
         end = i
     # retain up to the first colon (if any)
@@ -142,7 +152,7 @@ def _strip_exception_details(msg):
     i = msg.rfind('.', 0, end)
     if i >= 0:
         start = i + 1
-    return msg[start: end]
+    return msg[start:end]
 
 
 def extract_exc_want(want):
@@ -297,21 +307,22 @@ def _ellipsis_match(got, want):
     # ws = want.split(ELLIPSIS_MARKER)
     # MODIFICATION: the ellipsis consumes all whitespace around it
     # for compatibility with whitespace normalization.
-    ws = re.split(r'\s*{}\s*'.format(re.escape(ELLIPSIS_MARKER)), want,
-                  flags=re.MULTILINE)
+    ws = re.split(
+        r'\s*{}\s*'.format(re.escape(ELLIPSIS_MARKER)), want, flags=re.MULTILINE
+    )
     assert len(ws) >= 2
 
     # Deal with exact matches possibly needed at one or both ends.
     startpos, endpos = 0, len(got)
     w = ws[0]
-    if w:   # starts with exact match
+    if w:  # starts with exact match
         if got.startswith(w):
             startpos = len(w)
             del ws[0]
         else:
             return False
     w = ws[-1]
-    if w:   # ends with exact match
+    if w:  # ends with exact match
         if got.endswith(w):
             endpos -= len(w)
             del ws[-1]
@@ -413,7 +424,6 @@ def normalize(got, want, runstate=None):
     got = ''.join(got_lines)
 
     if runstate['NORMALIZE_WHITESPACE'] or runstate['IGNORE_WHITESPACE']:
-
         # all whitespace normalization
         # treat newlines and all whitespace as a single space
         got = ' '.join(got.split())
@@ -425,6 +435,7 @@ def normalize(got, want, runstate=None):
         want = re.sub(r'\s', '', want, flags=re.MULTILINE)
 
     if runstate['NORMALIZE_REPR']:
+
         def norm_repr(a, b):
             # If removing quotes would allow for a match, remove them.
             if not _check_match(a, b, runstate):
@@ -433,6 +444,7 @@ def normalize(got, want, runstate=None):
                         if _check_match(a[1:-1], b, runstate):
                             return a[1:-1]
             return a
+
         got = norm_repr(got, want)
         want = norm_repr(want, got)
 
@@ -443,6 +455,7 @@ class ExtractGotReprException(AssertionError):
     """
     Exception used when we are unable to extract a string "got"
     """
+
     def __init__(self, msg, orig_ex):
         """
         Args:
@@ -458,6 +471,7 @@ class GotWantException(AssertionError):
     Exception used when the "got" output of a doctest differs from the expected
     "want" output.
     """
+
     def __init__(self, msg, got, want):
         """
         Args:
@@ -565,7 +579,8 @@ class GotWantException(AssertionError):
                     got = utils.color_text(got, 'red')
                     want = utils.color_text(want, 'red')
                 text = 'Expected:\n{}\nGot:\n{}'.format(
-                    utils.indent(self.want), utils.indent(self.got))
+                    utils.indent(self.want), utils.indent(self.got)
+                )
             elif want:
                 if colored:
                     got = utils.color_text(got, 'red')
@@ -631,10 +646,9 @@ def remove_blankline_marker(text):
         >>> assert BLANKLINE_MARKER not in remove_blankline_marker(text5)
     """
     pos_lb = '(?<=\n)'  # positive lookbehind
-    blankline_pattern = '|'.join([
-        '{pos_lb}{marker}\n', '{marker}\n',
-        '\n{marker}', '{marker}']).format(
-            marker=BLANKLINE_MARKER, pos_lb=pos_lb)
+    blankline_pattern = '|'.join(
+        ['{pos_lb}{marker}\n', '{marker}\n', '\n{marker}', '{marker}']
+    ).format(marker=BLANKLINE_MARKER, pos_lb=pos_lb)
     # blankline_pattern = r'(?<=\n)[ ]*{}\n?'.format(re.escape(BLANKLINE_MARKER))
     new_text = re.sub(blankline_pattern, '\n', text, flags=re.MULTILINE)
     return new_text
@@ -646,4 +660,5 @@ if __name__ == '__main__':
         python -m xdoctest.checker all
     """
     import xdoctest as xdoc
+
     xdoc.doctest_module()

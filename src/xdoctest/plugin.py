@@ -14,6 +14,7 @@ this code is heavilly based on ``pytest/_pytest/doctest.py`` plugin file in
 https://github.com/pytest-dev/pytest
 
 """
+
 import pytest
 from _pytest._code import code
 from _pytest import fixtures
@@ -50,8 +51,9 @@ import xdoctest.doctest_example
 
 def pytest_configure(config):
     manager = config.pluginmanager
-    all_plugins = {manager.get_name(plugin): plugin
-                   for plugin in manager.get_plugins()}
+    all_plugins = {
+        manager.get_name(plugin): plugin for plugin in manager.get_plugins()
+    }
     # If we're using `xdoctest`, unregister plugins on the ban-list
     if getattr(config.option, 'xdoctestmodules', False):
         for incompatible in _INCOMPATIBLE_PLUGINS.intersection(all_plugins):
@@ -67,48 +69,74 @@ def pytest_addoption(parser):
         return str.lower(str(x))
 
     group = parser.getgroup('collect')
-    parser.addini('xdoctest_encoding', 'encoding used for xdoctest files', default='utf-8')
+    parser.addini(
+        'xdoctest_encoding', 'encoding used for xdoctest files', default='utf-8'
+    )
     # parser.addini('xdoctest_options', 'default directive flags for doctests',
     #               type="args", default=["+ELLIPSIS"])
-    group.addoption('--xdoctest-modules', '--xdoctest', '--xdoc',
-                    action='store_true', default=False,
-                    help='Run doctests in all .py modules using new style parsing',
-                    dest='xdoctestmodules')
-    group.addoption('--xdoctest-glob', '--xdoc-glob',
-                    action='append', default=[], metavar='pat',
-                    help=(
-                        'Text files matching this pattern will be checked '
-                        'for doctests. This option may be specified multiple '
-                        'times. XDoctest does not check any text files by '
-                        'default. For compatibility with doctest set this to '
-                        'test*.txt'),
-                    dest='xdoctestglob')
-    group.addoption('--xdoctest-ignore-syntax-errors',
-                    action='store_true', default=False,
-                    help='Ignore xdoctest SyntaxErrors',
-                    dest='xdoctest_ignore_syntax_errors')
+    group.addoption(
+        '--xdoctest-modules',
+        '--xdoctest',
+        '--xdoc',
+        action='store_true',
+        default=False,
+        help='Run doctests in all .py modules using new style parsing',
+        dest='xdoctestmodules',
+    )
+    group.addoption(
+        '--xdoctest-glob',
+        '--xdoc-glob',
+        action='append',
+        default=[],
+        metavar='pat',
+        help=(
+            'Text files matching this pattern will be checked '
+            'for doctests. This option may be specified multiple '
+            'times. XDoctest does not check any text files by '
+            'default. For compatibility with doctest set this to '
+            'test*.txt'
+        ),
+        dest='xdoctestglob',
+    )
+    group.addoption(
+        '--xdoctest-ignore-syntax-errors',
+        action='store_true',
+        default=False,
+        help='Ignore xdoctest SyntaxErrors',
+        dest='xdoctest_ignore_syntax_errors',
+    )
 
-    group.addoption('--xdoctest-style', '--xdoc-style',
-                    type=str_lower, default='freeform',
-                    help='Basic style used to write doctests',
-                    choices=core.DOCTEST_STYLES,
-                    dest='xdoctest_style')
+    group.addoption(
+        '--xdoctest-style',
+        '--xdoc-style',
+        type=str_lower,
+        default='freeform',
+        help='Basic style used to write doctests',
+        choices=core.DOCTEST_STYLES,
+        dest='xdoctest_style',
+    )
 
-    group.addoption('--xdoctest-analysis', '--xdoc-analysis',
-                    type=str_lower, default='auto',
-                    help=('How doctests are collected. '
-                          'Can either be static, dynamic, or auto'),
-                    choices=['static', 'dynamic', 'auto'],
-                    dest='xdoctest_analysis')
+    group.addoption(
+        '--xdoctest-analysis',
+        '--xdoc-analysis',
+        type=str_lower,
+        default='auto',
+        help=(
+            'How doctests are collected. Can either be static, dynamic, or auto'
+        ),
+        choices=['static', 'dynamic', 'auto'],
+        dest='xdoctest_analysis',
+    )
 
     from xdoctest import doctest_example
+
     doctest_example.DoctestConfig()._update_argparse_cli(
-        group.addoption, prefix=['xdoctest', 'xdoc'],
-        defaults=dict(verbose=2)
+        group.addoption, prefix=['xdoctest', 'xdoc'], defaults=dict(verbose=2)
     )
 
 
 if pytest.__version__ < '7.':  # nocover
+
     def pytest_collect_file(path, parent):
         return _pytest_collect_file(path, parent, fspath=path)
 
@@ -119,6 +147,7 @@ if pytest.__version__ < '7.':  # nocover
         return path.check(fnmatch=glob)
 
 else:
+
     def pytest_collect_file(file_path, parent):  # type: ignore
         return _pytest_collect_file(file_path, parent, path=file_path)
 
@@ -131,7 +160,7 @@ else:
 
 def _pytest_collect_file(file_path, parent, **path_args):
     config = parent.config
-    if _suffix(file_path) == ".py":
+    if _suffix(file_path) == '.py':
         if config.option.xdoctestmodules:
             if hasattr(XDoctestModule, 'from_parent'):
                 return XDoctestModule.from_parent(parent, **path_args)
@@ -149,7 +178,7 @@ def _is_xdoctest(config, path, parent):
     if _suffix(path) in ('.txt', '.rst') and parent.session.isinitpath(path):
         matched = True
     else:
-        globs = config.getoption("xdoctestglob")
+        globs = config.getoption('xdoctestglob')
         for glob in globs:
             if _match(path, glob):
                 matched = True
@@ -158,7 +187,6 @@ def _is_xdoctest(config, path, parent):
 
 
 class ReprFailXDoctest(code.TerminalRepr):
-
     def __init__(self, reprlocation, lines):
         """
         Args:
@@ -176,11 +204,7 @@ class ReprFailXDoctest(code.TerminalRepr):
 
 
 class XDoctestItem(pytest.Item):
-    def __init__(self,
-                 name,
-                 parent,
-                 runner=None,
-                 dtest=None):
+    def __init__(self, name, parent, runner=None, dtest=None):
         """
         Args:
             name (str):
@@ -202,6 +226,7 @@ class XDoctestItem(pytest.Item):
             self.fixture_request = None
 
     if _PYTEST_IS_GE_800:
+
         @classmethod
         def from_parent(  # type: ignore
             cls,
@@ -212,7 +237,9 @@ class XDoctestItem(pytest.Item):
         ):
             # incompatible signature due to imposed limits on subclass
             """The public named constructor."""
-            return super().from_parent(name=name, parent=parent, runner=runner, dtest=dtest)
+            return super().from_parent(
+                name=name, parent=parent, runner=runner, dtest=dtest
+            )
 
     @property
     def example(self):
@@ -230,14 +257,20 @@ class XDoctestItem(pytest.Item):
         if _PYTEST_IS_GE_800:
             self._request._fillfixtures()
             globs = dict(getfixture=self._request.getfixturevalue)
-            for name, value in self._request.getfixturevalue("xdoctest_namespace").items():
+            for name, value in self._request.getfixturevalue(
+                'xdoctest_namespace'
+            ).items():
                 globs[name] = value
             self.dtest.globs.update(globs)
         else:
             if self.dtest is not None:
                 self.fixture_request = _setup_fixtures(self)
-                global_namespace = dict(getfixture=self.fixture_request.getfixturevalue)
-                for name, value in self.fixture_request.getfixturevalue('xdoctest_namespace').items():
+                global_namespace = dict(
+                    getfixture=self.fixture_request.getfixturevalue
+                )
+                for name, value in self.fixture_request.getfixturevalue(
+                    'xdoctest_namespace'
+                ).items():
                     global_namespace[name] = value
                 self.dtest.global_namespace.update(global_namespace)
 
@@ -274,25 +307,28 @@ class XDoctestItem(pytest.Item):
         Returns:
             Tuple[str, int, str]
         """
-        return self.fspath, self.dtest.lineno, "[xdoctest] %s" % self.name
+        return self.fspath, self.dtest.lineno, '[xdoctest] %s' % self.name
 
 
 class _XDoctestBase(pytest.Module):
-
     def _prepare_internal_config(self):
-
         class NamespaceLike:
             def __init__(self, config):
                 self.config = config
+
             def __getitem__(self, attr):
                 return self.config.getvalue('xdoctest_' + attr)
+
             def __getattr__(self, attr):
                 return self.config.getvalue('xdoctest_' + attr)
 
         ns = NamespaceLike(self.config)
 
         from xdoctest import doctest_example
-        self._examp_conf = doctest_example.DoctestConfig()._populate_from_cli(ns)
+
+        self._examp_conf = doctest_example.DoctestConfig()._populate_from_cli(
+            ns
+        )
 
 
 class XDoctestTextfile(_XDoctestBase):
@@ -304,7 +340,8 @@ class XDoctestTextfile(_XDoctestBase):
             XDoctestItem
         """
         from xdoctest import core
-        encoding = self.config.getini("xdoctest_encoding")
+
+        encoding = self.config.getini('xdoctest_encoding')
         text = self.fspath.read_text(encoding)
         filename = str(self.fspath)
         name = self.fspath.basename
@@ -315,14 +352,14 @@ class XDoctestTextfile(_XDoctestBase):
         style = self.config.getvalue('xdoctest_style')
 
         _example_iter = core.parse_docstr_examples(
-            text, name, fpath=filename, style=style)
+            text, name, fpath=filename, style=style
+        )
 
         for dtest in _example_iter:
             dtest.global_namespace.update(global_namespace)
             dtest.config.update(self._examp_conf)
             if hasattr(XDoctestItem, 'from_parent'):
-                yield XDoctestItem.from_parent(
-                    self, name=name, dtest=dtest)
+                yield XDoctestItem.from_parent(self, name=name, dtest=dtest)
             else:
                 # direct construction is deprecated
                 yield XDoctestItem(name, self, dtest=dtest)
@@ -331,6 +368,7 @@ class XDoctestTextfile(_XDoctestBase):
 class XDoctestModule(_XDoctestBase):
     def collect(self):
         from xdoctest import core
+
         modpath = str(self.fspath)
 
         style = self.config.getvalue('xdoctest_style')
@@ -338,8 +376,9 @@ class XDoctestModule(_XDoctestBase):
         self._prepare_internal_config()
 
         try:
-            examples = list(core.parse_doctestables(modpath, style=style,
-                                                    analysis=analysis))
+            examples = list(
+                core.parse_doctestables(modpath, style=style, analysis=analysis)
+            )
         except SyntaxError:
             if self.config.getvalue('xdoctest_ignore_syntax_errors'):
                 pytest.skip('unable to import module %r' % self.fspath)
@@ -350,8 +389,7 @@ class XDoctestModule(_XDoctestBase):
             dtest.config.update(self._examp_conf)
             name = dtest.unique_callname
             if hasattr(XDoctestItem, 'from_parent'):
-                yield XDoctestItem.from_parent(
-                    self, name=name, dtest=dtest)
+                yield XDoctestItem.from_parent(self, name=name, dtest=dtest)
             else:
                 # direct construction is deprecated
                 yield XDoctestItem(name, self, dtest=dtest)
@@ -367,13 +405,15 @@ def _setup_fixtures(xdoctest_item):
     Returns:
         fixtures.FixtureRequest
     """
+
     def func():
         pass
 
     xdoctest_item.funcargs = {}
     fm = xdoctest_item.session._fixturemanager
     xdoctest_item._fixtureinfo = fm.getfixtureinfo(
-        node=xdoctest_item, func=func, cls=None, funcargs=False)
+        node=xdoctest_item, func=func, cls=None, funcargs=False
+    )
     # Note: FixtureRequest may change in the future, we are using
     # private functionality. Hopefully it wont break, but we should
     # check to see if there is a better way to do this

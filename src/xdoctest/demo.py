@@ -38,6 +38,7 @@ class MyClass:
         >>> self = MyClass.demo()
         >>> print('self.data = {!r}'.format(self.data))
     """
+
     def __init__(self, *args, **kw):
         """
         Example:
@@ -59,7 +60,7 @@ class MyClass:
             >>> # xdoc: +REQUIRES(--say)
             >>> print('self.data = {!r}'.format(self.data))
         """
-        return MyClass(['spam'] * 42, ['eggs'],  **kw)
+        return MyClass(['spam'] * 42, ['eggs'], **kw)
 
     @staticmethod
     def always_fails():

@@ -47,6 +47,7 @@ run the doctests as such:
     python -m xdoctest.runner list
 
 """
+
 from xdoctest import dynamic_analysis
 from xdoctest import core
 from xdoctest import doctest_example
@@ -92,11 +93,10 @@ def doctest_callable(func):
         >>> doctest_callable(func)
     """
     from xdoctest.core import parse_docstr_examples
-    doctests = list(parse_docstr_examples(
-        func.__doc__, callname=func.__name__))
+
+    doctests = list(parse_docstr_examples(func.__doc__, callname=func.__name__))
     # TODO: can this be hooked up into runner to get nice summaries?
     for doctest in doctests:
-
         # FIXME: each doctest needs a way of getting the globals of the scope
         # that the parent function was defined in.
         # HACK: to add module context, this might not be robust.
@@ -105,14 +105,23 @@ def doctest_callable(func):
         doctest.run(verbose=3)
 
 
-def gather_doctests(doctest_identifiers, style='auto', analysis='auto',
-                    verbose=None):
+def gather_doctests(
+    doctest_identifiers, style='auto', analysis='auto', verbose=None
+):
     raise NotImplementedError('todo')
 
 
-def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
-                   style='auto', verbose=None, config=None, durations=None,
-                   analysis='auto'):
+def doctest_module(
+    module_identifier=None,
+    command=None,
+    argv=None,
+    exclude=[],
+    style='auto',
+    verbose=None,
+    config=None,
+    durations=None,
+    analysis='auto',
+):
     """
     Executes requestsed google-style doctests in a package or module.
     Main entry point into the testing framework.
@@ -225,7 +234,9 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
             if '::' in module_identifier:
                 if command is None:
                     modpath_or_name, command = module_identifier.split('::')
-                    modinfo['modpath'] = core._rectify_to_modpath(modpath_or_name)
+                    modinfo['modpath'] = core._rectify_to_modpath(
+                        modpath_or_name
+                    )
                 else:
                     raise ValueError('Command must be None if using :: syntax')
             else:
@@ -251,22 +262,29 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
 
     if command is None:
         # Display help if command is not specified
-        _log('Not testname given. Use `all` to run everything or'
-             ' pick from a list of valid choices:')
+        _log(
+            'Not testname given. Use `all` to run everything or'
+            ' pick from a list of valid choices:'
+        )
         command = 'list'
 
     # TODO: command should not be allowed to be the requested doctest name in
     # case it conflicts with an existing command. This probably requires an API
     # change to this function.
-    gather_all = (command == 'all' or command == 'dump')
+    gather_all = command == 'all' or command == 'dump'
 
     tic = time.time()
 
     # Parse all valid examples
     with warnings.catch_warnings(record=True) as parse_warnlist:
-        examples = list(core.parse_doctestables(
-            parsable_identifier, exclude=exclude, style=style,
-            analysis=analysis))
+        examples = list(
+            core.parse_doctestables(
+                parsable_identifier,
+                exclude=exclude,
+                style=style,
+                analysis=analysis,
+            )
+        )
         # Set each example mode to native to signal that we are using the
         # native xdoctest runner instead of the pytest runner
         for example in examples:
@@ -276,8 +294,15 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
         if len(examples) == 0:
             _log('... no docstrings with examples found')
         else:
-            _log('    ' + '\n    '.join([example.cmdline  # + ' @ ' + str(example.lineno)
-                                          for example in examples]))
+            _log(
+                '    '
+                + '\n    '.join(
+                    [
+                        example.cmdline  # + ' @ ' + str(example.lineno)
+                        for example in examples
+                    ]
+                )
+            )
         run_summary = {'action': 'list'}
     else:
         _log('gathering tests', level=2)
@@ -315,10 +340,12 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
             if RANDOMIZE_ORDER:
                 # randomize the order in which tests are run
                 import random
+
                 random.shuffle(enabled_examples)
 
-            run_summary = _run_examples(enabled_examples, verbose, config,
-                                        _log=_log)
+            run_summary = _run_examples(
+                enabled_examples, verbose, config, _log=_log
+            )
 
             toc = time.time()
             n_seconds = toc - tic
@@ -328,15 +355,22 @@ def doctest_module(module_identifier=None, command=None, argv=None, exclude=[],
 
             # Print final summary info in a style similar to pytest
             if verbose >= 0 and run_summary:
-                _print_summary_report(run_summary, parse_warnlist, n_seconds,
-                                      enabled_examples, durations,
-                                      config=config, _log=_log)
+                _print_summary_report(
+                    run_summary,
+                    parse_warnlist,
+                    n_seconds,
+                    enabled_examples,
+                    durations,
+                    config=config,
+                    _log=_log,
+                )
 
             # Hidden experimental feature
             import os
+
             insert_skip_directive_above_failures = (
-                os.environ.get('XDOCTEST_INSERT_SKIP_DIRECTIVE_ABOVE_FAILURES') or
-                '--insert-skip-directive-above-failures' in sys.argv
+                os.environ.get('XDOCTEST_INSERT_SKIP_DIRECTIVE_ABOVE_FAILURES')
+                or '--insert-skip-directive-above-failures' in sys.argv
             )
             AFTER_ALL_HOOKS = []
             if insert_skip_directive_above_failures:
@@ -357,6 +391,7 @@ def _auto_disable_failing_tests_hook(context):
     This should likely be moved to its own submodule.
     """
     from collections import defaultdict
+
     run_summary = context['run_summary']
     failing_examples = run_summary['failed']
     path_to_failed_linos = defaultdict(list)
@@ -407,9 +442,13 @@ def _convert_to_test_module(enabled_examples):
 
     module_lines = []
     for example in enabled_examples:
-
         # Create a unit-testable function for this example
-        func_name = 'test_' + example.modname.replace('.', '_') + '_' + example.callname.replace('.', '_')
+        func_name = (
+            'test_'
+            + example.modname.replace('.', '_')
+            + '_'
+            + example.callname.replace('.', '_')
+        )
         body_lines = []
 
         docstr_lines = [
@@ -427,7 +466,6 @@ def _convert_to_test_module(enabled_examples):
             header_lines.extend([g + '  # NOQA' for g in global_lines])
 
         for part in example._parts:
-
             if dump_config['remove_import_star']:
                 new_exec_lines = []
                 for line in part.exec_lines:
@@ -440,9 +478,13 @@ def _convert_to_test_module(enabled_examples):
                     new_exec_lines.append(line)
                 part.exec_lines = new_exec_lines
 
-            body_part = part.format_part(linenos=False, want=False,
-                                         prefix=False, colored=False,
-                                         partnos=False)
+            body_part = part.format_part(
+                linenos=False,
+                want=False,
+                prefix=False,
+                colored=False,
+                partnos=False,
+            )
             if part.want:
                 want_text = '# doctest want:\n'
                 want_text += utils.indent(part.want, '# ')
@@ -457,10 +499,16 @@ def _convert_to_test_module(enabled_examples):
             undefined = sorted(undefined_names(body))
             if undefined:
                 # Assume we can find them in the parent module
-                header_lines.append('from {} import {}'.format(example.modname, ', '.join(undefined)))
+                header_lines.append(
+                    'from {} import {}'.format(
+                        example.modname, ', '.join(undefined)
+                    )
+                )
                 body = '\n'.join(docstr_lines + header_lines + body_lines)
         except Exception:
-            warnings.warn('Unable to check for undefined names without pyflakes')
+            warnings.warn(
+                'Unable to check for undefined names without pyflakes'
+            )
 
         # if '+SKIP' in body:
         #     continue
@@ -517,11 +565,19 @@ def undefined_names(sourcecode):
     return names
 
 
-def _print_summary_report(run_summary, parse_warnlist, n_seconds,
-                          enabled_examples, durations, config=None, _log=None):
+def _print_summary_report(
+    run_summary,
+    parse_warnlist,
+    n_seconds,
+    enabled_examples,
+    durations,
+    config=None,
+    _log=None,
+):
     """
     Summary report formatting and printing
     """
+
     def cprint(text, color):
         if config is not None and config.get('colored', True):
             _log(utils.color_text(text, color))
@@ -534,34 +590,61 @@ def _print_summary_report(run_summary, parse_warnlist, n_seconds,
 
     # report parse-time warnings
     if parse_warnlist:
-        cprint('\n=== Found {} parse-time warnings ==='.format(
-            len(parse_warnlist)), 'yellow')
+        cprint(
+            '\n=== Found {} parse-time warnings ==='.format(
+                len(parse_warnlist)
+            ),
+            'yellow',
+        )
 
         for warn_idx, warn in enumerate(parse_warnlist, start=1):
-            cprint('--- Parse Warning: {} / {} ---'.format(
-                warn_idx, len(parse_warnlist)), 'yellow')
-            _log(utils.indent(
-                warnings.formatwarning(warn.message, warn.category,
-                                       warn.filename, warn.lineno)))
+            cprint(
+                '--- Parse Warning: {} / {} ---'.format(
+                    warn_idx, len(parse_warnlist)
+                ),
+                'yellow',
+            )
+            _log(
+                utils.indent(
+                    warnings.formatwarning(
+                        warn.message, warn.category, warn.filename, warn.lineno
+                    )
+                )
+            )
 
     # report run-time warnings
     if warned:
-        cprint('\n=== Found {} run-time warnings ==='.format(len(warned)), 'yellow')
+        cprint(
+            '\n=== Found {} run-time warnings ==='.format(len(warned)), 'yellow'
+        )
         for warn_idx, example in enumerate(warned, start=1):
-            cprint('--- Runtime Warning: {} / {} ---'.format(warn_idx, len(warned)),
-                   'yellow')
+            cprint(
+                '--- Runtime Warning: {} / {} ---'.format(
+                    warn_idx, len(warned)
+                ),
+                'yellow',
+            )
             _log('example = {!r}'.format(example))
             for warn in example.warn_list:
-                _log(utils.indent(
-                    warnings.formatwarning(warn.message, warn.category,
-                                           warn.filename, warn.lineno)))
+                _log(
+                    utils.indent(
+                        warnings.formatwarning(
+                            warn.message,
+                            warn.category,
+                            warn.filename,
+                            warn.lineno,
+                        )
+                    )
+                )
 
     if failed and len(enabled_examples) > 1:
         # If there is more than one test being run, _log out all the
         # errors that occurred so they are consolidated in a single place.
         cprint('\n=== Found {} errors ==='.format(len(failed)), 'red')
         for fail_idx, example in enumerate(failed, start=1):
-            cprint('--- Error: {} / {} ---'.format(fail_idx, len(failed)), 'red')
+            cprint(
+                '--- Error: {} / {} ---'.format(fail_idx, len(failed)), 'red'
+            )
             _log(utils.indent('\n'.join(example.repr_failure())))
 
     # Print command lines to re-run failed tests
@@ -575,9 +658,11 @@ def _print_summary_report(run_summary, parse_warnlist, n_seconds,
     n_failed = run_summary.get('n_failed', 0)
     n_skipped = run_summary.get('n_skipped', 0)
     n_warnings = len(warned) + len(parse_warnlist)
-    pairs = zip([n_failed, n_passed, n_skipped, n_warnings],
-                ['failed', 'passed', 'skipped', 'warnings'])
-    parts = ['{n} {t}'.format(n=n, t=t) for n, t in pairs  if n > 0]
+    pairs = zip(
+        [n_failed, n_passed, n_skipped, n_warnings],
+        ['failed', 'passed', 'skipped', 'warnings'],
+    )
+    parts = ['{n} {t}'.format(n=n, t=t) for n, t in pairs if n > 0]
     _fmtstr = '=== ' + ', '.join(parts) + ' in {n_seconds:.2f} seconds ==='
     # _fmtstr = '=== ' + ' '.join(parts) + ' in {n_seconds:.2f} seconds ==='
     summary_line = _fmtstr.format(n_seconds=n_seconds)
@@ -611,10 +696,12 @@ def _gather_zero_arg_examples(modpath):
                 if n_args == 0:
                     # Create a dummy doctest example for a zero-arg function
                     docsrc = '>>> {}()'.format(callname)
-                    example = doctest_example.DocTest(docsrc=docsrc,
-                                                      modpath=_modpath,
-                                                      callname=callname,
-                                                      block_type='zero-arg')
+                    example = doctest_example.DocTest(
+                        docsrc=docsrc,
+                        modpath=_modpath,
+                        callname=callname,
+                        block_type='zero-arg',
+                    )
                     example.mode = 'native'
                     yield example
 
@@ -695,7 +782,7 @@ def _run_examples(enabled_examples, verbose, config=None, _log=None):
     if n_total > 1:
         # and verbose > 0:
         _log('Finished doctests')
-        _log('%d / %d passed'  % (n_passed, n_total))
+        _log('%d / %d passed' % (n_passed, n_total))
 
     run_summary = {
         'failed': failed,
@@ -749,36 +836,59 @@ def _update_argparse_cli(add_argument, prefix=None):
     how aggregate results are reported.
     """
     import os
-    add_argument(*('-m', '--modname'), type=str,
-                 help='Module name or path. If specified positional modules are ignored',
-                 default=None)
 
-    add_argument(*('-c', '--command'), type=str,
-                 help=(
-                     'A doctest name or a command (all|list|dump|<callname>). '
-                     'Defaults to `all` (which runs everything). Using `list` will '
-                     'collect and print all doctests. '
-                     'Using `dump` will convert doctests into unit tests. '
-                     'Anything else will be interpreted as a "callname"'),
-                 default=None)
+    add_argument(
+        *('-m', '--modname'),
+        type=str,
+        help='Module name or path. If specified positional modules are ignored',
+        default=None,
+    )
 
-    add_argument(*('--style',), type=str,
-                 help='Choose the style of doctests that will be parsed',
-                 choices=['auto', 'google', 'freeform'],
-                 default=os.environ.get('XDOCTEST_STYLE', 'auto'))
+    add_argument(
+        *('-c', '--command'),
+        type=str,
+        help=(
+            'A doctest name or a command (all|list|dump|<callname>). '
+            'Defaults to `all` (which runs everything). Using `list` will '
+            'collect and print all doctests. '
+            'Using `dump` will convert doctests into unit tests. '
+            'Anything else will be interpreted as a "callname"'
+        ),
+        default=None,
+    )
 
-    add_argument(*('--analysis',), type=str,
-                 help='How doctests are collected',
-                 choices=['auto', 'static', 'dynamic'],
-                 default=os.environ.get('XDOCTEST_ANALYSIS', 'auto'))
+    add_argument(
+        *('--style',),
+        type=str,
+        help='Choose the style of doctests that will be parsed',
+        choices=['auto', 'google', 'freeform'],
+        default=os.environ.get('XDOCTEST_STYLE', 'auto'),
+    )
 
-    add_argument(*('--durations',), type=int,
-                 help=('Specify execution times for slowest N tests.'
-                       'N=0 will show times for all tests'),
-                 default=None)
+    add_argument(
+        *('--analysis',),
+        type=str,
+        help='How doctests are collected',
+        choices=['auto', 'static', 'dynamic'],
+        default=os.environ.get('XDOCTEST_ANALYSIS', 'auto'),
+    )
 
-    add_argument(*('--time',), dest='time', action='store_true',
-                 help=('Same as if durations=0'))
+    add_argument(
+        *('--durations',),
+        type=int,
+        help=(
+            'Specify execution times for slowest N tests.'
+            'N=0 will show times for all tests'
+        ),
+        default=None,
+    )
+
+    add_argument(
+        *('--time',),
+        dest='time',
+        action='store_true',
+        help=('Same as if durations=0'),
+    )
 
     add_argument_kws = [
         # (['--style'], dict(dest='style',
@@ -801,7 +911,8 @@ def _update_argparse_cli(add_argument, prefix=None):
                 kw['default'] = os.environ.get(env_argname, kw['default'])
         alias = [
             a.replace('--', '--' + p + '-') if p else a
-            for a in alias for p in prefix
+            for a in alias
+            for p in prefix
         ]
         if prefix[0]:
             kw['dest'] = prefix[0] + '_' + kw['dest']
@@ -814,4 +925,5 @@ if __name__ == '__main__':
         python -m xdoctest.runner all
     """
     import xdoctest as xdoc
+
     xdoc.doctest_module()

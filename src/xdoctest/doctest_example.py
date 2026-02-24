@@ -1,6 +1,7 @@
 """
 This module defines the main class that holds a DocTest example
 """
+
 import __future__
 import ast
 from collections import OrderedDict
@@ -40,23 +41,28 @@ class DoctestConfig(dict):
     Note dynamic directives are not managed by DoctestConfig, they use
     RuntimeState.
     """
+
     def __init__(self, *args, **kwargs):
         super(DoctestConfig, self).__init__(*args, **kwargs)
-        self.update({
-            # main options exposed by command line runner/plugin
-            'colored': hasattr(sys.stdout, 'isatty') and sys.stdout.isatty(),
-            'reportchoice': 'udiff',
-            'default_runtime_state': {},
-            'offset_linenos': False,
-            'global_exec': None,
-            'supress_import_errors': False,
-            'on_error': 'raise',
-            'partnos': False,
-            'verbose': 1,
-        })
+        self.update(
+            {
+                # main options exposed by command line runner/plugin
+                'colored': hasattr(sys.stdout, 'isatty')
+                and sys.stdout.isatty(),
+                'reportchoice': 'udiff',
+                'default_runtime_state': {},
+                'offset_linenos': False,
+                'global_exec': None,
+                'supress_import_errors': False,
+                'on_error': 'raise',
+                'partnos': False,
+                'verbose': 1,
+            }
+        )
 
     def _populate_from_cli(self, ns):
         from xdoctest.directive import parse_directive_optstr
+
         directive_optstr = ns['options']
         default_runtime_state = {}
         if directive_optstr:
@@ -87,49 +93,122 @@ class DoctestConfig(dict):
             add_argument (callable): the parser.add_argument function
         """
         import argparse
+
         def str_lower(x):
             # python2 fix
             return str.lower(str(x))
 
         add_argument_kws = [
-            (['--colored'], dict(dest='colored', default=self['colored'],
-                                 help=('Enable or disable ANSI coloration in stdout'))),
-            (['--nocolor'], dict(dest='colored', action='store_false',
-                                 default=argparse.SUPPRESS,
-                                 help=('Disable ANSI coloration in stdout'))),
-            (['--offset'], dict(dest='offset_linenos', action='store_true',
-                                default=self['offset_linenos'],
-                                help=('If True formatted source linenumbers will agree with '
-                                      'their location in the source file. Otherwise they '
-                                      'will be relative to the doctest itself.'))),
-            (['--report'], dict(dest='reportchoice',
-                                type=str_lower,
-                                choices=('none', 'cdiff', 'ndiff', 'udiff', 'only_first_failure',),
-                                default=self['reportchoice'],
-                                help=('Choose another output format for diffs on xdoctest failure'))),
+            (
+                ['--colored'],
+                dict(
+                    dest='colored',
+                    default=self['colored'],
+                    help=('Enable or disable ANSI coloration in stdout'),
+                ),
+            ),
+            (
+                ['--nocolor'],
+                dict(
+                    dest='colored',
+                    action='store_false',
+                    default=argparse.SUPPRESS,
+                    help=('Disable ANSI coloration in stdout'),
+                ),
+            ),
+            (
+                ['--offset'],
+                dict(
+                    dest='offset_linenos',
+                    action='store_true',
+                    default=self['offset_linenos'],
+                    help=(
+                        'If True formatted source linenumbers will agree with '
+                        'their location in the source file. Otherwise they '
+                        'will be relative to the doctest itself.'
+                    ),
+                ),
+            ),
+            (
+                ['--report'],
+                dict(
+                    dest='reportchoice',
+                    type=str_lower,
+                    choices=(
+                        'none',
+                        'cdiff',
+                        'ndiff',
+                        'udiff',
+                        'only_first_failure',
+                    ),
+                    default=self['reportchoice'],
+                    help=(
+                        'Choose another output format for diffs on xdoctest failure'
+                    ),
+                ),
+            ),
             # used to build default_runtime_state
-            (['--options'], dict(type=str_lower, default=None, dest='options',
-                                 help='Default directive flags for doctests')),
-            (['--global-exec'], dict(type=str, default=None, dest='global_exec',
-                                     help='Custom Python code to execute before every test')),
+            (
+                ['--options'],
+                dict(
+                    type=str_lower,
+                    default=None,
+                    dest='options',
+                    help='Default directive flags for doctests',
+                ),
+            ),
+            (
+                ['--global-exec'],
+                dict(
+                    type=str,
+                    default=None,
+                    dest='global_exec',
+                    help='Custom Python code to execute before every test',
+                ),
+            ),
             # FIXME: this has a spelling error
-            (['--supress-import-errors'], dict(dest='supress_import_errors', action='store_true',
-                                               default=self['supress_import_errors'],
-                                               help='Removes tracebacks from errors in implicit imports')),
-            (['--verbose'], dict(
-                type=int, default=defaults.get('verbose', 3), dest='verbose',
-                help=(
-                    'Verbosity level. '
-                    '0 is silent, '
-                    '1 prints out test names, '
-                    '2 additionally prints test stdout, '
-                    '3 additionally prints test source'))),
-            (['--quiet'], dict(action='store_true', dest='verbose',
-                                default=argparse.SUPPRESS,
-                                help='sets verbosity to 1')),
-            (['--silent'], dict(action='store_false', dest='verbose',
-                                default=argparse.SUPPRESS,
-                                help='sets verbosity to 0')),
+            (
+                ['--supress-import-errors'],
+                dict(
+                    dest='supress_import_errors',
+                    action='store_true',
+                    default=self['supress_import_errors'],
+                    help='Removes tracebacks from errors in implicit imports',
+                ),
+            ),
+            (
+                ['--verbose'],
+                dict(
+                    type=int,
+                    default=defaults.get('verbose', 3),
+                    dest='verbose',
+                    help=(
+                        'Verbosity level. '
+                        '0 is silent, '
+                        '1 prints out test names, '
+                        '2 additionally prints test stdout, '
+                        '3 additionally prints test source'
+                    ),
+                ),
+            ),
+            (
+                ['--quiet'],
+                dict(
+                    action='store_true',
+                    dest='verbose',
+                    default=argparse.SUPPRESS,
+                    help='sets verbosity to 1',
+                ),
+            ),
+            (
+                ['--silent'],
+                dict(
+                    action='store_false',
+                    dest='verbose',
+                    default=argparse.SUPPRESS,
+                    help='sets verbosity to 0',
+                ),
+            ),
         ]
 
         if prefix is None:
@@ -137,9 +216,9 @@ class DoctestConfig(dict):
 
         # TODO: make environment variables as args more general
         import os
+
         environ_aware = {'report', 'options', 'global-exec', 'verbose'}
         for alias, kw in add_argument_kws:
-
             # Use environment variables for some defaults
             argname = alias[0].lstrip('-')
             if argname in environ_aware:
@@ -149,7 +228,8 @@ class DoctestConfig(dict):
 
             alias = [
                 a.replace('--', '--' + p + '-') if p else a
-                for a in alias for p in prefix
+                for a in alias
+                for p in prefix
             ]
             if prefix[0]:
                 kw['dest'] = prefix[0] + '_' + kw['dest']
@@ -263,8 +343,17 @@ class DocTest:
     UNKNOWN_CALLNAME = '<callname?>'
     UNKNOWN_FPATH = '<fpath?>'
 
-    def __init__(self, docsrc, modpath=None, callname=None, num=0,
-                 lineno=1, fpath=None, block_type=None, mode='pytest'):
+    def __init__(
+        self,
+        docsrc,
+        modpath=None,
+        callname=None,
+        num=0,
+        lineno=1,
+        fpath=None,
+        block_type=None,
+        mode='pytest',
+    ):
         """
         Args:
             docsrc (str): the text of the doctest
@@ -292,12 +381,15 @@ class DocTest:
             self.fpath = modpath
             self.module = modpath
             self.modname = modpath.__name__
-            self.modpath = getattr(self.module, '__file__', self.UNKNOWN_MODPATH)
+            self.modpath = getattr(
+                self.module, '__file__', self.UNKNOWN_MODPATH
+            )
         else:
             if fpath is not None:
                 if fpath != modpath:
                     raise AssertionError(
-                        'only specify fpath for non-python files')
+                        'only specify fpath for non-python files'
+                    )
             self.fpath = modpath
             self.modname = static.modpath_to_modname(modpath)
         if callname is None:
@@ -397,9 +489,7 @@ class DocTest:
             # r'>>>\s*#\s*x?doctest:\s\+SKIP',
         ]
         if pytest:
-            disable_patterns += [
-                r'>>>\s*#\s*pytest.skip'
-            ]
+            disable_patterns += [r'>>>\s*#\s*pytest.skip']
 
         pattern = '|'.join(disable_patterns)
         m = re.match(pattern, self.docsrc, flags=re.IGNORECASE)
@@ -450,8 +540,14 @@ class DocTest:
             if part.want:
                 yield part.want
 
-    def format_parts(self, linenos=True, colored=None, want=True,
-                     offset_linenos=None, prefix=True):
+    def format_parts(
+        self,
+        linenos=True,
+        colored=None,
+        want=True,
+        offset_linenos=None,
+        prefix=True,
+    ):
         """
         Used by :func:`format_src`
 
@@ -480,14 +576,25 @@ class DocTest:
             n_digits = int(math.ceil(n_digits))
 
         for part in self._parts:
-            part_text = part.format_part(linenos=linenos, want=want,
-                                         startline=startline,
-                                         n_digits=n_digits, prefix=prefix,
-                                         colored=colored, partnos=partnos)
+            part_text = part.format_part(
+                linenos=linenos,
+                want=want,
+                startline=startline,
+                n_digits=n_digits,
+                prefix=prefix,
+                colored=colored,
+                partnos=partnos,
+            )
             yield part_text
 
-    def format_src(self, linenos=True, colored=None, want=True,
-                   offset_linenos=None, prefix=True):
+    def format_src(
+        self,
+        linenos=True,
+        colored=None,
+        want=True,
+        offset_linenos=None,
+        prefix=True,
+    ):
         """
         Adds prefix and line numbers to a doctest
 
@@ -517,10 +624,15 @@ class DocTest:
             >>> print(self.format_src(linenos=False, colored=False))
             >>> assert not self.is_disabled()
         """
-        formated_parts = list(self.format_parts(linenos=linenos,
-                                                colored=colored, want=want,
-                                                offset_linenos=offset_linenos,
-                                                prefix=prefix))
+        formated_parts = list(
+            self.format_parts(
+                linenos=linenos,
+                colored=colored,
+                want=want,
+                offset_linenos=offset_linenos,
+                prefix=prefix,
+            )
+        )
         full_source = '\n'.join(formated_parts)
         return full_source
 
@@ -570,11 +682,14 @@ class DocTest:
             >>> self.run()
         """
         if not self._parts:
-            info = dict(callname=self.callname, modpath=self.modpath,
-                        lineno=self.lineno, fpath=self.fpath)
+            info = dict(
+                callname=self.callname,
+                modpath=self.modpath,
+                lineno=self.lineno,
+                fpath=self.fpath,
+            )
             self._parts = parser.DoctestParser().parse(self.docsrc, info)
-            self._parts = [p for p in self._parts
-                           if not isinstance(p, str)]
+            self._parts = [p for p in self._parts if not isinstance(p, str)]
         # Ensure part numbers are given
         for partno, part in enumerate(self._parts):
             part.partno = partno
@@ -596,14 +711,22 @@ class DocTest:
                     # Note: there is a possibility of conflicts that arises
                     # here depending on your local environment. We may want to
                     # try and detect that.
-                    self.module = utils.import_module_from_path(self.modpath, index=-1)
+                    self.module = utils.import_module_from_path(
+                        self.modpath, index=-1
+                    )
                 except RuntimeError as ex:
                     if global_state.DEBUG_DOCTEST:
                         print('sys.path={}'.format(sys.path))
-                        print('Failed to pre-import modpath = {}'.format(self.modpath))
+                        print(
+                            'Failed to pre-import modpath = {}'.format(
+                                self.modpath
+                            )
+                        )
                     msg_parts = [
-                        ('XDoctest failed to pre-import the module '
-                         'containing the doctest.')
+                        (
+                            'XDoctest failed to pre-import the module '
+                            'containing the doctest.'
+                        )
                     ]
                     msg_parts.append(str(ex))
                     new_exc = RuntimeError('\n'.join(msg_parts))
@@ -619,7 +742,11 @@ class DocTest:
                         raise new_exc
                 else:
                     if global_state.DEBUG_DOCTEST:
-                        print('Pre import success: self.module={}'.format(self.module))
+                        print(
+                            'Pre import success: self.module={}'.format(
+                                self.module
+                            )
+                        )
 
     @staticmethod
     def _extract_future_flags(namespace):
@@ -731,14 +858,14 @@ class DocTest:
         DEBUG = global_state.DEBUG_DOCTEST
 
         # Use the same capture object for all parts in the test
-        cap = utils.CaptureStdout(suppress=self._suppressed_stdout,
-                                  enabled=needs_capture)
+        cap = utils.CaptureStdout(
+            suppress=self._suppressed_stdout, enabled=needs_capture
+        )
 
         # NOTE: this will prevent any custom handling of warnings
         # See: https://github.com/Erotemic/xdoctest/issues/169
         with warnings.catch_warnings(record=True) as self.warn_list:
             for partx, part in enumerate(self._parts):
-
                 if DEBUG:
                     print(f'part[{partx}] checking')
 
@@ -754,10 +881,12 @@ class DocTest:
                     try:
                         runstate.update(part_directive)
                     except Exception as ex:
-                        msg = (
-                            'Failed to parse directive: {} in {} at line {}. Caused by {}'.format(
-                                part_directive, self.fpath, self.lineno +
-                                part.line_offset, repr(ex)))
+                        msg = 'Failed to parse directive: {} in {} at line {}. Caused by {}'.format(
+                            part_directive,
+                            self.fpath,
+                            self.lineno + part.line_offset,
+                            repr(ex),
+                        )
                         raise Exception(msg)
                 except Exception:
                     self.exc_info = sys.exc_info()
@@ -793,7 +922,9 @@ class DocTest:
                         self._import_module()
                     except Exception:
                         self.failed_part = '<IMPORT>'
-                        self._partfilename = '<doctest:' + self.node + ':pre_import>'
+                        self._partfilename = (
+                            '<doctest:' + self.node + ':pre_import>'
+                        )
                         self.exc_info = sys.exc_info()
                         if on_error == 'raise':
                             raise
@@ -803,17 +934,28 @@ class DocTest:
 
                     test_globals, compileflags = self._test_globals()
 
-                    if  DEBUG:
-                        print('Global names = {}'.format(sorted(test_globals.keys())))
+                    if DEBUG:
+                        print(
+                            'Global names = {}'.format(
+                                sorted(test_globals.keys())
+                            )
+                        )
 
                     global_exec = self.config.getvalue('global_exec')
                     if global_exec:
                         # Hack to make it easier to specify multi-line input on the CLI
-                        global_source = utils.codeblock(global_exec.replace('\\n', '\n'))
+                        global_source = utils.codeblock(
+                            global_exec.replace('\\n', '\n')
+                        )
                         global_code = compile(
-                            global_source, mode='exec',
-                            filename='<doctest:' + self.node + ':' + 'global_exec>',
-                            flags=compileflags, dont_inherit=True
+                            global_source,
+                            mode='exec',
+                            filename='<doctest:'
+                            + self.node
+                            + ':'
+                            + 'global_exec>',
+                            flags=compileflags,
+                            dont_inherit=True,
                         )
                         exec(global_code, test_globals)
 
@@ -827,9 +969,11 @@ class DocTest:
                     source_text = part.compilable_source()
 
                     code = compile(
-                        source_text, mode=part.compile_mode,
+                        source_text,
+                        mode=part.compile_mode,
                         filename=self._partfilename,
-                        flags=compileflags, dont_inherit=True
+                        flags=compileflags,
+                        dont_inherit=True,
                     )
                 except KeyboardInterrupt:  # nocover
                     raise
@@ -859,22 +1003,32 @@ class DocTest:
                                 # expect it to return an object with a repr that
                                 # can compared to a "want" statement.
                                 # print('part.compile_mode = {!r}'.format(part.compile_mode))
-                                is_coroutine = code.co_flags & CO_COROUTINE == CO_COROUTINE
+                                is_coroutine = (
+                                    code.co_flags & CO_COROUTINE == CO_COROUTINE
+                                )
                                 if is_coroutine or runstate['ASYNC']:
                                     if is_running_in_loop:
                                         raise exceptions.ExistingEventLoopError(
-                                            "Cannot run async doctests from within a running event loop: %s",
-                                            part.orig_lines
-                                            )
+                                            'Cannot run async doctests from within a running event loop: %s',
+                                            part.orig_lines,
+                                        )
                                     if asyncio_runner is None:
-                                        asyncio_runner = utils.util_asyncio.Runner()
+                                        asyncio_runner = (
+                                            utils.util_asyncio.Runner()
+                                        )
+
                                     async def corofunc():
                                         if is_coroutine:
-                                            return await eval(code, test_globals)
+                                            return await eval(
+                                                code, test_globals
+                                            )
                                         else:
                                             return eval(code, test_globals)
+
                                     if part.compile_mode == 'eval':
-                                        got_eval = asyncio_runner.run(corofunc())
+                                        got_eval = asyncio_runner.run(
+                                            corofunc()
+                                        )
                                     else:
                                         asyncio_runner.run(corofunc())
                                 else:
@@ -893,7 +1047,9 @@ class DocTest:
                                 # matches the part's want statement.
                                 exception = sys.exc_info()
                                 traceback.format_exception_only(*exception[:2])
-                                exc_got = traceback.format_exception_only(*exception[:2])[-1]
+                                exc_got = traceback.format_exception_only(
+                                    *exception[:2]
+                                )[-1]
                                 want = part.want
                                 checker.check_exception(exc_got, want, runstate)
                             else:
@@ -908,8 +1064,12 @@ class DocTest:
                             if part.want:
                                 got_stdout = cap.text
                                 if not runstate['IGNORE_WANT']:
-                                    part.check(got_stdout, got_eval, runstate,
-                                               unmatched=self._unmatched_stdout)
+                                    part.check(
+                                        got_stdout,
+                                        got_eval,
+                                        runstate,
+                                        unmatched=self._unmatched_stdout,
+                                    )
                                 # Clear unmatched output when a check passes
                                 self._unmatched_stdout = []
                             else:
@@ -935,8 +1095,10 @@ class DocTest:
                 # Handle anything that could go wrong
                 except KeyboardInterrupt:  # nocover
                     raise
-                except (exceptions.ExitTestException,
-                        exceptions._pytest.outcomes.Skipped) as ex:
+                except (
+                    exceptions.ExitTestException,
+                    exceptions._pytest.outcomes.Skipped,
+                ) as ex:
                     if verbose > 0:
                         print('Test gracefully exists on: ex={}'.format(ex))
                     break
@@ -965,7 +1127,10 @@ class DocTest:
                     DEBUG = global_state.DEBUG_DOCTEST
                     if DEBUG:
                         print('_ex_dbg = {!r}'.format(_ex_dbg))
-                        print('<DEBUG: doctest encountered exception>', file=sys.stderr)
+                        print(
+                            '<DEBUG: doctest encountered exception>',
+                            file=sys.stderr,
+                        )
                         print(''.join(traceback.format_tb(tb)), file=sys.stderr)
                         print('</DEBUG>', file=sys.stderr)
 
@@ -984,15 +1149,27 @@ class DocTest:
                         # The only traceback remaining should be
                         # the part that is relevant to the user
                         print('<DEBUG: best sub_tb>', file=sys.stderr)
-                        print('found_lineno = {!r}'.format(found_lineno), file=sys.stderr)
-                        print(''.join(traceback.format_tb(sub_tb)), file=sys.stderr)
+                        print(
+                            'found_lineno = {!r}'.format(found_lineno),
+                            file=sys.stderr,
+                        )
+                        print(
+                            ''.join(traceback.format_tb(sub_tb)),
+                            file=sys.stderr,
+                        )
                         print('</DEBUG>', file=sys.stderr)
 
                     if found_lineno is None:
                         if DEBUG:
-                            print('UNABLE TO CLEAN TRACEBACK. EXIT DUE TO DEBUG')
+                            print(
+                                'UNABLE TO CLEAN TRACEBACK. EXIT DUE TO DEBUG'
+                            )
                             sys.exit(1)
-                        raise ValueError('Could not clean traceback: ex = {!r}'.format(_ex_dbg))
+                        raise ValueError(
+                            'Could not clean traceback: ex = {!r}'.format(
+                                _ex_dbg
+                            )
+                        )
                     else:
                         self.failed_tb_lineno = found_lineno
 
@@ -1025,6 +1202,7 @@ class DocTest:
             # we skipped everything
             if self.mode == 'pytest':
                 import pytest
+
                 pytest.skip()
 
         summary = self._post_run(verbose)
@@ -1059,13 +1237,28 @@ class DocTest:
                 in_path = static.is_modname_importable(self.modname)
                 if in_path:
                     # should be able to find the module by name
-                    return 'python -m xdoctest ' + self.modname + ' ' + self.unique_callname
+                    return (
+                        'python -m xdoctest '
+                        + self.modname
+                        + ' '
+                        + self.unique_callname
+                    )
                 else:
                     # needs the full path to be able to run the module
-                    return 'python -m xdoctest ' + self.modpath + ' ' + self.unique_callname
+                    return (
+                        'python -m xdoctest '
+                        + self.modpath
+                        + ' '
+                        + self.unique_callname
+                    )
             else:
                 # Probably safer to always use the path
-                return 'python -m xdoctest ' + self.modpath + ' ' + self.unique_callname
+                return (
+                    'python -m xdoctest '
+                    + self.modpath
+                    + ' '
+                    + self.unique_callname
+                )
         else:
             raise KeyError(self.mode)
 
@@ -1082,11 +1275,16 @@ class DocTest:
                 # zero-arg funcs arent doctests, but we can still run them
                 print('* ZERO-ARG FUNC : {}'.format(self.node))
             else:
-                print('* DOCTEST : {}, line {}'.format(self.node, self.lineno) + self._color(' <- wrt source file', 'white'))
+                print(
+                    '* DOCTEST : {}, line {}'.format(self.node, self.lineno)
+                    + self._color(' <- wrt source file', 'white')
+                )
             if verbose >= 3:
                 print(self._color(self._block_prefix + ' SOURCE', 'white'))
                 print(self.format_src())
-                print(self._color(self._block_prefix + ' STDOUT/STDERR', 'white'))
+                print(
+                    self._color(self._block_prefix + ' STDOUT/STDERR', 'white')
+                )
 
     def failed_line_offset(self):
         """
@@ -1102,7 +1300,13 @@ class DocTest:
                 return 0
             ex_type, ex_value, tb = self.exc_info
             offset = self.failed_part.line_offset
-            if isinstance(ex_value, (checker.ExtractGotReprException, exceptions.ExistingEventLoopError)):
+            if isinstance(
+                ex_value,
+                (
+                    checker.ExtractGotReprException,
+                    exceptions.ExistingEventLoopError,
+                ),
+            ):
                 # Return the line of the "got" expression
                 offset += self.failed_part.n_exec_lines
             elif isinstance(ex_value, checker.GotWantException):
@@ -1240,15 +1444,17 @@ class DocTest:
         lines = [
             '* REASON: {}'.format(ex_type.__name__),
             self._color(self._block_prefix + ' DEBUG INFO', 'white'),
-            '  XDoc "{}", line {}'.format(self.node, fail_offset + 1) +
-            self._color(' <- wrt doctest', 'red'),
+            '  XDoc "{}", line {}'.format(self.node, fail_offset + 1)
+            + self._color(' <- wrt doctest', 'red'),
         ]
 
         colored = self.config['colored']
         if fail_lineno is not None:
             fpath = self.UNKNOWN_FPATH if self.fpath is None else self.fpath
-            lines += ['  File "{}", line {},'.format(fpath, fail_lineno) +
-                      self._color(' <- wrt source file', 'red')]
+            lines += [
+                '  File "{}", line {},'.format(fpath, fail_lineno)
+                + self._color(' <- wrt source file', 'red')
+            ]
 
         # lines += ['  in doctest "{}", line {}'.format(self.unique_callname,
         #                                               fail_offset + 1) +
@@ -1268,8 +1474,7 @@ class DocTest:
         #     lines += ['stdout results:']
         #     lines += [r1_strip_nl(t) for t in self.logged_stdout.values() if t]
 
-        textgen = self.format_parts(colored=colored, linenos=True,
-                                    want=False)
+        textgen = self.format_parts(colored=colored, linenos=True, want=False)
 
         n_digits = 1
 
@@ -1317,7 +1522,7 @@ class DocTest:
         if hasattr(ex_value, 'output_difference'):
             lines += [
                 ex_value.output_difference(self._runstate, colored=colored),
-                ex_value.output_repr_difference(self._runstate)
+                ex_value.output_repr_difference(self._runstate),
             ]
         else:
             if with_tb:
@@ -1326,7 +1531,6 @@ class DocTest:
                 tblines = traceback.format_exception(*self.exc_info)
 
                 def _alter_traceback_linenos(self, tblines):
-
                     def overwrite_lineno(linepart):
                         # Replace the trailing part which is the lineno
                         old_linestr = linepart[-1]  # noqa
@@ -1345,7 +1549,6 @@ class DocTest:
 
                     new_tblines = []
                     for i, line in enumerate(tblines):
-
                         # if '<frozen importlib._bootstrap' in line:
                         #     # not sure if this should be removed or not
                         #     continue
@@ -1359,7 +1562,10 @@ class DocTest:
                                 # raise Exception('foo')
                                 # continue
 
-                        if self._partfilename is not None and self._partfilename in line:
+                        if (
+                            self._partfilename is not None
+                            and self._partfilename in line
+                        ):
                             # Intercept the line corresponding to the doctest
                             tbparts = line.split(',')
                             tb_lineno = int(tbparts[-2].strip().split()[1])
@@ -1372,9 +1578,11 @@ class DocTest:
                             new_line = ','.join(tbparts)
 
                             # failed_ctx = '>>> ' + self.failed_part.exec_lines[tb_lineno - 1]
-                            failed_ctx = self.failed_part.orig_lines[tb_lineno - 1]
+                            failed_ctx = self.failed_part.orig_lines[
+                                tb_lineno - 1
+                            ]
                             extra = '    ' + failed_ctx
-                            line = (new_line + extra + '\n')
+                            line = new_line + extra + '\n'
 
                         # m = '(t{})'.format(i)
                         # line = m + line.replace('\n', '\n' + m)
@@ -1387,8 +1595,9 @@ class DocTest:
 
                 if colored:
                     tbtext = '\n'.join(new_tblines)
-                    tbtext = utils.highlight_code(tbtext, lexer_name='pytb',
-                                                  stripall=True)
+                    tbtext = utils.highlight_code(
+                        tbtext, lexer_name='pytb', stripall=True
+                    )
                     new_tblines = tbtext.splitlines()
                 lines += new_tblines
 
@@ -1409,7 +1618,7 @@ class DocTest:
             print('out_text = %r' % (out_text,))
 
     def _color(self, text, color, enabled=None):
-        """ conditionally color text based on config and flags """
+        """conditionally color text based on config and flags"""
         colored = self.config.getvalue('colored', enabled)
         if colored:
             text = utils.color_text(text, color)
@@ -1477,4 +1686,5 @@ if __name__ == '__main__':
         python -m xdoctest.doctest_example
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)

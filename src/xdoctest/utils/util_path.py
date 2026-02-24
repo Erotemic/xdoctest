@@ -1,6 +1,7 @@
 """
 Utilities related to filesystem paths
 """
+
 import os
 from os.path import exists
 from os.path import join
@@ -25,6 +26,7 @@ class TempDir:
         >>> self.cleanup()
         >>> assert not exists(dpath)
     """
+
     def __init__(self, persist=False):
         self.dpath = None
         self.persist = persist
@@ -35,6 +37,7 @@ class TempDir:
     def ensure(self):
         import tempfile
         import sys
+
         if not self.dpath:
             dpath = tempfile.mkdtemp()
             if sys.platform.startswith('win32'):
@@ -42,6 +45,7 @@ class TempDir:
                 # References:
                 # https://stackoverflow.com/questions/11420689/how-to-get-long-file-system-path-from-python-on-windows
                 from ctypes import create_unicode_buffer, windll
+
                 BUFFER_SIZE = 500
                 buffer = create_unicode_buffer(BUFFER_SIZE)
                 get_long_path_name = windll.kernel32.GetLongPathNameW

@@ -25,23 +25,34 @@ class _NOT_EVAL_TYPE:
         >>> assert copy.deepcopy(NOT_EVALED) is NOT_EVALED
         >>> assert _NOT_EVAL_TYPE() is NOT_EVALED
     """
+
     def __new__(cls):
         return NOT_EVALED
+
     def __reduce__(self):
         return (_NOT_EVAL_TYPE, ())
+
     def __copy__(self):
         return NOT_EVALED
+
     def __deepcopy__(self, memo):
         return NOT_EVALED
+
     def __call__(self, default):
         pass
+
     def __str__(cls):
         return '<NOT_EVALED>'
+
     def __repr__(cls):
         return '<NOT_EVALED>'
+
     def __bool__(self):
         return False
+
     __nonzero__ = __bool__
+
+
 try:
     NOT_EVALED  # type: ignore
 except NameError:

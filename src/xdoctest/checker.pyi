@@ -9,65 +9,42 @@ BLANKLINE_MARKER: str
 ELLIPSIS_MARKER: str
 TRAILING_WS: Incomplete
 
-
-def check_got_vs_want(want: str,
-                      got_stdout: str,
-                      got_eval: str = ...,
-                      runstate: xdoctest.directive.RuntimeState | None = None):
-    ...
-
-
-def extract_exc_want(want: str) -> str:
-    ...
-
-
-def check_exception(
-        exc_got: str,
-        want: str,
-        runstate: xdoctest.directive.RuntimeState | None = None) -> bool:
-    ...
-
-
-def check_output(
-        got: str,
-        want: str,
-        runstate: xdoctest.directive.RuntimeState | None = None) -> bool:
-    ...
-
-
-def normalize(
-    got: str,
+def check_got_vs_want(
     want: str,
-    runstate: xdoctest.directive.RuntimeState | None = None
-) -> Tuple[str, str]:
-    ...
-
+    got_stdout: str,
+    got_eval: str = ...,
+    runstate: xdoctest.directive.RuntimeState | None = None,
+): ...
+def extract_exc_want(want: str) -> str: ...
+def check_exception(
+    exc_got: str,
+    want: str,
+    runstate: xdoctest.directive.RuntimeState | None = None,
+) -> bool: ...
+def check_output(
+    got: str, want: str, runstate: xdoctest.directive.RuntimeState | None = None
+) -> bool: ...
+def normalize(
+    got: str, want: str, runstate: xdoctest.directive.RuntimeState | None = None
+) -> Tuple[str, str]: ...
 
 class ExtractGotReprException(AssertionError):
     orig_ex: Exception
 
-    def __init__(self, msg: str, orig_ex: Exception) -> None:
-        ...
-
+    def __init__(self, msg: str, orig_ex: Exception) -> None: ...
 
 class GotWantException(AssertionError):
     got: str
     want: str
 
-    def __init__(self, msg: str, got: str, want: str) -> None:
-        ...
-
-    def output_difference(self,
-                          runstate: xdoctest.directive.RuntimeState
-                          | None = None,
-                          colored: bool = True) -> str:
-        ...
-
+    def __init__(self, msg: str, got: str, want: str) -> None: ...
+    def output_difference(
+        self,
+        runstate: xdoctest.directive.RuntimeState | None = None,
+        colored: bool = True,
+    ) -> str: ...
     def output_repr_difference(
-            self,
-            runstate: xdoctest.directive.RuntimeState | None = None) -> str:
-        ...
+        self, runstate: xdoctest.directive.RuntimeState | None = None
+    ) -> str: ...
 
-
-def remove_blankline_marker(text: str) -> str:
-    ...
+def remove_blankline_marker(text: str) -> str: ...

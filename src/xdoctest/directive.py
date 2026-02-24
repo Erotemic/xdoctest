@@ -151,6 +151,7 @@ Example:
     >>> # New in 0.7.3: the requires directive can accept module names
     >>> # xdoctest: +REQUIRES(module:foobar)
 """
+
 import sys
 import os
 import re
@@ -185,33 +186,25 @@ DEFAULT_RUNTIME_STATE = {
     'IGNORE_WHITESPACE': False,
     'IGNORE_EXCEPTION_DETAIL': False,
     'NORMALIZE_WHITESPACE': True,
-
     'IGNORE_WANT': False,
-
     # 'IGNORE_MEASUREMENTS': False,
     # TODO: I want this flag to turn on normalization of numbers,
     # I.E: non-determenistic measurements do not cause doctest failure, but
     # other formatting errors will.
-
     'NORMALIZE_REPR': True,
-
     'REPORT_CDIFF': False,
     'REPORT_NDIFF': False,
     'REPORT_UDIFF': True,
-
     # If True, all doctests in this context are run in the same event loop.
     # Otherwise, async doctest blocks are run in independent event loops
     # and only if a top-level await exists. New in 1.3.0
     'ASYNC': False,
-
     # Doctests will be skipped while this is True, note that test only run
     # if this is False and REQUIRES is empty.
     'SKIP': False,
-
     # Maintains a set unmet dependencies, ie the reasons we are skipping.
     # Doctests will be skipped while REQUIRES is non-empty and SKIP is False.
     'REQUIRES': set(),
-
     # Original directives we are currently not supporting:
     # DONT_ACCEPT_TRUE_FOR_1
     # REPORT_ONLY_FIRST_FAILURE
@@ -268,6 +261,7 @@ class RuntimeState(utils.NiceRepr):
             SKIP: False
         })>
     """
+
     def __init__(self, default_state=None):
         """
         Args:
@@ -295,7 +289,7 @@ class RuntimeState(utils.NiceRepr):
             str
         """
         parts = ['{}: {}'.format(*item) for item in self.to_dict().items()]
-        return ('{' + ', '.join(parts) + '}')
+        return '{' + ', '.join(parts) + '}'
 
     def __getitem__(self, key):
         """
@@ -390,6 +384,7 @@ class Directive(utils.NiceRepr):
     """
     Directives modify the runtime state.
     """
+
     def __init__(self, name, positive=True, args=[], inline=None):
         """
         Args:
@@ -487,8 +482,9 @@ class Directive(utils.NiceRepr):
             False
         """
         # Flag extracted directives as inline iff the text contains non-comments
-        inline = not all(line.strip().startswith('#')
-                         for line in text.splitlines())
+        inline = not all(
+            line.strip().startswith('#') for line in text.splitlines()
+        )
         #
         for comment in static.extract_comments(text):
             # remove the first comment character and see if the comment matches
@@ -518,26 +514,36 @@ class Directive(utils.NiceRepr):
 
     def _unpack_args(self, num):
         from xdoctest.utils import util_deprecation
+
         util_deprecation.schedule_deprecation(
             modname='xdoctest',
-            name='Directive._unpack_args', type='method',
+            name='Directive._unpack_args',
+            type='method',
             migration='there is no need to use this',
-            deprecate='1.0.0', error='1.1.0', remove='1.2.0'
+            deprecate='1.0.0',
+            error='1.1.0',
+            remove='1.2.0',
         )
         nargs = self.args
         if len(nargs) != 1:
             raise TypeError(
-                '{} directive expected exactly {} argument(s), '
-                'got {}'.format(self.name, num, nargs))
+                '{} directive expected exactly {} argument(s), got {}'.format(
+                    self.name, num, nargs
+                )
+            )
         return self.args
 
     def effect(self, argv=None, environ=None):
         from xdoctest.utils import util_deprecation
+
         util_deprecation.schedule_deprecation(
             modname='xdoctest',
-            name='Directive.effect', type='method',
+            name='Directive.effect',
+            type='method',
             migration='Use Directive.effects instead',
-            deprecate='1.0.0', error='1.1.0', remove='1.2.0'
+            deprecate='1.0.0',
+            error='1.1.0',
+            remove='1.2.0',
         )
         effects = self.effects(argv=argv, environ=environ)
         if len(effects) > 1:
@@ -665,6 +671,7 @@ def _split_opstr(optstr):
         ['+FOO', 'REQUIRES(foo,bar)', '+ELLIPSIS']
     """
     import re
+
     stack = []
     split_pos = []
     for match in re.finditer(r',|\(|\)', optstr):
@@ -756,7 +763,9 @@ def _is_requires_satisfied(arg, argv=None, environ=None):
     elif arg.startswith('module:'):
         parts = arg.split(':')
         if len(parts) != 2:
-            raise ValueError('xdoctest module REQUIRES directive has too many parts')
+            raise ValueError(
+                'xdoctest module REQUIRES directive has too many parts'
+            )
         # set flag to False (aka SKIP) if the module does not exist
         modname = parts[1]
         flag = _module_exists(modname)
@@ -765,7 +774,9 @@ def _is_requires_satisfied(arg, argv=None, environ=None):
             environ = os.environ
         parts = arg.split(':')
         if len(parts) != 2:
-            raise ValueError('xdoctest env REQUIRES directive has too many parts')
+            raise ValueError(
+                'xdoctest env REQUIRES directive has too many parts'
+            )
         envexpr = parts[1]
         expr_parts = re.split('(==|!=|>=)', envexpr)
         if len(expr_parts) == 1:
@@ -791,6 +802,7 @@ def _is_requires_satisfied(arg, argv=None, environ=None):
         flag = os.name.startswith(arg_lower)
     elif arg_lower in PY_IMPL_TAGS:
         import platform
+
         flag = platform.python_implementation().lower().startswith(arg_lower)
     elif arg_lower in PY_VER_TAGS:
         if sys.version_info[0] == 2:  # nocover
@@ -800,15 +812,21 @@ def _is_requires_satisfied(arg, argv=None, environ=None):
         else:  # nocover
             flag = False
     else:
-        msg = utils.codeblock(
-            '''
+        msg = (
+            utils.codeblock(
+                """
             Argument to REQUIRES directive must be either
             (1) a PLATFORM or OS tag (e.g. win32, darwin, linux),
             (2) a command line flag prefixed with '--', or
             (3) a module prefixed with 'module:'.
             (4) an environment variable prefixed with 'env:'.
             Got arg={!r}
-            ''').replace('\n', ' ').strip().format(arg)
+            """
+            )
+            .replace('\n', ' ')
+            .strip()
+            .format(arg)
+        )
         raise ValueError(msg)
     return flag
 
@@ -826,6 +844,7 @@ def _module_exists(modname):
     """
     if modname not in _MODNAME_EXISTS_CACHE:
         from xdoctest.utils import util_import
+
         modpath = util_import.modname_to_modpath(modname)
         exists_flag = modpath is not None
         _MODNAME_EXISTS_CACHE[modname] = exists_flag
@@ -852,7 +871,7 @@ COMMANDS = list(DEFAULT_RUNTIME_STATE.keys()) + [
     'REQUIRES',
 ]
 DIRECTIVE_PATTERNS = [
-    #r'\s*\+\s*' + named('style1', '.*'),
+    # r'\s*\+\s*' + named('style1', '.*'),
     r'x?doctest:\s*' + named('style2', '.*'),
     r'x?doc:\s*' + named('style3', '.*'),
 ]
@@ -890,7 +909,7 @@ def parse_directive_optstr(optpart, inline=None):
     paren_pos = optpart.find('(')
     if paren_pos > -1:
         # handle simple paren case.
-        body = optpart[paren_pos + 1:optpart.find(')')]
+        body = optpart[paren_pos + 1 : optpart.find(')')]
         args = [a.strip() for a in body.split(',')]
         # args = [optpart[paren_pos + 1:optpart.find(')')]]
         optpart = optpart[:paren_pos]
@@ -920,4 +939,5 @@ if __name__ == '__main__':
         python -m xdoctest.directive all
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)

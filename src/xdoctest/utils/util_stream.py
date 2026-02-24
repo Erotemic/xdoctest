@@ -8,6 +8,7 @@ The :class:`TeeStringIO` does the same thing but for arbitrary streams. It is
 how the former is implemented.
 
 """
+
 import sys
 import io
 
@@ -23,6 +24,7 @@ class TeeStringIO(io.StringIO):
         >>> redirect = io.StringIO()
         >>> self = TeeStringIO(redirect)
     """
+
     def __init__(self, redirect=None):
         self.redirect = redirect  # type: io.IOBase
         super(TeeStringIO, self).__init__()
@@ -45,8 +47,11 @@ class TeeStringIO(io.StringIO):
             Needed for IPython.embed to work properly when this class is used
             to override stdout / stderr.
         """
-        return (self.redirect is not None and
-                hasattr(self.redirect, 'isatty') and self.redirect.isatty())
+        return (
+            self.redirect is not None
+            and hasattr(self.redirect, 'isatty')
+            and self.redirect.isatty()
+        )
 
     def fileno(self):
         """
@@ -131,15 +136,20 @@ class CaptureStdout(CaptureStream):
         ...     print('dont capture')
         >>> assert self.text is None
     """
+
     def __init__(self, suppress=True, enabled=True, **kwargs):
         _misspelled_varname = 'supress'
         if _misspelled_varname in kwargs:  # nocover
             from xdoctest.utils import util_deprecation
+
             util_deprecation.schedule_deprecation(
                 modname='xdoctest',
-                name='supress', type='Argument of CaptureStdout',
+                name='supress',
+                type='Argument of CaptureStdout',
                 migration='Use suppress instead',
-                deprecate='1.0.0', error='1.1.0', remove='1.2.0'
+                deprecate='1.0.0',
+                error='1.1.0',
+                remove='1.2.0',
             )
             suppress = kwargs.pop(_misspelled_varname)
             if len(kwargs) > 0:
@@ -159,7 +169,7 @@ class CaptureStdout(CaptureStream):
         self.started = False
 
     def log_part(self):
-        """ Log what has been captured so far """
+        """Log what has been captured so far"""
         self.cap_stdout.seek(self._pos)
         text = self.cap_stdout.read()
         self._pos = self.cap_stdout.tell()
