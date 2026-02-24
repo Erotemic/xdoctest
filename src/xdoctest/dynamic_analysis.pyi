@@ -7,6 +7,7 @@ from typing import Callable
 from typing import Tuple
 from collections.abc import Generator
 from typing import Any
+import xdoctest.static_analysis
 
 
 def parse_dynamic_calldefs(

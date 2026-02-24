@@ -825,8 +825,8 @@ def _module_exists(modname):
         bool
     """
     if modname not in _MODNAME_EXISTS_CACHE:
-        from xdoctest import static_analysis as static
-        modpath = static.modname_to_modpath(modname)
+        from xdoctest.utils import util_import
+        modpath = util_import.modname_to_modpath(modname)
         exists_flag = modpath is not None
         _MODNAME_EXISTS_CACHE[modname] = exists_flag
     exists_flag = _MODNAME_EXISTS_CACHE[modname]

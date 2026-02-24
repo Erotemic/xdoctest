@@ -1,6 +1,7 @@
 import xdoctest
 from typing import Tuple
 from _typeshed import Incomplete
+import xdoctest.directive
 
 unicode_literal_re: Incomplete
 bytes_literal_re: Incomplete
