@@ -1,6 +1,4 @@
-
 def mwe():
-
     # TODO: show that sphinx fails to parse this, and use xdoctest to make
     # things better.
 

@@ -5,18 +5,18 @@ import pytest
 
 
 def my_getter_func(self):
-    " getter doc"
+    "getter doc"
     print('call getter')
     return 'value'
 
 
 def my_setter_func(self, value):
-    " setter doc"
+    "setter doc"
     print('call setter for value = {!r}'.format(value))
 
 
 def my_deleter_func(self):
-    " deleter doc"
+    "deleter doc"
     print('call deleter')
 
 
@@ -83,6 +83,7 @@ print('my_deleter_prop.__doc__ = {!r}'.format(my_deleter_prop.__doc__))
 # Create an empty type
 class Husk:
     pass
+
 
 # Assigning properties to the class itself is equivalent to how they are
 # normally defined in the scope of the class definition.

@@ -30,11 +30,12 @@ Note:
         except Exception: print', mode='single', filename="")
 
 """
+
 import sys
 
 
 def logTracebackThisDoesnt(logFunction):
-    r""" Logs the exception traceback to the specified log function.
+    r"""Logs the exception traceback to the specified log function.
 
     >>> # xdoctest: +IGNORE_WANT
     >>> try: raise Exception()  # doctest: +ELLIPSIS

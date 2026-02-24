@@ -12,7 +12,8 @@ def test_module_docstr():
 
         def foo():
             """ other docstr """
-        ''')
+        '''
+    )
 
     self = static.TopLevelVisitor.parse(source)
     assert '__doc__' in self.calldefs
@@ -46,7 +47,8 @@ def test_lineno():
                 """ multiline 0-2-0
                 ---"""
                 pass
-        ''')
+        '''
+    )
 
     self = static.TopLevelVisitor.parse(source)
     calldefs = self.calldefs
@@ -58,7 +60,9 @@ def test_lineno():
         callname = calldef.callname
         # Ensure linenumbers correspond with start of func/class def
         assert callname.split('.')[-1] in line
-        docsrc_lines = sourcelines[calldef.doclineno - 1:calldef.doclineno_end]
+        docsrc_lines = sourcelines[
+            calldef.doclineno - 1 : calldef.doclineno_end
+        ]
         # Ensure linenumbers correspond with start and end of doctest
         assert docsrc_lines[0].strip().startswith('"""')
         assert docsrc_lines[-1].strip().endswith('"""')
@@ -105,9 +109,11 @@ def test_mod_lineno2():
         )                   # 36
         def decor4(self):   # 37
             ">>> print(1)"  # 38
-        ''')
+        '''
+    )
     # import ast
     from xdoctest.static_analysis import TopLevelVisitor
+
     # source_utf8 = source.encode('utf8')
     # pt = ast.parse(source_utf8)
     # node = pt.body[0].body[0]
@@ -136,7 +142,8 @@ def test_async_function_docstr_collection():
             2
             """
             return 1
-        ''')
+        '''
+    )
 
     self = static.TopLevelVisitor.parse(source)
     assert 'b' in self.calldefs
@@ -151,4 +158,5 @@ if __name__ == '__main__':
         pytest ~/code/xdoctest/tests/test_static.py
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)

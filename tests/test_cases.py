@@ -9,8 +9,9 @@ def test_properties():
 
     Credit: @trappitsch
     """
-    text = _run_case(utils.codeblock(
-        '''
+    text = _run_case(
+        utils.codeblock(
+            '''
         class Test:
             @property
             def test(self):
@@ -25,11 +26,14 @@ def test_properties():
             @test.setter
             def test(self, s):
                 pass
-        '''))
+        '''
+        )
+    )
     assert 'running 1 test' in text
 
-    text = _run_case(utils.codeblock(
-        '''
+    text = _run_case(
+        utils.codeblock(
+            '''
         class Test:
             @property
             def test(self):
@@ -40,11 +44,14 @@ def test_properties():
                     3.14
                 """
                 return 3.14
-        '''))
+        '''
+        )
+    )
     assert 'running 1 test' in text
 
-    text = _run_case(utils.codeblock(
-        '''
+    text = _run_case(
+        utils.codeblock(
+            '''
         class Test:
             @property
             def test(self):
@@ -64,11 +71,14 @@ def test_properties():
                     >>> ini.test = 3
                 """
                 pass
-        '''))
+        '''
+        )
+    )
     assert 'running 1 test' in text
 
-    text = _run_case(utils.codeblock(
-        '''
+    text = _run_case(
+        utils.codeblock(
+            '''
         class Test:
             @property
             def test(self):
@@ -82,11 +92,14 @@ def test_properties():
                     >>> ini.test = 3
                 """
                 pass
-        '''))
+        '''
+        )
+    )
     assert 'running 0 test' in text
 
-    text = _run_case(utils.codeblock(
-        '''
+    text = _run_case(
+        utils.codeblock(
+            '''
         class Test:
             @property
             def test(self):
@@ -109,7 +122,9 @@ def test_properties():
                     >>> ini.test = 3
                 """
                 pass
-        '''))
+        '''
+        )
+    )
     assert 'running 0 test' in text
 
 
@@ -152,7 +167,8 @@ def test_correct_skipping_on_decorators1():
                 4.0
             """
             return lambda x: x
-        ''')
+        '''
+    )
 
     config = {
         # 'global_exec': 'a=1',
@@ -173,7 +189,11 @@ def test_correct_skipping_on_decorators1():
         with open(modpath, 'w') as file:
             file.write(source)
 
-        examples = list(xdoctest.core.parse_doctestables(modpath, style='google', analysis='static'))
+        examples = list(
+            xdoctest.core.parse_doctestables(
+                modpath, style='google', analysis='static'
+            )
+        )
         print(f'examples={examples}')
 
         with utils.CaptureStdout() as cap:
@@ -203,7 +223,8 @@ def test_correct_skipping_on_decorators_simple():
                 >>> f(3)
             """
             return
-        ''')
+        '''
+    )
 
     config = {
         'style': 'google',
@@ -216,7 +237,11 @@ def test_correct_skipping_on_decorators_simple():
         with open(modpath, 'w') as file:
             file.write(source)
 
-        examples = list(xdoctest.core.parse_doctestables(modpath, style='google', analysis='static'))
+        examples = list(
+            xdoctest.core.parse_doctestables(
+                modpath, style='google', analysis='static'
+            )
+        )
         print(f'examples={examples}')
 
         with utils.CaptureStdout() as cap:

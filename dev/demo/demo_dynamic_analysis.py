@@ -9,10 +9,11 @@ CommandLine:
 
 
 def func() -> None:
-    r''' Dynamic doctest
+    r"""Dynamic doctest
     >>> %s
     %s
-    '''
+    """
     return
+
 
 func.__doc__ %= ('print(1)', '1')

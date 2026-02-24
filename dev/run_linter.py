@@ -1,5 +1,3 @@
-
-
 def main():
     flake8_errors = [
         'E126',  # continuation line hanging-indent
@@ -32,12 +30,13 @@ def main():
     flake8_args_list = [
         '--max-line-length 79',
         #'--max-line-length 100',
-        '--ignore=' + ','.join(flake8_errors)
+        '--ignore=' + ','.join(flake8_errors),
     ]
     flake8_args = ' '.join(flake8_args_list)
 
     import ubelt as ub
     import sys
+
     loc = ub.expandpath('~/code/xdoctest/xdoctest')
     command = 'flake8 ' + flake8_args + ' ' + loc
     print('command = {!r}'.format(command))

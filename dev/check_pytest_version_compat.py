@@ -1,9 +1,8 @@
-
 import os
 import ubelt as ub
 from distutils.version import LooseVersion
 
-os.chdir(ub.expandpath("$HOME/code/pytest"))
+os.chdir(ub.expandpath('$HOME/code/pytest'))
 
 info = ub.cmd('git tag')
 
@@ -43,7 +42,6 @@ keys = [
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
-
 ]
 for key in keys:
     cands = pythonversion_to_supported[key]

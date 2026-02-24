@@ -11,9 +11,11 @@ Similar Scripts:
 def _autogen_xdoctest_utils():
     import ubelt as ub
     import liberator
+
     lib = liberator.Liberator()
 
     from ubelt import util_import
+
     lib.add_dynamic(util_import.split_modpath)
     lib.add_dynamic(util_import.modpath_to_modname)
     lib.add_dynamic(util_import.modname_to_modpath)
@@ -35,12 +37,21 @@ def _autogen_xdoctest_utils():
     # target_fpath = ub.Path('~/code/xdoctest/src/xdoctest/utils/util_import.py').expand()
     import parso
     import xdoctest
+
     target_fpath = ub.Path(xdoctest.utils.util_import.__file__)
 
     new_module = parso.parse(text)
     old_module = parso.parse(target_fpath.read_text())
-    new_names = [child.name.value for child in new_module.children if child.type in {'funcdef', 'classdef'}]
-    old_names = [child.name.value for child in old_module.children if child.type in {'funcdef', 'classdef'}]
+    new_names = [
+        child.name.value
+        for child in new_module.children
+        if child.type in {'funcdef', 'classdef'}
+    ]
+    old_names = [
+        child.name.value
+        for child in old_module.children
+        if child.type in {'funcdef', 'classdef'}
+    ]
 
     print(set(old_names) - set(new_names))
     print(set(new_names) - set(old_names))
@@ -52,16 +63,20 @@ def _autogen_xdoctest_utils():
         dev/port_ubelt_utils.py in the xdoctest repo
         """
         from __future__ import annotations
-        ''')
+        '''
+    )
 
     # Remove doctest references to ubelt
     new_lines = []
     import re
+
     for line in text.split('\n'):
         if line.strip().startswith('>>> from ubelt'):
             continue
         if line.strip().startswith('>>> import ubelt as ub'):
-            line = re.sub('>>> .*', '>>> # xdoctest: +SKIP("ubelt dependency")', line)
+            line = re.sub(
+                '>>> .*', '>>> # xdoctest: +SKIP("ubelt dependency")', line
+            )
         new_lines.append(line)
 
     text = '\n'.join(new_lines)

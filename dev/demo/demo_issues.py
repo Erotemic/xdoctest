@@ -36,21 +36,31 @@ def demo():
     # Programmatic reproduction (notice the first one also reports itself in
     # pytest mode which is also wrong)
     import xdoctest
+
     xdoctest.doctest_callable(demo_requires_skips_all_v1)
     xdoctest.doctest_callable(demo_requires_skips_all_v2)
 
     import sys, ubelt
+
     sys.path.append(ubelt.expandpath('~/code/xdoctest/dev/demo'))
     import demo_issues
 
     # Correctly reports skipped
-    xdoctest.doctest_module(demo_issues, command='demo_requires_skips_all_v1', argv=[])
+    xdoctest.doctest_module(
+        demo_issues, command='demo_requires_skips_all_v1', argv=[]
+    )
 
     # Incorrectly reports passed
-    xdoctest.doctest_module(demo_issues, command='demo_requires_skips_all_v2', argv=[])
+    xdoctest.doctest_module(
+        demo_issues, command='demo_requires_skips_all_v2', argv=[]
+    )
 
     # argv not respected?
-    xdoctest.doctest_module(demo_issues, command='demo_requires_skips_all_v1', argv=['--cliflag'])
+    xdoctest.doctest_module(
+        demo_issues, command='demo_requires_skips_all_v1', argv=['--cliflag']
+    )
 
     # argv not respected?
-    xdoctest.doctest_module(demo_issues, command='demo_requires_skips_all_v2', argv=['--cliflag'])
+    xdoctest.doctest_module(
+        demo_issues, command='demo_requires_skips_all_v2', argv=['--cliflag']
+    )

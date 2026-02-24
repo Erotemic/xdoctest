@@ -49,6 +49,7 @@ class Demo5:
     Example:
         >>> raise Exception
     """
+
     def demo5(self):
         """
         CommandLine:
@@ -103,4 +104,5 @@ if __name__ == '__main__':
         python ~/code/xdoctest/dev/demo/demo_errors.py all
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)
