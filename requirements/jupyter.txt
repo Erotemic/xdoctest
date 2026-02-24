@@ -3,7 +3,7 @@ nbconvert>=6.1.0;  python_version >= '3.7.0' and platform_python_implementation 
 # For nbconvert
 jinja2>=3.0.0   ; platform_python_implementation != "PyPy"  # Python 3.6+
 
-jupyter_client>=8.6.0 ; python_version >= '3.14'
+jupyter_client>=8.8.0 ; python_version >= '3.14'
 jupyter_client>=7.0.0 ; python_version <  '3.14'
 
 IPython>=9.0.0   ; python_version >= '3.14'
