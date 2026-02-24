@@ -368,6 +368,95 @@ def test_parse_comment():
     assert parts[0].source.strip().startswith('#')
 
 
+def test_parse_comment_with_inconsistent_indent():
+    """Comments that ignore indentation should still parse."""
+    string = utils.codeblock(
+        '''
+        >>> class MyClass:
+        >>> # comment separating members
+        >>>     def method1(self):
+        >>>         ...
+        >>> # another separator
+        >>>     def method2(self):
+        >>>         ...
+        >>> # end comment
+        >>> self = MyClass()
+        '''
+    )
+    self = parser.DoctestParser()
+    source_lines = string.split('\n')[:]
+    linenos, mode_hint = self._locate_ps1_linenos(source_lines)
+    assert linenos[0] == 0
+    assert mode_hint == 'exec'
+    parts = self.parse(string)
+    # Ensure the comment lines were preserved in the resulting doctest part
+    assert any('# comment' in '\n'.join(part.orig_lines)
+               for part in parts)
+
+
+def test_parse_comment_with_blank_lines_and_varying_indent():
+    """Handle comment separators that include blank lines between blocks."""
+    string = utils.codeblock(
+        '''
+        >>> class WeirdSpacing:
+        >>> # first separator
+        >>>
+        >>>     def method1(self):
+        >>>         ...
+        >>>
+        >>> # second separator
+        >>>
+        >>>     # nested separator
+        >>>     def method2(self):
+        >>>         ...
+        >>>
+        >>> # trailing separator
+        >>>
+        >>> weird = WeirdSpacing()
+        '''
+    )
+    self = parser.DoctestParser()
+    source_lines = string.split('\n')[:]
+    linenos, mode_hint = self._locate_ps1_linenos(source_lines)
+    assert linenos[0] == 0
+    assert mode_hint == 'exec'
+    parts = self.parse(string)
+    combined = '\n'.join('\n'.join(part.orig_lines) for part in parts)
+    for text in ['# first separator', '# second separator',
+                 '# nested separator', '# trailing separator']:
+        assert text in combined
+
+
+def test_parse_comment_with_mixed_indentation_levels():
+    """Comments should be tolerated even as indentation changes."""
+    string = utils.codeblock(
+        '''
+        >>> class Outer:
+        >>> # before inner class
+        >>>     class Inner:
+        >>> # inner comment missing indent
+        >>>         def first(self):
+        >>>             ...
+        >>>
+        >>>         # properly indented comment
+        >>>         def second(self):
+        >>>             ...
+        >>> # after all class blocks
+        >>> helper = Outer.Inner()
+        '''
+    )
+    self = parser.DoctestParser()
+    source_lines = string.split('\n')[:]
+    linenos, mode_hint = self._locate_ps1_linenos(source_lines)
+    assert linenos[0] == 0
+    assert mode_hint == 'exec'
+    parts = self.parse(string)
+    combined = '\n'.join('\n'.join(part.orig_lines) for part in parts)
+    for text in ['# before inner class', '# inner comment missing indent',
+                 '# properly indented comment', '# after all class blocks']:
+        assert text in combined
+
+
 def test_text_after_want():
     string = utils.codeblock('''
         Example:

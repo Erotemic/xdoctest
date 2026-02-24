@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Version 1.3.1 - Unreleased
 
+### Fixed
+* Fixed issue #181 where comment indentation could cause parsing issues.
+
 
 ## Version 1.3.0 - Released 2025-09-08
 
