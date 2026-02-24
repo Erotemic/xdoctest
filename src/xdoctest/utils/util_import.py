@@ -14,10 +14,10 @@ from os.path import dirname
 from os.path import relpath
 from os.path import splitext
 from os.path import basename
-import typing
 from os.path import isfile
 from os.path import realpath
 import sys
+import typing
 from types import ModuleType
 from types import TracebackType
 from typing import Type
@@ -178,17 +178,18 @@ class PythonPathContext:
         self.dpath = os.fspath(dpath)
         self.index = index
 
-    def __enter__(self) -> None:
+    def __enter__(self) -> 'PythonPathContext':
         if self.index < 0:
             self.index = len(sys.path) + self.index + 1
         sys.path.insert(self.index, self.dpath)
+        return self
 
     def __exit__(
         self,
         ex_type: Type[BaseException] | None,
         ex_value: BaseException | None,
         ex_traceback: TracebackType | None,
-    ) -> bool | None:
+    ) -> None:
         """
         Args:
             ex_type (Type[BaseException] | None):
@@ -196,7 +197,7 @@ class PythonPathContext:
             ex_traceback (TracebackType | None):
 
         Returns:
-            bool | None
+            None
         """
         need_recover = False
         msg_parts: list[str] = []
@@ -854,8 +855,8 @@ def _syspath_modname_to_modpath(
             # It can be made faster, re-enable when that lands.
             import pathlib
 
-            for editable_pth in new_editable_pth_paths:
-                editable_pth = pathlib.Path(editable_pth)
+            for editable_pth_ in new_editable_pth_paths:
+                editable_pth = pathlib.Path(editable_pth_)
                 target = editable_pth.read_text().strip().split('\n')[-1]
                 if (
                     not exclude or normalize(target) not in real_exclude
@@ -964,10 +965,28 @@ def modname_to_modpath(
     modpath = normalize_modpath(
         modpath, hide_init=hide_init, hide_main=hide_main
     )
-
-    if typing.TYPE_CHECKING:
-        modpath = typing.cast(str, modpath)
     return modpath
+
+
+# If you pass in a string you will get out a string
+@typing.overload
+def normalize_modpath(
+    modpath: str,
+    hide_init: bool = True,
+    hide_main: bool = False,
+) -> str:
+    ...
+
+
+# If you pass in a PathLike, you might get a PathLike or a string
+# TODO: it might be nice to guarentee PathLike in returns PathLike out
+@typing.overload
+def normalize_modpath(
+    modpath: os.PathLike,
+    hide_init: bool = True,
+    hide_main: bool = False,
+) -> str | os.PathLike:
+    ...
 
 
 def normalize_modpath(
