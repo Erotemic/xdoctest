@@ -10,6 +10,7 @@ pip install sphinx_rtd_theme
 def initialize_docs():
     from os.path import join
     import setup
+
     setupkw = setup.setupkw
     full_version = setup.parse_version()
     short_version = '.'.join(full_version.split('.')[0:2])
@@ -35,6 +36,7 @@ def initialize_docs():
     cmdstr = ' '.join(args)
 
     import ubelt as ub
+
     result = ub.cmd(cmdstr, verbose=2)
     assert result['ret'] == 0
 
@@ -45,15 +47,14 @@ def modify_conf():
     """
     import redbaron
     import ubelt as ub
+
     conf_path = 'docs/conf.py'
 
     source = ub.readfrom(conf_path)
     red = redbaron.RedBaron(source)
 
     # Insert custom extensions
-    extra_extensions = [
-        '"sphinxcontrib.napoleon"'
-    ]
+    extra_extensions = ['"sphinxcontrib.napoleon"']
 
     ext_node = red.find('name', value='extensions').parent
     ext_node.value.value.extend(extra_extensions)

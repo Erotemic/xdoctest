@@ -8,8 +8,11 @@ from xdoctest import utils
 def cmd(command):
     # simplified version of ub.cmd no fancy tee behavior
     proc = subprocess.Popen(
-        command, shell=True, universal_newlines=True,
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        command,
+        shell=True,
+        universal_newlines=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     )
     out, err = proc.communicate()
     ret = proc.wait()
@@ -33,7 +36,9 @@ def test_xdoc_console_script_location():
     skip_if_not_installed()
 
     if sys.platform.startswith('freebsd'):
-        pytest.skip('freebsd is minimal and might not have xdoctest on the path')
+        pytest.skip(
+            'freebsd is minimal and might not have xdoctest on the path'
+        )
     elif sys.platform.startswith('win32'):
         pytest.skip()
         path = os.path.realpath(sys.executable)
@@ -47,9 +52,11 @@ def test_xdoc_console_script_location():
         assert os.path.exists(script_path)
     else:
         from shutil import which
+
         script_fpath = which('xdoctest')
         assert script_fpath is not None, (
-            'xdoctest should be installed in the path in normal circumstances')
+            'xdoctest should be installed in the path in normal circumstances'
+        )
         script_fname = os.path.basename(script_fpath)
         assert script_fname.startswith('xdoctest')
 
@@ -57,7 +64,9 @@ def test_xdoc_console_script_location():
 def test_xdoc_console_script_exec():
     skip_if_not_installed()
     if sys.platform.startswith('freebsd'):
-        pytest.skip('freebsd is minimal and might not have xdoctest on the path')
+        pytest.skip(
+            'freebsd is minimal and might not have xdoctest on the path'
+        )
     elif sys.platform.startswith('win32'):
         path = os.path.realpath(sys.executable)
         for i in range(4):
@@ -79,11 +88,13 @@ def test_xdoc_cli_version():
         python -m xdoctest -m ~/code/xdoctest/tests/test_entry_point.py test_xdoc_cli_version
     """
     import sys
+
     if sys.platform.startswith('win32'):
         pytest.skip()
 
     import xdoctest
     from xdoctest import __main__
+
     print('xdoctest = {!r}'.format(xdoctest))
     print('__main__ = {!r}'.format(__main__))
     retcode = __main__.main(argv=['--version'])
@@ -91,6 +102,7 @@ def test_xdoc_cli_version():
     assert retcode == 0
 
     import xdoctest
+
     print('xdoctest = {!r}'.format(xdoctest))
 
     sys.executable
@@ -111,4 +123,5 @@ if __name__ == '__main__':
         python ~/code/xdoctest/tests/test_entry_point.py
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)

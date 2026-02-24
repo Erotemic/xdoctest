@@ -21,6 +21,7 @@ class DoctestParseError(Exception):
     """
     Exception raised when doctest code has an error.
     """
+
     def __init__(self, msg, string=None, info=None, orig_ex=None):
         """
         Args:
@@ -44,6 +45,7 @@ class IncompleteParseError(SyntaxError):
     """
     Used when something goes wrong in the xdoctest parser
     """
+
 
 try:
     import _pytest

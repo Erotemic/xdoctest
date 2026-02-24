@@ -23,7 +23,6 @@ def parse_rst_codeblocks(fpath):
 
     curr = None
     for lineno, line in enumerate(text.split('\n')):
-
         found_header = None
 
         for header in valid_code_headers:
@@ -36,7 +35,7 @@ def parse_rst_codeblocks(fpath):
                 'lineno_end': None,
                 'lines': [],
                 'header': line,
-                'language': line.replace(found_header, '').strip()
+                'language': line.replace(found_header, '').strip(),
             }
         else:
             if curr is not None:

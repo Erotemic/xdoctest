@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 ignore_missing_imports = true
 
 [tool.xcookie]
-tags = [ "erotemic", "github", "purepy",]
+tags = [ "erotemic", "github", "purepy", "mypy"]
 mod_name = "xdoctest"
 repo_name = "xdoctest"
 rel_mod_parent_dpath = "./src"
@@ -92,3 +92,25 @@ skip = ['./docs/build', './*.egg-info', './build', './htmlcov']
 count = true
 quiet-level = 3
 ignore-words-list = ['wont', 'cant', 'ANS', 'doesnt', 'arent', 'ans', 'thats', 'datas', 'isnt', 'didnt', 'wasnt']
+
+[tool.ruff]
+line-length = 80
+target-version = "py38"
+extend-exclude = ["src/xdoctest/_tokenize.py"]
+
+
+[tool.ruff.lint]
+# Enable Flake8 (E, F) and isort (I) rules.
+select = ["E", "F", "I"]
+# Ignore specific rules, for example, E501 (line too long) as it's handled by the formatter.
+ignore = [
+    "E501",  # line too long
+    "E402",  # Module level import not at top of file
+]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = false

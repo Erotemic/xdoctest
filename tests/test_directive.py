@@ -7,11 +7,12 @@ def test_inline_skip_directive():
     pytest tests/test_directive.py::test_inline_skip_directive
     """
     string = utils.codeblock(
-        '''
+        """
         >>> x = 0
         >>> assert False, 'should be skipped'  # doctest: +SKIP
         >>> y = 0
-        ''')
+        """
+    )
     self = doctest_example.DocTest(docsrc=string)
     result = self.run(on_error='raise')
     # TODO: ensure that lines after the inline are run
@@ -23,11 +24,12 @@ def test_block_skip_directive():
     pytest tests/test_directive.py::test_block_skip_directive
     """
     string = utils.codeblock(
-        '''
+        """
         >>> x = 0
         >>> # doctest: +SKIP
         >>> assert False, 'should be skipped'
-        ''')
+        """
+    )
     self = doctest_example.DocTest(docsrc=string)
     result = self.run(on_error='raise')
     assert result['passed']
@@ -40,7 +42,7 @@ def test_multi_requires_directive():
     xdoctest ~/code/xdoctest/tests/test_directive.py test_multi_requires_directive
     """
     string = utils.codeblock(
-        '''
+        """
         >>> x = 0
         >>> print('not-skipped')
         >>> # doctest: +REQUIRES(env:NOT_EXIST, --show, module:xdoctest)
@@ -61,7 +63,8 @@ def test_multi_requires_directive():
         >>> # doctest: -REQUIRES(env:NOT_EXIST, --show, module:xdoctest)
         >>> print('not-skipped')
         >>> assert x == 'this will not be skipped'
-        ''')
+        """
+    )
     self = doctest_example.DocTest(docsrc=string)
     result = self.run(on_error='raise')
     stdout = ''.join(list(self.logged_stdout.values()))
@@ -72,13 +75,14 @@ def test_multi_requires_directive():
 
 def test_directive_syntax_error():
     string = utils.codeblock(
-        '''
+        """
         >>> x = 0
         >>> # doctest: +REQUIRES(module:xdoctest)
         >>> print('not-skipped')
         >>> # doctest: +REQUIRES(badsyntax)
         >>> print('is-skipped')
-        ''')
+        """
+    )
     self = doctest_example.DocTest(docsrc=string)
     result = self.run(on_error='return')
     assert not result['passed']
@@ -95,4 +99,5 @@ if __name__ == '__main__':
         pytest ~/code/xdoctest/tests/test_directive.py
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)

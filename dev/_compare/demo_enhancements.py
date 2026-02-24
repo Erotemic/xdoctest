@@ -91,5 +91,7 @@ def compact_style_code():
         ...
 
     """
-    try: raise Exception  # NOQA
-    except Exception: pass  # NOQA
+    try:
+        raise Exception  # NOQA
+    except Exception:
+        pass  # NOQA

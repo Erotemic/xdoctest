@@ -1,6 +1,6 @@
-
 def main():
     import re
+
     pat = re.compile(r'.*- (?P<num>\d) minute.*')
     n = 0
     matches = []

@@ -12,7 +12,7 @@ def parse_version(fpath):
     """
     Statically parse the version number from a python file
     """
-    value = static_parse("__version__", fpath)
+    value = static_parse('__version__', fpath)
     return value
 
 
@@ -24,18 +24,20 @@ def static_parse(varname, fpath):
     import ast
 
     if not exists(fpath):
-        raise ValueError("fpath={!r} does not exist".format(fpath))
-    with open(fpath, "r") as file_:
+        raise ValueError('fpath={!r} does not exist'.format(fpath))
+    with open(fpath, 'r') as file_:
         sourcecode = file_.read()
     pt = ast.parse(sourcecode)
 
     class StaticVisitor(ast.NodeVisitor):
         def visit_Assign(self, node: ast.Assign):
             for target in node.targets:
-                if getattr(target, "id", None) == varname:
+                if getattr(target, 'id', None) == varname:
                     value: ast.expr = node.value
                     if not isinstance(value, ast.Constant):
-                        raise ValueError("variable {!r} is not a constant".format(varname))
+                        raise ValueError(
+                            'variable {!r} is not a constant'.format(varname)
+                        )
                     self.static_value = value.value
 
     visitor = StaticVisitor()
@@ -45,7 +47,7 @@ def static_parse(varname, fpath):
     except AttributeError:
         import warnings
 
-        value = "Unknown {}".format(varname)
+        value = 'Unknown {}'.format(varname)
         warnings.warn(value)
     return value
 
@@ -58,16 +60,16 @@ def parse_description():
         pandoc --from=markdown --to=rst --output=README.rst README.md
         python -c "import setup; print(setup.parse_description())"
     """
-    readme_fpath = join(dirname(__file__), "README.rst")
+    readme_fpath = join(dirname(__file__), 'README.rst')
     # This breaks on pip install, so check that it exists.
     if exists(readme_fpath):
-        with open(readme_fpath, "r") as f:
+        with open(readme_fpath, 'r') as f:
             text = f.read()
         return text
-    return ""
+    return ''
 
 
-def parse_requirements(fname="requirements.txt", versions=False):
+def parse_requirements(fname='requirements.txt', versions=False):
     """
     Parse the package dependencies listed in a requirements file but strips
     specific versioning information.
@@ -86,7 +88,7 @@ def parse_requirements(fname="requirements.txt", versions=False):
     """
     require_fpath = fname
 
-    def parse_line(line, dpath=""):
+    def parse_line(line, dpath=''):
         """
         Parse information from a line in a requirements text file
 
@@ -94,75 +96,77 @@ def parse_requirements(fname="requirements.txt", versions=False):
         line = '-e git+https://a.com/somedep@sometag#egg=SomeDep'
         """
         # Remove inline comments
-        comment_pos = line.find(" #")
+        comment_pos = line.find(' #')
         if comment_pos > -1:
             line = line[:comment_pos]
 
-        if line.startswith("-r "):
+        if line.startswith('-r '):
             # Allow specifying requirements in other files
-            target = join(dpath, line.split(" ")[1])
+            target = join(dpath, line.split(' ')[1])
             for info in parse_require_file(target):
                 yield info
         else:
             # See: https://www.python.org/dev/peps/pep-0508/
-            info = {"line": line}
-            if line.startswith("-e "):
-                info["package"] = line.split("#egg=")[1]
+            info = {'line': line}
+            if line.startswith('-e '):
+                info['package'] = line.split('#egg=')[1]
             else:
-                if "--find-links" in line:
+                if '--find-links' in line:
                     # setuptools doesnt seem to handle find links
-                    line = line.split("--find-links")[0]
-                if ";" in line:
-                    pkgpart, platpart = line.split(";")
+                    line = line.split('--find-links')[0]
+                if ';' in line:
+                    pkgpart, platpart = line.split(';')
                     # Handle platform specific dependencies
                     # setuptools.readthedocs.io/en/latest/setuptools.html
                     # #declaring-platform-specific-dependencies
                     plat_deps = platpart.strip()
-                    info["platform_deps"] = plat_deps
+                    info['platform_deps'] = plat_deps
                 else:
                     pkgpart = line
                     platpart = None
 
                 # Remove versioning from the package
-                pat = "(" + "|".join([">=", "==", ">"]) + ")"
+                pat = '(' + '|'.join(['>=', '==', '>']) + ')'
                 parts = re.split(pat, pkgpart, maxsplit=1)
                 parts = [p.strip() for p in parts]
 
-                info["package"] = parts[0]
+                info['package'] = parts[0]
                 if len(parts) > 1:
                     op, rest = parts[1:]
                     version = rest  # NOQA
-                    info["version"] = (op, version)
+                    info['version'] = (op, version)
             yield info
 
     def parse_require_file(fpath):
         dpath = dirname(fpath)
-        with open(fpath, "r") as f:
+        with open(fpath, 'r') as f:
             for line in f.readlines():
                 line = line.strip()
-                if line and not line.startswith("#"):
+                if line and not line.startswith('#'):
                     for info in parse_line(line, dpath=dpath):
                         yield info
 
     def gen_packages_items():
         if exists(require_fpath):
             for info in parse_require_file(require_fpath):
-                parts = [info["package"]]
-                if versions and "version" in info:
-                    if versions == "strict":
+                parts = [info['package']]
+                if versions and 'version' in info:
+                    if versions == 'strict':
                         # In strict mode, we pin to the minimum version
-                        if info["version"]:
+                        if info['version']:
                             # Only replace the first >= instance
-                            verstr = "".join(info["version"]).replace(">=", "==", 1)
+                            verstr = ''.join(info['version']).replace(
+                                '>=', '==', 1
+                            )
                             parts.append(verstr)
                     else:
-                        parts.extend(info["version"])
-                if not sys.version.startswith("3.4"):
+                        parts.extend(info['version'])
+                if not sys.version.startswith('3.4'):
                     # apparently package_deps are broken in 3.4
-                    plat_deps = info.get("platform_deps")
+                    plat_deps = info.get('platform_deps')
                     if plat_deps is not None:
-                        parts.append(";" + plat_deps)
-                item = "".join(parts)
+                        parts.append(';' + plat_deps)
+                item = ''.join(parts)
                 yield item
 
     packages = list(gen_packages_items())
@@ -199,86 +203,98 @@ def parse_requirements(fname="requirements.txt", versions=False):
 #     return requirements
 
 
-NAME = "xdoctest"
-INIT_PATH = "src/xdoctest/__init__.py"
+NAME = 'xdoctest'
+INIT_PATH = 'src/xdoctest/__init__.py'
 VERSION = parse_version(INIT_PATH)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     setupkw = {}
 
-    setupkw["install_requires"] = parse_requirements(
-        "requirements/runtime.txt", versions="loose"
+    setupkw['install_requires'] = parse_requirements(
+        'requirements/runtime.txt', versions='loose'
     )
-    setupkw["extras_require"] = {
-        "all": parse_requirements("requirements.txt", versions="loose"),
-        "runtime": parse_requirements("requirements/runtime.txt", versions="loose"),
-        "tests": parse_requirements("requirements/tests.txt", versions="loose"),
-        "optional": parse_requirements("requirements/optional.txt", versions="loose"),
-        "colors": parse_requirements("requirements/colors.txt", versions="loose"),
-        "docs": parse_requirements("requirements/docs.txt", versions="loose"),
-        "jupyter": parse_requirements("requirements/jupyter.txt", versions="loose"),
-        "tests-binary": parse_requirements(
-            "requirements/tests-binary.txt", versions="loose"
+    setupkw['extras_require'] = {
+        'all': parse_requirements('requirements.txt', versions='loose'),
+        'runtime': parse_requirements(
+            'requirements/runtime.txt', versions='loose'
         ),
-        "all-strict": parse_requirements("requirements.txt", versions="strict"),
-        "runtime-strict": parse_requirements(
-            "requirements/runtime.txt", versions="strict"
+        'tests': parse_requirements('requirements/tests.txt', versions='loose'),
+        'optional': parse_requirements(
+            'requirements/optional.txt', versions='loose'
         ),
-        "tests-strict": parse_requirements("requirements/tests.txt", versions="strict"),
-        "optional-strict": parse_requirements(
-            "requirements/optional.txt", versions="strict"
+        'colors': parse_requirements(
+            'requirements/colors.txt', versions='loose'
         ),
-        "colors-strict": parse_requirements(
-            "requirements/colors.txt", versions="strict"
+        'docs': parse_requirements('requirements/docs.txt', versions='loose'),
+        'jupyter': parse_requirements(
+            'requirements/jupyter.txt', versions='loose'
         ),
-        "docs-strict": parse_requirements("requirements/docs.txt", versions="strict"),
-        "jupyter-strict": parse_requirements(
-            "requirements/jupyter.txt", versions="strict"
+        'tests-binary': parse_requirements(
+            'requirements/tests-binary.txt', versions='loose'
         ),
-        "tests-binary-strict": parse_requirements(
-            "requirements/tests-binary.txt", versions="strict"
+        'all-strict': parse_requirements('requirements.txt', versions='strict'),
+        'runtime-strict': parse_requirements(
+            'requirements/runtime.txt', versions='strict'
+        ),
+        'tests-strict': parse_requirements(
+            'requirements/tests.txt', versions='strict'
+        ),
+        'optional-strict': parse_requirements(
+            'requirements/optional.txt', versions='strict'
+        ),
+        'colors-strict': parse_requirements(
+            'requirements/colors.txt', versions='strict'
+        ),
+        'docs-strict': parse_requirements(
+            'requirements/docs.txt', versions='strict'
+        ),
+        'jupyter-strict': parse_requirements(
+            'requirements/jupyter.txt', versions='strict'
+        ),
+        'tests-binary-strict': parse_requirements(
+            'requirements/tests-binary.txt', versions='strict'
         ),
     }
-    setupkw["name"] = NAME
-    setupkw["version"] = VERSION
-    setupkw["author"] = "Jon Crall"
-    setupkw["author_email"] = "erotemic@gmail.com"
-    setupkw["url"] = "https://github.com/Erotemic/xdoctest"
-    setupkw["description"] = "A rewrite of the builtin doctest module"
-    setupkw["long_description"] = parse_description()
-    setupkw["long_description_content_type"] = "text/x-rst"
-    setupkw["license"] = "Apache 2"
-    setupkw["packages"] = find_packages("./src")
-    setupkw["python_requires"] = ">=3.8"
-    setupkw["classifiers"] = [
-        "Development Status :: 6 - Mature",
-        "Intended Audience :: Developers",
-        "Topic :: Software Development :: Libraries :: Python Modules",
-        "Topic :: Utilities",
-        "Topic :: Software Development :: Testing",
-        "Framework :: Pytest",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
-        "Programming Language :: Python :: 3.12",
-        "Programming Language :: Python :: 3.13",
-        "Programming Language :: Python :: 3.14",
-        "Programming Language :: Python :: Implementation :: PyPy",
-        "Programming Language :: Python :: Implementation :: CPython",
+    setupkw['name'] = NAME
+    setupkw['version'] = VERSION
+    setupkw['author'] = 'Jon Crall'
+    setupkw['author_email'] = 'erotemic@gmail.com'
+    setupkw['url'] = 'https://github.com/Erotemic/xdoctest'
+    setupkw['description'] = 'A rewrite of the builtin doctest module'
+    setupkw['long_description'] = parse_description()
+    setupkw['long_description_content_type'] = 'text/x-rst'
+    setupkw['license'] = 'Apache 2'
+    setupkw['packages'] = find_packages('./src')
+    setupkw['python_requires'] = '>=3.8'
+    setupkw['classifiers'] = [
+        'Development Status :: 6 - Mature',
+        'Intended Audience :: Developers',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+        'Topic :: Utilities',
+        'Topic :: Software Development :: Testing',
+        'Framework :: Pytest',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
+        'Programming Language :: Python :: 3.14',
+        'Programming Language :: Python :: Implementation :: PyPy',
+        'Programming Language :: Python :: Implementation :: CPython',
     ]
-    setupkw["package_data"] = {"xdoctest": ["py.typed", "*.pyi"]}
-    setupkw["package_dir"] = {
-        "": "./src",
+    setupkw['package_data'] = {'xdoctest': ['py.typed', '*.pyi']}
+    setupkw['package_dir'] = {
+        '': './src',
     }
-    setupkw["entry_points"] = {
-        "console_scripts": [
-            "xdoctest = xdoctest.__main__:main",
+    setupkw['entry_points'] = {
+        'console_scripts': [
+            'xdoctest = xdoctest.__main__:main',
         ],
-        "pytest11": [
-            "xdoctest = xdoctest.plugin",
+        'pytest11': [
+            'xdoctest = xdoctest.plugin',
         ],
     }
-    setupkw["keywords"] = "xdoctest,doctest,test,docstr,pytest"
+    setupkw['keywords'] = 'xdoctest,doctest,test,docstr,pytest'
     setup(**setupkw)

@@ -17,6 +17,7 @@ CommandLine:
 References:
     .. [Issue111] https://github.com/Erotemic/xdoctest/issues/111
 """
+
 import logging
 import sys
 
@@ -58,6 +59,7 @@ def func_with_doctest():
 
 def main():
     import xdoctest
+
     xdoctest.doctest_callable(func_with_doctest)
 
 

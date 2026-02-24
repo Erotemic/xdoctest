@@ -1,6 +1,7 @@
 """
 The core logic that allows for xdoctest to parse source statically
 """
+
 import sys
 from os.path import exists
 from os.path import isfile
@@ -12,12 +13,16 @@ import re
 from collections import deque, OrderedDict
 from xdoctest import utils
 
-from xdoctest.utils.util_import import _platform_pylib_exts # NOQA
+from xdoctest.utils.util_import import _platform_pylib_exts  # NOQA
 from xdoctest.utils.util_import import (  # NOQA
-    split_modpath, modname_to_modpath, is_modname_importable,
-    modpath_to_modname)
+    split_modpath,
+    modname_to_modpath,
+    is_modname_importable,
+    modpath_to_modname,
+)
 
 import platform
+
 PLAT_IMPL = platform.python_implementation()
 
 
@@ -38,8 +43,10 @@ class CallDefNode:
         lineno_end (None | int):
             the line number the docstring ends on (if known)
     """
-    def __init__(self, callname, lineno, docstr, doclineno, doclineno_end,
-                 args=None):
+
+    def __init__(
+        self, callname, lineno, docstr, doclineno, doclineno_end, args=None
+    ):
         """
         Args:
             callname (str):
@@ -74,8 +81,8 @@ class CallDefNode:
             str
         """
         return '{}[{}:{}][{}]'.format(
-            self.callname, self.lineno, self.lineno_end,
-            self.doclineno)
+            self.callname, self.lineno, self.lineno_end, self.doclineno
+        )
 
 
 class TopLevelVisitor(ast.NodeVisitor):
@@ -131,6 +138,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         >>> assert self.calldefs['foo'].docstr.strip() == 'my docstring'
         >>> assert 'subfunc' not in self.calldefs
     """
+
     @classmethod
     def parse(cls, source):
         """
@@ -175,7 +183,7 @@ class TopLevelVisitor(ast.NodeVisitor):
             ast.Module:
         """
         self.sourcelines = self.source.splitlines()
-        source_utf8  = self.source.encode('utf8')
+        source_utf8 = self.source.encode('utf8')
         pt = ast.parse(source_utf8)
         return pt
 
@@ -233,8 +241,9 @@ class TopLevelVisitor(ast.NodeVisitor):
         # TODO: Is this still necessary in modern Python versions?
         lineno = self._workaround_func_lineno(node)
         docstr, doclineno, doclineno_end = self._get_docstring(node)
-        calldef = CallDefNode(callname, lineno, docstr, doclineno,
-                              doclineno_end, args=node.args)
+        calldef = CallDefNode(
+            callname, lineno, docstr, doclineno, doclineno_end, args=node.args
+        )
         self.calldefs[callname] = calldef
 
         self._finish_queue.append(calldef)
@@ -255,8 +264,9 @@ class TopLevelVisitor(ast.NodeVisitor):
             callname = node.name
             self._current_classname = callname
             docstr, doclineno, doclineno_end = self._get_docstring(node)
-            calldef = CallDefNode(callname, node.lineno, docstr, doclineno,
-                                  doclineno_end)
+            calldef = CallDefNode(
+                callname, node.lineno, docstr, doclineno, doclineno_end
+            )
             self.calldefs[callname] = calldef
 
             self.generic_visit(node)
@@ -275,8 +285,9 @@ class TopLevelVisitor(ast.NodeVisitor):
             # the module level docstr is not really a calldef, but parse it for
             # backwards compatibility.
             callname = '__doc__'
-            calldef = CallDefNode(callname, doclineno, docstr, doclineno,
-                                  doclineno_end)
+            calldef = CallDefNode(
+                callname, doclineno, docstr, doclineno, doclineno_end
+            )
             self.calldefs[callname] = calldef
 
         self.generic_visit(node)
@@ -306,19 +317,23 @@ class TopLevelVisitor(ast.NodeVisitor):
         if isinstance(node.test, ast.Compare):  # pragma: nobranch
             try:
                 if IS_PY_GE_312:
-                    if all([
-                        isinstance(node.test.ops[0], ast.Eq),
-                        node.test.left.id == '__name__',
-                        node.test.comparators[0].value == '__main__',
-                    ]):
+                    if all(
+                        [
+                            isinstance(node.test.ops[0], ast.Eq),
+                            node.test.left.id == '__name__',
+                            node.test.comparators[0].value == '__main__',
+                        ]
+                    ):
                         # Ignore main block
                         return
                 else:
-                    if all([
-                        isinstance(node.test.ops[0], ast.Eq),
-                        node.test.left.id == '__name__',
-                        node.test.comparators[0].s == '__main__',
-                    ]):
+                    if all(
+                        [
+                            isinstance(node.test.ops[0], ast.Eq),
+                            node.test.left.id == '__name__',
+                            node.test.comparators[0].s == '__main__',
+                        ]
+                    ):
                         # Ignore main block
                         return
             except Exception:  # nocover
@@ -413,9 +428,9 @@ class TopLevelVisitor(ast.NodeVisitor):
                 else:
                     docstr = utils.ensure_unicode(docnode.value.s)
                 sourcelines = self.sourcelines
-                start, stop = self._find_docstr_endpos_workaround(docstr,
-                                                                  sourcelines,
-                                                                  startpos)
+                start, stop = self._find_docstr_endpos_workaround(
+                    docstr, sourcelines, startpos
+                )
                 # Convert 0-based line positions to 1-based line numbers
                 doclineno = start + 1
                 doclineno_end = stop + 1
@@ -430,7 +445,9 @@ class TopLevelVisitor(ast.NodeVisitor):
         else:
             docstr = utils.ensure_unicode(docnode.value.s)
         sourcelines = self.sourcelines
-        start, stop = self._find_docstr_startpos_workaround(docstr, sourcelines, endpos)
+        start, stop = self._find_docstr_startpos_workaround(
+            docstr, sourcelines, endpos
+        )
         # Convert 0-based line positions to 1-based line numbers
         doclineno = start + 1
         doclineno_end = stop
@@ -754,11 +771,15 @@ def parse_static_calldefs(source=None, fpath=None):
 
 def parse_calldefs(source=None, fpath=None):
     from xdoctest.utils import util_deprecation
+
     util_deprecation.schedule_deprecation(
         modname='xdoctest',
-        name='parse_calldefs', type='function',
+        name='parse_calldefs',
+        type='function',
         migration='use parse_static_calldefs instead',
-        deprecate='1.0.0', error='1.1.0', remove='1.2.0'
+        deprecate='1.0.0',
+        error='1.1.0',
+        remove='1.2.0',
     )
     return parse_static_calldefs(source=source, fpath=fpath)
 
@@ -768,9 +789,12 @@ def _parse_static_node_value(node):
     Extract a constant value from a node if possible
     """
     import numbers
-    if (isinstance(node, ast.Constant) and isinstance(node.value, numbers.Number)):
+
+    if isinstance(node, ast.Constant) and isinstance(
+        node.value, numbers.Number
+    ):
         value = node.value
-    elif (isinstance(node, ast.Constant) and isinstance(node.value, str)):
+    elif isinstance(node, ast.Constant) and isinstance(node.value, str):
         value = node.value
     elif isinstance(node, ast.List):
         value = list(map(_parse_static_node_value, node.elts))
@@ -787,8 +811,10 @@ def _parse_static_node_value(node):
         value = node.value
     else:
         print(node.__dict__)
-        raise TypeError('Cannot parse a static value from non-static node '
-                        'of type: {!r}'.format(type(node)))
+        raise TypeError(
+            'Cannot parse a static value from non-static node '
+            'of type: {!r}'.format(type(node))
+        )
     return value
 
 
@@ -850,8 +876,15 @@ def parse_static_value(key, source=None, fpath=None):
     return visitor.value
 
 
-def package_modpaths(pkgpath, with_pkg=False, with_mod=True, followlinks=True,
-                     recursive=True, with_libs=False, check=True):
+def package_modpaths(
+    pkgpath,
+    with_pkg=False,
+    with_mod=True,
+    followlinks=True,
+    recursive=True,
+    with_libs=False,
+    check=True,
+):
     r"""
     Finds sub-packages and sub-modules belonging to a package.
 
@@ -997,15 +1030,19 @@ def is_balanced_statement(lines, only_tokens=False, reraise=0):
     # Only iterate through non-empty lines otherwise tokenize will stop short
     lines = list(lines)
     iterable = (line for line in lines if line)
+
     def _readline():
         return next(iterable)
+
     try:
         for t in tokenize.generate_tokens(_readline):
             pass
     except tokenize.TokenError as ex:
         message = ex.args[0]
         # First case is Python <= 3.11, Second case is >= 3.12
-        if message.startswith(('EOF in multi-line', 'unexpected EOF in multi-line')):
+        if message.startswith(
+            ('EOF in multi-line', 'unexpected EOF in multi-line')
+        ):
             if reraise:
                 raise
             return False
@@ -1067,8 +1104,10 @@ def extract_comments(source):
 
     # Only iterate through non-empty lines otherwise tokenize will stop short
     iterable = (line for line in lines if line)
+
     def _readline():
         return next(iterable)
+
     try:
         for t in tokenize.generate_tokens(_readline):
             if t[0] == tokenize.COMMENT:
@@ -1120,6 +1159,7 @@ def _strip_hashtag_comments_and_newlines(source):
     """
     if isinstance(source, str):
         import io
+
         f = io.StringIO(source)
         readline = f.readline
     else:
@@ -1141,7 +1181,9 @@ def _strip_hashtag_comments_and_newlines(source):
         prev_end_col = 0
         skipped_rows = 0
         for token_info in tokens:
-            typ, tok, (start_row, start_col), (end_row, end_col), line = token_info
+            typ, tok, (start_row, start_col), (end_row, end_col), line = (
+                token_info
+            )
             if typ in (tokenize.NL, tokenize.NEWLINE):
                 if prev_typ in (tokenize.NL, tokenize.NEWLINE, None):
                     skipped_rows += 1
@@ -1151,7 +1193,13 @@ def _strip_hashtag_comments_and_newlines(source):
                 end_col = start_col + 1
             prev_typ = typ
             prev_end_col = end_col
-            yield typ, tok, (start_row - skipped_rows, start_col), (end_row - skipped_rows, end_col), line
+            yield (
+                typ,
+                tok,
+                (start_row - skipped_rows, start_col),
+                (end_row - skipped_rows, end_col),
+                line,
+            )
 
     tokens = tokenize.generate_tokens(readline)
     tokens = strip_hashtag_comments(tokens)
@@ -1178,4 +1226,5 @@ def six_axt_parse(source_block, filename='<source_block>', compatible=True):
 
 if __name__ == '__main__':
     import xdoctest as xdoc
+
     xdoc.doctest_module()

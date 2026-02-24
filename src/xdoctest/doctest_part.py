@@ -4,6 +4,7 @@ example. Multiple parts are typically stored in a
 :class:`xdoctest.doctest_example.Doctest`, which manages execution of each
 part.
 """
+
 import math
 from xdoctest import utils
 from xdoctest import checker
@@ -38,8 +39,16 @@ class DoctestPart:
 
         compile_mode (str): mode passed to compile.
     """
-    def __init__(self, exec_lines, want_lines=None, line_offset=0,
-                 orig_lines=None, directives=None, partno=None):
+
+    def __init__(
+        self,
+        exec_lines,
+        want_lines=None,
+        line_offset=0,
+        orig_lines=None,
+        directives=None,
+        partno=None,
+    ):
         """
         Args:
             exec_lines (List[str]):
@@ -126,10 +135,7 @@ class DoctestPart:
             bool
         """
         slines = [line.strip() for line in self.exec_lines]
-        return not all(
-            not line or line.startswith('#')
-            for line in slines
-        )
+        return not all(not line or line.startswith('#') for line in slines)
 
     @property
     def directives(self):
@@ -189,8 +195,13 @@ class DoctestPart:
         devnice = self.__nice__()
         return '<%s(%s)>' % (classname, devnice)
 
-    def check(part, got_stdout, got_eval=constants.NOT_EVALED, runstate=None,
-              unmatched=None):
+    def check(
+        part,
+        got_stdout,
+        got_eval=constants.NOT_EVALED,
+        runstate=None,
+        unmatched=None,
+    ):
         r"""
         Check if the "got" output obtained by running this test matches the
         "want" target. Note there are two types of "got" output: (1) output
@@ -249,8 +260,16 @@ class DoctestPart:
             # distance might be better to report?)
             raise exceptions[-1]
 
-    def format_part(self, linenos=True, want=True, startline=1, n_digits=None,
-                    colored=False, partnos=False, prefix=True):
+    def format_part(
+        self,
+        linenos=True,
+        want=True,
+        startline=1,
+        n_digits=None,
+        colored=False,
+        partnos=False,
+        prefix=True,
+    ):
         """
         Customizable formatting of the source and want for this doctest.
 
@@ -309,13 +328,13 @@ class DoctestPart:
         if linenos:
             n_spaces += n_digits + 1
             start = startline + self.line_offset
-            part_lines = utils.add_line_numbers(part_lines, n_digits=n_digits,
-                                                start=start)
+            part_lines = utils.add_line_numbers(
+                part_lines, n_digits=n_digits, start=start
+            )
 
         if partnos:
             part_lines = [
-                '(p{}) {}'.format(self.partno, line)
-                for line in part_lines
+                '(p{}) {}'.format(self.partno, line) for line in part_lines
             ]
             n_spaces += 4 + 1  # FIXME could be more robust if more than 9 parts
 
@@ -345,4 +364,5 @@ if __name__ == '__main__':
         python -m xdoctest.doctest_part
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)

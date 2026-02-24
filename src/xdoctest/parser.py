@@ -41,6 +41,7 @@ References:
     .. [CustomPrompt] https://wiki.archlinux.org/title/Bash/Prompt_customization
     .. [GeekPrompt] https://web.archive.org/web/20230824025647/https://www.thegeekstuff.com/2008/09/bash-shell-take-control-of-ps1-ps2-ps3-ps4-and-prompt_command/
 """
+
 import ast
 import sys
 import re
@@ -189,7 +190,6 @@ class DoctestParser:
             grouped_lines = self._group_labeled_lines(labeled_lines)
             all_parts = list(self._package_groups(grouped_lines))
         except Exception as orig_ex:
-
             if labeled_lines is None:
                 failpoint = '_label_docsrc_lines'
             elif grouped_lines is None:
@@ -203,6 +203,7 @@ class DoctestParser:
 
                 import ubelt as ub
                 import traceback
+
                 tb_text = traceback.format_exc()
                 tb_text = ub.highlight_code(tb_text)
                 tb_text = ub.indent(tb_text)
@@ -216,13 +217,18 @@ class DoctestParser:
                 print('-----')
                 print('orig_ex = {}'.format(orig_ex))
                 print('labeled_lines = {}'.format(ub.repr2(labeled_lines)))
-                print('grouped_lines = {}'.format(ub.repr2(grouped_lines, nl=3)))
+                print(
+                    'grouped_lines = {}'.format(ub.repr2(grouped_lines, nl=3))
+                )
                 print('all_parts = {}'.format(ub.repr2(all_parts)))
                 print('</FAILPOINT>')
                 # sys.exit(1)
             raise exceptions.DoctestParseError(
                 'Failed to parse doctest in {}'.format(failpoint),
-                string=string, info=info, orig_ex=orig_ex)
+                string=string,
+                info=info,
+                orig_ex=orig_ex,
+            )
         if global_state.DEBUG_PARSER > 1:
             print('\n===== FINISHED PARSE ====')
         return all_parts
@@ -230,6 +236,7 @@ class DoctestParser:
     def _package_groups(self, grouped_lines):
         if global_state.DEBUG_PARSER > 1:
             import ubelt as ub
+
             print('<PACKAGE LABEL GROUPS>')
             print('grouped_lines = {}'.format(ub.repr2(grouped_lines, nl=2)))
         lineno = 0
@@ -316,11 +323,13 @@ class DoctestParser:
             exec_lines = exec_source_lines[s1:s2]
             orig_lines = source_lines[s1:s2]
             directives = ps1_to_directive.get(s1, None)
-            example = doctest_part.DoctestPart(exec_lines,
-                                               want_lines=want_lines,
-                                               orig_lines=orig_lines,
-                                               line_offset=lineno + s1,
-                                               directives=directives)
+            example = doctest_part.DoctestPart(
+                exec_lines,
+                want_lines=want_lines,
+                orig_lines=orig_lines,
+                line_offset=lineno + s1,
+                directives=directives,
+            )
             return example
 
         s1 = 0
@@ -396,7 +405,9 @@ class DoctestParser:
 
         # Need to ensure that old-style continuations with want statements are
         # placed in their own group, so they can be executed as "single".
-        for left, mid, right in _iterthree(labeled_lines, pad_value=(None, None)):
+        for left, mid, right in _iterthree(
+            labeled_lines, pad_value=(None, None)
+        ):
             if left[0] != mid[0] or (mid[0] == 'dsrc' and right[0] == 'dcnt'):
                 if not (left[0] == 'dsrc' and mid[0] == 'dcnt'):
                     # Start a new group
@@ -549,11 +560,17 @@ class DoctestParser:
                 b = len(lines)
                 while b > 0:
                     # move the head pointer up until we become balanced
-                    while not static.is_balanced_statement(lines[a:b], only_tokens=True) and a >= 0:
+                    while (
+                        not static.is_balanced_statement(
+                            lines[a:b], only_tokens=True
+                        )
+                        and a >= 0
+                    ):
                         a -= 1
                     if a < 0:
                         raise exceptions.IncompleteParseError(
-                            'ill-formed doctest: cannot find balanced ps1 lines.')
+                            'ill-formed doctest: cannot find balanced ps1 lines.'
+                        )
                     # we found a balanced interval
                     intervals.append((a, b))
                     b = a
@@ -561,6 +578,7 @@ class DoctestParser:
 
                 intervals = intervals[::-1]
                 return intervals
+
             intervals = balanced_intervals(lines)
             interval_starts = {t[0] for t in intervals}
             for i, line in enumerate(lines):
@@ -584,7 +602,7 @@ class DoctestParser:
                     # (why is this not populated in SyntaxError by default?)
                     # (because filename does not point to a valid loc)
                     line = source_block.split('\n')[syn_ex.lineno - 1]
-                    syn_ex.text = line  + '\n'
+                    syn_ex.text = line + '\n'
             raise syn_ex
 
         # print(ast.dump(pt))
@@ -604,9 +622,7 @@ class DoctestParser:
                 ps1_linenos.append(lineno)
 
         # Respect any line explicitly defined as PS2 (via its prefix)
-        ps2_linenos = {
-            x for x, p in enumerate(source_lines) if p[:4] != '>>> '
-        }
+        ps2_linenos = {x for x, p in enumerate(source_lines) if p[:4] != '>>> '}
         ps1_linenos = sorted(set(ps1_linenos).difference(ps2_linenos))
 
         # There are 3 ways to compile python code
@@ -638,12 +654,16 @@ class DoctestParser:
             # Only iterate through non-empty lines otherwise tokenize will stop short
             # TODO: we probably could just save the tokens if we got them earlier?
             iterable = (line for line in exec_source_lines if line)
+
             def _readline():
                 return next(iterable)
+
             # We cannot eval a statement with a semicolon in it
             # Single should work.
-            if any(t.type == tokenize.OP and t.string == ';'
-                   for t in tokenize.generate_tokens(_readline)):
+            if any(
+                t.type == tokenize.OP and t.string == ';'
+                for t in tokenize.generate_tokens(_readline)
+            ):
                 mode_hint = 'single'
 
         return ps1_linenos, mode_hint
@@ -765,8 +785,9 @@ class DoctestParser:
                     curr_state = WANT
             else:  # nocover
                 # This should never happen
-                raise AssertionError('Unknown state prev_state={}'.format(
-                    prev_state))
+                raise AssertionError(
+                    'Unknown state prev_state={}'.format(prev_state)
+                )
 
             # Handle transitions
             if prev_state != curr_state:
@@ -785,7 +806,9 @@ class DoctestParser:
                 try:
                     if global_state.DEBUG_PARSER:  # nocover
                         print('completing source')
-                    for part, norm_line in _complete_source(line, state_indent, line_iter):
+                    for part, norm_line in _complete_source(
+                        line, state_indent, line_iter
+                    ):
                         if global_state.DEBUG_PARSER > 4:  # nocover
                             print('Append Completion Line:')
                             print('part = {!r}'.format(part))
@@ -818,6 +841,7 @@ class DoctestParser:
 
         if global_state.DEBUG_PARSER > 1:  # nocover
             import ubelt as ub
+
             # if global_state.DEBUG_PARSER > 3:
             #     print('string = {!r}'.format(string))
             print('<FINISH LABELED LINES')
@@ -857,8 +881,9 @@ def _complete_source(line, state_indent, line_iter):
     norm_line = line[state_indent:]  # Normalize line indentation
     prefix = norm_line[:4]
     suffix = norm_line[4:]
-    assert prefix.strip() in {'>>>', '...'}, (
-        'unexpected prefix: {!r}'.format(prefix))
+    assert prefix.strip() in {'>>>', '...'}, 'unexpected prefix: {!r}'.format(
+        prefix
+    )
     yield line, norm_line
 
     source_parts = [suffix]
@@ -879,7 +904,9 @@ def _complete_source(line, state_indent, line_iter):
                     # TODO: make a more robust patch
                     if any("'''" in s or '"""' in s for s in source_parts):
                         # print('HACK FIXING TRIPLE QUOTE')
-                        next_line = next_line[:state_indent] + '... ' + norm_line
+                        next_line = (
+                            next_line[:state_indent] + '... ' + norm_line
+                        )
                         norm_line = '... ' + norm_line
                         prefix = ''
                         suffix = norm_line
@@ -895,14 +922,18 @@ def _complete_source(line, state_indent, line_iter):
 
                     raise SyntaxError(
                         'Bad indentation in doctest on line {}: {!r}'.format(
-                            line_idx, next_line))
+                            line_idx, next_line
+                        )
+                    )
             source_parts.append(suffix)
             yield next_line, norm_line
     except StopIteration:
         if global_state.DEBUG_PARSER:
             import ubelt as ub
+
             print('<FAIL DID NOT COMPLETE SOURCE>')
             import traceback
+
             tb_text = traceback.format_exc()
             tb_text = ub.highlight_code(tb_text)
             tb_text = ub.indent(tb_text)
@@ -913,25 +944,30 @@ def _complete_source(line, state_indent, line_iter):
             # print('source =\n{}'.format('\n'.join(source_parts)))
             print('# Ensure that the following line should actually fail')
             print('source_parts = {}'.format(ub.repr2(source_parts, nl=2)))
-            print(ub.codeblock(
-                r'''
+            print(
+                ub.codeblock(
+                    r"""
                 from xdoctest import static_analysis as static
                 static.is_balanced_statement(source_parts, only_tokens=False)
                 static.is_balanced_statement(source_parts, only_tokens=True)
                 text = '\n'.join(source_parts)
                 print(text)
                 static.six_axt_parse(text)
-                '''))
+                """
+                )
+            )
             print('</FAIL DID NOT COMPLETE SOURCE>')
             # sys.exit(1)
         # TODO: use AST to reparse all doctest parts to discover where the
         # syntax error in the doctest is and then raise it.
         raise exceptions.IncompleteParseError(
             'ill-formed doctest: all parts have been processed '
-            'but the doctest source is not balanced')
+            'but the doctest source is not balanced'
+        )
     else:
         if global_state.DEBUG_PARSER > 1:
             import ubelt as ub
+
             print('<SUCCESS COMPLETED SOURCE>')
             # print(' * line_iter = {!r}'.format(line_iter))
             print('source_parts = {}'.format(ub.repr2(source_parts, nl=2)))
@@ -982,7 +1018,7 @@ def _iterthree(items, pad_value=None):
 
 
 def _hasprefix(line, prefixes):
-    """ helper prefix test """
+    """helper prefix test"""
     # if not isinstance(prefixes, tuple):
     #     prefixes = [prefixes]
     return any(line == p or line.startswith(p + ' ') for p in prefixes)
@@ -995,4 +1031,5 @@ if __name__ == '__main__':
         python -m xdoctest.parser all
     """
     import xdoctest as xdoc
+
     xdoc.doctest_module()

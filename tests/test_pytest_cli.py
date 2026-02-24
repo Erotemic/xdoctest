@@ -6,9 +6,13 @@ from xdoctest import utils
 def cmd(command):
     # simplified version of ub.cmd no fancy tee behavior
     import subprocess
+
     proc = subprocess.Popen(
-        command, shell=True, universal_newlines=True,
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        command,
+        shell=True,
+        universal_newlines=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     )
     out, err = proc.communicate()
     ret = proc.wait()
@@ -31,7 +35,8 @@ def test_simple_pytest_cli():
             Example:
                 >>> print('hello world')
             """
-        ''')
+        '''
+    )
     temp_module = util_misc.TempModule(module_text)
     temp_module.print_contents()
     modpath = temp_module.modpath
@@ -69,7 +74,8 @@ def test_simple_pytest_import_error_cli():
             Example:
                 >>> print('hello world')
             """
-        ''')
+        '''
+    )
     temp_module = util_misc.TempModule(module_text, modname='imperr_test_mod')
     temp_module.print_contents()
 
@@ -87,7 +93,11 @@ def test_simple_pytest_import_error_cli():
         print(f'info={info}')
         print(info['out'])
 
-    command = sys.executable + ' -m pytest -v -s --xdoctest-verbose=3 --xdoctest-supress-import-errors --xdoctest ' + temp_module.dpath
+    command = (
+        sys.executable
+        + ' -m pytest -v -s --xdoctest-verbose=3 --xdoctest-supress-import-errors --xdoctest '
+        + temp_module.dpath
+    )
     print('-- PRINT COMMAND 1:')
     print(command)
     print('-- RUN COMMAND 1:')
@@ -103,7 +113,11 @@ def test_simple_pytest_import_error_cli():
 
     # Remove the suppress import error flag and now we should get the traceback
     temp_module = util_misc.TempModule(module_text, modname='imperr_test_mod')
-    command = sys.executable + ' -m pytest -v -s --xdoctest-verbose=3 --xdoctest ' + temp_module.dpath
+    command = (
+        sys.executable
+        + ' -m pytest -v -s --xdoctest-verbose=3 --xdoctest '
+        + temp_module.dpath
+    )
     print('-- PRINT COMMAND 2:')
     print(command)
     print('-- RUN COMMAND 2:')
@@ -119,8 +133,7 @@ def test_simple_pytest_import_error_cli():
 
 
 def test_simple_pytest_syntax_error_cli():
-    """
-    """
+    """ """
     module_text = utils.codeblock(
         '''
         &&does_not_exist
@@ -132,7 +145,8 @@ def test_simple_pytest_syntax_error_cli():
             Example:
                 >>> print('hello world')
             """
-        ''')
+        '''
+    )
     temp_module = util_misc.TempModule(module_text)
     info = cmd(sys.executable + ' -m pytest --xdoctest ' + temp_module.dpath)
     print(info['out'])
@@ -144,15 +158,15 @@ def test_simple_pytest_syntax_error_cli():
 
 
 def test_simple_pytest_import_error_no_xdoctest():
-    """
-    """
+    """ """
     module_text = utils.codeblock(
-        '''
+        """
         import does_not_exist
 
         def test_this():
             print('hello world')
-        ''')
+        """
+    )
     temp_module = util_misc.TempModule(module_text)
     info = cmd(sys.executable + ' -m pytest ' + temp_module.modpath)
     print(info['out'])
@@ -164,15 +178,15 @@ def test_simple_pytest_import_error_no_xdoctest():
 
 
 def test_simple_pytest_syntax_error_no_xdoctest():
-    """
-    """
+    """ """
     module_text = utils.codeblock(
-        '''
+        """
         &&does_not_exist
 
         def test_this():
             print('hello world')
-        ''')
+        """
+    )
     temp_module = util_misc.TempModule(module_text)
     info = cmd(sys.executable + ' -m pytest ' + temp_module.modpath)
     print(info['out'])
@@ -184,9 +198,9 @@ def test_simple_pytest_syntax_error_no_xdoctest():
 
 
 def test_version_and_cli_info():
-    """
-    """
+    """ """
     import xdoctest
+
     info = cmd(sys.executable + ' -m xdoctest --version')
     assert info['out'].strip() == xdoctest.__version__
 
@@ -204,7 +218,8 @@ def test_simple_xdoctest_cli():
             Example:
                 >>> print('hello world')
             """
-        ''')
+        '''
+    )
     temp_module = util_misc.TempModule(module_text)
     modpath = temp_module.modpath
     info = cmd(sys.executable + ' -m xdoctest ' + modpath + ' --time')
@@ -229,7 +244,8 @@ def test_simple_xdoctest_cli_errors():
             Example:
                 >>> raise Exception
             """
-        ''')
+        '''
+    )
     temp_module = util_misc.TempModule(module_text)
     modpath = temp_module.modpath
     info = cmd(sys.executable + ' -m xdoctest ' + modpath + ' --time')

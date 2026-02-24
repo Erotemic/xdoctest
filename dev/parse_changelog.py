@@ -10,6 +10,7 @@ def _parse_changelog(fpath):
     except ImportError:
         from distutils.version import LooseVersion
     import re
+
     pat = re.compile(r'#.*Version ([0-9]+\.[0-9]+\.[0-9]+)')
     # We can statically modify this to a constant value when we deploy
     versions = []
@@ -28,10 +29,12 @@ def _parse_changelog(fpath):
                         print('Failed to parse = {!r}'.format(line))
 
     import pprint
+
     print('versions = {}'.format(pprint.pformat(versions)))
     assert sorted(versions)[::-1] == versions
 
     import xdoctest
+
     changelog_version = versions[0]
     module_version = LooseVersion(xdoctest.__version__)
     print('changelog_version = {!r}'.format(changelog_version))

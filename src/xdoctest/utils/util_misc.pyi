@@ -1,6 +1,5 @@
 from _typeshed import Incomplete
 
-
 class TempDoctest:
     modname: Incomplete
     docstr: Incomplete
@@ -8,9 +7,7 @@ class TempDoctest:
     dpath: Incomplete
     modpath: Incomplete
 
-    def __init__(self, docstr, modname: Incomplete | None = ...) -> None:
-        ...
-
+    def __init__(self, docstr, modname: Incomplete | None = ...) -> None: ...
 
 class TempModule:
     modname: Incomplete
@@ -19,5 +16,6 @@ class TempModule:
     dpath: Incomplete
     modpath: Incomplete
 
-    def __init__(self, module_text, modname: Incomplete | None = ...) -> None:
-        ...
+    def __init__(
+        self, module_text, modname: Incomplete | None = ...
+    ) -> None: ...

@@ -4,6 +4,7 @@ This mod has a docstring
 Example:
     >>> pass
 """
+
 import sys
 from xdoctest import dynamic_analysis as dynamic
 from xdoctest import static_analysis as static
@@ -29,6 +30,7 @@ class SimpleClass:
     Example:
         >>> pass
     """
+
     cls_attr = SimpleDescriptor()
 
     # Injected funcs should not be part of the calldefs
@@ -36,6 +38,7 @@ class SimpleClass:
 
     def __init__(self):
         self.inst_attr = SimpleDescriptor()
+
         def submethod1():
             """
             Example:
@@ -156,17 +159,17 @@ def test_defined_by_module():
         print('Checking {} is defined by {}'.format(item, module.__name__))
         assert flag, '{} should be defined by {}'.format(item, module)
 
-    items = [
-        sys, int, 0, 'foobar', module.__name__
-    ]
+    items = [sys, int, 0, 'foobar', module.__name__]
     for item in items:
         flag = dynamic.is_defined_by_module(item, module)
         print('Checking {} is not defined by {}'.format(item, module.__name__))
         assert not flag, '{} should not be defined by {}'.format(item, module)
 
     import platform
+
     if platform.python_implementation() == 'PyPy':
         import pytest
+
         pytest.skip('ctypes for pypy')
 
     import _ctypes
@@ -206,8 +209,10 @@ def test_programatically_generated_docstrings():
     """
     from xdoctest import utils
     from xdoctest.utils.util_misc import TempModule
-    temp = TempModule(utils.codeblock(
-        '''
+
+    temp = TempModule(
+        utils.codeblock(
+            '''
         code = ">>> print('hello world')"
 
         def func1():
@@ -218,17 +223,24 @@ def test_programatically_generated_docstrings():
 
         func1.__doc__ = func1.__doc__.format(code)
 
-        '''))
+        '''
+        )
+    )
 
     import xdoctest
+
     # auto wont pick up dynamic doctests by default
     # Although in the future it would be cool if it did
-    result = xdoctest.doctest_module(temp.modpath, analysis='auto', command='all')
+    result = xdoctest.doctest_module(
+        temp.modpath, analysis='auto', command='all'
+    )
     assert result['n_total'] == 1
     assert result['n_failed'] == 0
 
     # but an explicit dynamic should pick these up
-    result = xdoctest.doctest_module(temp.modpath, analysis='dynamic', command='all')
+    result = xdoctest.doctest_module(
+        temp.modpath, analysis='dynamic', command='all'
+    )
     assert result['n_passed'] == 1
     assert result['n_failed'] == 0
 
@@ -252,4 +264,5 @@ if __name__ == '__main__':
         pytest tests/test_dynamic.py
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)

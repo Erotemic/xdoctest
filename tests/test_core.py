@@ -13,6 +13,7 @@ def _test_status(docstr):
         # pytest seems to load an older version of xdoctest for some reason
         import xdoctest
         import inspect
+
         print('xdoctest.__version__ = {!r}'.format(xdoctest.__version__))
         print('utils = {!r}'.format(utils))
         print('utils.util_misc = {!r}'.format(utils.util_misc))
@@ -37,7 +38,8 @@ def test_mod_lineno():
                     >>> a = 1
                     >>> 1 / 0
                     """
-            ''')
+            '''
+        )
         with open(modpath, 'w') as file:
             file.write(source)
         doctests = list(core.parse_doctestables(modpath, style='freeform'))
@@ -69,10 +71,12 @@ def test_mod_globals():
                 >>> X
                 10
                 """
-            ''')
+            '''
+        )
         with open(modpath, 'w') as file:
             file.write(source)
         from xdoctest import core
+
         doctests = list(core.parse_doctestables(modpath, style='freeform'))
         assert len(doctests) == 1
         self = doctests[0]
@@ -113,7 +117,8 @@ def test_show_entire():
 
             text-line-after
             """
-        ''')
+        '''
+    )
     with open(modpath, 'w') as file:
         file.write(source)
     from xdoctest import core
@@ -146,11 +151,11 @@ def test_show_entire():
 
 def test_freeform_parse_lineno():
     """
-        python ~/code/xdoctest/tests/test_core.py test_freeform_parse_lineno
+    python ~/code/xdoctest/tests/test_core.py test_freeform_parse_lineno
 
     """
     docstr = utils.codeblock(
-        '''
+        """
         >>> print('line1')  # test.line=1, offset=0
 
         Example:
@@ -176,11 +181,15 @@ def test_freeform_parse_lineno():
         >>> x = 6 + x   # line 23, offset 3
 
         text-line-after
-        ''')
+        """
+    )
 
     from xdoctest import core
-    doctests = list(core.parse_freeform_docstr_examples(docstr, lineno=1, asone=False))
-    assert  [test.lineno for test in doctests] == [1, 4, 10, 14, 20]
+
+    doctests = list(
+        core.parse_freeform_docstr_examples(docstr, lineno=1, asone=False)
+    )
+    assert [test.lineno for test in doctests] == [1, 4, 10, 14, 20]
 
     # This asserts if the lines are consecutive. Should we enforce this?
     # Perhaps its ok if they are not.
@@ -191,11 +200,13 @@ def test_freeform_parse_lineno():
             assert p.line_offset == offset
             offset += p.n_lines
 
-    doctests = list(core.parse_freeform_docstr_examples(docstr, lineno=1, asone=True))
-    assert  [test.lineno for test in doctests] == [1]
+    doctests = list(
+        core.parse_freeform_docstr_examples(docstr, lineno=1, asone=True)
+    )
+    assert [test.lineno for test in doctests] == [1]
 
     doctests = list(core.parse_google_docstr_examples(docstr, lineno=1))
-    assert  [test.lineno for test in doctests] == [4, 10, 14]
+    assert [test.lineno for test in doctests] == [4, 10, 14]
 
     for test in doctests:
         test._parse()
@@ -221,10 +232,12 @@ def test_collect_module_level():
         """
         >>> pass
         """
-        ''')
+        '''
+    )
     with open(modpath, 'w') as file:
         file.write(source)
     from xdoctest import core
+
     doctests = list(core.parse_doctestables(modpath, style='freeform'))
     assert len(doctests) == 1
     self = doctests[0]
@@ -252,11 +265,11 @@ def test_collect_module_level_singleline():
     temp = utils.TempDir()
     dpath = temp.ensure()
     modpath = join(dpath, 'test_collect_module_level_singleline.py')
-    source = utils.codeblock(
-        '''">>> pass"''')
+    source = utils.codeblock('''">>> pass"''')
     with open(modpath, 'w') as file:
         file.write(source)
     from xdoctest import core
+
     doctests = list(core.parse_doctestables(modpath, style='freeform'))
     assert len(doctests) == 1
     self = doctests[0]
@@ -285,10 +298,12 @@ def test_no_docstr():
                 """ Gets average scale (does not take into account elliptical shape """
                 _scales = np.sqrt(get_sqrd_scales(kpts))
                 return _scales
-            ''')
+            '''
+        )
         with open(modpath, 'w') as file:
             file.write(source)
         from xdoctest import core
+
         doctests = list(core.parse_doctestables(modpath, style='freeform'))
         assert len(doctests) == 0
 
@@ -306,13 +321,15 @@ def test_oneliner():
                 """
                 >>> assert False, 'should fail'
                 """
-            ''')
+            '''
+        )
         with open(modpath, 'w') as file:
             file.write(source)
         doctests = list(core.parse_doctestables(modpath))
         assert len(doctests) == 1
         print('doctests = {!r}'.format(doctests))
         import pytest
+
         with pytest.raises(AssertionError, match='should fail'):
             doctests[0].run()
 
@@ -338,7 +355,8 @@ def test_delayed_want_pass_cases():
         >>> print('more text')
         some text
         more text
-        """)
+        """
+    )
     assert status['passed']
 
     # Pass Case2:
@@ -348,7 +366,8 @@ def test_delayed_want_pass_cases():
         some text
         >>> print('more text')
         more text
-        """)
+        """
+    )
     assert status['passed']
 
     # Pass Case3: "its ok to only match more text and ignore some text"
@@ -357,7 +376,8 @@ def test_delayed_want_pass_cases():
         >>> print('some text')
         >>> print('more text')
         more text
-        """)
+        """
+    )
     assert status['passed']
 
 
@@ -373,7 +393,8 @@ def test_delayed_want_fail_cases():
         some text
         more text
         >>> print('more text')
-        """)
+        """
+    )
     assert not status['passed']
 
     # Fail Case5: cannot match "some text" more than once
@@ -384,7 +405,8 @@ def test_delayed_want_fail_cases():
         >>> print('more text')
         some text
         more text
-        """)
+        """
+    )
     assert not status['passed']
 
     # Fail Case6: Because "more text" was matched, "some text" is forever
@@ -397,7 +419,8 @@ def test_delayed_want_fail_cases():
         >>> print('even more text')
         some text
         even more text
-        """)
+        """
+    )
     assert not status['passed']
 
     # alternate case 6
@@ -410,7 +433,8 @@ def test_delayed_want_fail_cases():
         some text
         more text
         even more text
-        """)
+        """
+    )
     assert not status['passed']
 
 
@@ -424,6 +448,7 @@ def test_indented_grouping():
         xdoctest -m ~/code/xdoctest/tests/test_core.py test_indented_grouping
     """
     from xdoctest.doctest_example import DocTest
+
     example = DocTest(
         utils.codeblock(r"""
         >>> from xdoctest.utils import codeblock
@@ -442,7 +467,8 @@ def test_indented_grouping():
         ...             return 'bar'
         ...     ''')
         >>> assert normal_version != codeblock_version
-        """))
+        """)
+    )
     # print(example.format_src())
     status = example.run(verbose=0)
     assert status['passed']
@@ -456,6 +482,7 @@ def test_backwards_compat_eval_in_loop():
         xdoctest -m ~/code/xdoctest/tests/test_core.py test_backwards_compat_eval_in_loop
     """
     from xdoctest.doctest_example import DocTest
+
     example = DocTest(
         utils.codeblock(r"""
         >>> for i in range(2):
@@ -463,7 +490,8 @@ def test_backwards_compat_eval_in_loop():
         ...
         '0'
         '1'
-        """))
+        """)
+    )
     # print(example.format_src())
     status = example.run(verbose=0)
     assert status['passed']
@@ -474,7 +502,8 @@ def test_backwards_compat_eval_in_loop():
         ...     '%s' % i
         '0'
         '1'
-        """))
+        """)
+    )
     status = example.run(verbose=0)
     assert status['passed']
 
@@ -485,6 +514,7 @@ def test_backwards_compat_indent_value():
         xdoctest -m ~/code/xdoctest/tests/test_core.py test_backwards_compat_indent_value
     """
     from xdoctest.doctest_example import DocTest
+
     example = DocTest(
         utils.codeblock(r"""
         >>> b = 3
@@ -492,7 +522,8 @@ def test_backwards_compat_indent_value():
         ...     a = 1
         ...     isinstance(1, int)
         True
-        """))
+        """)
+    )
     status = example.run(verbose=0)
     assert status['passed']
 
@@ -503,6 +534,7 @@ def test_concise_try_except():
         xdoctest -m ~/code/xdoctest/tests/test_core.py test_concise_try_except
     """
     from xdoctest.doctest_example import DocTest
+
     example = DocTest(
         utils.codeblock(r"""
         >>> # xdoctest: +IGNORE_WANT
@@ -510,11 +542,13 @@ def test_concise_try_except():
         ... except Exception: print(lambda *a, **b: sys.stdout.write(str(a) + "\n" + str(b)))
         a bad want string
         ...
-        """))
+        """)
+    )
     status = example.run(verbose=0)
     assert status['passed']
 
     from xdoctest.doctest_example import DocTest
+
     example = DocTest(
         utils.codeblock(r"""
         >>> # xdoctest: +IGNORE_WANT
@@ -522,7 +556,8 @@ def test_concise_try_except():
         >>> except Exception: print(lambda *a, **b: sys.stdout.write(str(a) + "\n" + str(b)))
         a bad want string
         ...
-        """))
+        """)
+    )
     status = example.run(verbose=0)
     assert status['passed']
 
@@ -566,21 +601,25 @@ def test_semicolon_line():
         xdoctest -m ~/code/xdoctest/tests/test_core.py test_concise_exceptions
     """
     from xdoctest.doctest_example import DocTest
+
     example = DocTest(
         utils.codeblock(r"""
         >>> import os; print(os.path.abspath('.'))
-        """))
+        """)
+    )
     status = example.run(verbose=0)
     assert status['passed']
 
     # The problem case was when it was compiled with a "want" statement
     #
     from xdoctest.doctest_example import DocTest
+
     example = DocTest(
         utils.codeblock(r"""
         >>> import os; print(os.path.abspath('.'))
         ...
-        """))
+        """)
+    )
     status = example.run(verbose=0)
     assert status['passed']
 
@@ -588,13 +627,16 @@ def test_semicolon_line():
     # import xdoctest
     # xdoctest.parser.DEBUG = 100
     from xdoctest.doctest_example import DocTest
+
     example = DocTest(
         utils.codeblock(r"""
         >>> import os
         ...
-        """))
+        """)
+    )
     status = example.run(verbose=0)
     assert status['passed']
+
 
 def test_collect_async_function_doctest():
     with utils.TempDir() as temp:
@@ -622,7 +664,8 @@ def test_collect_async_function_doctest():
                 2
                 """
                 return 1
-            ''')
+            '''
+        )
         with open(modpath, 'w') as file:
             file.write(source)
 
@@ -639,5 +682,5 @@ if __name__ == '__main__':
         pytest tests/test_core.py -vv
     """
     import xdoctest  # NOQA
-    xdoctest.doctest_module(__file__)
 
+    xdoctest.doctest_module(__file__)

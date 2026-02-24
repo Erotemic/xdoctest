@@ -9,7 +9,7 @@ def test_zero_args():
     from xdoctest import runner
 
     source = utils.codeblock(
-        '''
+        """
         # --- HELPERS ---
         def zero_args1(a=1):
             pass
@@ -45,7 +45,8 @@ def test_zero_args():
 
         def non_zero_args5(a, b=1, **kwargs):
             pass
-        ''')
+        """
+    )
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
@@ -58,8 +59,9 @@ def test_zero_args():
             example.callname
             for example in runner._gather_zero_arg_examples(modpath)
         }
-        assert zero_func_names == set(['zero_args1', 'zero_args2',
-                                       'zero_args3', 'zero_args4'])
+        assert zero_func_names == set(
+            ['zero_args1', 'zero_args2', 'zero_args3', 'zero_args4']
+        )
 
 
 def test_list():
@@ -87,7 +89,8 @@ def test_list():
 
         def fake_test2():
             pass
-        ''')
+        '''
+    )
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
@@ -124,7 +127,8 @@ def test_example_run():
                 Example:
                     >>> print('i wanna see this')
             """
-        ''')
+        '''
+    )
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
@@ -141,6 +145,7 @@ def test_example_run():
 
 def test_durations():
     from xdoctest import runner
+
     source = utils.codeblock(
         '''
         def func1():
@@ -154,7 +159,8 @@ def test_durations():
             Example:
                 >>> print(123)
             """
-        ''')
+        '''
+    )
     with utils.TempDir() as temp:
         dpath = temp.dpath
         modpath = join(dpath, 'test_durations.py')
@@ -170,6 +176,7 @@ def test_durations():
 
 def test_dump():
     from xdoctest import runner
+
     source = utils.codeblock(
         '''
         def func1():
@@ -187,7 +194,8 @@ def test_dump():
                 >>> for j in range(10):
                 ...     print(these + ' unit tests all along')
             """
-        ''')
+        '''
+    )
     with utils.TempDir() as temp:
         dpath = temp.dpath
         modpath = join(dpath, 'test_durations.py')
@@ -219,7 +227,8 @@ def test_all_disabled():
                 Example:
                     >>> print('all will' + ' print this')
             """
-        ''')
+        '''
+    )
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
@@ -281,7 +290,8 @@ def test_runner_failures():
                 Example:
                     >>> assert False, 'test 3'
             """
-        ''')
+        '''
+    )
 
     temp = utils.TempDir()
     temp.ensure()
@@ -316,10 +326,11 @@ def test_run_zero_arg():
     from xdoctest import runner
 
     source = utils.codeblock(
-        '''
+        """
         def zero_arg_print():
             print('running zero arg')
-        ''')
+        """
+    )
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
@@ -338,7 +349,9 @@ def test_run_zero_arg():
 
         with utils.CaptureStdout() as cap:
             try:
-                runner.doctest_module(modpath, 'zero_arg_print', argv=[''], verbose=3)
+                runner.doctest_module(
+                    modpath, 'zero_arg_print', argv=[''], verbose=3
+                )
             except Exception:
                 pass
         # print(cap.text)
@@ -350,12 +363,28 @@ def test_parse_cmdline():
     pytest tests/test_runner.py::test_parse_cmdline -s
     """
     from xdoctest import runner
+
     # sys.argv could be anything, so just run this for coverage to make sure it doesnt crash
     runner._parse_commandline(command=None, style=None, verbose=None, argv=None)
     # check specifying argv changes style
-    assert 'freeform' == runner._parse_commandline(command=None, style=None, verbose=None, argv=['--freeform'])[1]
-    assert 'google' == runner._parse_commandline(command=None, style=None, verbose=None, argv=['--google'])[1]
-    assert None is runner._parse_commandline(command=None, style=None, verbose=None, argv=['--google'])[0]
+    assert (
+        'freeform'
+        == runner._parse_commandline(
+            command=None, style=None, verbose=None, argv=['--freeform']
+        )[1]
+    )
+    assert (
+        'google'
+        == runner._parse_commandline(
+            command=None, style=None, verbose=None, argv=['--google']
+        )[1]
+    )
+    assert (
+        None
+        is runner._parse_commandline(
+            command=None, style=None, verbose=None, argv=['--google']
+        )[0]
+    )
 
 
 def test_runner_config():
@@ -371,7 +400,8 @@ def test_runner_config():
                 Example:
                     >>> print('i wanna see this')
             """
-        ''')
+        '''
+    )
 
     config = {
         'default_runtime_state': {'SKIP': True},
@@ -403,7 +433,8 @@ def test_global_exec():
                 Example:
                     >>> print(a)
             """
-        ''')
+        '''
+    )
 
     config = {
         'global_exec': 'a=1',
@@ -443,14 +474,14 @@ def test_hack_the_sys_argv():
                     >>> # xdoctest: +REQUIRES(--hackedflag)
                     >>> print('This will run if global_exec specified')
             """
-        ''')
+        '''
+    )
 
     import sys
+
     NEEDS_FIX = '--hackedflag' not in sys.argv
 
-    config = {
-        'global_exec': 'import sys; sys.argv.append("--hackedflag")'
-    }
+    config = {'global_exec': 'import sys; sys.argv.append("--hackedflag")'}
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
@@ -481,4 +512,5 @@ if __name__ == '__main__':
     # import pytest
     # pytest.main([__file__])
     import xdoctest
+
     xdoctest.doctest_module(__file__)

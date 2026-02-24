@@ -1,16 +1,19 @@
 """
 Need to enhance the tracebacks to spit out something more useful
 """
+
 from xdoctest import utils
 from xdoctest.utils.util_misc import _run_case
 
 
 def test_fail_call_onefunc():
     import warnings
+
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        text = _run_case(utils.codeblock(
-            '''
+        warnings.simplefilter('ignore')
+        text = _run_case(
+            utils.codeblock(
+                '''
             def func(a):
                 """
                 Example:
@@ -19,21 +22,25 @@ def test_fail_call_onefunc():
                 """
                 a = []()
                 return a
-            '''))
+            '''
+            )
+        )
         assert '>>> func(a)' in text
         assert 'rel: 2, abs: 5' in text
 
 
 def test_fail_call_twofunc():
     """
-        python ~/code/xdoctest/tests/test_traceback.py test_fail_call_twofunc
+    python ~/code/xdoctest/tests/test_traceback.py test_fail_call_twofunc
 
     """
     import warnings
+
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        text = _run_case(utils.codeblock(
-            '''
+        warnings.simplefilter('ignore')
+        text = _run_case(
+            utils.codeblock(
+                '''
             def func(a):
                 """
                 Example:
@@ -49,7 +56,9 @@ def test_fail_call_twofunc():
                     >>> pass
                 """
                 pass
-            '''))
+            '''
+            )
+        )
         assert text
         assert '>>> func(a)' in text
         assert 'rel: 2, abs: 5,' in text
@@ -57,14 +66,16 @@ def test_fail_call_twofunc():
 
 def test_fail_inside_twofunc():
     """
-        python ~/code/xdoctest/tests/test_traceback.py test_fail_inside_twofunc
+    python ~/code/xdoctest/tests/test_traceback.py test_fail_inside_twofunc
 
     """
     import warnings
+
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        text = _run_case(utils.codeblock(
-            '''
+        warnings.simplefilter('ignore')
+        text = _run_case(
+            utils.codeblock(
+                '''
             def func(a):
                 """
                 Example:
@@ -83,7 +94,9 @@ def test_fail_inside_twofunc():
                     >>> pass
                 """
                 pass
-            '''))
+            '''
+            )
+        )
         assert text
         assert '>>> a = []()' in text
         assert 'rel: 5, abs: 8' in text
@@ -91,11 +104,12 @@ def test_fail_inside_twofunc():
 
 def test_fail_inside_onefunc():
     """
-        python ~/code/xdoctest/tests/test_traceback.py test_fail_inside_onefunc
+    python ~/code/xdoctest/tests/test_traceback.py test_fail_inside_onefunc
 
     """
-    text = _run_case(utils.codeblock(
-        '''
+    text = _run_case(
+        utils.codeblock(
+            '''
         def func(a):
             """
             Example:
@@ -108,7 +122,9 @@ def test_fail_inside_onefunc():
                 >>> func(a)
             """
             return a
-        '''))
+        '''
+        )
+    )
     assert text
     assert '>>> a = []()' in text
     assert 'rel: 6, abs: 9,' in text
@@ -122,8 +138,9 @@ def test_failure_linenos():
     Example:
         >>> test_failure_linenos()
     """
-    text = _run_case(utils.codeblock(
-        r'''
+    text = _run_case(
+        utils.codeblock(
+            r'''
         def bar(a):
             return a
 
@@ -146,7 +163,9 @@ def test_failure_linenos():
                     1
                 """
                 return a
-        '''))
+        '''
+        )
+    )
 
     assert 'line 15' in text
     assert 'line 6' in text
@@ -174,11 +193,12 @@ SeeAlso:
 
 def test_lineno_failcase_gotwant():
     """
-        python ~/code/xdoctest/tests/test_linenos.py test_lineno_failcase_gotwant
+    python ~/code/xdoctest/tests/test_linenos.py test_lineno_failcase_gotwant
 
     """
-    text = _run_case(utils.codeblock(
-        '''
+    text = _run_case(
+        utils.codeblock(
+            '''
         def func(a):
             """
             Example:
@@ -187,7 +207,9 @@ def test_lineno_failcase_gotwant():
                 bar
             """
             return a
-        '''))
+        '''
+        )
+    )
     assert text
     assert 'line 3' in text
     assert 'line 6' in text
@@ -195,12 +217,13 @@ def test_lineno_failcase_gotwant():
 
 def test_lineno_failcase_called_code():
     """
-        python ~/code/xdoctest/tests/test_linenos.py test_lineno_failcase_called_code
-        python ~/code/xdoctest/tests/test_linenos.py
+    python ~/code/xdoctest/tests/test_linenos.py test_lineno_failcase_called_code
+    python ~/code/xdoctest/tests/test_linenos.py
 
     """
-    text = _run_case(utils.codeblock(
-        r'''
+    text = _run_case(
+        utils.codeblock(
+            r'''
         def func(a):
             """
             Example:
@@ -220,18 +243,21 @@ def test_lineno_failcase_called_code():
                 nested_failure(a - 1)
             else:
                 raise Exception('fail case')
-        '''))
+        '''
+        )
+    )
     assert 'rel: 6, abs: 9,' in text
     assert text
 
 
 def test_lineno_failcase_doctest_code():
     """
-        python ~/code/xdoctest/tests/test_linenos.py test_lineno_failcase_doctest_code
+    python ~/code/xdoctest/tests/test_linenos.py test_lineno_failcase_doctest_code
 
     """
-    text = _run_case(utils.codeblock(
-        r'''
+    text = _run_case(
+        utils.codeblock(
+            r'''
         def bar():
             pass
 
@@ -250,7 +276,9 @@ def test_lineno_failcase_doctest_code():
                 1
             """
             return a
-        '''))
+        '''
+        )
+    )
     assert 'rel: 5, abs: 11,' in text
     assert text
 
@@ -263,4 +291,5 @@ if __name__ == '__main__':
         pytest ~/code/xdoctest/tests/test_traceback.py -s
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)
