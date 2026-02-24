@@ -59,23 +59,26 @@ def test_parse_syntax_error():
         python tests/test_errors.py test_parse_syntax_error
     """
     docstr = utils.codeblock(
-        '''
+        """
         Example:
             >>> x = 0
             >>> 3 = 5
-            ''')
+            """
+    )
 
     info = {'callname': 'test_synerr', 'lineno': 42}
 
     # Eager parsing should cause no doctests with errors to be found
     # and warnings should be raised
     with warnings.catch_warnings(record=True) as f_warnlist:
-        f_doctests = list(core.parse_docstr_examples(docstr, style='freeform',
-                                                     **info))
+        f_doctests = list(
+            core.parse_docstr_examples(docstr, style='freeform', **info)
+        )
 
     with warnings.catch_warnings(record=True) as g_warnlist:
-        g_doctests = list(core.parse_docstr_examples(docstr, style='google',
-                                                     **info))
+        g_doctests = list(
+            core.parse_docstr_examples(docstr, style='google', **info)
+        )
 
     for w in g_warnlist:
         print(w.message)
@@ -90,9 +93,9 @@ def test_parse_syntax_error():
 
     # Google style can find doctests with bad syntax, but parsing them
     # results in an error.
-    g_doctests2 = list(core.parse_google_docstr_examples(docstr,
-                                                         eager_parse=False,
-                                                         **info))
+    g_doctests2 = list(
+        core.parse_google_docstr_examples(docstr, eager_parse=False, **info)
+    )
     assert len(g_doctests2) == 1
     for example in g_doctests2:
         with pytest.raises(exceptions.DoctestParseError):
@@ -101,10 +104,10 @@ def test_parse_syntax_error():
 
 def test_runner_syntax_error():
     """
-        python tests/test_errors.py test_runner_syntax_error
-        pytest tests/test_errors.py -k test_runner_syntax_error
+    python tests/test_errors.py test_runner_syntax_error
+    pytest tests/test_errors.py -k test_runner_syntax_error
 
-        xdoctest -m tests/test_errors.py test_runner_syntax_error
+    xdoctest -m tests/test_errors.py test_runner_syntax_error
     """
     source = utils.codeblock(
         r'''
@@ -139,7 +142,8 @@ def test_runner_syntax_error():
                     >>> import warnings
                     >>> warnings.warn('in-code warning')
             """
-        ''')
+        '''
+    )
 
     temp = utils.TempDir(persist=True)
     temp.ensure()
@@ -149,8 +153,9 @@ def test_runner_syntax_error():
         file.write(source)
 
     with utils.CaptureStdout() as cap:
-        runner.doctest_module(modpath, 'all', argv=[''], style='freeform',
-                              verbose=1)
+        runner.doctest_module(
+            modpath, 'all', argv=[''], style='freeform', verbose=1
+        )
 
     print('CAPTURED [[[[[[[[')
     print(utils.indent(cap.text))
@@ -178,12 +183,14 @@ def test_parse_doctset_error():
                 a (int): a number
 
             Example:
-                >>> a = "\\''' + '''n"
+                >>> a = "\\'''
+        + '''n"
                 >>> func(a)
             """
             pass
 
-          ''')
+          '''
+    )
     text = _run_case(source, style='google')
     text = _run_case(source, style='freeform')
     del text
@@ -208,7 +215,8 @@ def test_extract_got_exception():
             """
             def __repr__(self):
                 raise Exception('this repr fails')
-          ''')
+          '''
+    )
     text = _run_case(source, style='google')
     assert 'ExtractGotReprException' in text
 
@@ -224,4 +232,5 @@ if __name__ == '__main__':
         xdoctest -m ~/code/xdoctest/tests/test_errors.py test_extract_got_exception zero
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)

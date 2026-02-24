@@ -21,7 +21,8 @@ def test_preimport_skiped_on_disabled_module():
                 >>> # xdoctest: +REQUIRES(env:XDOCTEST_TEST_DOITANYWAY)
                 >>> print('hello')
             """
-        ''')
+        '''
+    )
 
     with utils.TempDir() as temp:
         dpath = temp.dpath

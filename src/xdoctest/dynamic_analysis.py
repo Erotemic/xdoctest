@@ -1,6 +1,7 @@
 """
 Utilities for dynamically inspecting code
 """
+
 import inspect
 import os
 import types
@@ -41,6 +42,7 @@ def parse_dynamic_calldefs(modpath_or_module):
     from xdoctest import static_analysis as static
 
     import types
+
     if isinstance(modpath_or_module, types.ModuleType):
         module = modpath_or_module
     else:
@@ -52,10 +54,12 @@ def parse_dynamic_calldefs(modpath_or_module):
             xdoctest ~/code/xdoctest/tests/notebook_with_doctests.ipynb
             """
             from xdoctest.utils import util_notebook
+
             module = util_notebook.import_notebook_from_path(modpath)
         else:
             # Possible option for dynamic parsing
             from xdoctest.utils import util_import
+
             module = util_import.import_module_from_path(modpath)
 
     calldefs = {}
@@ -67,7 +71,7 @@ def parse_dynamic_calldefs(modpath_or_module):
             lineno=0,
             doclineno=1,
             doclineno_end=1,
-            args=None
+            args=None,
         )
 
     for key, val in iter_module_doctestables(module):
@@ -79,7 +83,7 @@ def parse_dynamic_calldefs(modpath_or_module):
                 lineno=0,
                 doclineno=1,
                 doclineno_end=1,
-                args=None
+                args=None,
             )
     return calldefs
 
@@ -242,6 +246,7 @@ def is_defined_by_module(item, module):
 
     """
     from xdoctest import static_analysis as static
+
     target_modname = module.__name__
 
     # invalid_types = (int, float, list, tuple, set)
@@ -287,11 +292,12 @@ def is_defined_by_module(item, module):
                 item_modname = item.__globals__['__name__']
                 if item_modname == target_modname:
                     flag = True
-            except  AttributeError:
+            except AttributeError:
                 pass
     return flag
 
 
 if __name__ == '__main__':
     import xdoctest as xdoc
+
     xdoc.doctest_module()

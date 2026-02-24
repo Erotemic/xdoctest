@@ -1,6 +1,7 @@
 import pytest
 import sys
 from os.path import join, exists, dirname
+
 try:
     from packaging.version import parse as LooseVersion
 except ImportError:
@@ -20,6 +21,7 @@ def skip_notebook_tests_if_unsupported():
         import nbformat  # NOQA
 
         import platform
+
         if platform.python_implementation() == 'PyPy':
             # In xdoctest <= 0.15.0 (~ 2021-01-01) this didn't cause an issue
             # But I think there was a jupyter update that broke it.
@@ -34,9 +36,13 @@ def skip_notebook_tests_if_unsupported():
 def cmd(command):
     # simplified version of ub.cmd no fancy tee behavior
     import subprocess
+
     proc = subprocess.Popen(
-        command, shell=True, universal_newlines=True,
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        command,
+        shell=True,
+        universal_newlines=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     )
     out, err = proc.communicate()
     ret = proc.wait()
@@ -55,9 +61,10 @@ def demodata_notebook_fpath():
     except NameError:
         # Hack for dev CLI usage
         import os
+
         testdir = os.path.expandvars('$HOME/code/xdoctest/tests/')
         assert exists(testdir), 'assuming a specific dev environment'
-    notebook_fpath = join(testdir, "notebook_with_doctests.ipynb")
+    notebook_fpath = join(testdir, 'notebook_with_doctests.ipynb')
     return notebook_fpath
 
 
@@ -75,17 +82,20 @@ def test_xdoctest_inside_notebook():
     notebook_fpath = demodata_notebook_fpath()
 
     from xdoctest.utils import util_notebook
+
     nb, resources = util_notebook.execute_notebook(notebook_fpath, verbose=3)
 
     last_cell = nb['cells'][-1]
     text = last_cell['outputs'][0]['text']
     if '3 / 3 passed' not in text:
         import warnings
-        warnings.warn('test_xdoctest_inside_notebook might fail due to io issues')
+
+        warnings.warn(
+            'test_xdoctest_inside_notebook might fail due to io issues'
+        )
 
 
 def test_xdoctest_outside_notebook():
-
     skip_notebook_tests_if_unsupported()
 
     if sys.platform.startswith('win32'):

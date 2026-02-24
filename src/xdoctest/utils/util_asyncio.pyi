@@ -1,5 +1,6 @@
 import sys
 from typing import Any, TypeVar, final
+
 if sys.version_info >= (3, 9):
     from collections.abc import Coroutine
 else:

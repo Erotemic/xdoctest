@@ -1,4 +1,3 @@
-
 def _pkgutil_submodule_names(modpath, with_pkg=False, with_mod=True):
     """
     Ignore:
@@ -18,13 +17,14 @@ def _pkgutil_submodule_names(modpath, with_pkg=False, with_mod=True):
     else:
         # Otherwise, if it is a package, find sub-packages and sub-modules
         import pkgutil
+
         # dont use the pkgutil version, as it is incompatible with pytest
         prefix = package_name + '.'
-        walker = pkgutil.walk_packages([modpath], prefix=prefix,
-                                       onerror=lambda x: None)  # nocover
+        walker = pkgutil.walk_packages(
+            [modpath], prefix=prefix, onerror=lambda x: None
+        )  # nocover
         for importer, modname, ispkg in walker:
             if not ispkg and with_mod:
                 yield modname
             elif ispkg and with_pkg:
                 yield modname
-

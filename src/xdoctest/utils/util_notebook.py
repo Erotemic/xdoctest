@@ -40,7 +40,7 @@ from os.path import basename, dirname
 
 
 def _find_notebook(fullname, path=None):
-    """ Find a notebook, given its fully qualified name and an optional path
+    """Find a notebook, given its fully qualified name and an optional path
 
     This turns "foo.bar" into "foo/bar.ipynb"
     and tries turning "Foo_Bar" into "Foo Bar" if Foo_Bar
@@ -67,37 +67,44 @@ def _find_notebook(fullname, path=None):
     if not path:
         path = ['']
     for d in path:
-        nb_path = os.path.join(d, name + ".ipynb")
+        nb_path = os.path.join(d, name + '.ipynb')
         if os.path.isfile(nb_path):
             return nb_path
         # let import Notebook_Name find "Notebook Name.ipynb"
-        nb_path = nb_path.replace("_", " ")
+        nb_path = nb_path.replace('_', ' ')
         if os.path.isfile(nb_path):
             return nb_path
 
 
 class CellDeleter(ast.NodeTransformer):
-    """ Removes all nodes from an AST which are not suitable
-    for exporting out of a notebook. """
+    """Removes all nodes from an AST which are not suitable
+    for exporting out of a notebook."""
+
     def visit(self, node):
-        """ Visit a node. """
-        if node.__class__.__name__ in ['Module', 'FunctionDef', 'ClassDef',
-                                       'Import', 'ImportFrom']:
+        """Visit a node."""
+        if node.__class__.__name__ in [
+            'Module',
+            'FunctionDef',
+            'ClassDef',
+            'Import',
+            'ImportFrom',
+        ]:
             return node
         return None
 
 
 class NotebookLoader:
-    """ Module Loader for Jupyter Notebooks. """
+    """Module Loader for Jupyter Notebooks."""
 
     default_options = {
         'only_defs': False,
         'run_nbinit': True,
-        'encoding': 'utf-8'
+        'encoding': 'utf-8',
     }
 
     def __init__(self, path=None):
         from IPython.core.interactiveshell import InteractiveShell
+
         self.shell = InteractiveShell.instance()
         self.path = path
         self.options = self.default_options.copy()
@@ -106,6 +113,7 @@ class NotebookLoader:
         """import a notebook as a module"""
         from IPython import get_ipython
         import nbformat
+
         if fpath is None:
             fpath = _find_notebook(fullname, self.path)
 
@@ -140,7 +148,9 @@ class NotebookLoader:
             deleter = CellDeleter()
             for cell in filter(lambda c: c.cell_type == 'code', nb.cells):
                 # transform the input into executable Python
-                code = self.shell.input_transformer_manager.transform_cell(cell.source)
+                code = self.shell.input_transformer_manager.transform_cell(
+                    cell.source
+                )
                 if self.options['only_defs']:
                     # Remove anything that isn't a def or a class
                     tree = deleter.generic_visit(ast.parse(code))
@@ -279,14 +289,17 @@ def _make_test_notebook_fpath(fpath, cell_sources):
     import nbformat as nbf
     import json
     import jupyter_client.kernelspec
+
     # TODO: is there an API to generate kernelspec json correctly?
     kernel_name = jupyter_client.kernelspec.NATIVE_KERNEL_NAME
     spec = jupyter_client.kernelspec.get_kernel_spec(kernel_name)
-    metadata = {'kernelspec': {
-        'name': kernel_name,
-        'display_name': spec.display_name,
-        'language': spec.language,
-    }}
+    metadata = {
+        'kernelspec': {
+            'name': kernel_name,
+            'display_name': spec.display_name,
+            'language': spec.language,
+        }
+    }
     # Use nbformat API to create notebook structure and cell json
     nb = nbf.v4.new_notebook(metadata=metadata)
     for source in cell_sources:
@@ -302,4 +315,5 @@ if __name__ == '__main__':
         python ~/code/xdoctest/xdoctest/utils/util_notebook.py all
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)

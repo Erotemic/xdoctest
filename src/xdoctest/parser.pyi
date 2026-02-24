@@ -6,16 +6,10 @@ from _typeshed import Incomplete
 INDENT_RE: Incomplete
 NEED_16806_WORKAROUND: Incomplete
 
-
 class DoctestParser:
     simulate_repl: bool
 
-    def __init__(self, simulate_repl: bool = False) -> None:
-        ...
-
+    def __init__(self, simulate_repl: bool = False) -> None: ...
     def parse(
-            self,
-            string: str,
-            info: dict | None = None
-    ) -> List[xdoctest.doctest_part.DoctestPart | str]:
-        ...
+        self, string: str, info: dict | None = None
+    ) -> List[xdoctest.doctest_part.DoctestPart | str]: ...

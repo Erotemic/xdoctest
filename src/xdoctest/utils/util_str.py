@@ -1,6 +1,7 @@
 """
 Utilities related to string manipulations
 """
+
 import math
 import textwrap
 import warnings
@@ -37,7 +38,9 @@ def strip_ansi(text):
     # ansi_escape1 = re.compile(r'\x1b[^m]*m')
     # text = ansi_escape1.sub('', text)
     # ansi_escape2 = re.compile(r'\x1b\[([0-9,A-Z]{1,2}(;[0-9]{1,2})?(;[0-9]{3})?)?[m|K]?')
-    ansi_escape3 = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]', flags=re.IGNORECASE)
+    ansi_escape3 = re.compile(
+        r'(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]', flags=re.IGNORECASE
+    )
     text = ansi_escape3.sub('', text)
     return text
 
@@ -85,17 +88,18 @@ def color_text(text, color):
     if NO_COLOR or color is None:
         return text
     try:
-
         if sys.platform.startswith('win32'):  # nocover
             # Hack on win32 to support colored output
             try:
                 import colorama
+
                 if not colorama.initialise.atexit_done:
                     # Only init if it hasn't been done
                     colorama.init()
             except ImportError:
                 warnings.warn(
-                    'colorama is not installed, ansi colors may not work')
+                    'colorama is not installed, ansi colors may not work'
+                )
             # import os
             # if os.environ.get('XDOC_WIN32_COLORS', 'False') == 'False':
             #     # hack: dont color on windows by default, but do init colorama
@@ -103,6 +107,7 @@ def color_text(text, color):
 
         import pygments
         import pygments.console
+
         try:
             ansi_text = pygments.console.colorize(color, text)
         except KeyError:
@@ -204,17 +209,18 @@ def highlight_code(text, lexer_name='python', **kwargs):
         'c': 'cpp',
     }.get(lexer_name.replace('.', ''), lexer_name)
     try:
-
         if sys.platform.startswith('win32'):  # nocover
             # Hack on win32 to support colored output
             try:
                 import colorama
+
                 if not colorama.initialise.atexit_done:
                     # Only init if it hasn't been done
                     colorama.init()
             except ImportError:
                 warnings.warn(
-                    'colorama is not installed, ansi colors may not work')
+                    'colorama is not installed, ansi colors may not work'
+                )
             # import os
             # if os.environ.get('XDOC_WIN32_COLORS', 'False') == 'False':
             #     # hack: dont color on windows by default, but do init colorama
@@ -226,7 +232,9 @@ def highlight_code(text, lexer_name='python', **kwargs):
         import pygments.formatters.terminal
 
         formatter = pygments.formatters.terminal.TerminalFormatter(bg='dark')
-        lexer = pygments.lexers.get_lexer_by_name(lexer_name, ensurenl=False, **kwargs)
+        lexer = pygments.lexers.get_lexer_by_name(
+            lexer_name, ensurenl=False, **kwargs
+        )
         new_text = pygments.highlight(text, lexer, formatter)
         # formatter = pygments.formatters.terminal.TerminalFormatter(bg='dark')
         # lexer = pygments.lexers.get_lexer_by_name(lexer_name, **kwargs)
@@ -322,4 +330,5 @@ if __name__ == '__main__':
         python -m xdoctest.utils.util_str all
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)

@@ -109,10 +109,12 @@ def build_demo_extmod():
     plat_impl = platform.python_implementation()
     if plat_impl == 'PyPy':
         import pytest
+
         pytest.skip('pypy not supported')
 
     if sys.platform.startswith('win32'):
         import pytest
+
         pytest.skip('win32 not supported YET')
 
     try:
@@ -122,6 +124,7 @@ def build_demo_extmod():
         import ninja  # NOQA
     except Exception:
         import pytest
+
         pytest.skip('skbuild, ninja, cmake, or pybind11 not available')
 
     testing_dpath = dirname(__file__)
@@ -129,7 +132,7 @@ def build_demo_extmod():
     verstr, details = sys.version.split(' ', 1)
     try:
         # poor man's hash (in case python wasnt built with hashlib)
-        coded = (int(details.encode('utf8').hex(), 16) % (2 ** 32))
+        coded = int(details.encode('utf8').hex(), 16) % (2**32)
         hashid = coded.to_bytes(4, 'big').hex()
     except Exception:
         hashid = 'python2isdead'
@@ -179,13 +182,16 @@ def test_run_binary_doctests():
     extmod_fpath = build_demo_extmod()
     print('extmod_fpath = {!r}'.format(extmod_fpath))
     from xdoctest import runner
+
     # results = runner.doctest_module(extmod_fpath, analysis='auto')
-    results = runner.doctest_module(extmod_fpath, analysis='dynamic',
-                                    command='list', argv=[], verbose=3)
+    results = runner.doctest_module(
+        extmod_fpath, analysis='dynamic', command='list', argv=[], verbose=3
+    )
     print('results = {!r}'.format(results))
 
-    results = runner.doctest_module(extmod_fpath, analysis='dynamic',
-                                    command='all', argv=[], verbose=3)
+    results = runner.doctest_module(
+        extmod_fpath, analysis='dynamic', command='all', argv=[], verbose=3
+    )
     print('results = {!r}'.format(results))
     assert results['n_passed'] == 1
 
@@ -196,4 +202,5 @@ if __name__ == '__main__':
         python ~/code/xdoctest/tests/test_binary_ext.py
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)

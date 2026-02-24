@@ -13,11 +13,12 @@ def test_final_eval_exec():
         xdoctest -m ~/code/xdoctest/tests/test_parser.py test_final_eval_exec
     """
     string = utils.codeblock(
-        '''
+        """
         >>> x = 2
         >>> x + 1
         1
-        ''')
+        """
+    )
     self = parser.DoctestParser()
     parts = self.parse(string)
     DEBUG = 0
@@ -27,10 +28,11 @@ def test_final_eval_exec():
     assert [p.compile_mode for p in parts] == ['exec', 'eval']
 
     string = utils.codeblock(
-        '''
+        """
         >>> x = 2
         >>> x + 1
-        ''')
+        """
+    )
     self = parser.DoctestParser()
     parts = self.parse(string)
     if DEBUG:
@@ -46,7 +48,8 @@ def test_final_eval_exec():
         ... foobar
         ... """
         '\nfoobar\n'
-        ''')
+        '''
+    )
     self = parser.DoctestParser()
     parts = self.parse(string)
     if DEBUG:
@@ -55,11 +58,12 @@ def test_final_eval_exec():
     assert [p.compile_mode for p in parts] == ['exec', 'single']
 
     string = utils.codeblock(
-        r'''
+        r"""
         >>> i = 0
         >>> 0 / i
         2
-        ''')
+        """
+    )
     self = parser.DoctestParser()
     parts = self.parse(string)
     if DEBUG:
@@ -68,11 +72,12 @@ def test_final_eval_exec():
     assert [p.compile_mode for p in parts] == ['exec', 'eval']
 
     string = utils.codeblock(
-        r'''
+        r"""
         >>> if True:
         ...     2
         2
-        ''')
+        """
+    )
     self = parser.DoctestParser()
     parts = self.parse(string)
     if DEBUG:
@@ -83,12 +88,13 @@ def test_final_eval_exec():
 
 def test_compile_mode_print():
     string = utils.codeblock(
-        r'''
+        r"""
         >>> x = 2
         >>> x += 3
         >>> print('foo')
         foo
-        ''')
+        """
+    )
     self = parser.DoctestParser()
     parts = self.parse(string)
     assert [p.compile_mode for p in parts] == ['exec', 'eval']
@@ -96,17 +102,18 @@ def test_compile_mode_print():
 
 def test_label_lines():
     string = utils.codeblock(
-        r'''
+        r"""
         >>> i = 0
         >>> 0 / i
         2
-        ''')
+        """
+    )
     self = parser.DoctestParser()
     labeled = self._label_docsrc_lines(string)
     assert labeled == [
         ('dsrc', '>>> i = 0'),
         ('dsrc', '>>> 0 / i'),
-        ('want', '2')
+        ('want', '2'),
     ]
 
 
@@ -160,11 +167,12 @@ def test_label_indented_lines():
         ('dsrc', '            >>> "now its a doctest"'),
         ('text', ''),
         ('text', '            text'),
-        ('text', '    '),    # FIXME: weird that this space has an indent
+        ('text', '    '),  # FIXME: weird that this space has an indent
     ]
     if labeled != expected:
         try:
             import itertools as it
+
             for got, want in it.zip_longest(labeled, expected):
                 if got != want:
                     print(utils.color_text('GOT  = {!r}'.format(got), 'red'))
@@ -182,11 +190,12 @@ def test_ps1_linenos_1():
     Test we can find the line numbers for every "evaluatable" statement
     """
     source_lines = utils.codeblock(
-        '''
+        """
         >>> x = 2
         >>> x + 1
         1
-        ''').split('\n')[:-1]
+        """
+    ).split('\n')[:-1]
     self = parser.DoctestParser()
     linenos, mode_hint = self._locate_ps1_linenos(source_lines)
     assert mode_hint == 'eval'
@@ -201,7 +210,8 @@ def test_ps1_linenos_2():
             """
         >>> print(x.strip() + '1')
         x = 21
-        ''').split('\n')[:-1]
+        '''
+    ).split('\n')[:-1]
     self = parser.DoctestParser()
     linenos, mode_hint = self._locate_ps1_linenos(source_lines)
     assert mode_hint == 'eval'
@@ -216,7 +226,8 @@ def test_ps1_linenos_3():
             """
         >>> y = (x.strip() + '1')
         'x = 21'
-        ''').split('\n')[:-1]
+        '''
+    ).split('\n')[:-1]
     self = parser.DoctestParser()
     linenos, mode_hint = self._locate_ps1_linenos(source_lines)
     assert mode_hint == 'exec'
@@ -248,7 +259,8 @@ def test_ps1_linenos_4():
         >>> )
         >>> z
         59
-        ''').split('\n')[:-1]
+        '''
+    ).split('\n')[:-1]
     self = parser.DoctestParser()
     linenos, mode_hint = self._locate_ps1_linenos(source_lines)
     assert mode_hint == 'eval'
@@ -256,14 +268,14 @@ def test_ps1_linenos_4():
 
 
 def test_retain_source():
-    """
-    """
+    """ """
     source = utils.codeblock(
-        '''
+        """
         >>> x = 2
         >>> print("foo")
         foo
-        ''')
+        """
+    )
     source_lines = source.split('\n')[:-1]
     self = parser.DoctestParser()
     linenos, mode_hint = self._locate_ps1_linenos(source_lines)
@@ -290,11 +302,12 @@ def test_simulate_repl():
     pytest tests/test_parser.py::test_package_string_tup
     """
     string = utils.codeblock(
-        '''
+        """
         >>> x = 1
         >>> x = 2
         >>> x = 3
-        ''')
+        """
+    )
     self = parser.DoctestParser()
     self.simulate_repl = False
     assert len(self.parse(string)) == 1
@@ -304,7 +317,7 @@ def test_simulate_repl():
 
 def test_parse_multi_want():
     string = utils.codeblock(
-        '''
+        """
         >>> x = 2
         >>> x
         2
@@ -312,7 +325,8 @@ def test_parse_multi_want():
         'string'
         >>> print('string')
         string
-        ''')
+        """
+    )
     self = parser.DoctestParser()
     parts = self.parse(string)
 
@@ -323,10 +337,11 @@ def test_parse_multi_want():
 
 def test_parse_eval_nowant():
     string = utils.codeblock(
-        '''
+        """
         >>> a = 1
         >>> 1 / 0
-        ''')
+        """
+    )
     self = parser.DoctestParser()
     parts = self.parse(string)
     raw_source_lines = string.split('\n')[:]
@@ -339,11 +354,12 @@ def test_parse_eval_nowant():
 
 def test_parse_eval_single_want():
     string = utils.codeblock(
-        '''
+        """
         >>> a = 1
         >>> 1 / 0
         We have a want
-        ''')
+        """
+    )
     self = parser.DoctestParser()
     parts = self.parse(string)
     raw_source_lines = string.split('\n')[:-1]
@@ -356,9 +372,10 @@ def test_parse_eval_single_want():
 
 def test_parse_comment():
     string = utils.codeblock(
-        '''
+        """
         >>> # nothing
-        ''')
+        """
+    )
     self = parser.DoctestParser()
     labeled = self._label_docsrc_lines(string)
     assert labeled == [('dsrc', '>>> # nothing')]
@@ -369,12 +386,12 @@ def test_parse_comment():
 
 
 def test_text_after_want():
-    string = utils.codeblock('''
+    string = utils.codeblock("""
         Example:
             >>> dsrc()
             want
         just some test
-    ''')
+    """)
     self = parser.DoctestParser()
     labeled = self._label_docsrc_lines(string)
     expected = [
@@ -387,11 +404,11 @@ def test_text_after_want():
 
 
 def test_want_ellipse_with_space():
-    string = utils.codeblock('''
+    string = utils.codeblock("""
         Example:
             >>> dsrc()
             ...
-    ''')
+    """)
     # Add an extra space after the ellipses to be clear what we are testing
     # and because my editor automatically removes it when I try to save the
     # file ¯\_(ツ)_/¯
@@ -407,10 +424,10 @@ def test_want_ellipse_with_space():
 
 
 def test_syntax_error():
-    string = utils.codeblock('''
+    string = utils.codeblock("""
         Example:
             >>> 03 = dsrc()
-    ''')
+    """)
     self = parser.DoctestParser()
     with pytest.raises(exceptions.DoctestParseError):
         self.parse(string)
@@ -425,10 +442,11 @@ def test_nonbalanced_statement():
     static.is_balanced_statement(lines, only_tokens=True)
     """
     string = utils.codeblock(
-        '''
+        """
         >>> x = [
         # ] this bracket is to make my editor happy and is does not effect the test
-        ''').splitlines()[0]
+        """
+    ).splitlines()[0]
 
     self = parser.DoctestParser()
     with pytest.raises(exceptions.DoctestParseError) as exc_info:
@@ -443,11 +461,12 @@ def test_bad_indent():
         python tests/test_parser.py test_bad_indent
     """
     string = utils.codeblock(
-        '''
+        """
         Example:
             >>> x = [
         # ] bad want indent
-        ''')
+        """
+    )
 
     self = parser.DoctestParser()
     with pytest.raises(exceptions.DoctestParseError) as exc_info:
@@ -458,15 +477,17 @@ def test_bad_indent():
 
 def test_part_nice_no_lineoff():
     from xdoctest import doctest_part
+
     self = doctest_part.DoctestPart([], [], None)
     assert str(self) == '<DoctestPart(src="", want=None)>'
 
 
 def test_repl_oneline():
     string = utils.codeblock(
-        '''
+        """
         >>> x = 1
-        ''')
+        """
+    )
     self = parser.DoctestParser(simulate_repl=True)
     parts = self.parse(string)
     assert [p.source for p in parts] == ['x = 1']
@@ -474,10 +495,11 @@ def test_repl_oneline():
 
 def test_repl_twoline():
     string = utils.codeblock(
-        '''
+        """
         >>> x = 1
         >>> x = 2
-        ''')
+        """
+    )
     self = parser.DoctestParser(simulate_repl=True)
     parts = self.parse(string)
     assert [p.source for p in parts] == ['x = 1', 'x = 2']
@@ -502,7 +524,7 @@ def test_repl_comment_in_string():
 
 def test_inline_directive():
     """
-        python ~/code/xdoctest/tests/test_parser.py test_inline_directive
+    python ~/code/xdoctest/tests/test_parser.py test_inline_directive
     """
     string = utils.codeblock(
         '''
@@ -528,7 +550,8 @@ def test_inline_directive():
                   # doctest: still not a directive
                   """)
         finalwant
-        ''')
+        '''
+    )
     # source_lines = string.splitlines()
     self = parser.DoctestParser()
     # [0, 1, 3, 4, 7, 8, 10, 11, 12]
@@ -548,14 +571,15 @@ def test_inline_directive():
 
 def test_block_directive_nowant1():
     """
-        python ~/code/xdoctest/tests/test_parser.py test_block_directive_nowant1
+    python ~/code/xdoctest/tests/test_parser.py test_block_directive_nowant1
     """
     string = utils.codeblock(
-        '''
+        """
         >>> # doctest: +SKIP
         >>> func1()
         >>> func2()
-        ''')
+        """
+    )
     # source_lines = string.splitlines()
     self = parser.DoctestParser()
     parts = self.parse(string)
@@ -572,17 +596,18 @@ def test_block_directive_nowant1():
 
 def test_block_directive_nowant2():
     """
-        python ~/code/xdoctest/tests/test_parser.py test_block_directive_nowant
+    python ~/code/xdoctest/tests/test_parser.py test_block_directive_nowant
     """
     string = utils.codeblock(
-        '''
+        """
         >>> # doctest: +SKIP
         >>> func1()
         >>> func2()
         >>> # doctest: +SKIP
         >>> func1()
         >>> func2()
-        ''')
+        """
+    )
     # source_lines = string.splitlines()
     self = parser.DoctestParser()
     parts = self.parse(string)
@@ -592,15 +617,16 @@ def test_block_directive_nowant2():
 
 def test_block_directive_want1_assign():
     """
-        python ~/code/xdoctest/tests/test_parser.py test_block_directive_want1
+    python ~/code/xdoctest/tests/test_parser.py test_block_directive_want1
     """
     string = utils.codeblock(
-        '''
+        """
         >>> # doctest: +SKIP
         >>> func1()
         >>> _ = func2()  # assign this line so we dont break it off for eval
         want
-        ''')
+        """
+    )
     self = parser.DoctestParser()
     parts = self.parse(string)
     print('----')
@@ -616,15 +642,16 @@ def test_block_directive_want1_assign():
 
 def test_block_directive_want1_eval():
     """
-        python ~/code/xdoctest/tests/test_parser.py test_block_directive_want1
+    python ~/code/xdoctest/tests/test_parser.py test_block_directive_want1
     """
     string = utils.codeblock(
-        '''
+        """
         >>> # doctest: +SKIP
         >>> func1()
         >>> func2()  # eval this line so it is broken off
         want
-        ''')
+        """
+    )
     self = parser.DoctestParser()
     parts = self.parse(string)
     assert len(parts) == 2
@@ -632,16 +659,17 @@ def test_block_directive_want1_eval():
 
 def test_block_directive_want2_assign():
     """
-        python ~/code/xdoctest/tests/test_parser.py test_block_directive_want2
+    python ~/code/xdoctest/tests/test_parser.py test_block_directive_want2
     """
     string = utils.codeblock(
-        '''
+        """
         >>> func1()
         >>> # doctest: +SKIP
         >>> func2()
         >>> _ = func3()
         want
-        ''')
+        """
+    )
     self = parser.DoctestParser()
     parts = self.parse(string)
     assert len(parts) == 2
@@ -649,16 +677,17 @@ def test_block_directive_want2_assign():
 
 def test_block_directive_want2_eval():
     """
-        python ~/code/xdoctest/tests/test_parser.py test_block_directive_want2_eval
+    python ~/code/xdoctest/tests/test_parser.py test_block_directive_want2_eval
     """
     string = utils.codeblock(
-        '''
+        """
         >>> func1()
         >>> # doctest: +SKIP
         >>> func2()
         >>> func3()
         want
-        ''')
+        """
+    )
     self = parser.DoctestParser()
     parts = self.parse(string)
     print('----')
@@ -674,10 +703,10 @@ def test_block_directive_want2_eval():
 
 def test_block_directive_want2_eval2():
     """
-        python ~/code/xdoctest/tests/test_parser.py test_block_directive_want2_eval
+    python ~/code/xdoctest/tests/test_parser.py test_block_directive_want2_eval
     """
     string = utils.codeblock(
-        '''
+        """
         >>> func1()
         >>> func1()
         >>> # doctest: +SKIP
@@ -689,7 +718,8 @@ def test_block_directive_want2_eval2():
         >>> func3()
         >>> func4()
         want
-        ''')
+        """
+    )
     self = parser.DoctestParser()
     parts = self.parse(string)
     assert len(parts) == 4
@@ -697,7 +727,7 @@ def test_block_directive_want2_eval2():
 
 def test_gh_issue_25_parsing_failure():
     string = utils.codeblock(
-        '''
+        """
         >>> _, o = 0, 1
         >>> A = B = C = D = 1
         >>> cc_mask = [        # Y
@@ -711,25 +741,27 @@ def test_gh_issue_25_parsing_failure():
         >>> ]
         >>> # a regular comment
         >>> print(cc_mask)
-        ''')
+        """
+    )
     source_lines = string.splitlines()
     self = parser.DoctestParser()
     ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
-    assert ps1_linenos ==  [0, 1, 2, 11, 12]
+    assert ps1_linenos == [0, 1, 2, 11, 12]
     parts = self.parse(string)
     assert len(parts) == 1
 
 
 def test_parser_with_type_annot():
     string = utils.codeblock(
-        '''
+        """
         >>> def foo(x: str) -> None:
         >>>     ...
-        ''')
+        """
+    )
     source_lines = string.splitlines()
     self = parser.DoctestParser()
     ps1_linenos = self._locate_ps1_linenos(source_lines)[0]
-    assert ps1_linenos ==  [0]
+    assert ps1_linenos == [0]
     parts = self.parse(string)
     assert len(parts) == 1
 
@@ -737,9 +769,10 @@ def test_parser_with_type_annot():
 def test_parse_tabs():
     tab = '\t'
     string = utils.codeblock(
-        f'''
+        f"""
         >>> text = "tab{tab}sep{tab}val"
-        ''')
+        """
+    )
     self = parser.DoctestParser()
     parts = self.parse(string)
     doctest_part = parts[0]
@@ -756,4 +789,5 @@ if __name__ == '__main__':
         pytest tests/test_parser.py -vv
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)

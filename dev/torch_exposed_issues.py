@@ -1,5 +1,3 @@
-
-
 # We should be able to handle these:
 
 
@@ -37,7 +35,7 @@ def issue1():
 def issue2():
     # Should be able to parse that setup
     def CppExtension(name, sources, *args, **kwargs):
-        r'''
+        r"""
         Creates a :class:`setuptools.Extension` for C++.
 
         Convenience method that creates a :class:`setuptools.Extension` with the
@@ -60,7 +58,7 @@ def issue2():
                  cmdclass={
                      'build_ext': BuildExtension
                  })
-        '''
+        """
         include_dirs = kwargs.get('include_dirs', [])
         include_dirs += include_paths()
         kwargs['include_dirs'] = include_dirs
@@ -96,6 +94,7 @@ def issue2():
                     hx, cx = rnn(input[i], (hx, cx))
                     output.append(hx)
         """
+
         _FLOAT_MODULE = torch.nn.LSTMCell
 
 

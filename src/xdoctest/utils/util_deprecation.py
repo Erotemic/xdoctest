@@ -3,8 +3,15 @@ Utilities for helping robustly deprecate features.
 """
 
 
-def schedule_deprecation(modname, name='?', type='?', migration='',
-                         deprecate=None, error=None, remove=None):
+def schedule_deprecation(
+    modname,
+    name='?',
+    type='?',
+    migration='',
+    deprecate=None,
+    error=None,
+    remove=None,
+):
     """
     Deprecation machinery to help provide users with a smoother transition.
 
@@ -88,6 +95,7 @@ def schedule_deprecation(modname, name='?', type='?', migration='',
     """
     import sys
     import warnings
+
     try:
         from packaging.version import parse as parse_version
     except ImportError:
@@ -108,14 +116,20 @@ def schedule_deprecation(modname, name='?', type='?', migration='',
         error_str = ' in {}'.format(error)
     if deprecate is None or current >= deprecate:
         msg = (
-            'The "{name}" {type} was deprecated{deprecate_str}, will cause '
-            'an error{error_str} and will be removed{remove_str}. The current '
-            'version is {current}. {migration}'
-        ).format(**locals()).strip()
+            (
+                'The "{name}" {type} was deprecated{deprecate_str}, will cause '
+                'an error{error_str} and will be removed{remove_str}. The current '
+                'version is {current}. {migration}'
+            )
+            .format(**locals())
+            .strip()
+        )
         if remove is not None and current >= remove:
             raise AssertionError(
-                'Forgot to remove deprecated: ' + msg + ' ' +
-                'Remove the function, or extend the scheduled remove version.'
+                'Forgot to remove deprecated: '
+                + msg
+                + ' '
+                + 'Remove the function, or extend the scheduled remove version.'
             )
         if error is not None and current >= error:
             raise RuntimeError(msg)

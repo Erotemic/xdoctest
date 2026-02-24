@@ -1,6 +1,7 @@
 """
 https://tohtml.com/
 """
+
 import operator
 
 
@@ -63,6 +64,7 @@ def paragraph(text):
         >>> assert chr(10) in text and chr(10) not in out
     """
     import re
+
     out = re.sub(r'\s\s*', ' ', text).strip()
     return out
 
@@ -190,4 +192,5 @@ if __name__ == '__main__':
         python -m xdoctest ~/code/xdoctest/dev/talk.py demo_directive
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)

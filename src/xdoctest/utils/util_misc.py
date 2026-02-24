@@ -1,6 +1,7 @@
 """
 Utilities that are mainly used in self-testing
 """
+
 from os.path import join
 import random
 from .util_path import TempDir
@@ -16,6 +17,7 @@ class TempDoctest:
         >>> doctests = list(core.parse_doctestables(self.modpath))
         >>> assert len(doctests) == 1
     """
+
     def __init__(self, docstr, modname=None):
         if modname is None:
             # make a random temporary module name
@@ -40,6 +42,7 @@ class TempModule:
         >>> doctests = list(core.parse_doctestables(self.modpath))
         >>> assert len(doctests) == 1
     """
+
     def __init__(self, module_text, modname=None):
         if modname is None:
             # make a random temporary module name
@@ -59,6 +62,7 @@ class TempModule:
         """
         import pathlib
         import os
+
         print(f'--- <TempModule {self!r}> ---')
         print(f'self.modname={self.modname!r}')
         print(f'self.dpath={self.dpath!r}')
@@ -91,22 +95,26 @@ def _run_case(source, style='auto'):
     """
     from xdoctest import utils
     from xdoctest import runner
+
     COLOR = 'yellow'
+
     def cprint(msg, color=COLOR):
         print(utils.color_text(str(msg), COLOR))
-    cprint('\n\n'
-           '\n <RUN CASE> '
-           '\n  ========  '
-           '\n', COLOR)
+
+    cprint('\n\n\n <RUN CASE> \n  ========  \n', COLOR)
 
     cprint('CASE SOURCE:')
     cprint('------------')
-    print(utils.indent(
-        utils.add_line_numbers(utils.highlight_code(source, 'python'))))
+    print(
+        utils.indent(
+            utils.add_line_numbers(utils.highlight_code(source, 'python'))
+        )
+    )
 
     print('')
 
     import hashlib
+
     hasher = hashlib.sha1()
     hasher.update(source.encode('utf8'))
     hashid = hasher.hexdigest()[0:8]
