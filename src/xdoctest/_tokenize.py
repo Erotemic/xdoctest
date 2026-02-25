@@ -1,4 +1,3 @@
-#  type: ignore
 # Vendored from Python 3.11
 """Tokenization help for Python programs.
 

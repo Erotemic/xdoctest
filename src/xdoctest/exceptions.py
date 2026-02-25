@@ -1,6 +1,7 @@
 """
 Define errors that may be raised by xdoctest
 """
+
 from __future__ import annotations
 
 
@@ -48,12 +49,17 @@ class IncompleteParseError(SyntaxError):
     """
 
 
-try:
-    import _pytest
-    import _pytest.outcomes
-except ImportError:  # nocover
-    # Define dummy skipped exception if pytest is not available
-    class _pytest:  # type: ignore
-        class outcomes:
-            class Skipped(Exception):
-                pass
+def _resolve_skipped_exception_class():
+    try:
+        from _pytest.outcomes import Skipped as pytest_skipped
+    except ImportError:  # nocover
+
+        class LocalSkipped(Exception):
+            pass
+
+        return LocalSkipped
+    else:
+        return pytest_skipped
+
+
+Skipped = _resolve_skipped_exception_class()

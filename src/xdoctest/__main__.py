@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import sys
 
-
 __tests__ = """
 Ignore:
     xdoctest -m xdoctest.demo
@@ -46,8 +45,9 @@ def main(argv: list[str] | None = None) -> int:
 
     import argparse
     import textwrap
-    from xdoctest import utils
     from os.path import exists
+
+    from xdoctest import utils
 
     # FIXME: default values are reporting incorrectly or are missformated
     class RawDescriptionDefaultsHelpFormatter(
@@ -88,11 +88,10 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     # The bulk of the argparse CLI is defined in the doctest example
-    from xdoctest import doctest_example
-    from xdoctest import runner
+    from xdoctest import doctest_example, runner
 
-    runner._update_argparse_cli(parser.add_argument)  # type: ignore[attr-defined]
-    doctest_example.DoctestConfig()._update_argparse_cli(parser.add_argument)  # type: ignore[attr-defined]
+    runner._update_argparse_cli(parser.add_argument)
+    doctest_example.DoctestConfig()._update_argparse_cli(parser.add_argument)
 
     args, unknown = parser.parse_known_args(args=argv[1:])
     ns = args.__dict__.copy()
@@ -142,16 +141,22 @@ def main(argv: list[str] | None = None) -> int:
         options = ''
         pyproject_fpath = 'pyproject.toml'
         if exists(pyproject_fpath):
+            toml_loader = None
             try:
                 import tomllib
             except ImportError:
                 try:
-                    import tomli as tomllib_fallback
+                    import tomli
                 except ImportError:
                     pass
+                else:
+                    toml_loader = tomli
             else:
+                toml_loader = tomllib
+
+            if toml_loader is not None:
                 with open(pyproject_fpath, 'rb') as file:
-                    pyproject_settings = tomllib.load(file)
+                    pyproject_settings = toml_loader.load(file)
                 try:
                     options = pyproject_settings['tool']['xdoctest']['options']
                 except KeyError:
@@ -169,7 +174,7 @@ def main(argv: list[str] | None = None) -> int:
 
     from xdoctest import doctest_example
 
-    config = doctest_example.DoctestConfig()._populate_from_cli(ns)  # type: ignore[attr-defined]
+    config = doctest_example.DoctestConfig()._populate_from_cli(ns)
 
     if config['verbose'] > 2:
         print(

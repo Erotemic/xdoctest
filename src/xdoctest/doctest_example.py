@@ -1,26 +1,30 @@
 """
 This module defines the main class that holds a DocTest example
 """
-from __future__ import annotations
 
+from __future__ import annotations
 import __future__
+
 import ast
-from collections import OrderedDict
-import traceback
-import warnings
 import math
-import sys
 import re
+import sys
+import traceback
 import types
+import warnings
+from collections import OrderedDict
 from inspect import CO_COROUTINE
-from xdoctest import utils
-from xdoctest import directive
-from xdoctest import constants
+
+from xdoctest import (
+    checker,
+    constants,
+    directive,
+    exceptions,
+    global_state,
+    parser,
+    utils,
+)
 from xdoctest import static_analysis as static
-from xdoctest import parser
-from xdoctest import checker
-from xdoctest import exceptions
-from xdoctest import global_state
 
 __devnotes__ = """
 TODO:
@@ -1098,7 +1102,7 @@ class DocTest:
                     raise
                 except (
                     exceptions.ExitTestException,
-                    exceptions._pytest.outcomes.Skipped,
+                    exceptions.Skipped,
                 ) as ex:
                     if verbose > 0:
                         print('Test gracefully exists on: ex={}'.format(ex))

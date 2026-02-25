@@ -4,26 +4,23 @@ The core logic that allows for xdoctest to parse source statically
 
 from __future__ import annotations
 
-import sys
-from os.path import exists
-from os.path import isfile
-from os.path import join
-from os.path import splitext
-import os
 import ast
-import re
-from collections import deque, OrderedDict
-from xdoctest import utils
-
-from xdoctest.utils.util_import import _platform_pylib_exts  # NOQA
-from xdoctest.utils.util_import import (  # NOQA
-    split_modpath,
-    modname_to_modpath,
-    is_modname_importable,
-    modpath_to_modname,
-)
-
+import importlib
+import os
 import platform
+import re
+import sys
+from collections import OrderedDict, deque
+from os.path import exists, isfile, join, splitext
+
+from xdoctest import utils
+from xdoctest.utils.util_import import (  # NOQA
+    _platform_pylib_exts,  # NOQA
+    is_modname_importable,
+    modname_to_modpath,
+    modpath_to_modname,
+    split_modpath,
+)
 
 PLAT_IMPL = platform.python_implementation()
 
@@ -34,9 +31,9 @@ IS_PY_LT_314 = sys.version_info[0:2] < (3, 14)  # type: bool
 
 
 if IS_PY_GE_312:
-    from xdoctest import _tokenize as tokenize
+    tokenize = importlib.import_module('xdoctest._tokenize')
 else:
-    import tokenize  # type: ignore[no-redef]
+    tokenize = importlib.import_module('tokenize')
 
 
 class CallDefNode:

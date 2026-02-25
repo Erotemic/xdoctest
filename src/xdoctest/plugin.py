@@ -17,21 +17,40 @@ https://github.com/pytest-dev/pytest
 
 from __future__ import annotations
 
+from typing import cast
+
 import pytest
-from _pytest._code import code
 from _pytest import fixtures
+from _pytest._code import code
 
 try:
-    from packaging.version import parse as Version
+    from packaging import version as _packaging_version
 except ImportError:  # nocover
-    from distutils.version import LooseVersion as Version  # type: ignore[no-redef]
+    from distutils import version as _distutils_version
 
-_PYTEST_IS_GE_620 = Version(pytest.__version__) >= Version('6.2.0')
-_PYTEST_IS_GE_800 = Version(pytest.__version__) >= Version('8.0.0')
+    def _parse_version(version_text):
+        return _distutils_version.LooseVersion(version_text)
+else:
+
+    def _parse_version(version_text):
+        return _packaging_version.parse(version_text)
+
+
+_PYTEST_IS_GE_620 = _parse_version(pytest.__version__) >= _parse_version(
+    '6.2.0'
+)
+_PYTEST_IS_GE_800 = _parse_version(pytest.__version__) >= _parse_version(
+    '8.0.0'
+)
 
 
 if _PYTEST_IS_GE_800:
-    from typing import Dict
+    from typing import Any, Dict
+
+    try:
+        from typing import override
+    except ImportError:  # nocover
+        from typing_extensions import override
     from _pytest.fixtures import TopRequest
 
 
@@ -150,7 +169,7 @@ if pytest.__version__ < '7.':  # nocover
 
 else:
 
-    def pytest_collect_file(file_path, parent):  # type: ignore
+    def pytest_collect_file(file_path, parent):
         return _pytest_collect_file(file_path, parent, path=file_path)
 
     def _suffix(path):
@@ -230,7 +249,8 @@ class XDoctestItem(pytest.Item):
     if _PYTEST_IS_GE_800:
 
         @classmethod
-        def from_parent(  # type: ignore
+        @override
+        def from_parent(
             cls,
             parent,
             name,
@@ -253,7 +273,7 @@ class XDoctestItem(pytest.Item):
     def _initrequest(self) -> None:
         assert _PYTEST_IS_GE_800
         self.funcargs: Dict[str, object] = {}
-        self._request = TopRequest(self, _ispytest=True)  # type: ignore[arg-type]
+        self._request = TopRequest(cast(Any, self), _ispytest=True)
 
     def setup(self):
         if _PYTEST_IS_GE_800:
