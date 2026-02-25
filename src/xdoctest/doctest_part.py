@@ -4,6 +4,7 @@ example. Multiple parts are typically stored in a
 :class:`xdoctest.doctest_example.Doctest`, which manages execution of each
 part.
 """
+
 from __future__ import annotations
 
 import math
@@ -21,6 +22,12 @@ TODO:
 
 
 class DoctestPart:
+    exec_lines: list[str]
+    want_lines: list[str] | None
+    line_offset: int
+    orig_lines: list[str] | None
+    partno: int | None
+    compile_mode: str
     """
     The result of parsing that represents a "logical block" of code.
     If a want statement is defined, it is stored here.
@@ -43,13 +50,13 @@ class DoctestPart:
 
     def __init__(
         self,
-        exec_lines,
-        want_lines=None,
-        line_offset=0,
-        orig_lines=None,
-        directives=None,
-        partno=None,
-    ):
+        exec_lines: list[str],
+        want_lines: list[str] | None = None,
+        line_offset: int = 0,
+        orig_lines: list[str] | None = None,
+        directives: list | None = None,
+        partno: int | None = None,
+    ) -> None:
         """
         Args:
             exec_lines (List[str]):
@@ -198,11 +205,11 @@ class DoctestPart:
 
     def check(
         part,
-        got_stdout,
-        got_eval=constants.NOT_EVALED,
-        runstate=None,
-        unmatched=None,
-    ):
+        got_stdout: str,
+        got_eval: object = constants.NOT_EVALED,
+        runstate: directive.RuntimeState | None = None,
+        unmatched: list | None = None,
+    ) -> None:
         r"""
         Check if the "got" output obtained by running this test matches the
         "want" target. Note there are two types of "got" output: (1) output

@@ -41,6 +41,7 @@ References:
     .. [CustomPrompt] https://wiki.archlinux.org/title/Bash/Prompt_customization
     .. [GeekPrompt] https://web.archive.org/web/20230824025647/https://www.thegeekstuff.com/2008/09/bash-shell-take-control-of-ps1-ps2-ps3-ps4-and-prompt_command/
 """
+
 from __future__ import annotations
 
 import ast
@@ -89,7 +90,7 @@ class DoctestParser:
         >>> print('\n'.join(list(map(str, doctest_parts))))
     """
 
-    def __init__(self, simulate_repl=False):
+    def __init__(self, simulate_repl: bool = False) -> None:
         """
         Args:
             simulate_repl (bool): if True each line will be treated as its
@@ -98,7 +99,9 @@ class DoctestParser:
         """
         self.simulate_repl = simulate_repl
 
-    def parse(self, string, info=None):
+    def parse(
+        self, string: str, info: dict | None = None
+    ) -> list[doctest_part.DoctestPart | str]:
         r"""
         Divide the given string into examples and interleaving text.
 
