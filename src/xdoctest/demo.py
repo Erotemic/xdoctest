@@ -8,6 +8,7 @@ CommandLine:
     xdoctest -m xdoctest.demo --silent
     xdoctest -m xdoctest.demo --quiet
 """
+
 from __future__ import annotations
 
 

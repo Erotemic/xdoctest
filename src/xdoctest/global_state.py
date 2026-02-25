@@ -2,6 +2,7 @@
 Global state initialized at import time.
 Used for hidden arguments and developer features.
 """
+
 from __future__ import annotations
 
 import os

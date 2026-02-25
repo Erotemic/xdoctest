@@ -4,6 +4,7 @@ Provides a simple script for running module doctests.
 
 This should work even if the target module is unaware of xdoctest.
 """
+
 from __future__ import annotations
 
 import sys

@@ -1,6 +1,7 @@
 """
 The core logic that allows for xdoctest to parse source statically
 """
+
 from __future__ import annotations
 
 import sys
@@ -35,7 +36,7 @@ IS_PY_LT_314 = sys.version_info[0:2] < (3, 14)  # type: bool
 if IS_PY_GE_312:
     from xdoctest import _tokenize as tokenize
 else:
-    import tokenize
+    import tokenize  # type: ignore[no-redef]
 
 
 class CallDefNode:

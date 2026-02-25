@@ -1,6 +1,7 @@
 """
 Defines sentinel values for internal xdoctest usage
 """
+
 from __future__ import annotations
 
 

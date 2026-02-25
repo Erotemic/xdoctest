@@ -14,6 +14,7 @@ this code is heavilly based on ``pytest/_pytest/doctest.py`` plugin file in
 https://github.com/pytest-dev/pytest
 
 """
+
 from __future__ import annotations
 
 import pytest
@@ -23,7 +24,7 @@ from _pytest import fixtures
 try:
     from packaging.version import parse as Version
 except ImportError:  # nocover
-    from distutils.version import LooseVersion as Version
+    from distutils.version import LooseVersion as Version  # type: ignore[no-redef]
 
 _PYTEST_IS_GE_620 = Version(pytest.__version__) >= Version('6.2.0')
 _PYTEST_IS_GE_800 = Version(pytest.__version__) >= Version('8.0.0')
