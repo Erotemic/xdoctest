@@ -19,6 +19,7 @@ The following is a glossary of terms and jargon used in this repo.
 
 * TODO - complete this list (Make an issue or PR if there is any term you don't immediately understand!).
 """
+from __future__ import annotations
 
 import textwrap
 import warnings

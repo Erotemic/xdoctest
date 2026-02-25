@@ -151,6 +151,7 @@ Example:
     >>> # New in 0.7.3: the requires directive can accept module names
     >>> # xdoctest: +REQUIRES(module:foobar)
 """
+from __future__ import annotations
 
 import sys
 import os

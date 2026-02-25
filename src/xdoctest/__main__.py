@@ -4,6 +4,7 @@ Provides a simple script for running module doctests.
 
 This should work even if the target module is unaware of xdoctest.
 """
+from __future__ import annotations
 
 import sys
 
@@ -17,7 +18,7 @@ Ignore:
 """
 
 
-def main(argv=None):
+def main(argv: list[str] | None = None) -> int:
     """
     Args:
         argv (List[str] | None):
@@ -89,8 +90,8 @@ def main(argv=None):
     from xdoctest import doctest_example
     from xdoctest import runner
 
-    runner._update_argparse_cli(parser.add_argument)
-    doctest_example.DoctestConfig()._update_argparse_cli(parser.add_argument)
+    runner._update_argparse_cli(parser.add_argument)  # type: ignore[attr-defined]
+    doctest_example.DoctestConfig()._update_argparse_cli(parser.add_argument)  # type: ignore[attr-defined]
 
     args, unknown = parser.parse_known_args(args=argv[1:])
     ns = args.__dict__.copy()
@@ -144,7 +145,7 @@ def main(argv=None):
                 import tomllib
             except ImportError:
                 try:
-                    import tomli as tomllib
+                    import tomli as tomllib_fallback
                 except ImportError:
                     pass
             else:
@@ -157,17 +158,17 @@ def main(argv=None):
         if exists('pytest.ini'):
             import configparser
 
-            parser = configparser.ConfigParser()
-            parser.read('pytest.ini')
+            config_parser = configparser.ConfigParser()
+            config_parser.read('pytest.ini')
             try:
-                options = parser.get('pytest', 'xdoctest_options')
+                options = config_parser.get('pytest', 'xdoctest_options')
             except configparser.NoOptionError:
                 pass
         ns['options'] = options
 
     from xdoctest import doctest_example
 
-    config = doctest_example.DoctestConfig()._populate_from_cli(ns)
+    config = doctest_example.DoctestConfig()._populate_from_cli(ns)  # type: ignore[attr-defined]
 
     if config['verbose'] > 2:
         print(

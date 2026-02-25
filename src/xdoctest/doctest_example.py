@@ -1,6 +1,7 @@
 """
 This module defines the main class that holds a DocTest example
 """
+from __future__ import annotations
 
 import __future__
 import ast

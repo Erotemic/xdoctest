@@ -1,6 +1,7 @@
 """
 Utilities for dynamically inspecting code
 """
+from __future__ import annotations
 
 import inspect
 import os

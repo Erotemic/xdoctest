@@ -1,17 +1,18 @@
 """
 Utilities for helping robustly deprecate features.
 """
+from __future__ import annotations
 
 
 def schedule_deprecation(
-    modname,
-    name='?',
-    type='?',
-    migration='',
-    deprecate=None,
-    error=None,
-    remove=None,
-):
+    modname: str,
+    name: str = '?',
+    type: str = '?',
+    migration: str = '',
+    deprecate: str | None = None,
+    error: str | None = None,
+    remove: str | None = None,
+) -> None:
     """
     Deprecation machinery to help provide users with a smoother transition.
 
@@ -97,24 +98,23 @@ def schedule_deprecation(
     import warnings
 
     try:
-        from packaging.version import parse as parse_version
+        import packaging.version as _pkg_version
+
+        _parse_version = _pkg_version.parse
     except ImportError:
-        from distutils.version import LooseVersion as parse_version
+        import distutils.version as _dist_version
+
+        _parse_version = _dist_version.LooseVersion
+
     module = sys.modules[modname]
-    current = parse_version(module.__version__)
-    deprecate_str = ''
-    if deprecate is not None:
-        deprecate = parse_version(deprecate)
-        deprecate_str = ' in {}'.format(deprecate)
-    remove_str = ''
-    if remove is not None:
-        remove = parse_version(remove)
-        remove_str = ' in {}'.format(remove)
-    error_str = ''
-    if error is not None:
-        error = parse_version(error)
-        error_str = ' in {}'.format(error)
-    if deprecate is None or current >= deprecate:
+    current = _parse_version(module.__version__)
+    deprecate_v = _parse_version(deprecate) if deprecate is not None else None
+    remove_v = _parse_version(remove) if remove is not None else None
+    error_v = _parse_version(error) if error is not None else None
+    deprecate_str = '' if deprecate_v is None else f' in {deprecate_v}'
+    remove_str = '' if remove_v is None else f' in {remove_v}'
+    error_str = '' if error_v is None else f' in {error_v}'
+    if deprecate_v is None or current >= deprecate_v:
         msg = (
             (
                 'The "{name}" {type} was deprecated{deprecate_str}, will cause '
@@ -124,14 +124,14 @@ def schedule_deprecation(
             .format(**locals())
             .strip()
         )
-        if remove is not None and current >= remove:
+        if remove_v is not None and current >= remove_v:
             raise AssertionError(
                 'Forgot to remove deprecated: '
                 + msg
                 + ' '
                 + 'Remove the function, or extend the scheduled remove version.'
             )
-        if error is not None and current >= error:
+        if error_v is not None and current >= error_v:
             raise RuntimeError(msg)
         else:
             warnings.warn(msg, DeprecationWarning)

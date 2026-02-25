@@ -1,6 +1,7 @@
 """
 Port of NiceRepr from ubelt.util_mixins
 """
+from __future__ import annotations
 
 
 class NiceRepr:

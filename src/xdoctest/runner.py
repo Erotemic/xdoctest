@@ -47,6 +47,7 @@ run the doctests as such:
     python -m xdoctest.runner list
 
 """
+from __future__ import annotations
 
 from xdoctest import dynamic_analysis
 from xdoctest import core

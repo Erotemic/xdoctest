@@ -30,6 +30,7 @@ disabled by setting NotebookLoader.default_options['run_nbinit'] = False.
 Finally, you can set the encoding of the notebooks with
 NotebookLoader.default_options['encoding']. The default is 'utf-8'.
 """
+from __future__ import annotations
 
 import io
 import os

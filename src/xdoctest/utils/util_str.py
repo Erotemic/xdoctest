@@ -2,6 +2,8 @@
 Utilities related to string manipulations
 """
 
+from __future__ import annotations
+
 import math
 import textwrap
 import warnings
@@ -16,7 +18,7 @@ import sys
 NO_COLOR = bool(os.environ.get('NO_COLOR'))
 
 
-def strip_ansi(text):
+def strip_ansi(text: str) -> str:
     r"""
     Removes all ansi directives from the string.
 
@@ -45,7 +47,7 @@ def strip_ansi(text):
     return text
 
 
-def color_text(text, color):
+def color_text(text: str, color: str | None) -> str:
     r"""
     Colorizes text a single color using ansii tags.
 
@@ -122,7 +124,7 @@ def color_text(text, color):
         return text
 
 
-def ensure_unicode(text):
+def ensure_unicode(text: str) -> str:
     """
     Casts bytes into utf8 (mostly for python2 compatibility)
 
@@ -154,7 +156,7 @@ def ensure_unicode(text):
         raise ValueError('unknown input type {!r}'.format(text))
 
 
-def indent(text, prefix='    '):
+def indent(text: str, prefix: str = '    ') -> str:
     r"""
     Indents a block of text
 
@@ -177,7 +179,9 @@ def indent(text, prefix='    '):
     return prefix + text.replace('\n', '\n' + prefix)
 
 
-def highlight_code(text, lexer_name='python', **kwargs):
+def highlight_code(
+    text: str, lexer_name: str = 'python', **kwargs: object
+) -> str:
     """
     Highlights a block of text using ansi tags based on language syntax.
 
@@ -246,7 +250,9 @@ def highlight_code(text, lexer_name='python', **kwargs):
     return new_text
 
 
-def add_line_numbers(source, start=1, n_digits=None):
+def add_line_numbers(
+    source: str | list[str], start: int = 1, n_digits: int | None = None
+) -> list[str] | str:
     """
     Prefixes code with line numbers
 
@@ -268,18 +274,23 @@ def add_line_numbers(source, start=1, n_digits=None):
         2 b
         3 c
     """
-    was_string = isinstance(source, str)
-    part_lines = source.splitlines() if was_string else source
+    if isinstance(source, str):
+        was_string = True
+        part_lines = source.splitlines()
+    else:
+        was_string = False
+        part_lines = source
 
     if n_digits is None:
         endline = start + len(part_lines)
-        n_digits = math.log(max(1, endline), 10)
-        n_digits = int(math.ceil(n_digits))
+        computed_digits = int(math.ceil(math.log(max(1, endline), 10)))
+    else:
+        computed_digits = n_digits
 
     src_fmt = '{count:{n_digits}d} {line}'
 
     part_lines = [
-        src_fmt.format(n_digits=n_digits, count=count, line=line)
+        src_fmt.format(n_digits=computed_digits, count=count, line=line)
         for count, line in enumerate(part_lines, start=start)
     ]
 
@@ -289,7 +300,7 @@ def add_line_numbers(source, start=1, n_digits=None):
         return part_lines
 
 
-def codeblock(block_str):
+def codeblock(block_str: str) -> str:
     """
     Wraps multiline string blocks and returns unindented code.
     Useful for templated code defined in indented parts of code.

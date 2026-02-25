@@ -32,6 +32,7 @@ In most cases it is best to use stdout to write your got-want tests because it
 is easier to control strings sent to stdout than it is to control the
 representation of expression-based "got-strings".
 """
+from __future__ import annotations
 
 import re
 import difflib

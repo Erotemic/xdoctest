@@ -41,6 +41,7 @@ References:
     .. [CustomPrompt] https://wiki.archlinux.org/title/Bash/Prompt_customization
     .. [GeekPrompt] https://web.archive.org/web/20230824025647/https://www.thegeekstuff.com/2008/09/bash-shell-take-control-of-ps1-ps2-ps3-ps4-and-prompt_command/
 """
+from __future__ import annotations
 
 import ast
 import sys

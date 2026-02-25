@@ -2,6 +2,8 @@
 Utilities that are mainly used in self-testing
 """
 
+from __future__ import annotations
+
 from os.path import join
 import random
 from .util_path import TempDir
@@ -18,7 +20,7 @@ class TempDoctest:
         >>> assert len(doctests) == 1
     """
 
-    def __init__(self, docstr, modname=None):
+    def __init__(self, docstr: str, modname: str | None = None) -> None:
         if modname is None:
             # make a random temporary module name
             alphabet = list(map(chr, range(97, 97 + 26)))
@@ -43,7 +45,7 @@ class TempModule:
         >>> assert len(doctests) == 1
     """
 
-    def __init__(self, module_text, modname=None):
+    def __init__(self, module_text: str, modname: str | None = None) -> None:
         if modname is None:
             # make a random temporary module name
             alphabet = list(map(chr, range(97, 97 + 26)))
@@ -56,7 +58,7 @@ class TempModule:
         with open(self.modpath, 'w') as file:
             file.write(module_text)
 
-    def print_contents(self):
+    def print_contents(self) -> None:
         """
         For debugging on windows
         """
@@ -84,7 +86,7 @@ class TempModule:
         print(f'--- </TempModule {self!r}> ---')
 
 
-def _run_case(source, style='auto'):
+def _run_case(source: str, style: str = 'auto') -> str | None:
     """
     Runs all doctests in a source block
 
@@ -105,11 +107,13 @@ def _run_case(source, style='auto'):
 
     cprint('CASE SOURCE:')
     cprint('------------')
-    print(
-        utils.indent(
-            utils.add_line_numbers(utils.highlight_code(source, 'python'))
-        )
-    )
+    highlighted = utils.highlight_code(source, 'python')
+    numbered = utils.add_line_numbers(highlighted)
+    if isinstance(numbered, list):
+        numbered_text = '\n'.join(numbered)
+    else:
+        numbered_text = numbered
+    print(utils.indent(numbered_text))
 
     print('')
 
@@ -121,6 +125,7 @@ def _run_case(source, style='auto'):
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
+        assert dpath is not None
         modpath = join(dpath, 'test_linenos_' + hashid + '.py')
 
         with open(modpath, 'w') as file:

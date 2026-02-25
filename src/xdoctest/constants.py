@@ -1,6 +1,7 @@
 """
 Defines sentinel values for internal xdoctest usage
 """
+from __future__ import annotations
 
 
 # Create the most singleton object ever to avoid reload issues
@@ -26,19 +27,19 @@ class _NOT_EVAL_TYPE:
         >>> assert _NOT_EVAL_TYPE() is NOT_EVALED
     """
 
-    def __new__(cls):
+    def __new__(cls) -> _NOT_EVAL_TYPE:
         return NOT_EVALED
 
-    def __reduce__(self):
+    def __reduce__(self) -> tuple[type[_NOT_EVAL_TYPE], tuple[()]]:
         return (_NOT_EVAL_TYPE, ())
 
-    def __copy__(self):
+    def __copy__(self) -> _NOT_EVAL_TYPE:
         return NOT_EVALED
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo: dict[object, object]) -> _NOT_EVAL_TYPE:
         return NOT_EVALED
 
-    def __call__(self, default):
+    def __call__(self, default: object) -> None:
         pass
 
     def __str__(cls):
@@ -47,7 +48,7 @@ class _NOT_EVAL_TYPE:
     def __repr__(cls):
         return '<NOT_EVALED>'
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return False
 
     __nonzero__ = __bool__

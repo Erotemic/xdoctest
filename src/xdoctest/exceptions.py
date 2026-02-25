@@ -1,6 +1,7 @@
 """
 Define errors that may be raised by xdoctest
 """
+from __future__ import annotations
 
 
 class MalformedDocstr(Exception):

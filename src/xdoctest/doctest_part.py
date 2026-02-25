@@ -4,6 +4,7 @@ example. Multiple parts are typically stored in a
 :class:`xdoctest.doctest_example.Doctest`, which manages execution of each
 part.
 """
+from __future__ import annotations
 
 import math
 from xdoctest import utils

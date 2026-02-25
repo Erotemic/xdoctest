@@ -1,6 +1,7 @@
 """
 The core logic that allows for xdoctest to parse source statically
 """
+from __future__ import annotations
 
 import sys
 from os.path import exists

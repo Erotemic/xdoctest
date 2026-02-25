@@ -14,6 +14,7 @@ this code is heavilly based on ``pytest/_pytest/doctest.py`` plugin file in
 https://github.com/pytest-dev/pytest
 
 """
+from __future__ import annotations
 
 import pytest
 from _pytest._code import code
