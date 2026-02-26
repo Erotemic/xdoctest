@@ -179,7 +179,7 @@ class CaptureStdout(CaptureStream):
         else:
             redirect = self.orig_stdout
         self.cap_stdout = TeeStringIO(
-            typing.cast(io.IOBase | None, redirect)
+            typing.cast(typing.Optional[io.IOBase], redirect)
         )
         self._pos = 0  # keep track of how much has been logged
 

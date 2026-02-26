@@ -900,7 +900,7 @@ def _syspath_modname_to_modpath(
                     break
 
     if typing.TYPE_CHECKING:
-        found_modpath = typing.cast(str | None, found_modpath)
+        found_modpath = typing.cast(typing.Optional[str], found_modpath)
     return found_modpath
 
 
