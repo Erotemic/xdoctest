@@ -555,7 +555,7 @@ def _parse_static_node_value(node):
     )
 
 
-def _extension_module_tags():
+def _extension_module_tags() -> list[str]:
     """
     Returns valid tags an extension module might have
 
@@ -573,7 +573,7 @@ def _extension_module_tags():
     return tags
 
 
-def _static_parse(varname, fpath):
+def _static_parse(varname, fpath) -> str | None:
     """
     Statically parse the a constant variable from a python file
 
@@ -643,7 +643,7 @@ def _static_parse(varname, fpath):
     return value
 
 
-def _platform_pylib_exts():  # nocover
+def _platform_pylib_exts() -> tuple[str, ...]:  # nocover
     """
     Returns .so, .pyd, or .dylib depending on linux, win or mac.
     On python3 return the previous with and without abi (e.g.

@@ -87,7 +87,7 @@ class DoctestPart:
         self.compile_mode = 'exec'
 
     @property
-    def n_lines(self):
+    def n_lines(self) -> int:
         """
         Returns:
             int: number of lines in the entire source (i.e. exec + want)
@@ -95,7 +95,7 @@ class DoctestPart:
         return self.n_exec_lines + self.n_want_lines
 
     @property
-    def n_exec_lines(self):
+    def n_exec_lines(self) -> int:
         """
         Returns:
             int: number of executable lines (excluding want)
@@ -103,7 +103,7 @@ class DoctestPart:
         return len(self.exec_lines)
 
     @property
-    def n_want_lines(self):
+    def n_want_lines(self) -> int:
         """
         Returns:
             int: number of lines in the "want" statement.
@@ -114,14 +114,14 @@ class DoctestPart:
             return 0
 
     @property
-    def source(self):
+    def source(self) -> str:
         """
         Returns:
             str: A single block of text representing the source code.
         """
         return '\n'.join(self.exec_lines)
 
-    def compilable_source(self):
+    def compilable_source(self) -> str:
         """
         Use this to build the string for compile. Takes care of a corner case.
 
@@ -133,7 +133,7 @@ class DoctestPart:
         else:
             return '\n'.join(self.exec_lines)
 
-    def has_any_code(self):
+    def has_any_code(self) -> bool:
         """
         Heuristic to check if there is any runnable code in this doctest.  We
         currently just check that not every line is a comment, which helps the
@@ -146,7 +146,7 @@ class DoctestPart:
         return not all(not line or line.startswith('#') for line in slines)
 
     @property
-    def directives(self):
+    def directives(self) -> list[object]:
         """
         Returns:
             List[directive.Directive]: The extracted or provided directives to
@@ -162,7 +162,7 @@ class DoctestPart:
         return self._directives
 
     @property
-    def want(self):
+    def want(self) -> str:
         """
         Returns:
             str | None: what the test is expected to produce
@@ -172,7 +172,7 @@ class DoctestPart:
         else:
             return None
 
-    def __nice__(self):
+    def __nice__(self) -> str:
         """
         Returns:
             str: a pretty and concise "nice" representation
@@ -277,7 +277,7 @@ class DoctestPart:
         colored=False,
         partnos=False,
         prefix=True,
-    ):
+    ) -> str:
         """
         Customizable formatting of the source and want for this doctest.
 

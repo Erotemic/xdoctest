@@ -382,7 +382,7 @@ class DoctestParser:
             print('<YIELD CHUNK>')
         yield example
 
-    def _group_labeled_lines(self, labeled_lines):
+    def _group_labeled_lines(self, labeled_lines) -> list[list[tuple[str, str]]]:
         """
         Group labeled lines into logical parts to be executed together
 
@@ -476,7 +476,7 @@ class DoctestParser:
             print('</GROUP LABEL LINES>')
         return grouped_lines
 
-    def _locate_ps1_linenos(self, source_lines):
+    def _locate_ps1_linenos(self, source_lines) -> tuple[list[int], bool]:
         """
         Determines which lines in the source begin a "logical block" of code.
 
@@ -672,7 +672,7 @@ class DoctestParser:
 
         return ps1_linenos, mode_hint
 
-    def _label_docsrc_lines(self, string):
+    def _label_docsrc_lines(self, string) -> list[tuple[str, str]]:
         """
         Give each line in the docstring a label so we can distinguish
         what parts are text, what parts are code, and what parts are "want"

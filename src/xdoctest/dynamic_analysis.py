@@ -8,7 +8,7 @@ import os
 import types
 
 
-def parse_dynamic_calldefs(modpath_or_module):
+def parse_dynamic_calldefs(modpath_or_module) -> dict[str, object]:
     """
     Dynamic parsing of module doctestable items.
 
@@ -89,7 +89,7 @@ def parse_dynamic_calldefs(modpath_or_module):
     return calldefs
 
 
-def get_stack_frame(n=0, strict=True):
+def get_stack_frame(n=0, strict=True) -> object:
     """
     Gets the current stack frame or any of its ancestors dynamically
 
@@ -119,7 +119,7 @@ def get_stack_frame(n=0, strict=True):
     return frame_cur
 
 
-def get_parent_frame(n=0):
+def get_parent_frame(n=0) -> object:
     """
     Returns the frame of that called you.
     This is equivalent to `get_stack_frame(n=1)`

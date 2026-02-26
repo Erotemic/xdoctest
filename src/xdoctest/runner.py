@@ -47,6 +47,7 @@ run the doctests as such:
     python -m xdoctest.runner list
 
 """
+
 from __future__ import annotations
 
 from xdoctest import dynamic_analysis
@@ -122,7 +123,7 @@ def doctest_module(
     config=None,
     durations=None,
     analysis='auto',
-):
+) -> dict[str, object]:
     """
     Executes requestsed google-style doctests in a package or module.
     Main entry point into the testing framework.
@@ -522,7 +523,7 @@ def _convert_to_test_module(enabled_examples):
     return module_text
 
 
-def undefined_names(sourcecode):
+def undefined_names(sourcecode) -> set[str]:
     """
     Parses source code for undefined names
 

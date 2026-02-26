@@ -565,7 +565,7 @@ def package_calldefs(
                 raise SyntaxError(msg)
 
 
-def parse_calldefs(module_identifier, analysis='auto'):
+def parse_calldefs(module_identifier, analysis='auto') -> dict[str, static_analysis.CallDefNode]:
     """
     Parse calldefs from a single module using either static or dynamic
     analysis.

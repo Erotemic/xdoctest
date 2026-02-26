@@ -165,7 +165,7 @@ from collections import OrderedDict
 from collections import namedtuple
 
 
-def named(key, pattern):
+def named(key, pattern) -> str:
     """
     helper for regex
 
@@ -274,7 +274,7 @@ class RuntimeState(utils.NiceRepr):
             self._global_state.update(default_state)
         self._inline_state = {}
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, object]:
         """
         Returns:
             OrderedDict
@@ -284,7 +284,7 @@ class RuntimeState(utils.NiceRepr):
         state = OrderedDict(sorted(state.items()))
         return state
 
-    def __nice__(self):
+    def __nice__(self) -> str:
         """
         Returns:
             str
@@ -292,7 +292,7 @@ class RuntimeState(utils.NiceRepr):
         parts = ['{}: {}'.format(*item) for item in self.to_dict().items()]
         return '{' + ', '.join(parts) + '}'
 
-    def __getitem__(self, key):
+    def __getitem__(self, key) -> object:
         """
         Args:
             key (str):
@@ -501,7 +501,7 @@ class Directive(utils.NiceRepr):
                             if directive:
                                 yield directive
 
-    def __nice__(self):
+    def __nice__(self) -> str:
         """
         Returns:
             str
@@ -551,7 +551,7 @@ class Directive(utils.NiceRepr):
             raise Exception('Old method cannot handle multiple effects')
         return effects[0]
 
-    def effects(self, argv=None, environ=None):
+    def effects(self, argv=None, environ=None) -> list[Effect]:
         """
         Returns how this directive modifies a RuntimeState object
 
@@ -656,7 +656,7 @@ class Directive(utils.NiceRepr):
         return effects
 
 
-def _split_opstr(optstr):
+def _split_opstr(optstr) -> tuple[str, str, object]:
     """
     Simplified balanced paren logic to only split commas outside of parens
 
@@ -696,7 +696,7 @@ def _split_opstr(optstr):
     return parts
 
 
-def _is_requires_satisfied(arg, argv=None, environ=None):
+def _is_requires_satisfied(arg, argv=None, environ=None) -> bool:
     """
     Determines if the argument to a REQUIRES directive is satisfied
 
@@ -835,7 +835,7 @@ def _is_requires_satisfied(arg, argv=None, environ=None):
 _MODNAME_EXISTS_CACHE = {}
 
 
-def _module_exists(modname):
+def _module_exists(modname) -> bool:
     """
     Args:
         modname (str):
@@ -879,7 +879,7 @@ DIRECTIVE_PATTERNS = [
 DIRECTIVE_RE = re.compile('|'.join(DIRECTIVE_PATTERNS), flags=re.IGNORECASE)
 
 
-def parse_directive_optstr(optpart, inline=None):
+def parse_directive_optstr(optpart, inline=None) -> list[Directive]:
     """
     Parses the information in the directive from the "optpart"
 

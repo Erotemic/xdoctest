@@ -126,7 +126,7 @@ def check_got_vs_want(
     return flag
 
 
-def _strip_exception_details(msg):
+def _strip_exception_details(msg) -> str:
     """
     Args:
         msg (str):
@@ -259,7 +259,7 @@ def check_output(
     return False
 
 
-def _check_match(got, want, runstate):
+def _check_match(got, want, runstate) -> bool:
     """
     Does the actual comparison between `got` and `want`
 
@@ -281,7 +281,7 @@ def _check_match(got, want, runstate):
     return False
 
 
-def _ellipsis_match(got, want):
+def _ellipsis_match(got, want) -> bool:
     r"""
     The ellipsis matching algorithm taken directly from standard doctest.
 

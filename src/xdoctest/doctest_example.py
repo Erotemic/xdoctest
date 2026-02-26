@@ -240,7 +240,7 @@ class DoctestConfig(dict):
                 kw['dest'] = prefix[0] + '_' + kw['dest']
             add_argument(*alias, **kw)
 
-    def getvalue(self, key, given=None):
+    def getvalue(self, key, given=None) -> object:
         """
         Args:
             key (str): The configuration key
@@ -426,7 +426,7 @@ class DocTest:
         # Hint at what is running this doctest
         self.mode = mode
 
-    def __nice__(self):
+    def __nice__(self) -> str:
         """
         Returns:
             str
@@ -438,7 +438,7 @@ class DocTest:
             parts.append('ln %s' % (self.lineno))
         return ' '.join(parts)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Returns:
             str
@@ -447,7 +447,7 @@ class DocTest:
         devnice = self.__nice__()
         return '<%s(%s) at %s>' % (classname, devnice, hex(id(self)))
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Returns:
             str
@@ -456,7 +456,7 @@ class DocTest:
         devnice = self.__nice__()
         return '<%s(%s)>' % (classname, devnice)
 
-    def is_disabled(self, pytest=False):
+    def is_disabled(self, pytest=False) -> bool:
         """
         Checks for comment directives on the first line of the doctest
 
@@ -501,7 +501,7 @@ class DocTest:
         return m is not None
 
     @property
-    def unique_callname(self):
+    def unique_callname(self) -> str:
         """
         A key that references this doctest given its module
 
@@ -511,7 +511,7 @@ class DocTest:
         return self.callname + ':' + str(self.num)
 
     @property
-    def node(self):
+    def node(self) -> str:
         """
         A key that references this doctest within pytest
 
@@ -521,7 +521,7 @@ class DocTest:
         return self.modpath + '::' + self.callname + ':' + str(self.num)
 
     @property
-    def valid_testnames(self):
+    def valid_testnames(self) -> set[str]:
         """
         A set of callname and unique_callname
 
@@ -599,7 +599,7 @@ class DocTest:
         want=True,
         offset_linenos=None,
         prefix=True,
-    ):
+    ) -> str:
         """
         Adds prefix and line numbers to a doctest
 
@@ -641,7 +641,7 @@ class DocTest:
         full_source = '\n'.join(formated_parts)
         return full_source
 
-    def _parse(self):
+    def _parse(self) -> list['doctest_part.DoctestPart']:
         """
         Divide the given string into examples and intervening text.
 
@@ -699,7 +699,7 @@ class DocTest:
         for partno, part in enumerate(self._parts):
             part.partno = partno
 
-    def _import_module(self):
+    def _import_module(self) -> object:
         """
         After this point we are in dynamic analysis mode, in most cases
         xdoctest should have been in static-analysis-only mode.
@@ -754,7 +754,7 @@ class DocTest:
                         )
 
     @staticmethod
-    def _extract_future_flags(namespace):
+    def _extract_future_flags(namespace) -> int:
         """
         Return the compiler-flags associated with the future features that
         have been imported into the given namespace (i.e. globals).
@@ -806,7 +806,7 @@ class DocTest:
         compileflags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
         return test_globals, compileflags
 
-    def anything_ran(self):
+    def anything_ran(self) -> bool:
         """
         Returns:
             bool
@@ -814,7 +814,7 @@ class DocTest:
         # If everything was skipped, then there will be no stdout
         return len(self.logged_stdout) > 0
 
-    def run(self, verbose=None, on_error=None):
+    def run(self, verbose=None, on_error=None) -> dict[str, object]:
         """
         Executes the doctest, checks the results, reports the outcome.
 
@@ -1225,7 +1225,7 @@ class DocTest:
         return self.global_namespace
 
     @property
-    def cmdline(self):
+    def cmdline(self) -> str:
         """
         A cli-instruction that can be used to execute *this* doctest.
 
@@ -1291,7 +1291,7 @@ class DocTest:
                     self._color(self._block_prefix + ' STDOUT/STDERR', 'white')
                 )
 
-    def failed_line_offset(self):
+    def failed_line_offset(self) -> int:
         """
         Determine which line in the doctest failed.
 
@@ -1322,7 +1322,7 @@ class DocTest:
             offset -= 1
             return offset
 
-    def failed_lineno(self):
+    def failed_lineno(self) -> int:
         """
         Returns:
             int | None
@@ -1335,7 +1335,7 @@ class DocTest:
             lineno = self.lineno + offset
             return lineno
 
-    def repr_failure(self, with_tb=True):
+    def repr_failure(self, with_tb=True) -> list[str]:
         r"""
         Constructs lines detailing information about a failed doctest
 
@@ -1629,7 +1629,7 @@ class DocTest:
             text = utils.color_text(text, color)
         return text
 
-    def _post_run(self, verbose):
+    def _post_run(self, verbose) -> dict[str, object]:
         """
         Returns:
             Dict : summary

@@ -312,7 +312,7 @@ class XDoctestItem(pytest.Item):
         if not self.dtest.anything_ran():
             pytest.skip('doctest is empty or all parts were skipped')
 
-    def repr_failure(self, excinfo):
+    def repr_failure(self, excinfo) -> object:
         """
         # Args:
         #     excinfo (_pytest._code.code.ExceptionInfo):
@@ -332,7 +332,7 @@ class XDoctestItem(pytest.Item):
         else:
             return super(XDoctestItem, self).repr_failure(excinfo)
 
-    def reportinfo(self):
+    def reportinfo(self) -> tuple[str, int, str]:
         """
         Returns:
             Tuple[str, int, str]
@@ -425,7 +425,7 @@ class XDoctestModule(_XDoctestBase):
                 yield XDoctestItem(name, self, dtest=dtest)
 
 
-def _setup_fixtures(xdoctest_item):
+def _setup_fixtures(xdoctest_item) -> fixtures.TopRequest:
     """
     Used by XDoctestTextfile and XDoctestItem to setup fixture information.
 
@@ -458,7 +458,7 @@ def _setup_fixtures(xdoctest_item):
 
 
 @pytest.fixture(scope='session')
-def xdoctest_namespace():
+def xdoctest_namespace() -> dict[str, object]:
     """
     Inject names into the xdoctest namespace.
 

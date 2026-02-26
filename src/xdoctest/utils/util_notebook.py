@@ -218,7 +218,7 @@ def import_notebook_from_path(ipynb_fpath, only_defs=False):
     return module
 
 
-def execute_notebook(ipynb_fpath, timeout=None, verbose=None):
+def execute_notebook(ipynb_fpath, timeout=None, verbose=None) -> dict[str, object]:
     """
     Execute an IPython notebook in a separate kernel
 

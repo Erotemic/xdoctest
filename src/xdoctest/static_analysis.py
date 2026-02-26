@@ -74,7 +74,7 @@ class CallDefNode:
         self.lineno_end = None
         self.args = args
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Returns:
             str
@@ -174,7 +174,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         # new
         self.assignments = []
 
-    def syntax_tree(self):
+    def syntax_tree(self) -> ast.AST:
         """
         creates the abstract syntax tree
 
@@ -355,7 +355,7 @@ class TopLevelVisitor(ast.NodeVisitor):
 
     # -- helpers ---
 
-    def _docnode_line_workaround(self, docnode):
+    def _docnode_line_workaround(self, docnode) -> int | None:
         """
         Find the start and ending line numbers of a docstring
 
@@ -513,7 +513,7 @@ class TopLevelVisitor(ast.NodeVisitor):
                     stop = start
         return start, stop
 
-    def _find_docstr_startpos_workaround(self, docstr, sourcelines, endpos):
+    def _find_docstr_startpos_workaround(self, docstr, sourcelines, endpos) -> tuple[int, int]:
         r"""
         Find the which sourcelines contain the docstring
 
@@ -727,7 +727,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         return lineno
 
 
-def parse_static_calldefs(source=None, fpath=None):
+def parse_static_calldefs(source=None, fpath=None) -> dict[str, CallDefNode]:
     """
     Statically finds top-level callable functions and methods in python source
 
@@ -817,7 +817,7 @@ def _parse_static_node_value(node):
     return value
 
 
-def parse_static_value(key, source=None, fpath=None):
+def parse_static_value(key, source=None, fpath=None) -> object:
     """
     Statically parse a constant variable's value from python code.
 
@@ -951,7 +951,7 @@ def package_modpaths(
                 break
 
 
-def is_balanced_statement(lines, only_tokens=False, reraise=0):
+def is_balanced_statement(lines, only_tokens=False, reraise=0) -> bool:
     r"""
     Checks if the lines have balanced braces and quotes.
 
@@ -1207,7 +1207,7 @@ def _strip_hashtag_comments_and_newlines(source):
     return new_source
 
 
-def six_axt_parse(source_block, filename='<source_block>', compatible=True):
+def six_axt_parse(source_block, filename='<source_block>', compatible=True) -> ast.AST:
     """
     Python 2/3 compatible replacement for ast.parse(source_block, filename='<source_block>')
 
