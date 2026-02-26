@@ -45,12 +45,20 @@ _PYTEST_IS_GE_800 = _parse_version(pytest.__version__) >= _parse_version(
 
 
 if _PYTEST_IS_GE_800:
-    from typing import Any, Dict
+    from typing import Any, Callable, Dict, TypeVar
 
     try:
         from typing import override
     except ImportError:  # nocover
-        from typing_extensions import override
+        try:
+            from typing_extensions import override
+        except ImportError:  # nocover
+            _F = TypeVar('_F', bound=Callable[..., object])
+
+            def override(method: _F, /) -> _F:
+                """Fallback no-op decorator when typing override helpers are unavailable."""
+                return method
+
     from _pytest.fixtures import TopRequest
 
 
