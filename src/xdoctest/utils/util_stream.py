@@ -11,8 +11,8 @@ how the former is implemented.
 
 from __future__ import annotations
 
-import sys
 import io
+import sys
 import typing
 
 
@@ -147,6 +147,17 @@ class CaptureStdout(CaptureStream):
     def __init__(
         self, suppress: bool = True, enabled: bool = True, **kwargs: object
     ) -> None:
+        # Initialize attributes early so __del__ remains safe even if
+        # argument validation below raises before normal initialization.
+        self.enabled = enabled
+        self.suppress = suppress
+        self.orig_stdout = sys.stdout
+        self.cap_stdout: TeeStringIO | None = None
+        self.text: str | None = None
+        self._pos = 0
+        self.parts: list[str] = []
+        self.started = False
+
         _misspelled_varname = 'supress'
         if _misspelled_varname in kwargs:  # nocover
             from xdoctest.utils import util_deprecation
@@ -163,21 +174,14 @@ class CaptureStdout(CaptureStream):
             suppress = bool(kwargs.pop(_misspelled_varname))
             if len(kwargs) > 0:
                 raise ValueError('unexpected args: {}'.format(kwargs))
-        self.enabled = enabled
-        self.suppress = suppress
-        self.orig_stdout = sys.stdout
         if suppress:
             redirect = None
         else:
             redirect = self.orig_stdout
-        self.cap_stdout: TeeStringIO | None = TeeStringIO(
+        self.cap_stdout = TeeStringIO(
             typing.cast(io.IOBase | None, redirect)
         )
-        self.text: str | None = None
-
         self._pos = 0  # keep track of how much has been logged
-        self.parts: list[str] = []
-        self.started = False
 
     def log_part(self) -> None:
         """Log what has been captured so far"""
@@ -210,9 +214,9 @@ class CaptureStdout(CaptureStream):
         return self
 
     def __del__(self) -> None:  # nocover
-        if self.started:
+        if getattr(self, 'started', False):
             self.stop()
-        if self.cap_stdout is not None:
+        if getattr(self, 'cap_stdout', None) is not None:
             self.close()
 
     def close(self) -> None:
