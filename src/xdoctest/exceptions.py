@@ -4,6 +4,8 @@ Define errors that may be raised by xdoctest
 
 from __future__ import annotations
 
+import typing
+
 
 class MalformedDocstr(Exception):
     """
@@ -24,7 +26,13 @@ class DoctestParseError(Exception):
     Exception raised when doctest code has an error.
     """
 
-    def __init__(self, msg, string=None, info=None, orig_ex=None):
+    def __init__(
+        self,
+        msg: typing.Any,
+        string: typing.Any = None,
+        info: typing.Any = None,
+        orig_ex: typing.Any = None,
+    ):
         """
         Args:
             msg (str): error message

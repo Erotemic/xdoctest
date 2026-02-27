@@ -151,7 +151,10 @@ Example:
     >>> # New in 0.7.3: the requires directive can accept module names
     >>> # xdoctest: +REQUIRES(module:foobar)
 """
+
 from __future__ import annotations
+
+import typing
 
 import sys
 import os
@@ -165,7 +168,7 @@ from collections import OrderedDict
 from collections import namedtuple
 
 
-def named(key, pattern) -> str:
+def named(key: typing.Any, pattern: typing.Any) -> str:
     """
     helper for regex
 
@@ -263,7 +266,7 @@ class RuntimeState(utils.NiceRepr):
         })>
     """
 
-    def __init__(self, default_state=None):
+    def __init__(self, default_state: typing.Any = None):
         """
         Args:
             default_state (None | dict): starting default state, if unspecified
@@ -292,7 +295,7 @@ class RuntimeState(utils.NiceRepr):
         parts = ['{}: {}'.format(*item) for item in self.to_dict().items()]
         return '{' + ', '.join(parts) + '}'
 
-    def __getitem__(self, key) -> object:
+    def __getitem__(self, key: typing.Any) -> object:
         """
         Args:
             key (str):
@@ -307,7 +310,7 @@ class RuntimeState(utils.NiceRepr):
         else:
             return self._global_state[key]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: typing.Any, value: typing.Any):
         """
         Args:
             key (str):
@@ -317,7 +320,9 @@ class RuntimeState(utils.NiceRepr):
             raise KeyError('Unknown key: {}'.format(key))
         self._global_state[key] = value
 
-    def set_report_style(self, reportchoice, state=None):
+    def set_report_style(
+        self, reportchoice: typing.Any, state: typing.Any = None
+    ):
         """
         Args:
             reportchoice (str): name of report style
@@ -339,7 +344,7 @@ class RuntimeState(utils.NiceRepr):
                 state[k] = False
         state['REPORT_' + reportchoice.upper()] = True
 
-    def update(self, directives):
+    def update(self, directives: typing.Any):
         """
         Update the runtime state given a set of directives
 
@@ -386,7 +391,13 @@ class Directive(utils.NiceRepr):
     Directives modify the runtime state.
     """
 
-    def __init__(self, name, positive=True, args=[], inline=None):
+    def __init__(
+        self,
+        name: typing.Any,
+        positive: typing.Any = True,
+        args: typing.Any = [],
+        inline: typing.Any = None,
+    ):
         """
         Args:
             name (str): The name of the directive
@@ -405,7 +416,7 @@ class Directive(utils.NiceRepr):
         self.positive = positive
 
     @classmethod
-    def extract(cls, text):
+    def extract(cls, text: typing.Any):
         """
         Parses directives from a line or repl line
 
@@ -551,7 +562,9 @@ class Directive(utils.NiceRepr):
             raise Exception('Old method cannot handle multiple effects')
         return effects[0]
 
-    def effects(self, argv=None, environ=None) -> list[Effect]:
+    def effects(
+        self, argv: typing.Any = None, environ: typing.Any = None
+    ) -> list[Effect]:
         """
         Returns how this directive modifies a RuntimeState object
 
@@ -656,7 +669,7 @@ class Directive(utils.NiceRepr):
         return effects
 
 
-def _split_opstr(optstr) -> tuple[str, str, object]:
+def _split_opstr(optstr: typing.Any) -> tuple[str, str, object]:
     """
     Simplified balanced paren logic to only split commas outside of parens
 
@@ -696,7 +709,9 @@ def _split_opstr(optstr) -> tuple[str, str, object]:
     return parts
 
 
-def _is_requires_satisfied(arg, argv=None, environ=None) -> bool:
+def _is_requires_satisfied(
+    arg: typing.Any, argv: typing.Any = None, environ: typing.Any = None
+) -> bool:
     """
     Determines if the argument to a REQUIRES directive is satisfied
 
@@ -835,7 +850,7 @@ def _is_requires_satisfied(arg, argv=None, environ=None) -> bool:
 _MODNAME_EXISTS_CACHE = {}
 
 
-def _module_exists(modname) -> bool:
+def _module_exists(modname: typing.Any) -> bool:
     """
     Args:
         modname (str):
@@ -879,7 +894,9 @@ DIRECTIVE_PATTERNS = [
 DIRECTIVE_RE = re.compile('|'.join(DIRECTIVE_PATTERNS), flags=re.IGNORECASE)
 
 
-def parse_directive_optstr(optpart, inline=None) -> list[Directive]:
+def parse_directive_optstr(
+    optpart: typing.Any, inline: typing.Any = None
+) -> list[Directive]:
     """
     Parses the information in the directive from the "optpart"
 

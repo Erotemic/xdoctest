@@ -7,6 +7,8 @@ part.
 
 from __future__ import annotations
 
+import typing
+
 import math
 from xdoctest import utils
 from xdoctest import checker
@@ -204,9 +206,9 @@ class DoctestPart:
         return '<%s(%s)>' % (classname, devnice)
 
     def check(
-        part,
+        part: typing.Any,
         got_stdout: str,
-        got_eval: object = constants.NOT_EVALED,
+        got_eval: typing.Any = constants.NOT_EVALED,
         runstate: directive.RuntimeState | None = None,
         unmatched: list | None = None,
     ) -> None:
@@ -270,13 +272,13 @@ class DoctestPart:
 
     def format_part(
         self,
-        linenos=True,
-        want=True,
-        startline=1,
-        n_digits=None,
-        colored=False,
-        partnos=False,
-        prefix=True,
+        linenos: typing.Any = True,
+        want: typing.Any = True,
+        startline: typing.Any = 1,
+        n_digits: typing.Any = None,
+        colored: typing.Any = False,
+        partnos: typing.Any = False,
+        prefix: typing.Any = True,
     ) -> str:
         """
         Customizable formatting of the source and want for this doctest.

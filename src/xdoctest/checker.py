@@ -35,6 +35,8 @@ representation of expression-based "got-strings".
 
 from __future__ import annotations
 
+import typing
+
 import re
 import difflib
 from xdoctest import utils
@@ -70,7 +72,7 @@ _EXCEPTION_RE = re.compile(
 def check_got_vs_want(
     want: str,
     got_stdout: str,
-    got_eval: object = constants.NOT_EVALED,
+    got_eval: typing.Any = constants.NOT_EVALED,
     runstate: directive.RuntimeState | None = None,
 ):
     """
@@ -126,7 +128,7 @@ def check_got_vs_want(
     return flag
 
 
-def _strip_exception_details(msg) -> str:
+def _strip_exception_details(msg: typing.Any) -> str:
     """
     Args:
         msg (str):
@@ -259,7 +261,9 @@ def check_output(
     return False
 
 
-def _check_match(got, want, runstate) -> bool:
+def _check_match(
+    got: typing.Any, want: typing.Any, runstate: typing.Any
+) -> bool:
     """
     Does the actual comparison between `got` and `want`
 
@@ -281,7 +285,7 @@ def _check_match(got, want, runstate) -> bool:
     return False
 
 
-def _ellipsis_match(got, want) -> bool:
+def _ellipsis_match(got: typing.Any, want: typing.Any) -> bool:
     r"""
     The ellipsis matching algorithm taken directly from standard doctest.
 

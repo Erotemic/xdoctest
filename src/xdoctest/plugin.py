@@ -17,6 +17,8 @@ https://github.com/pytest-dev/pytest
 
 from __future__ import annotations
 
+import typing
+
 from typing import cast
 
 import pytest
@@ -216,7 +218,7 @@ def _is_xdoctest(config, path, parent):
 
 
 class ReprFailXDoctest(code.TerminalRepr):
-    def __init__(self, reprlocation, lines):
+    def __init__(self, reprlocation: typing.Any, lines: typing.Any):
         """
         Args:
             reprlocation (Any):
@@ -233,7 +235,13 @@ class ReprFailXDoctest(code.TerminalRepr):
 
 
 class XDoctestItem(pytest.Item):
-    def __init__(self, name, parent, runner=None, dtest=None):
+    def __init__(
+        self,
+        name: typing.Any,
+        parent: typing.Any,
+        runner: typing.Any = None,
+        dtest: typing.Any = None,
+    ):
         """
         Args:
             name (str):
@@ -425,7 +433,7 @@ class XDoctestModule(_XDoctestBase):
                 yield XDoctestItem(name, self, dtest=dtest)
 
 
-def _setup_fixtures(xdoctest_item) -> fixtures.TopRequest:
+def _setup_fixtures(xdoctest_item: typing.Any) -> fixtures.TopRequest:
     """
     Used by XDoctestTextfile and XDoctestItem to setup fixture information.
 

@@ -19,7 +19,10 @@ The following is a glossary of terms and jargon used in this repo.
 
 * TODO - complete this list (Make an issue or PR if there is any term you don't immediately understand!).
 """
+
 from __future__ import annotations
+
+import typing
 
 import textwrap
 import warnings
@@ -51,7 +54,12 @@ import xdoctest.doctest_example
 
 
 def parse_freeform_docstr_examples(
-    docstr, callname=None, modpath=None, lineno=1, fpath=None, asone=True
+    docstr: typing.Any,
+    callname: typing.Any = None,
+    modpath: typing.Any = None,
+    lineno: typing.Any = 1,
+    fpath: typing.Any = None,
+    asone: typing.Any = True,
 ):
     r"""
     Finds free-form doctests in a docstring. This is similar to the original
@@ -234,7 +242,12 @@ def parse_freeform_docstr_examples(
 
 
 def parse_google_docstr_examples(
-    docstr, callname=None, modpath=None, lineno=1, fpath=None, eager_parse=True
+    docstr: typing.Any,
+    callname: typing.Any = None,
+    modpath: typing.Any = None,
+    lineno: typing.Any = 1,
+    fpath: typing.Any = None,
+    eager_parse: typing.Any = True,
 ):
     """
     Parses Google-style doctests from a docstr and generates example objects
@@ -330,13 +343,13 @@ def parse_auto_docstr_examples(docstr, *args, **kwargs):
 
 
 def parse_docstr_examples(
-    docstr,
-    callname=None,
-    modpath=None,
-    lineno=1,
-    style='auto',
-    fpath=None,
-    parser_kw=None,
+    docstr: typing.Any,
+    callname: typing.Any = None,
+    modpath: typing.Any = None,
+    lineno: typing.Any = 1,
+    style: typing.Any = 'auto',
+    fpath: typing.Any = None,
+    parser_kw: typing.Any = None,
 ):
     """
     Parses doctests from a docstr and generates example objects.
@@ -485,7 +498,10 @@ def _rectify_to_modpath(modpath_or_name):
 
 
 def package_calldefs(
-    pkg_identifier, exclude=[], ignore_syntax_errors=True, analysis='auto'
+    pkg_identifier: typing.Any,
+    exclude: typing.Any = [],
+    ignore_syntax_errors: typing.Any = True,
+    analysis: typing.Any = 'auto',
 ):
     """
     Statically generates all callable definitions in a module or package
@@ -565,7 +581,9 @@ def package_calldefs(
                 raise SyntaxError(msg)
 
 
-def parse_calldefs(module_identifier, analysis='auto') -> dict[str, static_analysis.CallDefNode]:
+def parse_calldefs(
+    module_identifier: typing.Any, analysis: typing.Any = 'auto'
+) -> dict[str, static_analysis.CallDefNode]:
     """
     Parse calldefs from a single module using either static or dynamic
     analysis.
@@ -642,12 +660,12 @@ def parse_calldefs(module_identifier, analysis='auto') -> dict[str, static_analy
 
 
 def parse_doctestables(
-    module_identifier,
-    exclude=[],
-    style='auto',
-    ignore_syntax_errors=True,
-    parser_kw={},
-    analysis='auto',
+    module_identifier: typing.Any,
+    exclude: typing.Any = [],
+    style: typing.Any = 'auto',
+    ignore_syntax_errors: typing.Any = True,
+    parser_kw: typing.Any = {},
+    analysis: typing.Any = 'auto',
 ):
     """
     Parses all doctests within top-level callables of a module and generates

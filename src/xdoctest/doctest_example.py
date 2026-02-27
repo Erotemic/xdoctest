@@ -3,6 +3,8 @@ This module defines the main class that holds a DocTest example
 """
 
 from __future__ import annotations
+
+import typing
 import __future__
 
 import ast
@@ -90,7 +92,12 @@ class DoctestConfig(dict):
         }
         return _examp_conf
 
-    def _update_argparse_cli(self, add_argument, prefix=None, defaults={}):
+    def _update_argparse_cli(
+        self,
+        add_argument: typing.Any,
+        prefix: typing.Any = None,
+        defaults: typing.Any = {},
+    ):
         """
         Updates a pytest or argparse CLI
 
@@ -240,7 +247,7 @@ class DoctestConfig(dict):
                 kw['dest'] = prefix[0] + '_' + kw['dest']
             add_argument(*alias, **kw)
 
-    def getvalue(self, key, given=None) -> object:
+    def getvalue(self, key: typing.Any, given: typing.Any = None) -> object:
         """
         Args:
             key (str): The configuration key
@@ -350,14 +357,14 @@ class DocTest:
 
     def __init__(
         self,
-        docsrc,
-        modpath=None,
-        callname=None,
-        num=0,
-        lineno=1,
-        fpath=None,
-        block_type=None,
-        mode='pytest',
+        docsrc: typing.Any,
+        modpath: typing.Any = None,
+        callname: typing.Any = None,
+        num: typing.Any = 0,
+        lineno: typing.Any = 1,
+        fpath: typing.Any = None,
+        block_type: typing.Any = None,
+        mode: typing.Any = 'pytest',
     ):
         """
         Args:
@@ -547,11 +554,11 @@ class DocTest:
 
     def format_parts(
         self,
-        linenos=True,
-        colored=None,
-        want=True,
-        offset_linenos=None,
-        prefix=True,
+        linenos: typing.Any = True,
+        colored: typing.Any = None,
+        want: typing.Any = True,
+        offset_linenos: typing.Any = None,
+        prefix: typing.Any = True,
     ):
         """
         Used by :func:`format_src`
@@ -594,11 +601,11 @@ class DocTest:
 
     def format_src(
         self,
-        linenos=True,
-        colored=None,
-        want=True,
-        offset_linenos=None,
-        prefix=True,
+        linenos: typing.Any = True,
+        colored: typing.Any = None,
+        want: typing.Any = True,
+        offset_linenos: typing.Any = None,
+        prefix: typing.Any = True,
     ) -> str:
         """
         Adds prefix and line numbers to a doctest
@@ -641,7 +648,7 @@ class DocTest:
         full_source = '\n'.join(formated_parts)
         return full_source
 
-    def _parse(self) -> list['doctest_part.DoctestPart']:
+    def _parse(self) -> list[typing.Any]:
         """
         Divide the given string into examples and intervening text.
 
@@ -814,7 +821,9 @@ class DocTest:
         # If everything was skipped, then there will be no stdout
         return len(self.logged_stdout) > 0
 
-    def run(self, verbose=None, on_error=None) -> dict[str, object]:
+    def run(
+        self, verbose: typing.Any = None, on_error: typing.Any = None
+    ) -> dict[str, object]:
         """
         Executes the doctest, checks the results, reports the outcome.
 
@@ -1335,7 +1344,7 @@ class DocTest:
             lineno = self.lineno + offset
             return lineno
 
-    def repr_failure(self, with_tb=True) -> list[str]:
+    def repr_failure(self, with_tb: typing.Any = True) -> list[str]:
         r"""
         Constructs lines detailing information about a failed doctest
 

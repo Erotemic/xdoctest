@@ -30,7 +30,10 @@ disabled by setting NotebookLoader.default_options['run_nbinit'] = False.
 Finally, you can set the encoding of the notebooks with
 NotebookLoader.default_options['encoding']. The default is 'utf-8'.
 """
+
 from __future__ import annotations
+
+import typing
 
 import io
 import os
@@ -174,7 +177,9 @@ class NotebookLoader:
         return mod
 
 
-def import_notebook_from_path(ipynb_fpath, only_defs=False):
+def import_notebook_from_path(
+    ipynb_fpath: typing.Any, only_defs: typing.Any = False
+):
     """
     Import an IPython notebook as a module from a full path and try to maintain
     clean sys.path variables.
@@ -218,7 +223,11 @@ def import_notebook_from_path(ipynb_fpath, only_defs=False):
     return module
 
 
-def execute_notebook(ipynb_fpath, timeout=None, verbose=None) -> dict[str, object]:
+def execute_notebook(
+    ipynb_fpath: typing.Any,
+    timeout: typing.Any = None,
+    verbose: typing.Any = None,
+) -> dict[str, object]:
     """
     Execute an IPython notebook in a separate kernel
 
@@ -275,7 +284,7 @@ def execute_notebook(ipynb_fpath, timeout=None, verbose=None) -> dict[str, objec
     return nb, resources
 
 
-def _make_test_notebook_fpath(fpath, cell_sources):
+def _make_test_notebook_fpath(fpath: typing.Any, cell_sources: typing.Any):
     """
     Helper for testing
 

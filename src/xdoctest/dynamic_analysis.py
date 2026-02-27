@@ -1,14 +1,17 @@
 """
 Utilities for dynamically inspecting code
 """
+
 from __future__ import annotations
+
+import typing
 
 import inspect
 import os
 import types
 
 
-def parse_dynamic_calldefs(modpath_or_module) -> dict[str, object]:
+def parse_dynamic_calldefs(modpath_or_module: typing.Any) -> dict[str, object]:
     """
     Dynamic parsing of module doctestable items.
 
@@ -89,7 +92,7 @@ def parse_dynamic_calldefs(modpath_or_module) -> dict[str, object]:
     return calldefs
 
 
-def get_stack_frame(n=0, strict=True) -> object:
+def get_stack_frame(n: typing.Any = 0, strict: typing.Any = True) -> object:
     """
     Gets the current stack frame or any of its ancestors dynamically
 
@@ -119,7 +122,7 @@ def get_stack_frame(n=0, strict=True) -> object:
     return frame_cur
 
 
-def get_parent_frame(n=0) -> object:
+def get_parent_frame(n: typing.Any = 0) -> object:
     """
     Returns the frame of that called you.
     This is equivalent to `get_stack_frame(n=1)`
@@ -153,7 +156,7 @@ def get_parent_frame(n=0) -> object:
     return parent_frame
 
 
-def iter_module_doctestables(module):
+def iter_module_doctestables(module: typing.Any):
     r"""
     Yields doctestable objects that belong to a live python module
 
@@ -213,7 +216,7 @@ def iter_module_doctestables(module):
                     yield key + '.' + subkey, item
 
 
-def is_defined_by_module(item, module):
+def is_defined_by_module(item: typing.Any, module: typing.Any):
     """
     Check if item is directly defined by a module.
 

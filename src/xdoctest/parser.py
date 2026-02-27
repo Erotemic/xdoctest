@@ -44,6 +44,8 @@ References:
 
 from __future__ import annotations
 
+import typing
+
 import ast
 import sys
 import re
@@ -382,7 +384,9 @@ class DoctestParser:
             print('<YIELD CHUNK>')
         yield example
 
-    def _group_labeled_lines(self, labeled_lines) -> list[list[tuple[str, str]]]:
+    def _group_labeled_lines(
+        self, labeled_lines
+    ) -> list[list[tuple[str, str]]]:
         """
         Group labeled lines into logical parts to be executed together
 
@@ -476,7 +480,9 @@ class DoctestParser:
             print('</GROUP LABEL LINES>')
         return grouped_lines
 
-    def _locate_ps1_linenos(self, source_lines) -> tuple[list[int], bool]:
+    def _locate_ps1_linenos(
+        self, source_lines: typing.Any
+    ) -> tuple[list[int], bool]:
         """
         Determines which lines in the source begin a "logical block" of code.
 
@@ -552,7 +558,7 @@ class DoctestParser:
             # note, this hack never leaves this function because we only are
             # returning line numbers.
             # FIXME: there is probably a better way to do this.
-            def balanced_intervals(lines):
+            def balanced_intervals(lines: typing.Any):
                 """
                 Finds intervals of balanced nesting syntax
 
@@ -672,7 +678,7 @@ class DoctestParser:
 
         return ps1_linenos, mode_hint
 
-    def _label_docsrc_lines(self, string) -> list[tuple[str, str]]:
+    def _label_docsrc_lines(self, string: typing.Any) -> list[tuple[str, str]]:
         """
         Give each line in the docstring a label so we can distinguish
         what parts are text, what parts are code, and what parts are "want"
