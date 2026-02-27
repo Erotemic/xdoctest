@@ -23,6 +23,8 @@ References:
 
 from __future__ import annotations
 
+import typing
+
 import re
 import textwrap
 import collections
@@ -270,7 +272,7 @@ def split_google_docblocks(docstr: str) -> list[tuple[str, DocBlock]]:
     return groups
 
 
-def parse_google_args(docstr: str):
+def parse_google_args(docstr: str) -> list[dict[str, str]]:
     r"""
     Generates dictionaries of argument hints based on a google docstring
 
@@ -294,7 +296,9 @@ def parse_google_args(docstr: str):
                 yield argdict
 
 
-def parse_google_returns(docstr: str, return_annot: str | None = None):
+def parse_google_returns(
+    docstr: str, return_annot: str | None = None
+) -> list[dict[str, str]]:
     r"""
     Generates dictionaries of possible return hints based on a google docstring
 
@@ -330,7 +334,9 @@ def parse_google_returns(docstr: str, return_annot: str | None = None):
                 yield retdict
 
 
-def parse_google_retblock(lines: str, return_annot: str | None = None):
+def parse_google_retblock(
+    lines: str, return_annot: str | None = None
+) -> typing.Iterator[dict[str, typing.Any]]:
     r"""
     Parse information out of a returns or yields block.
 
@@ -461,7 +467,9 @@ def parse_google_retblock(lines: str, return_annot: str | None = None):
             yield finalize(retdict)
 
 
-def parse_google_argblock(lines: str, clean_desc: bool = True):
+def parse_google_argblock(
+    lines: str, clean_desc: bool = True
+) -> typing.Iterator[dict[str, str | None]]:
     r"""
     Parse out individual items from google-style args blocks.
 

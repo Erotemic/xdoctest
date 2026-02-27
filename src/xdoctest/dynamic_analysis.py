@@ -156,7 +156,9 @@ def get_parent_frame(n: typing.Any = 0) -> object:
     return parent_frame
 
 
-def iter_module_doctestables(module: typing.Any):
+def iter_module_doctestables(
+    module: typing.Any,
+) -> typing.Iterator[tuple[str, typing.Any]]:
     r"""
     Yields doctestable objects that belong to a live python module
 

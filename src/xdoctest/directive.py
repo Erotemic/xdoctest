@@ -416,7 +416,7 @@ class Directive(utils.NiceRepr):
         self.positive = positive
 
     @classmethod
-    def extract(cls, text: typing.Any):
+    def extract(cls, text: typing.Any) -> typing.Iterator[typing.Any]:
         """
         Parses directives from a line or repl line
 

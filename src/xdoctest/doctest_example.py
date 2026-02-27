@@ -540,7 +540,7 @@ class DocTest:
             self.unique_callname,
         }
 
-    def wants(self):
+    def wants(self) -> bool:
         """
         Returns a list of the populated wants
 

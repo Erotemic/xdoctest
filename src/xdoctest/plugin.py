@@ -372,7 +372,7 @@ class _XDoctestBase(pytest.Module):
 class XDoctestTextfile(_XDoctestBase):
     obj = None
 
-    def collect(self):
+    def collect(self) -> typing.Iterator[typing.Any]:
         """
         Yields:
             XDoctestItem

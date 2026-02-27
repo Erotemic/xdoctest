@@ -60,7 +60,7 @@ def parse_freeform_docstr_examples(
     lineno: typing.Any = 1,
     fpath: typing.Any = None,
     asone: typing.Any = True,
-):
+) -> typing.Iterator[doctest_example.DocTest]:
     r"""
     Finds free-form doctests in a docstring. This is similar to the original
     doctests because these tests do not requires a google/numpy style header.
@@ -248,7 +248,7 @@ def parse_google_docstr_examples(
     lineno: typing.Any = 1,
     fpath: typing.Any = None,
     eager_parse: typing.Any = True,
-):
+) -> typing.Iterator[doctest_example.DocTest]:
     """
     Parses Google-style doctests from a docstr and generates example objects
 
@@ -350,7 +350,7 @@ def parse_docstr_examples(
     style: typing.Any = 'auto',
     fpath: typing.Any = None,
     parser_kw: typing.Any = None,
-):
+) -> typing.Iterator[doctest_example.DocTest]:
     """
     Parses doctests from a docstr and generates example objects.
     The style influences which tests are found.
@@ -502,7 +502,7 @@ def package_calldefs(
     exclude: typing.Any = [],
     ignore_syntax_errors: typing.Any = True,
     analysis: typing.Any = 'auto',
-):
+) -> typing.Iterator[tuple[dict[str, static_analysis.CallDefNode], typing.Any]]:
     """
     Statically generates all callable definitions in a module or package
 
@@ -666,7 +666,7 @@ def parse_doctestables(
     ignore_syntax_errors: typing.Any = True,
     parser_kw: typing.Any = {},
     analysis: typing.Any = 'auto',
-):
+) -> typing.Iterator[doctest_example.DocTest]:
     """
     Parses all doctests within top-level callables of a module and generates
     example objects.  The style influences which tests are found.
