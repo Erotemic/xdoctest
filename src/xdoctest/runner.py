@@ -54,6 +54,7 @@ from xdoctest import doctest_example
 from xdoctest import utils
 from functools import partial
 import time
+import pathlib
 import types
 import warnings
 import sys
@@ -375,14 +376,64 @@ def doctest_module(
             AFTER_ALL_HOOKS = []
             if insert_skip_directive_above_failures:
                 AFTER_ALL_HOOKS.append(_auto_disable_failing_tests_hook)
+
+            if config.get('write_outputs', False):
+                AFTER_ALL_HOOKS.append(_write_outputs_hook)
+
             for hook in AFTER_ALL_HOOKS:
                 context = {
-                    'enabled_example': enabled_examples,
+                    'enabled_examples': enabled_examples,
                     'run_summary': run_summary,
+                    'config': config,
                 }
                 hook(context)
 
     return run_summary
+
+
+def _write_outputs_hook(context):
+    """
+    Write captured outputs back to source files.
+    Updates existing want statements and optionally fills missing ones.
+
+    Args:
+        context (dict): Hook context with keys:
+            - enabled_examples: List of DocTest objects that ran
+            - run_summary: Dictionary with test results
+            - config: Configuration dict with write_outputs and fill_missing_wants
+    """
+    from collections import defaultdict
+
+    enabled_examples = context['enabled_examples']
+    config = context.get('config', {})
+    fill_missing = config.get('fill_missing_wants', False)
+
+    # Group modifications by file
+    file_modifications = defaultdict(list)
+
+    for example in enabled_examples:
+        # Skip if test didn't run
+        if not example.anything_ran():
+            continue
+
+        # Skip if test failed with an exception other than GotWantException
+        # (GotWantException means output mismatch, which is what we want to fix)
+        if example.exc_info is not None:
+            from xdoctest.checker import GotWantException
+            exc_type, exc_value, exc_tb = example.exc_info
+            # Skip if it's not a GotWantException (e.g., syntax error, runtime error)
+            if not isinstance(exc_value, GotWantException):
+                continue
+
+        # Compute modifications for this example
+        for partx, part in enumerate(example._parts):
+            mod = _compute_part_modification(example, partx, part, fill_missing)
+            if mod:
+                file_modifications[example.fpath].append(mod)
+
+    # Apply modifications to each file
+    for fpath, modifications in file_modifications.items():
+        _apply_modifications_to_file(fpath, modifications)
 
 
 def _auto_disable_failing_tests_hook(context):
@@ -427,6 +478,187 @@ def _auto_disable_failing_tests_hook(context):
                 lines.insert(line_idx, new_line)
         with open(fpath, 'w') as file:
             file.write(''.join(lines))
+
+
+def _strip_ansi_codes(text):
+    """
+    Remove ANSI color codes from text.
+
+    Args:
+        text (str): Text that may contain ANSI escape sequences
+
+    Returns:
+        str: Text with ANSI codes removed
+
+    Example:
+        >>> # Test with ANSI color codes
+        >>> text = '\x1b[31mred text\x1b[0m'
+        >>> _strip_ansi_codes(text)
+        'red text'
+        >>> # Test with no ANSI codes
+        >>> _strip_ansi_codes('plain text')
+        'plain text'
+    """
+    import re
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    return ansi_escape.sub('', text)
+
+
+def _detect_indentation(example, part):
+    """
+    Detect indentation from the source file.
+
+    Args:
+        example (DocTest): The doctest example containing the part
+        part (DoctestPart): The doctest part to analyze
+
+    Returns:
+        str: The indentation prefix (spaces/tabs)
+    """
+    # Calculate the absolute line number in the source file
+    # where this part's exec line appears
+    exec_line_number = example.lineno + part.line_offset
+
+    lines = pathlib.Path(example.fpath).read_text().split('\n')
+    if exec_line_number - 1 < len(lines):
+        source_line = lines[exec_line_number - 1]
+        # Extract the leading whitespace
+        indentation = source_line[:len(source_line) - len(source_line.lstrip())]
+        return indentation
+
+    return ''
+
+
+def _format_want_lines(output_text, indentation):
+    """
+    Format output as doctest want lines with proper indentation.
+
+    Args:
+        output_text (str): The raw output to format
+        indentation (str): The indentation prefix to apply
+
+    Returns:
+        List[str]: Formatted lines ready to write to file
+
+    Example:
+        >>> # Test basic formatting
+        >>> lines = _format_want_lines('hello\\nworld', '    ')
+        >>> len(lines)
+        2
+        >>> lines[0]
+        '    hello\\n'
+        >>> lines[1]
+        '    world\\n'
+        >>> # Test with blank lines
+        >>> lines = _format_want_lines('line1\\n\\nline3', '    ')
+        >>> len(lines)
+        3
+        >>> lines[1]
+        '    <BLANKLINE>\\n'
+    """
+    if not output_text:
+        return []
+
+    lines = _strip_ansi_codes(output_text).rstrip('\n').split('\n')
+
+    formatted = []
+    for line in lines:
+        if line.strip() == '':
+            line = '<BLANKLINE>'
+        formatted.append(indentation + line + '\n')
+
+    return formatted
+
+
+def _compute_part_modification(example, partx, part, fill_missing):
+    """
+    Determine what modification is needed for a doctest part.
+
+    Args:
+        example (DocTest): The doctest example containing the part
+        partx (int): Index of the part in the example
+        part (DoctestPart): The doctest part to process
+        fill_missing (bool): Whether to fill in missing want statements
+
+    Returns:
+        dict or None: Modification dict with keys:
+            - line_number: Line number where want is/should be
+            - action: 'replace' or 'insert'
+            - num_old_lines: Number of lines to remove (for replace)
+            - new_lines: List of formatted lines to insert
+        Returns None if no modification needed
+    """
+    from xdoctest import constants
+
+    got_stdout = example.logged_stdout.get(partx, '')
+    got_eval = example.logged_evals.get(partx, constants.NOT_EVALED)
+
+    if got_stdout or got_eval is constants.NOT_EVALED:
+        output_text = got_stdout
+    elif got_eval is not None:
+        output_text = repr(got_eval)
+    else:
+        output_text = ''
+
+    if part.want_lines:
+        action = 'replace'
+        num_old_lines = len(part.want_lines)
+    elif fill_missing and output_text:
+        action = 'insert'
+        num_old_lines = 0
+    else:
+        return None  # Skip this part
+
+    want_line_number = example.lineno + part.line_offset + part.n_exec_lines
+
+    formatted_lines = _format_want_lines(output_text, _detect_indentation(example, part))
+
+    if not formatted_lines:
+        return None
+
+    return {
+        'line_number': want_line_number,
+        'action': action,
+        'num_old_lines': num_old_lines,
+        'new_lines': formatted_lines,
+    }
+
+
+def _apply_modifications_to_file(fpath, modifications):
+    """
+    Apply all modifications to a single file.
+
+    Args:
+        fpath (str): Path to source file
+        modifications (list): List of modification dicts from _compute_part_modification
+    """
+    print(f'Updating doctests in: {fpath}')
+
+    with open(fpath, 'r') as f:
+        lines = f.readlines()
+
+    # Sort by line number (descending) to preserve line numbers
+    modifications = sorted(modifications,
+                           key=lambda m: m['line_number'],
+                           reverse=True)
+
+    for mod in modifications:
+        line_idx = mod['line_number'] - 1
+
+        if mod['action'] == 'replace':
+            # Remove old want lines
+            for _ in range(mod['num_old_lines']):
+                if line_idx < len(lines):
+                    lines.pop(line_idx)
+
+        # Insert new want lines
+        for new_line in reversed(mod['new_lines']):
+            lines.insert(line_idx, new_line)
+
+    with open(fpath, 'w') as f:
+        f.writelines(lines)
+
+    print('  Updated {} doctest part(s)'.format(len(modifications)))
 
 
 def _convert_to_test_module(enabled_examples):
@@ -889,6 +1121,20 @@ def _update_argparse_cli(add_argument, prefix=None):
         action='store_true',
         help=('Same as if durations=0'),
     )
+
+    add_argument(*('--write-outputs', '--update-wants'),
+                 dest='write_outputs',
+                 action='store_true',
+                 default=False,
+                 help=('Write captured outputs back to source files, '
+                       'updating existing want statements'))
+
+    add_argument(*('--fill-missing-wants',),
+                 dest='fill_missing_wants',
+                 action='store_true',
+                 default=False,
+                 help=('When used with --write-outputs, also add want '
+                       'statements for parts that have none'))
 
     add_argument_kws = [
         # (['--style'], dict(dest='style',

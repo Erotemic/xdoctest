@@ -82,6 +82,8 @@ class DoctestConfig(dict):
             'global_exec': ns['global_exec'],
             'supress_import_errors': ns['supress_import_errors'],
             'verbose': ns['verbose'],
+            'write_outputs': ns['write_outputs'],
+            'fill_missing_wants': ns['fill_missing_wants'],
         }
         return _examp_conf
 

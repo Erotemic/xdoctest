@@ -1,4 +1,4 @@
-import xdoctest
+import xdoctest.directive
 from typing import Tuple
 from _typeshed import Incomplete
 import xdoctest.directive
