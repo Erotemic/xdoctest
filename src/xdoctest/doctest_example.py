@@ -251,7 +251,8 @@ class DoctestConfig(dict):
                 for p in prefix
             ]
             if prefix[0]:
-                kw['dest'] = f"{prefix[0]} {kw['dest']}"
+                # use underscore in dest so pytest option names are valid
+                kw['dest'] = f"{prefix[0]}_{kw['dest']}"
             add_argument(*alias, **kw)
 
     def getvalue(self, key: str, given: typing.Any = None) -> object:
