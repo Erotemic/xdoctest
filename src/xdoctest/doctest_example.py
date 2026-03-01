@@ -372,7 +372,7 @@ class DocTest:
     _parts: list['DoctestPart'] | None
     failed_tb_lineno: int | None
     exc_info: tuple[type[BaseException], BaseException, types.TracebackType] | tuple[None, None, None] | None
-    failed_part: 'DoctestPart' | None 
+    failed_part: 'DoctestPart' | str | None 
     warn_list: list | None
     _partfilename: str | None 
     logged_evals: OrderedDict[int, typing.Any] | None 
@@ -967,7 +967,7 @@ class DocTest:
                     print(f'runstate._global_state={runstate._global_state}')
 
                 # Handle runtime actions
-                if runstate['SKIP'] or len(runstate['REQUIRES']) > 0:
+                if runstate['SKIP'] or len(runstate['REQUIRES']) > 0:  # type: ignore[arg-type]
                     if DEBUG:
                         print(f'part[{partx}] runstate requests skipping')
                     self._skipped_parts.append(part)
@@ -1127,8 +1127,8 @@ class DocTest:
                             """
                             if part.want:
                                 got_stdout = cap.text
+                                assert got_stdout is not None
                                 if not runstate['IGNORE_WANT']:
-                                    assert got_stdout is not None
                                     part.check(
                                         got_stdout,
                                         got_eval,
@@ -1140,6 +1140,7 @@ class DocTest:
                             else:
                                 # If a part doesnt have a want allow its output to
                                 # be matched by the next part.
+                                assert cap.text is not None
                                 self._unmatched_stdout.append(cap.text)
                     except BaseException:
                         # close the asyncio runner (base exception)
@@ -1187,7 +1188,7 @@ class DocTest:
                         raise ex.orig_ex
                     break
                 except Exception as _ex_dbg:
-                    ex_type, ex_value, tb = sys.exc_info()
+                    ex_type, ex_value, tb = _exec_info = sys.exc_info()
 
                     DEBUG = global_state.DEBUG_DOCTEST
                     if DEBUG:
@@ -1238,7 +1239,7 @@ class DocTest:
                     else:
                         self.failed_tb_lineno = found_lineno
 
-                    self.exc_info = (ex_type, ex_value, tb)
+                    self.exc_info = _exec_info
 
                     # The idea of CLEAN_TRACEBACK is to make it so the
                     # traceback from this function doesn't clutter the error
@@ -1295,24 +1296,9 @@ class DocTest:
         if self.mode == 'pytest':
             return 'pytest ' + self.node
         elif self.mode == 'native':
-            ALLOW_MODNAME_CMDLINE = False
-            if ALLOW_MODNAME_CMDLINE:
-                # not 100% reliable if any dynamic code has executed before
-                # or we are doing self-testing
-                in_path = static.is_modname_importable(self.modname)
-                if in_path:
-                    # should be able to find the module by name
-                    return (
-                        f'python -m xdoctest {self.modname} {self.unique_callname}'
-                    )
-                else:
-                    # needs the full path to be able to run the module
-                    return f'python -m xdoctest {self.modpath} {self.unique_callname}'
-            else:
-                # Probably safer to always use the path
-                return (
-                    f'python -m xdoctest {self.modpath} {self.unique_callname}'
-                )
+            return (
+                f'python -m xdoctest {self.modpath} {self.unique_callname}'
+            )
         else:
             raise KeyError(self.mode)
 
@@ -1353,6 +1339,8 @@ class DocTest:
             if self.failed_part == '<IMPORT>':
                 return 0
             ex_type, ex_value, tb = self.exc_info
+            assert self.failed_part is not None
+            assert not isinstance(self.failed_part, str)
             offset = self.failed_part.line_offset
             if isinstance(
                 ex_value,
@@ -1367,6 +1355,7 @@ class DocTest:
                 # Return the line of the want line
                 offset += self.failed_part.n_exec_lines + 1
             else:
+                assert self.failed_tb_lineno is not None
                 offset += self.failed_tb_lineno
             offset -= 1
             return offset
@@ -1381,6 +1370,7 @@ class DocTest:
             return None
         else:
             # Find the first line of the part
+            assert self.lineno is not None
             lineno = self.lineno + offset
             return lineno
 
@@ -1494,11 +1484,12 @@ class DocTest:
         fail_offset = self.failed_line_offset()
         # Failure line number wrt the entire file (starts from 1)
         fail_lineno = self.failed_lineno()
-
+        assert ex_type is not None
+        assert fail_offset is not None
         lines = [
-            '* REASON: {}'.format(ex_type.__name__),
+            f'* REASON: {ex_type.__name__}',
             self._color(self._block_prefix + ' DEBUG INFO', 'white'),
-            '  XDoc "{}", line {}'.format(self.node, fail_offset + 1)
+            f'  XDoc "{self.node}", line {fail_offset + 1}'
             + self._color(' <- wrt doctest', 'red'),
         ]
 
@@ -1533,12 +1524,17 @@ class DocTest:
         n_digits = 1
 
         # Logic to break output between pass, failed, and unexecuted parts
-        before_part_lines = []
-        fail_part_lines = []
-        after_parts_lines = []
+        before_part_lines: list[str] = []
+        fail_part_lines: list[str] = []
+        after_parts_lines: list[str] = []
         temp = [before_part_lines, fail_part_lines, after_parts_lines]
         tindex = 0
         indent_text = ' ' * (5 + n_digits)
+        
+        assert self._parts is not None
+        assert self._skipped_parts is not None
+        assert self.logged_stdout is not None
+        assert ex_value is not None
 
         for partx, (part, part_text) in enumerate(zip(self._parts, textgen)):
             if part in self._skipped_parts:
@@ -1574,6 +1570,7 @@ class DocTest:
 
         lines += [self._color(self._block_prefix + ' TRACEBACK', 'white')]
         if hasattr(ex_value, 'output_difference'):
+            assert hasattr(ex_value, 'output_repr_difference')
             lines += [
                 ex_value.output_difference(self._runstate, colored=colored),
                 ex_value.output_repr_difference(self._runstate),
@@ -1678,12 +1675,14 @@ class DocTest:
             text = utils.color_text(text, color)
         return text
 
-    def _post_run(self, verbose) -> dict[str, object]:
+    def _post_run(self, verbose) -> dict[str, typing.Any]:
         """
         Returns:
             Dict : summary
         """
         # print('POST RUN verbose = {!r}'.format(verbose))
+        assert self._skipped_parts is not None
+        assert self._parts is not None
 
         skipped = len(self._skipped_parts) == len(self._parts)
         failed = self.exc_info is not None
