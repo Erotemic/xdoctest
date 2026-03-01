@@ -2,24 +2,36 @@
 This module defines the main class that holds a DocTest example
 """
 
+from __future__ import annotations
+
+import typing
+from typing import TYPE_CHECKING
 import __future__
+
 import ast
-from collections import OrderedDict
-import traceback
-import warnings
 import math
-import sys
+import os
 import re
+import sys
+import traceback
 import types
+import warnings
+from collections import OrderedDict
 from inspect import CO_COROUTINE
-from xdoctest import utils
-from xdoctest import directive
-from xdoctest import constants
+
+from xdoctest import (
+    checker,
+    constants,
+    directive,
+    exceptions,
+    global_state,
+    parser,
+    utils,
+)
+
+if TYPE_CHECKING:
+    from xdoctest.doctest_part import DoctestPart
 from xdoctest import static_analysis as static
-from xdoctest import parser
-from xdoctest import checker
-from xdoctest import exceptions
-from xdoctest import global_state
 
 __devnotes__ = """
 TODO:
@@ -85,7 +97,12 @@ class DoctestConfig(dict):
         }
         return _examp_conf
 
-    def _update_argparse_cli(self, add_argument, prefix=None, defaults={}):
+    def _update_argparse_cli(
+        self,
+        add_argument: typing.Callable[..., typing.Any],
+        prefix: str | list[str] | None = None,
+        defaults: dict[str, typing.Any] = {},
+    ):
         """
         Updates a pytest or argparse CLI
 
@@ -213,6 +230,8 @@ class DoctestConfig(dict):
 
         if prefix is None:
             prefix = ['']
+        # mypy: after this point prefix should be a list of strings
+        assert isinstance(prefix, list)
 
         # TODO: make environment variables as args more general
         import os
@@ -224,7 +243,7 @@ class DoctestConfig(dict):
             if argname in environ_aware:
                 env_argname = 'XDOCTEST_' + argname.replace('-', '_').upper()
                 if 'default' in kw:
-                    kw['default'] = os.environ.get(env_argname, kw['default'])
+                    kw['default'] = os.environ.get(env_argname, kw['default'])  # type: ignore[invalid-assignment]
 
             alias = [
                 a.replace('--', '--' + p + '-') if p else a
@@ -232,10 +251,10 @@ class DoctestConfig(dict):
                 for p in prefix
             ]
             if prefix[0]:
-                kw['dest'] = prefix[0] + '_' + kw['dest']
+                kw['dest'] = f"{prefix[0]}_{kw['dest']}"
             add_argument(*alias, **kw)
 
-    def getvalue(self, key, given=None):
+    def getvalue(self, key: str, given: typing.Any = None) -> object:
         """
         Args:
             key (str): The configuration key
@@ -259,7 +278,7 @@ class DocTest:
         docsrc (str):
             doctest source code
 
-        modpath (str | PathLike):
+        modpath (str | PathLike | None):
             module the source was read from
 
         callname (str):
@@ -299,7 +318,7 @@ class DocTest:
         failed_tb_lineno (int | None):
             Line number a failure occurred on.
 
-        exc_info (None | TracebackType):
+        exc_info (None | tuple[type[BaseException], BaseException, types.TracebackType] | tuple[None, None, None]):
             traceback of a failure if one occurred.
 
         failed_part (None | DoctestPart):
@@ -343,16 +362,36 @@ class DocTest:
     UNKNOWN_CALLNAME = '<callname?>'
     UNKNOWN_FPATH = '<fpath?>'
 
+    # Attribute annotations derived from docstring
+    module: types.ModuleType | None
+    modname: str | None
+    fpath: str | os.PathLike | None 
+    docsrc: str | None
+    lineno: int | None 
+    num: int | None 
+    _parts: list['DoctestPart'] | None
+    failed_tb_lineno: int | None
+    exc_info: tuple[type[BaseException], BaseException, types.TracebackType] | tuple[None, None, None] | None
+    failed_part: 'DoctestPart' | str | None 
+    warn_list: list | None
+    _partfilename: str | None 
+    logged_evals: OrderedDict[int, typing.Any] | None 
+    logged_stdout: OrderedDict[int, str | None] | None 
+    _unmatched_stdout: list[str] | None 
+    _skipped_parts: list | None 
+    _runstate: typing.Any
+    global_namespace: dict[str, typing.Any]
+
     def __init__(
         self,
-        docsrc,
-        modpath=None,
-        callname=None,
-        num=0,
-        lineno=1,
-        fpath=None,
-        block_type=None,
-        mode='pytest',
+        docsrc: str,
+        modpath: str | os.PathLike | None = None,
+        callname: str | None = None,
+        num: int = 0,
+        lineno: int = 1,
+        fpath: str | os.PathLike | None = None,
+        block_type: str | None = None,
+        mode: str = 'pytest',
     ):
         """
         Args:
@@ -421,19 +460,19 @@ class DocTest:
         # Hint at what is running this doctest
         self.mode = mode
 
-    def __nice__(self):
+    def __nice__(self) -> str:
         """
         Returns:
             str
         """
-        parts = []
-        parts.append(self.modname)
+        parts: list[str] = []
+        parts.append(str(self.modname))
         parts.append('%s:%s' % (self.callname, self.num))
         if self.lineno is not None:
             parts.append('ln %s' % (self.lineno))
         return ' '.join(parts)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Returns:
             str
@@ -442,7 +481,7 @@ class DocTest:
         devnice = self.__nice__()
         return '<%s(%s) at %s>' % (classname, devnice, hex(id(self)))
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Returns:
             str
@@ -451,7 +490,7 @@ class DocTest:
         devnice = self.__nice__()
         return '<%s(%s)>' % (classname, devnice)
 
-    def is_disabled(self, pytest=False):
+    def is_disabled(self, pytest=False) -> bool:
         """
         Checks for comment directives on the first line of the doctest
 
@@ -492,31 +531,32 @@ class DocTest:
             disable_patterns += [r'>>>\s*#\s*pytest.skip']
 
         pattern = '|'.join(disable_patterns)
+        assert self.docsrc is not None
         m = re.match(pattern, self.docsrc, flags=re.IGNORECASE)
         return m is not None
 
     @property
-    def unique_callname(self):
+    def unique_callname(self) -> str:
         """
         A key that references this doctest given its module
 
         Returns:
             str
         """
-        return self.callname + ':' + str(self.num)
+        return f'{self.callname}:{self.num}'
 
     @property
-    def node(self):
+    def node(self) -> str:
         """
         A key that references this doctest within pytest
 
         Returns:
             str
         """
-        return self.modpath + '::' + self.callname + ':' + str(self.num)
+        return  f'{self.modpath}::{self.callname}:{self.num}'
 
     @property
-    def valid_testnames(self):
+    def valid_testnames(self) -> set[str]:
         """
         A set of callname and unique_callname
 
@@ -528,7 +568,7 @@ class DocTest:
             self.unique_callname,
         }
 
-    def wants(self):
+    def wants(self) -> typing.Generator[str, None, None]:
         """
         Returns a list of the populated wants
 
@@ -536,17 +576,19 @@ class DocTest:
             str
         """
         self._parse()
+        # _parse ensures _parts is a list
+        assert self._parts is not None
         for part in self._parts:
             if part.want:
                 yield part.want
 
     def format_parts(
         self,
-        linenos=True,
-        colored=None,
-        want=True,
-        offset_linenos=None,
-        prefix=True,
+        linenos: bool = True,
+        colored: bool | None = None,
+        want: bool = True,
+        offset_linenos: bool | None = None,
+        prefix: bool = True,
     ):
         """
         Used by :func:`format_src`
@@ -560,20 +602,33 @@ class DocTest:
             prefix (bool): if False, exclude the doctest ``>>> `` prefix
         """
         self._parse()
-        colored = self.config.getvalue('colored', colored)
+        # ensure parts exists for subsequent loops
+        assert self._parts is not None
+        val = self.config.getvalue('colored', colored)
+        if val is None:
+            colored = False
+        else:
+            # allow ints or bools from config and coerce to bool
+            colored = bool(val)
         partnos = self.config.getvalue('partnos')
-        offset_linenos = self.config.getvalue('offset_linenos', offset_linenos)
+        assert isinstance(partnos, bool)
+        val2 = self.config.getvalue('offset_linenos', offset_linenos)
+        if val2 is None:
+            offset_linenos = None
+        else:
+            offset_linenos = bool(val2)
 
         n_digits = None
         startline = 1
         if linenos:
             if offset_linenos:
+                assert self.lineno is not None
                 startline = self.lineno
             n_lines = sum(p.n_lines for p in self._parts)
             endline = startline + n_lines
 
-            n_digits = math.log(max(1, endline), 10)
-            n_digits = int(math.ceil(n_digits))
+            n_digits_ = math.log(max(1, endline), 10)
+            n_digits = int(math.ceil(n_digits_))
 
         for part in self._parts:
             part_text = part.format_part(
@@ -589,12 +644,12 @@ class DocTest:
 
     def format_src(
         self,
-        linenos=True,
-        colored=None,
-        want=True,
-        offset_linenos=None,
-        prefix=True,
-    ):
+        linenos: bool = True,
+        colored: bool | None = None,
+        want: bool = True,
+        offset_linenos: bool | None = None,
+        prefix: bool = True,
+    ) -> str:
         """
         Adds prefix and line numbers to a doctest
 
@@ -636,7 +691,7 @@ class DocTest:
         full_source = '\n'.join(formated_parts)
         return full_source
 
-    def _parse(self):
+    def _parse(self) -> None:
         """
         Divide the given string into examples and intervening text.
 
@@ -688,9 +743,12 @@ class DocTest:
                 lineno=self.lineno,
                 fpath=self.fpath,
             )
-            self._parts = parser.DoctestParser().parse(self.docsrc, info)
-            self._parts = [p for p in self._parts if not isinstance(p, str)]
+            assert self.docsrc is not None
+            raw_parts = parser.DoctestParser().parse(self.docsrc, info)
+            # filter out strings that are inserted for text chunks
+            self._parts = [p for p in raw_parts if not isinstance(p, str)]
         # Ensure part numbers are given
+        assert self._parts is not None
         for partno, part in enumerate(self._parts):
             part.partno = partno
 
@@ -703,6 +761,7 @@ class DocTest:
             None
         """
         if self.module is None:
+            assert self.modname is not None
             if not self.modname.startswith('<'):
                 # self.module = utils.import_module_from_path(self.modpath, index=0)
                 if global_state.DEBUG_DOCTEST:
@@ -711,6 +770,7 @@ class DocTest:
                     # Note: there is a possibility of conflicts that arises
                     # here depending on your local environment. We may want to
                     # try and detect that.
+                    assert self.modpath is not None
                     self.module = utils.import_module_from_path(
                         self.modpath, index=-1
                     )
@@ -749,7 +809,7 @@ class DocTest:
                         )
 
     @staticmethod
-    def _extract_future_flags(namespace):
+    def _extract_future_flags(namespace) -> int:
         """
         Return the compiler-flags associated with the future features that
         have been imported into the given namespace (i.e. globals).
@@ -801,15 +861,18 @@ class DocTest:
         compileflags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
         return test_globals, compileflags
 
-    def anything_ran(self):
+    def anything_ran(self) -> bool:
         """
         Returns:
             bool
         """
         # If everything was skipped, then there will be no stdout
+        assert self.logged_stdout is not None
         return len(self.logged_stdout) > 0
 
-    def run(self, verbose=None, on_error=None):
+    def run(
+        self, verbose: typing.Any = None, on_error: typing.Any = None
+    ) -> dict[str, typing.Any]:
         """
         Executes the doctest, checks the results, reports the outcome.
 
@@ -822,6 +885,7 @@ class DocTest:
         """
         on_error = self.config.getvalue('on_error', on_error)
         verbose = self.config.getvalue('verbose', verbose)
+        assert isinstance(verbose, int)
         if on_error not in {'raise', 'return'}:
             raise KeyError(on_error)
 
@@ -829,6 +893,8 @@ class DocTest:
         self._pre_run(verbose)
 
         # Prepare for actual test run
+        assert self.logged_evals is not None
+        assert self.logged_stdout is not None
         self.logged_evals.clear()
         self.logged_stdout.clear()
         self._unmatched_stdout = []
@@ -865,6 +931,7 @@ class DocTest:
         # NOTE: this will prevent any custom handling of warnings
         # See: https://github.com/Erotemic/xdoctest/issues/169
         with warnings.catch_warnings(record=True) as self.warn_list:
+            assert self._parts is not None
             for partx, part in enumerate(self._parts):
                 if DEBUG:
                     print(f'part[{partx}] checking')
@@ -881,6 +948,7 @@ class DocTest:
                     try:
                         runstate.update(part_directive)
                     except Exception as ex:
+                        assert self.lineno is not None
                         msg = 'Failed to parse directive: {} in {} at line {}. Caused by {}'.format(
                             part_directive,
                             self.fpath,
@@ -901,7 +969,7 @@ class DocTest:
                     print(f'runstate._global_state={runstate._global_state}')
 
                 # Handle runtime actions
-                if runstate['SKIP'] or len(runstate['REQUIRES']) > 0:
+                if runstate['SKIP'] or len(runstate['REQUIRES']) > 0:  # type: ignore[arg-type]
                     if DEBUG:
                         print(f'part[{partx}] runstate requests skipping')
                     self._skipped_parts.append(part)
@@ -923,7 +991,7 @@ class DocTest:
                     except Exception:
                         self.failed_part = '<IMPORT>'
                         self._partfilename = (
-                            '<doctest:' + self.node + ':pre_import>'
+                            f'<doctest:{self.node}:pre_import>'
                         )
                         self.exc_info = sys.exc_info()
                         if on_error == 'raise':
@@ -944,16 +1012,14 @@ class DocTest:
                     global_exec = self.config.getvalue('global_exec')
                     if global_exec:
                         # Hack to make it easier to specify multi-line input on the CLI
+                        assert isinstance(global_exec, str)
                         global_source = utils.codeblock(
                             global_exec.replace('\\n', '\n')
                         )
                         global_code = compile(
                             global_source,
                             mode='exec',
-                            filename='<doctest:'
-                            + self.node
-                            + ':'
-                            + 'global_exec>',
+                            filename=f'<doctest:{self.node}:global_exec>',
                             flags=compileflags,
                             dont_inherit=True,
                         )
@@ -965,7 +1031,7 @@ class DocTest:
                     # Compile code, handle syntax errors
                     #   part.compile_mode can be single, exec, or eval.
                     #   Typically single is used instead of eval
-                    self._partfilename = '<doctest:' + self.node + '>'
+                    self._partfilename = f'<doctest:{self.node}>'
                     source_text = part.compilable_source()
 
                     code = compile(
@@ -1063,6 +1129,7 @@ class DocTest:
                             """
                             if part.want:
                                 got_stdout = cap.text
+                                assert got_stdout is not None
                                 if not runstate['IGNORE_WANT']:
                                     part.check(
                                         got_stdout,
@@ -1075,6 +1142,7 @@ class DocTest:
                             else:
                                 # If a part doesnt have a want allow its output to
                                 # be matched by the next part.
+                                assert cap.text is not None
                                 self._unmatched_stdout.append(cap.text)
                     except BaseException:
                         # close the asyncio runner (base exception)
@@ -1097,7 +1165,7 @@ class DocTest:
                     raise
                 except (
                     exceptions.ExitTestException,
-                    exceptions._pytest.outcomes.Skipped,
+                    exceptions.Skipped,
                 ) as ex:
                     if verbose > 0:
                         print('Test gracefully exists on: ex={}'.format(ex))
@@ -1122,7 +1190,7 @@ class DocTest:
                         raise ex.orig_ex
                     break
                 except Exception as _ex_dbg:
-                    ex_type, ex_value, tb = sys.exc_info()
+                    ex_type, ex_value, tb = _exec_info = sys.exc_info()
 
                     DEBUG = global_state.DEBUG_DOCTEST
                     if DEBUG:
@@ -1173,7 +1241,7 @@ class DocTest:
                     else:
                         self.failed_tb_lineno = found_lineno
 
-                    self.exc_info = (ex_type, ex_value, tb)
+                    self.exc_info = _exec_info
 
                     # The idea of CLEAN_TRACEBACK is to make it so the
                     # traceback from this function doesn't clutter the error
@@ -1220,7 +1288,7 @@ class DocTest:
         return self.global_namespace
 
     @property
-    def cmdline(self):
+    def cmdline(self) -> str:
         """
         A cli-instruction that can be used to execute *this* doctest.
 
@@ -1230,35 +1298,9 @@ class DocTest:
         if self.mode == 'pytest':
             return 'pytest ' + self.node
         elif self.mode == 'native':
-            ALLOW_MODNAME_CMDLINE = False
-            if ALLOW_MODNAME_CMDLINE:
-                # not 100% reliable if any dynamic code has executed before
-                # or we are doing self-testing
-                in_path = static.is_modname_importable(self.modname)
-                if in_path:
-                    # should be able to find the module by name
-                    return (
-                        'python -m xdoctest '
-                        + self.modname
-                        + ' '
-                        + self.unique_callname
-                    )
-                else:
-                    # needs the full path to be able to run the module
-                    return (
-                        'python -m xdoctest '
-                        + self.modpath
-                        + ' '
-                        + self.unique_callname
-                    )
-            else:
-                # Probably safer to always use the path
-                return (
-                    'python -m xdoctest '
-                    + self.modpath
-                    + ' '
-                    + self.unique_callname
-                )
+            return (
+                f'python -m xdoctest {self.modpath} {self.unique_callname}'
+            )
         else:
             raise KeyError(self.mode)
 
@@ -1286,7 +1328,7 @@ class DocTest:
                     self._color(self._block_prefix + ' STDOUT/STDERR', 'white')
                 )
 
-    def failed_line_offset(self):
+    def failed_line_offset(self) -> int | None:
         """
         Determine which line in the doctest failed.
 
@@ -1299,6 +1341,8 @@ class DocTest:
             if self.failed_part == '<IMPORT>':
                 return 0
             ex_type, ex_value, tb = self.exc_info
+            assert self.failed_part is not None
+            assert not isinstance(self.failed_part, str)
             offset = self.failed_part.line_offset
             if isinstance(
                 ex_value,
@@ -1313,11 +1357,12 @@ class DocTest:
                 # Return the line of the want line
                 offset += self.failed_part.n_exec_lines + 1
             else:
+                assert self.failed_tb_lineno is not None
                 offset += self.failed_tb_lineno
             offset -= 1
             return offset
 
-    def failed_lineno(self):
+    def failed_lineno(self) -> int | None:
         """
         Returns:
             int | None
@@ -1327,10 +1372,11 @@ class DocTest:
             return None
         else:
             # Find the first line of the part
+            assert self.lineno is not None
             lineno = self.lineno + offset
             return lineno
 
-    def repr_failure(self, with_tb=True):
+    def repr_failure(self, with_tb: typing.Any = True) -> list[str]:
         r"""
         Constructs lines detailing information about a failed doctest
 
@@ -1440,11 +1486,12 @@ class DocTest:
         fail_offset = self.failed_line_offset()
         # Failure line number wrt the entire file (starts from 1)
         fail_lineno = self.failed_lineno()
-
+        assert ex_type is not None
+        assert fail_offset is not None
         lines = [
-            '* REASON: {}'.format(ex_type.__name__),
+            f'* REASON: {ex_type.__name__}',
             self._color(self._block_prefix + ' DEBUG INFO', 'white'),
-            '  XDoc "{}", line {}'.format(self.node, fail_offset + 1)
+            f'  XDoc "{self.node}", line {fail_offset + 1}'
             + self._color(' <- wrt doctest', 'red'),
         ]
 
@@ -1479,12 +1526,17 @@ class DocTest:
         n_digits = 1
 
         # Logic to break output between pass, failed, and unexecuted parts
-        before_part_lines = []
-        fail_part_lines = []
-        after_parts_lines = []
+        before_part_lines: list[str] = []
+        fail_part_lines: list[str] = []
+        after_parts_lines: list[str] = []
         temp = [before_part_lines, fail_part_lines, after_parts_lines]
         tindex = 0
         indent_text = ' ' * (5 + n_digits)
+        
+        assert self._parts is not None
+        assert self._skipped_parts is not None
+        assert self.logged_stdout is not None
+        assert ex_value is not None
 
         for partx, (part, part_text) in enumerate(zip(self._parts, textgen)):
             if part in self._skipped_parts:
@@ -1520,9 +1572,10 @@ class DocTest:
 
         lines += [self._color(self._block_prefix + ' TRACEBACK', 'white')]
         if hasattr(ex_value, 'output_difference'):
+            assert hasattr(ex_value, 'output_repr_difference')
             lines += [
-                ex_value.output_difference(self._runstate, colored=colored),
-                ex_value.output_repr_difference(self._runstate),
+                ex_value.output_difference(self._runstate, colored=colored),  # type: ignore[call-non-callable]
+                ex_value.output_repr_difference(self._runstate),  # type: ignore[call-non-callable]
             ]
         else:
             if with_tb:
@@ -1607,6 +1660,7 @@ class DocTest:
         return lines
 
     def _print_captured(self):
+        assert self.logged_stdout is not None
         out_text = ''.join([v for v in self.logged_stdout.values() if v])
         if out_text is not None:
             assert isinstance(out_text, str), 'do not use bytes'
@@ -1624,12 +1678,14 @@ class DocTest:
             text = utils.color_text(text, color)
         return text
 
-    def _post_run(self, verbose):
+    def _post_run(self, verbose) -> dict[str, typing.Any]:
         """
         Returns:
             Dict : summary
         """
         # print('POST RUN verbose = {!r}'.format(verbose))
+        assert self._skipped_parts is not None
+        assert self._parts is not None
 
         skipped = len(self._skipped_parts) == len(self._parts)
         failed = self.exc_info is not None

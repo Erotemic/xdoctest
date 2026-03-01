@@ -42,6 +42,8 @@ References:
     .. [GeekPrompt] https://web.archive.org/web/20230824025647/https://www.thegeekstuff.com/2008/09/bash-shell-take-control-of-ps1-ps2-ps3-ps4-and-prompt_command/
 """
 
+from __future__ import annotations
+
 import ast
 import sys
 import re
@@ -88,7 +90,7 @@ class DoctestParser:
         >>> print('\n'.join(list(map(str, doctest_parts))))
     """
 
-    def __init__(self, simulate_repl=False):
+    def __init__(self, simulate_repl: bool = False) -> None:
         """
         Args:
             simulate_repl (bool): if True each line will be treated as its
@@ -97,7 +99,9 @@ class DoctestParser:
         """
         self.simulate_repl = simulate_repl
 
-    def parse(self, string, info=None):
+    def parse(
+        self, string: str, info: dict | None = None
+    ) -> list[doctest_part.DoctestPart | str]:
         r"""
         Divide the given string into examples and interleaving text.
 
@@ -378,7 +382,9 @@ class DoctestParser:
             print('<YIELD CHUNK>')
         yield example
 
-    def _group_labeled_lines(self, labeled_lines):
+    def _group_labeled_lines(
+        self, labeled_lines
+    ) -> list[list | tuple | str]:
         """
         Group labeled lines into logical parts to be executed together
 
@@ -393,12 +399,13 @@ class DoctestParser:
         # Now that lines have types, groups them. This could have done this
         # above, but functionality is split for readability.
         prev_source = None
-        grouped_lines = []
+        # TODO: make typing more sane here.
+        grouped_lines: list[list | tuple | str] = []
 
         # WORKON_BACKWARDS_COMPAT_CONTINUE_EVAL
         # Break up explicit continuations for backwards compat
-        groups = []
-        current = []
+        groups: list[tuple] = []
+        current: list[str] = []
         state = None
         if global_state.DEBUG_PARSER > 4:
             print('labeled_lines = {!r}'.format(labeled_lines))
@@ -423,29 +430,29 @@ class DoctestParser:
             print('groups = {!r}'.format(groups))
 
         # need to merge consecutive dsrc groups without want statements
-        merged_groups = []
-        current = []
+        merged_groups: list[tuple] = []
+        merge_current: list[str] = []
         state = None
         for left, mid, right in _iterthree(groups, pad_value=(None, None)):
             # Merge consecutive groups unless it is followed by a want
             if left[0] == mid[0] and right[0] != 'want':
                 # extend the previous group
-                current.extend(mid[1])
+                merge_current.extend(mid[1])
             else:
                 # start a new group
                 if state is not None:
-                    merged_groups.append((left[0], current))
+                    merged_groups.append((left[0], merge_current))
                 state = mid[0]
-                current = []
-                current.extend(mid[1])
-        if current:
-            merged_groups.append((state, current))
+                merge_current = []
+                merge_current.extend(mid[1])
+        if merge_current:
+            merged_groups.append((state, merge_current))
 
         # More iterating and grouping. This section needs a careful rewrite
         prev_source = None
         grouped_lines = []
         for state, group in merged_groups:
-            block = [t[1] for t in group]
+            block: list[str] = [t[1] for t in group]
             if state == 'text':
                 if prev_source is not None:
                     # accept a source block without a want block
@@ -472,7 +479,9 @@ class DoctestParser:
             print('</GROUP LABEL LINES>')
         return grouped_lines
 
-    def _locate_ps1_linenos(self, source_lines):
+    def _locate_ps1_linenos(
+        self, source_lines: list[str]
+    ) -> tuple[list[int], str]:
         """
         Determines which lines in the source begin a "logical block" of code.
 
@@ -548,7 +557,7 @@ class DoctestParser:
             # note, this hack never leaves this function because we only are
             # returning line numbers.
             # FIXME: there is probably a better way to do this.
-            def balanced_intervals(lines):
+            def balanced_intervals(lines: list[str]):
                 """
                 Finds intervals of balanced nesting syntax
 
@@ -593,7 +602,7 @@ class DoctestParser:
 
         source_block = '\n'.join(exec_source_lines)
         try:
-            pt = static.six_axt_parse(source_block)
+            pt = ast.parse(source_block, filename='<source_block>')
         except SyntaxError as syn_ex:
             # Assign missing information to the syntax error.
             if syn_ex.text is None:
@@ -668,7 +677,7 @@ class DoctestParser:
 
         return ps1_linenos, mode_hint
 
-    def _label_docsrc_lines(self, string):
+    def _label_docsrc_lines(self, string: str) -> list[tuple[str, str]]:
         """
         Give each line in the docstring a label so we can distinguish
         what parts are text, what parts are code, and what parts are "want"
@@ -713,7 +722,7 @@ class DoctestParser:
         """
 
         # parse and differentiate between doctest source and want statements.
-        labeled_lines = []
+        labeled_lines: list[tuple[str, str]] = []
         state_indent = 0
 
         # line states
@@ -828,8 +837,8 @@ class DoctestParser:
                         print('line = {!r}'.format(line))
                         print('Failed to label source lines')
                         print('Labeled lines so far: <[[[[[[[[[[')
-                        for line in labeled_lines:
-                            print(line)
+                        for _line in labeled_lines:
+                            print(_line)
                         print(']]]]]]]]]]>')
                         print('</LABEL FAIL>')
                     raise
@@ -948,11 +957,12 @@ def _complete_source(line, state_indent, line_iter):
                 ub.codeblock(
                     r"""
                 from xdoctest import static_analysis as static
+                import ast
                 static.is_balanced_statement(source_parts, only_tokens=False)
                 static.is_balanced_statement(source_parts, only_tokens=True)
                 text = '\n'.join(source_parts)
                 print(text)
-                static.six_axt_parse(text)
+                ast.parse(text, filename='<source_block>')
                 """
                 )
             )

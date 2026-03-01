@@ -20,10 +20,15 @@ The following is a glossary of terms and jargon used in this repo.
 * TODO - complete this list (Make an issue or PR if there is any term you don't immediately understand!).
 """
 
+from __future__ import annotations
+
+import typing
+
 import textwrap
 import warnings
 import itertools as it
 import types
+import os
 from os.path import exists
 from fnmatch import fnmatch
 from xdoctest import dynamic_analysis
@@ -50,8 +55,13 @@ import xdoctest.doctest_example
 
 
 def parse_freeform_docstr_examples(
-    docstr, callname=None, modpath=None, lineno=1, fpath=None, asone=True
-):
+    docstr: str,
+    callname: str | None = None,
+    modpath: str | os.PathLike | None = None,
+    lineno: int = 1,
+    fpath: str | os.PathLike | None = None,
+    asone: bool = True,
+) -> typing.Iterator[doctest_example.DocTest]:
     r"""
     Finds free-form doctests in a docstring. This is similar to the original
     doctests because these tests do not requires a google/numpy style header.
@@ -186,7 +196,7 @@ def parse_freeform_docstr_examples(
     info = dict(callname=callname, modpath=modpath, lineno=lineno, fpath=fpath)
     all_parts = list(parser.DoctestParser().parse(docstr, info))
 
-    curr_parts = []
+    curr_parts: list[typing.Any] = []
     curr_offset = 0
     num = 0
     prev_part = None
@@ -233,8 +243,13 @@ def parse_freeform_docstr_examples(
 
 
 def parse_google_docstr_examples(
-    docstr, callname=None, modpath=None, lineno=1, fpath=None, eager_parse=True
-):
+    docstr: str,
+    callname: str | None = None,
+    modpath: str | os.PathLike | None = None,
+    lineno: int = 1,
+    fpath: str | os.PathLike | None = None,
+    eager_parse: bool = True,
+) -> typing.Iterator[doctest_example.DocTest]:
     """
     Parses Google-style doctests from a docstr and generates example objects
 
@@ -329,14 +344,14 @@ def parse_auto_docstr_examples(docstr, *args, **kwargs):
 
 
 def parse_docstr_examples(
-    docstr,
-    callname=None,
-    modpath=None,
-    lineno=1,
-    style='auto',
-    fpath=None,
-    parser_kw=None,
-):
+    docstr: str,
+    callname: str | None = None,
+    modpath: str | os.PathLike | None = None,
+    lineno: int = 1,
+    style: str = 'auto',
+    fpath: str | os.PathLike | None = None,
+    parser_kw: dict | None = None,
+) -> typing.Iterator[doctest_example.DocTest]:
     """
     Parses doctests from a docstr and generates example objects.
     The style influences which tests are found.
@@ -392,6 +407,7 @@ def parse_docstr_examples(
                 callname, modpath
             )
         )
+    parser: typing.Any
     if style == 'freeform':
         parser = parse_freeform_docstr_examples
     elif style == 'google':
@@ -484,13 +500,16 @@ def _rectify_to_modpath(modpath_or_name):
 
 
 def package_calldefs(
-    pkg_identifier, exclude=[], ignore_syntax_errors=True, analysis='auto'
-):
+    pkg_identifier: str | os.PathLike | types.ModuleType,
+    exclude: list[str] = [],
+    ignore_syntax_errors: bool = True,
+    analysis: str = 'auto',
+) -> typing.Iterator[tuple[dict[str, static_analysis.CallDefNode], typing.Any]]:
     """
     Statically generates all callable definitions in a module or package
 
     Args:
-        pkg_identifier (str | ModuleType): path to or name of the module to be
+        pkg_identifier (str | PathLike | ModuleType): path to or name of the module to be
             tested (or the live module itself, which is not recommended)
 
         exclude (List[str]): glob-patterns of file names to exclude
@@ -526,16 +545,15 @@ def package_calldefs(
             )
         )
 
+    identifiers: list
     if isinstance(pkg_identifier, types.ModuleType):
         # Case where we are forced to use a live module
         identifiers = [pkg_identifier]
     else:
         pkgpath = _rectify_to_modpath(pkg_identifier)
-        identifiers = list(
-            static_analysis.package_modpaths(
-                pkgpath, with_pkg=True, with_libs=True
-            )
-        )
+        _ideniter = static_analysis.package_modpaths(
+            pkgpath, with_pkg=True, with_libs=True)
+        identifiers = list(_ideniter)
 
     for module_identifier in identifiers:
         if isinstance(module_identifier, str):
@@ -564,7 +582,9 @@ def package_calldefs(
                 raise SyntaxError(msg)
 
 
-def parse_calldefs(module_identifier, analysis='auto'):
+def parse_calldefs(
+    module_identifier: str | types.ModuleType, analysis: str = 'auto'
+) -> dict[str, static_analysis.CallDefNode] | None:
     """
     Parse calldefs from a single module using either static or dynamic
     analysis.
@@ -630,24 +650,26 @@ def parse_calldefs(module_identifier, analysis='auto'):
             warnings.warn(msg)
             raise
     else:
+        assert not isinstance(module_identifier, types.ModuleType)
         calldefs = static_analysis.parse_static_calldefs(
             fpath=module_identifier
         )
-
+    
+    assert calldefs is not None
     if global_state.DEBUG_CORE:  # nocover
-        print('Found {} calldefs'.format(len(calldefs)))
+        print(f'Found {len(calldefs)} calldefs')
 
     return calldefs
 
 
 def parse_doctestables(
-    module_identifier,
-    exclude=[],
-    style='auto',
-    ignore_syntax_errors=True,
-    parser_kw={},
-    analysis='auto',
-):
+    module_identifier: str | os.PathLike | types.ModuleType,
+    exclude: list[str] = [],
+    style: str = 'auto',
+    ignore_syntax_errors: bool = True,
+    parser_kw: dict = {},
+    analysis: str = 'auto',
+) -> typing.Iterator[doctest_example.DocTest]:
     """
     Parses all doctests within top-level callables of a module and generates
     example objects.  The style influences which tests are found.
@@ -712,6 +734,7 @@ def parse_doctestables(
         )
 
     # Statically parse modules and their doctestable callables in a package
+    assert module_identifier is not None
     for calldefs, modpath in package_calldefs(
         module_identifier, exclude, ignore_syntax_errors, analysis=analysis
     ):

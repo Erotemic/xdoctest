@@ -2,12 +2,18 @@
 Utilities for dynamically inspecting code
 """
 
+from __future__ import annotations
+
+import typing
+if typing.TYPE_CHECKING:
+    from xdoctest.static_analysis import CallDefNode
+
 import inspect
 import os
 import types
 
 
-def parse_dynamic_calldefs(modpath_or_module):
+def parse_dynamic_calldefs(modpath_or_module: str | os.PathLike | types.ModuleType) -> dict[str, "CallDefNode"]:
     """
     Dynamic parsing of module doctestable items.
 
@@ -47,6 +53,7 @@ def parse_dynamic_calldefs(modpath_or_module):
         module = modpath_or_module
     else:
         modpath = modpath_or_module
+        assert isinstance(modpath, str)
         if modpath.endswith('.ipynb'):
             """
             # Devnote:
@@ -63,11 +70,11 @@ def parse_dynamic_calldefs(modpath_or_module):
             module = util_import.import_module_from_path(modpath)
 
     calldefs = {}
-
-    if getattr(module, '__doc__'):
+    module_doc = getattr(module, '__doc__')
+    if module_doc:
         calldefs['__doc__'] = static.CallDefNode(
             callname='__doc__',
-            docstr=module.__doc__,
+            docstr=module_doc,
             lineno=0,
             doclineno=1,
             doclineno_end=1,
@@ -88,7 +95,7 @@ def parse_dynamic_calldefs(modpath_or_module):
     return calldefs
 
 
-def get_stack_frame(n=0, strict=True):
+def get_stack_frame(n: int = 0, strict: bool = True) -> types.FrameType:
     """
     Gets the current stack frame or any of its ancestors dynamically
 
@@ -106,6 +113,11 @@ def get_stack_frame(n=0, strict=True):
         >>> assert frame_cur.f_globals['frame_cur'] is frame_cur
     """
     frame_cur = inspect.currentframe()
+    if frame_cur is None:
+        if strict:
+            raise AssertionError('Unable to obtain current frame')
+        else:
+            raise AssertionError('Unable to obtain current frame')
     # Use n+1 to always skip the frame of this function
     for ix in range(n + 1):
         frame_next = frame_cur.f_back
@@ -118,7 +130,7 @@ def get_stack_frame(n=0, strict=True):
     return frame_cur
 
 
-def get_parent_frame(n=0):
+def get_parent_frame(n: int = 0) -> types.FrameType:
     """
     Returns the frame of that called you.
     This is equivalent to `get_stack_frame(n=1)`
@@ -152,7 +164,9 @@ def get_parent_frame(n=0):
     return parent_frame
 
 
-def iter_module_doctestables(module):
+def iter_module_doctestables(
+    module: types.ModuleType,
+) -> typing.Iterator[tuple[str, typing.Any]]:
     r"""
     Yields doctestable objects that belong to a live python module
 
@@ -212,7 +226,7 @@ def iter_module_doctestables(module):
                     yield key + '.' + subkey, item
 
 
-def is_defined_by_module(item, module):
+def is_defined_by_module(item: typing.Any, module: typing.Any):
     """
     Check if item is directly defined by a module.
 
@@ -263,7 +277,9 @@ def is_defined_by_module(item, module):
             except Exception:
                 flag = False
         else:
-            item_modpath = os.path.realpath(os.path.dirname(item.__file__))
+            fname = getattr(item, '__file__', None)
+            assert fname is not None
+            item_modpath = os.path.realpath(os.path.dirname(fname))
             mod_fpath = module.__file__.replace('.pyc', '.py')
             if not mod_fpath.endswith('__init__.py'):
                 flag = False

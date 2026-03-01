@@ -2,9 +2,6 @@
 requires = [ "setuptools>=41.0.1",]
 build-backend = "setuptools.build_meta"
 
-[tool.mypy]
-ignore_missing_imports = true
-
 [tool.xcookie]
 tags = [ "erotemic", "github", "purepy",]
 mod_name = "xdoctest"
@@ -93,6 +90,19 @@ count = true
 quiet-level = 3
 ignore-words-list = ['wont', 'cant', 'ANS', 'doesnt', 'arent', 'ans', 'thats', 'datas', 'isnt', 'didnt', 'wasnt']
 
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[tool.ty.rules]
+unused-type-ignore-comment = "ignore"
+
+[[tool.ty.overrides]]
+include = ["src/xdoctest/_tokenize.py"]
+[tool.ty.overrides.rules]
+unsupported-operator = "ignore"
+invalid-assignment = "ignore"
+
 [tool.ruff]
 line-length = 80
 target-version = "py38"
@@ -114,3 +124,5 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 docstring-code-format = false
+
+

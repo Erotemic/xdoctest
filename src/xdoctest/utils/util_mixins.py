@@ -2,6 +2,8 @@
 Port of NiceRepr from ubelt.util_mixins
 """
 
+from __future__ import annotations
+
 
 class NiceRepr:
     """
@@ -25,7 +27,7 @@ class NiceRepr:
     def __repr__(self):
         try:
             classname = self.__class__.__name__
-            devnice = self.__nice__()
+            devnice = self.__nice__()  # type: ignore[unresolved-attribute]
             return '<%s(%s) at %s>' % (classname, devnice, hex(id(self)))
         except AttributeError:
             if hasattr(self, '__nice__'):
@@ -38,7 +40,7 @@ class NiceRepr:
     def __str__(self):
         try:
             classname = self.__class__.__name__
-            devnice = self.__nice__()
+            devnice = self.__nice__()  # type: ignore[unresolved-attribute]
             return '<%s(%s)>' % (classname, devnice)
         except AttributeError:
             if hasattr(self, '__nice__'):

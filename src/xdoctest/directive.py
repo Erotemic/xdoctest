@@ -152,6 +152,10 @@ Example:
     >>> # xdoctest: +REQUIRES(module:foobar)
 """
 
+from __future__ import annotations
+
+import typing
+
 import sys
 import os
 import re
@@ -164,7 +168,7 @@ from collections import OrderedDict
 from collections import namedtuple
 
 
-def named(key, pattern):
+def named(key: str, pattern: str) -> str:
     """
     helper for regex
 
@@ -262,7 +266,7 @@ class RuntimeState(utils.NiceRepr):
         })>
     """
 
-    def __init__(self, default_state=None):
+    def __init__(self, default_state: dict[str, object] | None = None):
         """
         Args:
             default_state (None | dict): starting default state, if unspecified
@@ -271,9 +275,9 @@ class RuntimeState(utils.NiceRepr):
         self._global_state = copy.deepcopy(DEFAULT_RUNTIME_STATE)
         if default_state:
             self._global_state.update(default_state)
-        self._inline_state = {}
+        self._inline_state: dict[str, typing.Any] = {}
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, object]:
         """
         Returns:
             OrderedDict
@@ -283,7 +287,7 @@ class RuntimeState(utils.NiceRepr):
         state = OrderedDict(sorted(state.items()))
         return state
 
-    def __nice__(self):
+    def __nice__(self) -> str:
         """
         Returns:
             str
@@ -291,7 +295,7 @@ class RuntimeState(utils.NiceRepr):
         parts = ['{}: {}'.format(*item) for item in self.to_dict().items()]
         return '{' + ', '.join(parts) + '}'
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> object:
         """
         Args:
             key (str):
@@ -306,7 +310,7 @@ class RuntimeState(utils.NiceRepr):
         else:
             return self._global_state[key]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: object):
         """
         Args:
             key (str):
@@ -316,7 +320,9 @@ class RuntimeState(utils.NiceRepr):
             raise KeyError('Unknown key: {}'.format(key))
         self._global_state[key] = value
 
-    def set_report_style(self, reportchoice, state=None):
+    def set_report_style(
+        self, reportchoice: str, state: dict[str, object] | None = None
+    ):
         """
         Args:
             reportchoice (str): name of report style
@@ -338,12 +344,12 @@ class RuntimeState(utils.NiceRepr):
                 state[k] = False
         state['REPORT_' + reportchoice.upper()] = True
 
-    def update(self, directives):
+    def update(self, directives: list[Directive]):
         """
         Update the runtime state given a set of directives
 
         Args:
-            directives (List[Directive]):
+            directives (list[Directive]):
                 list of directives. The ``effects`` method is used to update
                 this object.
         """
@@ -370,10 +376,10 @@ class RuntimeState(utils.NiceRepr):
                 elif action == 'assign':
                     state[key] = value
                 elif action == 'set.add':
-                    state[key].add(value)
+                    state[key].add(value)  # type: ignore[unresolved-attribute]
                 elif action == 'set.remove':
                     try:
-                        state[key].remove(value)
+                        state[key].remove(value)  # type: ignore[unresolved-attribute]
                     except KeyError:
                         pass
                 else:
@@ -385,14 +391,20 @@ class Directive(utils.NiceRepr):
     Directives modify the runtime state.
     """
 
-    def __init__(self, name, positive=True, args=[], inline=None):
+    def __init__(
+        self,
+        name: str,
+        positive: bool = True,
+        args: list[str] | None = None,
+        inline: bool | None = None,
+    ):
         """
         Args:
             name (str): The name of the directive
 
             positive (bool): if it is enabling / disabling
 
-            args (List[str]): arguments given to the directive
+            args (list[str]): arguments given to the directive
 
             inline (bool | None):
                 True if this is an inline directive (i.e. only impacts a single
@@ -404,7 +416,7 @@ class Directive(utils.NiceRepr):
         self.positive = positive
 
     @classmethod
-    def extract(cls, text):
+    def extract(cls, text: str) -> typing.Iterator[Directive]:
         """
         Parses directives from a line or repl line
 
@@ -500,7 +512,7 @@ class Directive(utils.NiceRepr):
                             if directive:
                                 yield directive
 
-    def __nice__(self):
+    def __nice__(self) -> str:
         """
         Returns:
             str
@@ -525,6 +537,7 @@ class Directive(utils.NiceRepr):
             remove='1.2.0',
         )
         nargs = self.args
+        assert nargs is not None
         if len(nargs) != 1:
             raise TypeError(
                 '{} directive expected exactly {} argument(s), got {}'.format(
@@ -550,7 +563,9 @@ class Directive(utils.NiceRepr):
             raise Exception('Old method cannot handle multiple effects')
         return effects[0]
 
-    def effects(self, argv=None, environ=None):
+    def effects(
+        self, argv: list[str] | None = None, environ: dict[str, str] | None = None
+    ) -> list[Effect]:
         """
         Returns how this directive modifies a RuntimeState object
 
@@ -561,7 +576,7 @@ class Directive(utils.NiceRepr):
                 Command line the directive is interpreted in the context of.
                 If unspecified, uses ``sys.argv``.
 
-            environ (Dict[str, str] | None):
+            environ (dict[str, str] | None):
                 Environment variables the directive is interpreted in the
                 context of. If unspecified, uses ``os.environ``.
 
@@ -622,11 +637,12 @@ class Directive(utils.NiceRepr):
             effect = Effect(action='noop', key='REQUIRES', value='module:xdoctest')
         """
         key = self.name
-        value = None
+        value: typing.Any = None
 
         effects = []
         if self.name == 'REQUIRES':
             # Special handling of REQUIRES
+            assert isinstance(self.args, list)
             for arg in self.args:
                 value = arg
                 if _is_requires_satisfied(arg, argv=argv, environ=environ):
@@ -655,7 +671,7 @@ class Directive(utils.NiceRepr):
         return effects
 
 
-def _split_opstr(optstr):
+def _split_opstr(optstr: str) -> list[str]:
     """
     Simplified balanced paren logic to only split commas outside of parens
 
@@ -672,7 +688,7 @@ def _split_opstr(optstr):
     """
     import re
 
-    stack = []
+    stack: list[typing.Any] = []
     split_pos = []
     for match in re.finditer(r',|\(|\)', optstr):
         token = match.group()
@@ -687,6 +703,7 @@ def _split_opstr(optstr):
 
     parts = []
     prev = 0
+    curr: int | None
     for curr in split_pos:
         parts.append(optstr[prev:curr].strip())
         prev = curr + 1
@@ -695,14 +712,16 @@ def _split_opstr(optstr):
     return parts
 
 
-def _is_requires_satisfied(arg, argv=None, environ=None):
+def _is_requires_satisfied(
+    arg: str, argv: list[str] | None = None, environ: dict[str, str] | None = None
+) -> bool:
     """
     Determines if the argument to a REQUIRES directive is satisfied
 
     Args:
         arg (str): condition code
-        argv (List[str] | None): cmdline if arg is cmd code usually ``sys.argv``
-        environ (Dict[str, str] | None): environment variables usually ``os.environ``
+        argv (list[str] | None): cmdline if arg is cmd code usually ``sys.argv``
+        environ (dict[str, str] | None): environment variables usually ``os.environ``
 
     Returns:
         bool: flag - True if the requirement is met
@@ -770,8 +789,12 @@ def _is_requires_satisfied(arg, argv=None, environ=None):
         modname = parts[1]
         flag = _module_exists(modname)
     elif arg.startswith('env:'):
+        environ_: typing.Mapping[str, str]
         if environ is None:
-            environ = os.environ
+            environ_ = os.environ
+        else:
+            environ_ = environ
+
         parts = arg.split(':')
         if len(parts) != 2:
             raise ValueError(
@@ -782,11 +805,12 @@ def _is_requires_satisfied(arg, argv=None, environ=None):
         if len(expr_parts) == 1:
             # Test if the environment variable is truthy
             env_key = expr_parts[0]
-            flag = bool(environ.get(env_key, None))
+            
+            flag = bool(environ_.get(env_key, None))
         elif len(expr_parts) == 3:
             # Test if the environment variable is equal to an expression
             env_key, op_code, value = expr_parts
-            env_val = environ.get(env_key, None)
+            env_val = environ_.get(env_key, None)
             if op_code == '==':
                 op = operator.eq
             elif op_code == '!=':
@@ -834,7 +858,7 @@ def _is_requires_satisfied(arg, argv=None, environ=None):
 _MODNAME_EXISTS_CACHE = {}
 
 
-def _module_exists(modname):
+def _module_exists(modname: typing.Any) -> bool:
     """
     Args:
         modname (str):
@@ -878,7 +902,9 @@ DIRECTIVE_PATTERNS = [
 DIRECTIVE_RE = re.compile('|'.join(DIRECTIVE_PATTERNS), flags=re.IGNORECASE)
 
 
-def parse_directive_optstr(optpart, inline=None):
+def parse_directive_optstr(
+    optpart: str, inline: None | bool = None
+) -> Directive | None:
     """
     Parses the information in the directive from the "optpart"
 
@@ -896,7 +922,7 @@ def parse_directive_optstr(optpart, inline=None):
             True if the directive only applies to a single line.
 
     Returns:
-        Directive: the parsed directive
+        Directive | None: the parsed directive (or None if parsing failed)
 
     Example:
         >>> print(str(parse_directive_optstr('+IGNORE_WHITESPACE')))
@@ -928,6 +954,7 @@ def parse_directive_optstr(optpart, inline=None):
     if name not in COMMANDS:
         msg = 'Unknown directive: {!r}'.format(optpart)
         warnings.warn(msg)
+        return None
     else:
         directive = Directive(name, positive, args, inline)
         return directive

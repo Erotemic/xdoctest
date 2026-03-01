@@ -31,6 +31,10 @@ Finally, you can set the encoding of the notebooks with
 NotebookLoader.default_options['encoding']. The default is 'utf-8'.
 """
 
+from __future__ import annotations
+
+import typing
+
 import io
 import os
 import sys
@@ -120,12 +124,13 @@ class NotebookLoader:
         # load the notebook object
         nb_version = nbformat.current_nbformat
 
-        with io.open(fpath, 'r', encoding=self.options['encoding']) as f:
+        with io.open(fpath, 'r', encoding=self.options['encoding']) as f:  # type: ignore[invalid-argument-type]
             nb = nbformat.read(f, nb_version)
 
         # create the module and add it to sys.modules
         # if name in sys.modules:
         #    return sys.modules[name]
+        assert isinstance(fullname, str)
         mod = types.ModuleType(fullname)
         mod.__file__ = fpath
         mod.__loader__ = self
@@ -137,7 +142,7 @@ class NotebookLoader:
         #     return mod
 
         # print("Importing Jupyter notebook from %s" % fpath)
-        sys.modules[fullname] = mod
+        sys.modules[fullname] = mod  # type: ignore[invalid-assignment]
 
         # extra work to ensure that magics that would affect the user_ns
         # actually affect the notebook module's ns
@@ -157,7 +162,7 @@ class NotebookLoader:
                 else:
                     tree = ast.parse(code)
                 # run the code in the module
-                codeobj = compile(tree, filename=fpath, mode='exec')
+                codeobj = compile(tree, filename=fpath, mode='exec')  # type: ignore[invalid-argument-type]
                 exec(codeobj, mod.__dict__)
         finally:
             self.shell.user_ns = save_user_ns
@@ -166,14 +171,16 @@ class NotebookLoader:
         if self.options['run_nbinit'] and '__nbinit_done__' not in mod.__dict__:
             try:
                 mod.__nbinit__()
-                mod.__nbinit_done__ = True
+                setattr(mod, '__nbinit_done__', True)
             except (KeyError, AttributeError):
                 pass
 
         return mod
 
 
-def import_notebook_from_path(ipynb_fpath, only_defs=False):
+def import_notebook_from_path(
+    ipynb_fpath: str | os.PathLike, only_defs: bool = False
+):
     """
     Import an IPython notebook as a module from a full path and try to maintain
     clean sys.path variables.
@@ -217,7 +224,11 @@ def import_notebook_from_path(ipynb_fpath, only_defs=False):
     return module
 
 
-def execute_notebook(ipynb_fpath, timeout=None, verbose=None):
+def execute_notebook(
+    ipynb_fpath: str | os.PathLike,
+    timeout: typing.Any = None,
+    verbose: bool | int | None = None,
+) -> tuple[typing.Any, dict[str, object]]:
     """
     Execute an IPython notebook in a separate kernel
 
@@ -274,7 +285,7 @@ def execute_notebook(ipynb_fpath, timeout=None, verbose=None):
     return nb, resources
 
 
-def _make_test_notebook_fpath(fpath, cell_sources):
+def _make_test_notebook_fpath(fpath: typing.Any, cell_sources: typing.Any):
     """
     Helper for testing
 

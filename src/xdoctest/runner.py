@@ -48,6 +48,10 @@ run the doctests as such:
 
 """
 
+from __future__ import annotations
+
+import typing
+
 from xdoctest import dynamic_analysis
 from xdoctest import core
 from xdoctest import doctest_example
@@ -58,9 +62,10 @@ import types
 import warnings
 import sys
 from xdoctest import global_state
+from collections.abc import Callable
 
 
-def log(msg, verbose, level=1):
+def log(msg: str, verbose: bool | int, level: int = 1):
     """
     Simple conditional print logger
 
@@ -73,8 +78,7 @@ def log(msg, verbose, level=1):
     if verbose >= level:
         print(msg)
 
-
-def doctest_callable(func):
+def doctest_callable(func: Callable[..., typing.Any]):
     """
     Executes doctests an in-memory function or class.
 
@@ -94,14 +98,19 @@ def doctest_callable(func):
     """
     from xdoctest.core import parse_docstr_examples
 
-    doctests = list(parse_docstr_examples(func.__doc__, callname=func.__name__))
+    callname = getattr(func, '__name__', None)
+    assert callname is not None
+    assert func.__doc__ is not None
+
+    doctests = list(parse_docstr_examples(func.__doc__, callname=callname))
     # TODO: can this be hooked up into runner to get nice summaries?
     for doctest in doctests:
         # FIXME: each doctest needs a way of getting the globals of the scope
         # that the parent function was defined in.
         # HACK: to add module context, this might not be robust.
         doctest.module = sys.modules[func.__module__]
-        doctest.global_namespace[func.__name__] = func
+        assert doctest.global_namespace is not None
+        doctest.global_namespace[callname] = func
         doctest.run(verbose=3)
 
 
@@ -112,16 +121,16 @@ def gather_doctests(
 
 
 def doctest_module(
-    module_identifier=None,
-    command=None,
-    argv=None,
-    exclude=[],
-    style='auto',
-    verbose=None,
-    config=None,
-    durations=None,
-    analysis='auto',
-):
+    module_identifier: str | types.ModuleType | None = None,
+    command: str | None = None,
+    argv: list[str] | None = None,
+    exclude: list[str] = [],
+    style: str = 'auto',
+    verbose: int | None = None,
+    config: dict[str, typing.Any] | None = None,
+    durations: int | None = None,
+    analysis: str = 'auto',
+) -> dict[str, typing.Any]:
     """
     Executes requestsed google-style doctests in a package or module.
     Main entry point into the testing framework.
@@ -207,7 +216,7 @@ def doctest_module(
     _debug('style = {!r}'.format(style))
     _debug('------+ /DEBUG +------')
 
-    modinfo = {
+    modinfo: dict[str, typing.Any] = {
         'modpath': None,
         'modname': None,
         'module': None,
@@ -228,7 +237,7 @@ def doctest_module(
     else:
         if isinstance(module_identifier, types.ModuleType):
             modinfo['module'] = module_identifier
-            modinfo['modpath'] = modinfo['module'].__file__
+            modinfo['modpath'] = getattr(modinfo['module'], '__file__', None)
         else:
             # Allow the modname to contain the name of the test to be run
             if '::' in module_identifier:
@@ -256,6 +265,8 @@ def doctest_module(
         parsable_identifier = modinfo['module']
     else:
         parsable_identifier = modinfo['modpath']
+    
+    assert parsable_identifier is not None
 
     _log('Start doctest_module({!r})'.format(parsable_identifier), level=2)
     _log('Listing tests', level=2)
@@ -521,7 +532,7 @@ def _convert_to_test_module(enabled_examples):
     return module_text
 
 
-def undefined_names(sourcecode):
+def undefined_names(sourcecode: str) -> set[str]:
     """
     Parses source code for undefined names
 
@@ -577,6 +588,7 @@ def _print_summary_report(
     """
     Summary report formatting and printing
     """
+    assert _log is not None
 
     def cprint(text, color):
         if config is not None and config.get('colored', True):
@@ -711,6 +723,7 @@ def _run_examples(enabled_examples, verbose, config=None, _log=None):
     Internal helper, loops over each example, runs it, returns a summary
     """
     n_total = len(enabled_examples)
+    assert _log is not None
     _log('running %d test(s)' % n_total)
     summaries = []
     failed = []
