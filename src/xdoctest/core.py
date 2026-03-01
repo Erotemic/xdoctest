@@ -28,6 +28,7 @@ import textwrap
 import warnings
 import itertools as it
 import types
+import os
 from os.path import exists
 from fnmatch import fnmatch
 from xdoctest import dynamic_analysis
@@ -54,12 +55,12 @@ import xdoctest.doctest_example
 
 
 def parse_freeform_docstr_examples(
-    docstr: typing.Any,
-    callname: typing.Any = None,
-    modpath: typing.Any = None,
-    lineno: typing.Any = 1,
-    fpath: typing.Any = None,
-    asone: typing.Any = True,
+    docstr: str,
+    callname: str | None = None,
+    modpath: str | os.PathLike | None = None,
+    lineno: int = 1,
+    fpath: str | os.PathLike | None = None,
+    asone: bool = True,
 ) -> typing.Iterator[doctest_example.DocTest]:
     r"""
     Finds free-form doctests in a docstring. This is similar to the original
@@ -242,12 +243,12 @@ def parse_freeform_docstr_examples(
 
 
 def parse_google_docstr_examples(
-    docstr: typing.Any,
-    callname: typing.Any = None,
-    modpath: typing.Any = None,
-    lineno: typing.Any = 1,
-    fpath: typing.Any = None,
-    eager_parse: typing.Any = True,
+    docstr: str,
+    callname: str | None = None,
+    modpath: str | os.PathLike | None = None,
+    lineno: int = 1,
+    fpath: str | os.PathLike | None = None,
+    eager_parse: bool = True,
 ) -> typing.Iterator[doctest_example.DocTest]:
     """
     Parses Google-style doctests from a docstr and generates example objects
@@ -343,13 +344,13 @@ def parse_auto_docstr_examples(docstr, *args, **kwargs):
 
 
 def parse_docstr_examples(
-    docstr: typing.Any,
-    callname: typing.Any = None,
-    modpath: typing.Any = None,
-    lineno: typing.Any = 1,
-    style: typing.Any = 'auto',
-    fpath: typing.Any = None,
-    parser_kw: typing.Any = None,
+    docstr: str,
+    callname: str | None = None,
+    modpath: str | os.PathLike | None = None,
+    lineno: int = 1,
+    style: str = 'auto',
+    fpath: str | os.PathLike | None = None,
+    parser_kw: dict | None = None,
 ) -> typing.Iterator[doctest_example.DocTest]:
     """
     Parses doctests from a docstr and generates example objects.
@@ -499,16 +500,16 @@ def _rectify_to_modpath(modpath_or_name):
 
 
 def package_calldefs(
-    pkg_identifier: typing.Any,
-    exclude: typing.Any = [],
-    ignore_syntax_errors: typing.Any = True,
-    analysis: typing.Any = 'auto',
+    pkg_identifier: str | os.PathLike | types.ModuleType,
+    exclude: list[str] = [],
+    ignore_syntax_errors: bool = True,
+    analysis: str = 'auto',
 ) -> typing.Iterator[tuple[dict[str, static_analysis.CallDefNode], typing.Any]]:
     """
     Statically generates all callable definitions in a module or package
 
     Args:
-        pkg_identifier (str | ModuleType): path to or name of the module to be
+        pkg_identifier (str | PathLike | ModuleType): path to or name of the module to be
             tested (or the live module itself, which is not recommended)
 
         exclude (List[str]): glob-patterns of file names to exclude
@@ -582,7 +583,7 @@ def package_calldefs(
 
 
 def parse_calldefs(
-    module_identifier: typing.Any, analysis: typing.Any = 'auto'
+    module_identifier: str | types.ModuleType, analysis: str = 'auto'
 ) -> dict[str, static_analysis.CallDefNode] | None:
     """
     Parse calldefs from a single module using either static or dynamic
@@ -649,6 +650,7 @@ def parse_calldefs(
             warnings.warn(msg)
             raise
     else:
+        assert not isinstance(module_identifier, types.ModuleType)
         calldefs = static_analysis.parse_static_calldefs(
             fpath=module_identifier
         )
@@ -661,12 +663,12 @@ def parse_calldefs(
 
 
 def parse_doctestables(
-    module_identifier: typing.Any,
-    exclude: typing.Any = [],
-    style: typing.Any = 'auto',
-    ignore_syntax_errors: typing.Any = True,
-    parser_kw: typing.Any = {},
-    analysis: typing.Any = 'auto',
+    module_identifier: str | os.PathLike | types.ModuleType,
+    exclude: list[str] = [],
+    style: str = 'auto',
+    ignore_syntax_errors: bool = True,
+    parser_kw: dict = {},
+    analysis: str = 'auto',
 ) -> typing.Iterator[doctest_example.DocTest]:
     """
     Parses all doctests within top-level callables of a module and generates
@@ -732,6 +734,7 @@ def parse_doctestables(
         )
 
     # Statically parse modules and their doctestable callables in a package
+    assert module_identifier is not None
     for calldefs, modpath in package_calldefs(
         module_identifier, exclude, ignore_syntax_errors, analysis=analysis
     ):

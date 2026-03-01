@@ -100,6 +100,7 @@ def doctest_callable(func: Callable[..., typing.Any]):
 
     callname = getattr(func, '__name__', None)
     assert callname is not None
+    assert func.__doc__ is not None
 
     doctests = list(parse_docstr_examples(func.__doc__, callname=callname))
     # TODO: can this be hooked up into runner to get nice summaries?
@@ -264,6 +265,8 @@ def doctest_module(
         parsable_identifier = modinfo['module']
     else:
         parsable_identifier = modinfo['modpath']
+    
+    assert parsable_identifier is not None
 
     _log('Start doctest_module({!r})'.format(parsable_identifier), level=2)
     _log('Listing tests', level=2)
