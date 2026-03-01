@@ -320,7 +320,7 @@ class XDoctestItem(pytest.Item):
         if not self.dtest.anything_ran():
             pytest.skip('doctest is empty or all parts were skipped')
 
-    def repr_failure(self, excinfo) -> object:
+    def repr_failure(self, excinfo):
         """
         # Args:
         #     excinfo (_pytest._code.code.ExceptionInfo):
@@ -458,10 +458,10 @@ def _setup_fixtures(xdoctest_item: typing.Any) -> fixtures.FixtureRequest:
     # https://github.com/pytest-dev/pytest/discussions/8512#discussioncomment-563347
     if _PYTEST_IS_GE_620:
         # The "_ispytest" arg was added in 3.6.1
-        fixture_request = fixtures.FixtureRequest(xdoctest_item, _ispytest=True)
+        fixture_request = fixtures.FixtureRequest(xdoctest_item, _ispytest=True)  # type: ignore[abstract, call-arg]
     else:
-        fixture_request = fixtures.FixtureRequest(xdoctest_item)
-    fixture_request._fillfixtures()
+        fixture_request = fixtures.FixtureRequest(xdoctest_item)  # type: ignore[abstract, call-arg]
+    fixture_request._fillfixtures()  # type: ignore[attr-defined]
     return fixture_request
 
 

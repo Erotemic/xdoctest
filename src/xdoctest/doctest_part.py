@@ -253,6 +253,7 @@ class DoctestPart:
         for i in range(1, len(trailing_gots) + 1):
             # Try the i-th trailing sequence
             got_ = ''.join(trailing_gots[-i:])
+            assert self.want is not None
             try:
                 checker.check_got_vs_want(self.want, got_, got_eval, runstate)
             except checker.GotWantException as ex:

@@ -363,24 +363,24 @@ class DocTest:
     UNKNOWN_FPATH = '<fpath?>'
 
     # Attribute annotations derived from docstring
-    module: types.ModuleType | None = None
-    modname: str | None = None
-    fpath: str | os.PathLike | None = None
-    docsrc: str | None = None
-    lineno: int | None = None
-    num: int | None = None
-    _parts: list['DoctestPart'] | None = None
-    failed_tb_lineno: int | None = None
-    exc_info: tuple[type[BaseException], BaseException, types.TracebackType] | tuple[None, None, None] | None = None
-    failed_part: 'DoctestPart' | None = None
-    warn_list: list | None = None
-    _partfilename: str | None = None
-    logged_evals: OrderedDict[int, typing.Any] | None = None
-    logged_stdout: OrderedDict[int, str | None] | None = None
-    _unmatched_stdout: list[str] | None = None
-    _skipped_parts: list | None = None
-    _runstate: typing.Any = None
-    global_namespace: dict[str, typing.Any] | None = None
+    module: types.ModuleType | None
+    modname: str | None
+    fpath: str | os.PathLike | None 
+    docsrc: str | None
+    lineno: int | None 
+    num: int | None 
+    _parts: list['DoctestPart'] | None
+    failed_tb_lineno: int | None
+    exc_info: tuple[type[BaseException], BaseException, types.TracebackType] | tuple[None, None, None] | None
+    failed_part: 'DoctestPart' | None 
+    warn_list: list | None
+    _partfilename: str | None 
+    logged_evals: OrderedDict[int, typing.Any] | None 
+    logged_stdout: OrderedDict[int, str | None] | None 
+    _unmatched_stdout: list[str] | None 
+    _skipped_parts: list | None 
+    _runstate: typing.Any
+    global_namespace: dict[str, typing.Any]
 
     def __init__(
         self,

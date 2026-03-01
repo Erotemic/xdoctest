@@ -469,7 +469,7 @@ def parse_google_retblock(
 
 def parse_google_argblock(
     lines: str, clean_desc: bool = True
-) -> typing.Iterator[dict[str, str | None]]:
+) -> typing.Iterator[dict[str, str]]:
     r"""
     Parse out individual items from google-style args blocks.
 
@@ -481,7 +481,7 @@ def parse_google_argblock(
             Defaults to True.
 
     Yields:
-        Dict[str, str | None]:
+        Dict[str, str]:
             A dictionary containing keys, "name", "type", and "desc"
             corresponding to an argument in the Args block.
 

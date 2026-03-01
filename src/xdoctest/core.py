@@ -544,16 +544,15 @@ def package_calldefs(
             )
         )
 
+    identifiers: list
     if isinstance(pkg_identifier, types.ModuleType):
         # Case where we are forced to use a live module
         identifiers = [pkg_identifier]
     else:
         pkgpath = _rectify_to_modpath(pkg_identifier)
-        identifiers = list(
-            static_analysis.package_modpaths(
-                pkgpath, with_pkg=True, with_libs=True
-            )
-        )
+        _ideniter = static_analysis.package_modpaths(
+            pkgpath, with_pkg=True, with_libs=True)
+        identifiers = list(_ideniter)
 
     for module_identifier in identifiers:
         if isinstance(module_identifier, str):
@@ -653,9 +652,10 @@ def parse_calldefs(
         calldefs = static_analysis.parse_static_calldefs(
             fpath=module_identifier
         )
-
+    
+    assert calldefs is not None
     if global_state.DEBUG_CORE:  # nocover
-        print('Found {} calldefs'.format(len(calldefs)))
+        print(f'Found {len(calldefs)} calldefs')
 
     return calldefs
 
