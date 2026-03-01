@@ -171,16 +171,16 @@ class TopLevelVisitor(ast.NodeVisitor):
             source (None | str):
         """
         super(TopLevelVisitor, self).__init__()
-        self.calldefs = OrderedDict()
-        self.source = source
-        self.sourcelines = None
+        self.calldefs: OrderedDict[str, CallDefNode] = OrderedDict()
+        self.source: typing.Optional[str] = source
+        self.sourcelines: typing.Optional[list[str]] = None
 
-        self._current_classname = None
+        self._current_classname: typing.Optional[str] = None
         # Keep track of when we leave a top level definition
-        self._finish_queue = deque()
+        self._finish_queue: deque[CallDefNode] = deque()
 
         # new
-        self.assignments = []
+        self.assignments: list[typing.Any] = []
 
     def syntax_tree(self) -> ast.AST:
         """
@@ -189,9 +189,10 @@ class TopLevelVisitor(ast.NodeVisitor):
         Returns:
             ast.Module:
         """
+        assert self.source is not None
         self.sourcelines = self.source.splitlines()
-        source_utf8 = self.source.encode('utf8')
-        pt = ast.parse(source_utf8)
+        # ast.parse expects a string; ensure we pass the original source
+        pt = ast.parse(self.source)
         return pt
 
     def process_finished(self, node: typing.Any):
@@ -202,6 +203,7 @@ class TopLevelVisitor(ast.NodeVisitor):
             node (ast.AST):
         """
         if self._finish_queue:
+            lineno_end: int | None
             if isinstance(node, int):
                 lineno_end = node
             else:
@@ -327,8 +329,9 @@ class TopLevelVisitor(ast.NodeVisitor):
                     if all(
                         [
                             isinstance(node.test.ops[0], ast.Eq),
-                            node.test.left.id == '__name__',
-                            node.test.comparators[0].value == '__main__',
+                            getattr(node.test.left, 'id', None) == '__name__',
+                            getattr(node.test.comparators[0], 'value', None)
+                            == '__main__',
                         ]
                     ):
                         # Ignore main block
@@ -337,8 +340,9 @@ class TopLevelVisitor(ast.NodeVisitor):
                     if all(
                         [
                             isinstance(node.test.ops[0], ast.Eq),
-                            node.test.left.id == '__name__',
-                            node.test.comparators[0].s == '__main__',
+                            getattr(node.test.left, 'id', None) == '__name__',
+                            getattr(node.test.comparators[0], 's', None)
+                            == '__main__',
                         ]
                     ):
                         # Ignore main block
@@ -799,6 +803,14 @@ def _parse_static_node_value(node):
     """
     Extract a constant value from a node if possible
     """
+
+    # Prefer using ast.literal_eval when possible as it handles constants
+    # and container literals robustly across Python versions.
+    try:
+        return ast.literal_eval(node)
+    except Exception:
+        pass
+
     import numbers
 
     if isinstance(node, ast.Constant) and isinstance(
@@ -807,15 +819,20 @@ def _parse_static_node_value(node):
         value = node.value
     elif isinstance(node, ast.Constant) and isinstance(node.value, str):
         value = node.value
-    elif isinstance(node, ast.List):
-        value = list(map(_parse_static_node_value, node.elts))
-    elif isinstance(node, ast.Tuple):
-        value = tuple(map(_parse_static_node_value, node.elts))
-    elif isinstance(node, (ast.Dict)):
-        keys = map(_parse_static_node_value, node.keys)
-        values = map(_parse_static_node_value, node.values)
+    # Accept sequence-like nodes (List/Tuple in different Python versions)
+    elif hasattr(node, 'elts'):
+        # Sequence-like node (list/tuple) — accept any iterable of elts
+        elts = [(_parse_static_node_value(e)) for e in getattr(node, 'elts')]
+        # Preserve tuple vs list if possible by checking node class name
+        if getattr(node, '__class__', None).__name__ == 'Tuple':
+            value = tuple(elts)
+        else:
+            value = list(elts)
+    # Handle mapping-like nodes
+    elif hasattr(node, 'keys') and hasattr(node, 'values'):
+        keys = list(map(_parse_static_node_value, node.keys))
+        values = list(map(_parse_static_node_value, node.values))
         value = OrderedDict(zip(keys, values))
-        # value = dict(zip(keys, values))
     # Avoid direct reference to ast.NameConstant which is deprecated in
     # Python 3.14; access it via getattr so linters won't emit a deprecation
     # warning while preserving compatibility with older Pythons.

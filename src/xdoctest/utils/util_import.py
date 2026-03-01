@@ -573,7 +573,7 @@ def _extension_module_tags() -> list[str]:
     return tags
 
 
-def _static_parse(varname: typing.Any, fpath: typing.Any) -> str | None:
+def _static_parse(varname: typing.Any, fpath: typing.Any) -> typing.Any:
     """
     Statically parse the a constant variable from a python file
 
