@@ -42,6 +42,10 @@ References:
     .. [GeekPrompt] https://web.archive.org/web/20230824025647/https://www.thegeekstuff.com/2008/09/bash-shell-take-control-of-ps1-ps2-ps3-ps4-and-prompt_command/
 """
 
+from __future__ import annotations
+
+import typing
+
 import ast
 import sys
 import re
@@ -88,7 +92,7 @@ class DoctestParser:
         >>> print('\n'.join(list(map(str, doctest_parts))))
     """
 
-    def __init__(self, simulate_repl=False):
+    def __init__(self, simulate_repl: bool = False) -> None:
         """
         Args:
             simulate_repl (bool): if True each line will be treated as its
@@ -97,7 +101,9 @@ class DoctestParser:
         """
         self.simulate_repl = simulate_repl
 
-    def parse(self, string, info=None):
+    def parse(
+        self, string: str, info: dict | None = None
+    ) -> list[doctest_part.DoctestPart | str]:
         r"""
         Divide the given string into examples and interleaving text.
 
@@ -378,7 +384,9 @@ class DoctestParser:
             print('<YIELD CHUNK>')
         yield example
 
-    def _group_labeled_lines(self, labeled_lines):
+    def _group_labeled_lines(
+        self, labeled_lines
+    ) -> list[list[tuple[str, str]]]:
         """
         Group labeled lines into logical parts to be executed together
 
@@ -472,7 +480,9 @@ class DoctestParser:
             print('</GROUP LABEL LINES>')
         return grouped_lines
 
-    def _locate_ps1_linenos(self, source_lines):
+    def _locate_ps1_linenos(
+        self, source_lines: typing.Any
+    ) -> tuple[list[int], str]:
         """
         Determines which lines in the source begin a "logical block" of code.
 
@@ -548,7 +558,7 @@ class DoctestParser:
             # note, this hack never leaves this function because we only are
             # returning line numbers.
             # FIXME: there is probably a better way to do this.
-            def balanced_intervals(lines):
+            def balanced_intervals(lines: typing.Any):
                 """
                 Finds intervals of balanced nesting syntax
 
@@ -668,7 +678,7 @@ class DoctestParser:
 
         return ps1_linenos, mode_hint
 
-    def _label_docsrc_lines(self, string):
+    def _label_docsrc_lines(self, string: typing.Any) -> list[tuple[str, str]]:
         """
         Give each line in the docstring a label so we can distinguish
         what parts are text, what parts are code, and what parts are "want"

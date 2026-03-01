@@ -5,6 +5,10 @@ example. Multiple parts are typically stored in a
 part.
 """
 
+from __future__ import annotations
+
+import typing
+
 import math
 from xdoctest import utils
 from xdoctest import checker
@@ -20,6 +24,12 @@ TODO:
 
 
 class DoctestPart:
+    exec_lines: list[str]
+    want_lines: list[str] | None
+    line_offset: int
+    orig_lines: list[str] | None
+    partno: int | None
+    compile_mode: str
     """
     The result of parsing that represents a "logical block" of code.
     If a want statement is defined, it is stored here.
@@ -42,13 +52,13 @@ class DoctestPart:
 
     def __init__(
         self,
-        exec_lines,
-        want_lines=None,
-        line_offset=0,
-        orig_lines=None,
-        directives=None,
-        partno=None,
-    ):
+        exec_lines: list[str],
+        want_lines: list[str] | None = None,
+        line_offset: int = 0,
+        orig_lines: list[str] | None = None,
+        directives: list | None = None,
+        partno: int | None = None,
+    ) -> None:
         """
         Args:
             exec_lines (List[str]):
@@ -79,7 +89,7 @@ class DoctestPart:
         self.compile_mode = 'exec'
 
     @property
-    def n_lines(self):
+    def n_lines(self) -> int:
         """
         Returns:
             int: number of lines in the entire source (i.e. exec + want)
@@ -87,7 +97,7 @@ class DoctestPart:
         return self.n_exec_lines + self.n_want_lines
 
     @property
-    def n_exec_lines(self):
+    def n_exec_lines(self) -> int:
         """
         Returns:
             int: number of executable lines (excluding want)
@@ -95,7 +105,7 @@ class DoctestPart:
         return len(self.exec_lines)
 
     @property
-    def n_want_lines(self):
+    def n_want_lines(self) -> int:
         """
         Returns:
             int: number of lines in the "want" statement.
@@ -106,14 +116,14 @@ class DoctestPart:
             return 0
 
     @property
-    def source(self):
+    def source(self) -> str:
         """
         Returns:
             str: A single block of text representing the source code.
         """
         return '\n'.join(self.exec_lines)
 
-    def compilable_source(self):
+    def compilable_source(self) -> str:
         """
         Use this to build the string for compile. Takes care of a corner case.
 
@@ -125,7 +135,7 @@ class DoctestPart:
         else:
             return '\n'.join(self.exec_lines)
 
-    def has_any_code(self):
+    def has_any_code(self) -> bool:
         """
         Heuristic to check if there is any runnable code in this doctest.  We
         currently just check that not every line is a comment, which helps the
@@ -138,7 +148,7 @@ class DoctestPart:
         return not all(not line or line.startswith('#') for line in slines)
 
     @property
-    def directives(self):
+    def directives(self) -> list[object]:
         """
         Returns:
             List[directive.Directive]: The extracted or provided directives to
@@ -154,7 +164,7 @@ class DoctestPart:
         return self._directives
 
     @property
-    def want(self):
+    def want(self) -> str | None:
         """
         Returns:
             str | None: what the test is expected to produce
@@ -164,7 +174,7 @@ class DoctestPart:
         else:
             return None
 
-    def __nice__(self):
+    def __nice__(self) -> str:
         """
         Returns:
             str: a pretty and concise "nice" representation
@@ -196,12 +206,12 @@ class DoctestPart:
         return '<%s(%s)>' % (classname, devnice)
 
     def check(
-        part,
-        got_stdout,
-        got_eval=constants.NOT_EVALED,
-        runstate=None,
-        unmatched=None,
-    ):
+        part: typing.Any,
+        got_stdout: str,
+        got_eval: typing.Any = constants.NOT_EVALED,
+        runstate: directive.RuntimeState | None = None,
+        unmatched: list | None = None,
+    ) -> None:
         r"""
         Check if the "got" output obtained by running this test matches the
         "want" target. Note there are two types of "got" output: (1) output
@@ -262,14 +272,14 @@ class DoctestPart:
 
     def format_part(
         self,
-        linenos=True,
-        want=True,
-        startline=1,
-        n_digits=None,
-        colored=False,
-        partnos=False,
-        prefix=True,
-    ):
+        linenos: typing.Any = True,
+        want: typing.Any = True,
+        startline: typing.Any = 1,
+        n_digits: typing.Any = None,
+        colored: typing.Any = False,
+        partnos: typing.Any = False,
+        prefix: typing.Any = True,
+    ) -> str:
         """
         Customizable formatting of the source and want for this doctest.
 

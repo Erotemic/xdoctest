@@ -5,8 +5,9 @@ Provides a simple script for running module doctests.
 This should work even if the target module is unaware of xdoctest.
 """
 
-import sys
+from __future__ import annotations
 
+import sys
 
 __tests__ = """
 Ignore:
@@ -17,7 +18,7 @@ Ignore:
 """
 
 
-def main(argv=None):
+def main(argv: list[str] | None = None) -> int:
     """
     Args:
         argv (List[str] | None):
@@ -44,8 +45,9 @@ def main(argv=None):
 
     import argparse
     import textwrap
-    from xdoctest import utils
     from os.path import exists
+
+    from xdoctest import utils
 
     # FIXME: default values are reporting incorrectly or are missformated
     class RawDescriptionDefaultsHelpFormatter(
@@ -86,8 +88,7 @@ def main(argv=None):
     )
 
     # The bulk of the argparse CLI is defined in the doctest example
-    from xdoctest import doctest_example
-    from xdoctest import runner
+    from xdoctest import doctest_example, runner
 
     runner._update_argparse_cli(parser.add_argument)
     doctest_example.DoctestConfig()._update_argparse_cli(parser.add_argument)
@@ -140,16 +141,22 @@ def main(argv=None):
         options = ''
         pyproject_fpath = 'pyproject.toml'
         if exists(pyproject_fpath):
+            toml_loader = None
             try:
                 import tomllib
             except ImportError:
                 try:
-                    import tomli as tomllib
+                    import tomli
                 except ImportError:
                     pass
+                else:
+                    toml_loader = tomli
             else:
+                toml_loader = tomllib
+
+            if toml_loader is not None:
                 with open(pyproject_fpath, 'rb') as file:
-                    pyproject_settings = tomllib.load(file)
+                    pyproject_settings = toml_loader.load(file)
                 try:
                     options = pyproject_settings['tool']['xdoctest']['options']
                 except KeyError:
@@ -157,10 +164,10 @@ def main(argv=None):
         if exists('pytest.ini'):
             import configparser
 
-            parser = configparser.ConfigParser()
-            parser.read('pytest.ini')
+            config_parser = configparser.ConfigParser()
+            config_parser.read('pytest.ini')
             try:
-                options = parser.get('pytest', 'xdoctest_options')
+                options = config_parser.get('pytest', 'xdoctest_options')
             except configparser.NoOptionError:
                 pass
         ns['options'] = options

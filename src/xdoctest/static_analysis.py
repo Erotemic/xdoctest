@@ -2,26 +2,27 @@
 The core logic that allows for xdoctest to parse source statically
 """
 
-import sys
-from os.path import exists
-from os.path import isfile
-from os.path import join
-from os.path import splitext
-import os
+from __future__ import annotations
+
+import typing
+
 import ast
-import re
-from collections import deque, OrderedDict
-from xdoctest import utils
-
-from xdoctest.utils.util_import import _platform_pylib_exts  # NOQA
-from xdoctest.utils.util_import import (  # NOQA
-    split_modpath,
-    modname_to_modpath,
-    is_modname_importable,
-    modpath_to_modname,
-)
-
+import importlib
+import os
 import platform
+import re
+import sys
+from collections import OrderedDict, deque
+from os.path import exists, isfile, join, splitext
+
+from xdoctest import utils
+from xdoctest.utils.util_import import (  # NOQA
+    _platform_pylib_exts,  # NOQA
+    is_modname_importable,
+    modname_to_modpath,
+    modpath_to_modname,
+    split_modpath,
+)
 
 PLAT_IMPL = platform.python_implementation()
 
@@ -32,9 +33,9 @@ IS_PY_LT_314 = sys.version_info[0:2] < (3, 14)  # type: bool
 
 
 if IS_PY_GE_312:
-    from xdoctest import _tokenize as tokenize
+    tokenize = importlib.import_module('xdoctest._tokenize')
 else:
-    import tokenize
+    tokenize = importlib.import_module('tokenize')
 
 
 class CallDefNode:
@@ -45,7 +46,13 @@ class CallDefNode:
     """
 
     def __init__(
-        self, callname, lineno, docstr, doclineno, doclineno_end, args=None
+        self,
+        callname: typing.Any,
+        lineno: typing.Any,
+        docstr: typing.Any,
+        doclineno: typing.Any,
+        doclineno_end: typing.Any,
+        args: typing.Any = None,
     ):
         """
         Args:
@@ -75,7 +82,7 @@ class CallDefNode:
         self.lineno_end = None
         self.args = args
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Returns:
             str
@@ -140,7 +147,7 @@ class TopLevelVisitor(ast.NodeVisitor):
     """
 
     @classmethod
-    def parse(cls, source):
+    def parse(cls, source: typing.Any):
         """
         main entry point
 
@@ -158,36 +165,37 @@ class TopLevelVisitor(ast.NodeVisitor):
         self.process_finished(lineno_end)
         return self
 
-    def __init__(self, source=None):
+    def __init__(self, source: typing.Any = None):
         """
         Args:
             source (None | str):
         """
         super(TopLevelVisitor, self).__init__()
-        self.calldefs = OrderedDict()
-        self.source = source
-        self.sourcelines = None
+        self.calldefs: OrderedDict[str, CallDefNode] = OrderedDict()
+        self.source: typing.Optional[str] = source
+        self.sourcelines: typing.Optional[list[str]] = None
 
-        self._current_classname = None
+        self._current_classname: typing.Optional[str] = None
         # Keep track of when we leave a top level definition
-        self._finish_queue = deque()
+        self._finish_queue: deque[CallDefNode] = deque()
 
         # new
-        self.assignments = []
+        self.assignments: list[typing.Any] = []
 
-    def syntax_tree(self):
+    def syntax_tree(self) -> ast.AST:
         """
         creates the abstract syntax tree
 
         Returns:
             ast.Module:
         """
+        assert self.source is not None
         self.sourcelines = self.source.splitlines()
-        source_utf8 = self.source.encode('utf8')
-        pt = ast.parse(source_utf8)
+        # ast.parse expects a string; ensure we pass the original source
+        pt = ast.parse(self.source)
         return pt
 
-    def process_finished(self, node):
+    def process_finished(self, node: typing.Any):
         """
         process (get ending lineno) for everything marked as finished
 
@@ -195,6 +203,7 @@ class TopLevelVisitor(ast.NodeVisitor):
             node (ast.AST):
         """
         if self._finish_queue:
+            lineno_end: int | None
             if isinstance(node, int):
                 lineno_end = node
             else:
@@ -203,7 +212,7 @@ class TopLevelVisitor(ast.NodeVisitor):
                 calldef = self._finish_queue.pop()
                 calldef.lineno_end = lineno_end
 
-    def visit(self, node):
+    def visit(self, node: typing.Any):
         """
         Args:
             node (ast.AST):
@@ -211,7 +220,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         self.process_finished(node)
         super(TopLevelVisitor, self).visit(node)
 
-    def visit_FunctionDef(self, node):
+    def visit_FunctionDef(self, node: typing.Any):
         """
         Args:
             node (ast.FunctionDef):
@@ -248,14 +257,14 @@ class TopLevelVisitor(ast.NodeVisitor):
 
         self._finish_queue.append(calldef)
 
-    def visit_AsyncFunctionDef(self, node):
+    def visit_AsyncFunctionDef(self, node: typing.Any):
         """
         Args:
             node (ast.AsyncFunctionDef):
         """
         self.visit_FunctionDef(node)
 
-    def visit_ClassDef(self, node):
+    def visit_ClassDef(self, node: typing.Any):
         """
         Args:
             node (ast.ClassDef):
@@ -274,7 +283,7 @@ class TopLevelVisitor(ast.NodeVisitor):
 
             self._finish_queue.append(calldef)
 
-    def visit_Module(self, node):
+    def visit_Module(self, node: typing.Any):
         """
         Args:
             node (ast.Module):
@@ -293,7 +302,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         self.generic_visit(node)
         # self._finish_queue.append(calldef)
 
-    def visit_Assign(self, node):
+    def visit_Assign(self, node: typing.Any):
         """
         Args:
             node (ast.Assign):
@@ -309,7 +318,7 @@ class TopLevelVisitor(ast.NodeVisitor):
             # self.const_lookup
         self.generic_visit(node)
 
-    def visit_If(self, node):
+    def visit_If(self, node: typing.Any):
         """
         Args:
             node (ast.If):
@@ -320,8 +329,9 @@ class TopLevelVisitor(ast.NodeVisitor):
                     if all(
                         [
                             isinstance(node.test.ops[0], ast.Eq),
-                            node.test.left.id == '__name__',
-                            node.test.comparators[0].value == '__main__',
+                            getattr(node.test.left, 'id', None) == '__name__',
+                            getattr(node.test.comparators[0], 'value', None)
+                            == '__main__',
                         ]
                     ):
                         # Ignore main block
@@ -330,8 +340,9 @@ class TopLevelVisitor(ast.NodeVisitor):
                     if all(
                         [
                             isinstance(node.test.ops[0], ast.Eq),
-                            node.test.left.id == '__name__',
-                            node.test.comparators[0].s == '__main__',
+                            getattr(node.test.left, 'id', None) == '__name__',
+                            getattr(node.test.comparators[0], 's', None)
+                            == '__main__',
                         ]
                     ):
                         # Ignore main block
@@ -356,7 +367,7 @@ class TopLevelVisitor(ast.NodeVisitor):
 
     # -- helpers ---
 
-    def _docnode_line_workaround(self, docnode):
+    def _docnode_line_workaround(self, docnode: typing.Any) -> tuple[int, int]:
         """
         Find the start and ending line numbers of a docstring
 
@@ -514,7 +525,9 @@ class TopLevelVisitor(ast.NodeVisitor):
                     stop = start
         return start, stop
 
-    def _find_docstr_startpos_workaround(self, docstr, sourcelines, endpos):
+    def _find_docstr_startpos_workaround(
+        self, docstr: typing.Any, sourcelines: typing.Any, endpos: typing.Any
+    ) -> tuple[int, int]:
         r"""
         Find the which sourcelines contain the docstring
 
@@ -728,7 +741,9 @@ class TopLevelVisitor(ast.NodeVisitor):
         return lineno
 
 
-def parse_static_calldefs(source=None, fpath=None):
+def parse_static_calldefs(
+    source: typing.Any = None, fpath: typing.Any = None
+) -> dict[str, CallDefNode]:
     """
     Statically finds top-level callable functions and methods in python source
 
@@ -788,6 +803,14 @@ def _parse_static_node_value(node):
     """
     Extract a constant value from a node if possible
     """
+
+    # Prefer using ast.literal_eval when possible as it handles constants
+    # and container literals robustly across Python versions.
+    try:
+        return ast.literal_eval(node)
+    except Exception:
+        pass
+
     import numbers
 
     if isinstance(node, ast.Constant) and isinstance(
@@ -796,16 +819,25 @@ def _parse_static_node_value(node):
         value = node.value
     elif isinstance(node, ast.Constant) and isinstance(node.value, str):
         value = node.value
-    elif isinstance(node, ast.List):
-        value = list(map(_parse_static_node_value, node.elts))
-    elif isinstance(node, ast.Tuple):
-        value = tuple(map(_parse_static_node_value, node.elts))
-    elif isinstance(node, (ast.Dict)):
-        keys = map(_parse_static_node_value, node.keys)
-        values = map(_parse_static_node_value, node.values)
+    # Accept sequence-like nodes (List/Tuple in different Python versions)
+    elif hasattr(node, 'elts'):
+        # Sequence-like node (list/tuple) — accept any iterable of elts
+        elts = [(_parse_static_node_value(e)) for e in getattr(node, 'elts')]
+        # Preserve tuple vs list if possible by checking node class name
+        if getattr(node, '__class__', None).__name__ == 'Tuple':
+            value = tuple(elts)
+        else:
+            value = list(elts)
+    # Handle mapping-like nodes
+    elif hasattr(node, 'keys') and hasattr(node, 'values'):
+        keys = list(map(_parse_static_node_value, node.keys))
+        values = list(map(_parse_static_node_value, node.values))
         value = OrderedDict(zip(keys, values))
-        # value = dict(zip(keys, values))
-    elif IS_PY_LT_314 and isinstance(node, (ast.NameConstant)):
+    # Avoid direct reference to ast.NameConstant which is deprecated in
+    # Python 3.14; access it via getattr so linters won't emit a deprecation
+    # warning while preserving compatibility with older Pythons.
+    NameConstant = getattr(ast, 'NameConstant', None)
+    if IS_PY_LT_314 and NameConstant is not None and isinstance(node, NameConstant):
         value = node.value
     elif isinstance(node, ast.Constant):
         value = node.value
@@ -818,7 +850,9 @@ def _parse_static_node_value(node):
     return value
 
 
-def parse_static_value(key, source=None, fpath=None):
+def parse_static_value(
+    key: typing.Any, source: typing.Any = None, fpath: typing.Any = None
+) -> object:
     """
     Statically parse a constant variable's value from python code.
 
@@ -877,14 +911,14 @@ def parse_static_value(key, source=None, fpath=None):
 
 
 def package_modpaths(
-    pkgpath,
-    with_pkg=False,
-    with_mod=True,
-    followlinks=True,
-    recursive=True,
-    with_libs=False,
-    check=True,
-):
+    pkgpath: typing.Any,
+    with_pkg: typing.Any = False,
+    with_mod: typing.Any = True,
+    followlinks: typing.Any = True,
+    recursive: typing.Any = True,
+    with_libs: typing.Any = False,
+    check: typing.Any = True,
+) -> typing.Iterator[str]:
     r"""
     Finds sub-packages and sub-modules belonging to a package.
 
@@ -952,7 +986,9 @@ def package_modpaths(
                 break
 
 
-def is_balanced_statement(lines, only_tokens=False, reraise=0):
+def is_balanced_statement(
+    lines: typing.Any, only_tokens: typing.Any = False, reraise: typing.Any = 0
+) -> bool:
     r"""
     Checks if the lines have balanced braces and quotes.
 
@@ -1073,7 +1109,7 @@ def is_balanced_statement(lines, only_tokens=False, reraise=0):
         return True
 
 
-def extract_comments(source):
+def extract_comments(source: typing.Any):
     """
     Returns the text in each comment in a block of python code.
     Uses tokenize to account for quotations.
@@ -1116,7 +1152,7 @@ def extract_comments(source):
         pass
 
 
-def _strip_hashtag_comments_and_newlines(source):
+def _strip_hashtag_comments_and_newlines(source: typing.Any):
     """
     Removes hashtag comments from underlying source
 
@@ -1208,7 +1244,11 @@ def _strip_hashtag_comments_and_newlines(source):
     return new_source
 
 
-def six_axt_parse(source_block, filename='<source_block>', compatible=True):
+def six_axt_parse(
+    source_block: typing.Any,
+    filename: typing.Any = '<source_block>',
+    compatible: typing.Any = True,
+) -> ast.AST:
     """
     Python 2/3 compatible replacement for ast.parse(source_block, filename='<source_block>')
 

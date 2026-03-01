@@ -48,6 +48,10 @@ run the doctests as such:
 
 """
 
+from __future__ import annotations
+
+import typing
+
 from xdoctest import dynamic_analysis
 from xdoctest import core
 from xdoctest import doctest_example
@@ -60,7 +64,7 @@ import sys
 from xdoctest import global_state
 
 
-def log(msg, verbose, level=1):
+def log(msg: typing.Any, verbose: typing.Any, level: typing.Any = 1):
     """
     Simple conditional print logger
 
@@ -74,7 +78,7 @@ def log(msg, verbose, level=1):
         print(msg)
 
 
-def doctest_callable(func):
+def doctest_callable(func: typing.Any):
     """
     Executes doctests an in-memory function or class.
 
@@ -112,16 +116,16 @@ def gather_doctests(
 
 
 def doctest_module(
-    module_identifier=None,
-    command=None,
-    argv=None,
-    exclude=[],
-    style='auto',
-    verbose=None,
-    config=None,
-    durations=None,
-    analysis='auto',
-):
+    module_identifier: typing.Any = None,
+    command: typing.Any = None,
+    argv: typing.Any = None,
+    exclude: typing.Any = [],
+    style: typing.Any = 'auto',
+    verbose: typing.Any = None,
+    config: typing.Any = None,
+    durations: typing.Any = None,
+    analysis: typing.Any = 'auto',
+) -> dict[str, object]:
     """
     Executes requestsed google-style doctests in a package or module.
     Main entry point into the testing framework.
@@ -521,7 +525,7 @@ def _convert_to_test_module(enabled_examples):
     return module_text
 
 
-def undefined_names(sourcecode):
+def undefined_names(sourcecode: typing.Any) -> set[str]:
     """
     Parses source code for undefined names
 

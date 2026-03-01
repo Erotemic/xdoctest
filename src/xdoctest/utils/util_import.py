@@ -57,7 +57,7 @@ def is_modname_importable(
     return flag
 
 
-def _importlib_import_modpath(modpath):  # nocover
+def _importlib_import_modpath(modpath: typing.Any):  # nocover
     """
     Alternative to import_module_from_path using importlib mechainsms
 
@@ -76,7 +76,7 @@ def _importlib_import_modpath(modpath):  # nocover
     return module
 
 
-def _importlib_modname_to_modpath(modname):  # nocover
+def _importlib_modname_to_modpath(modname: typing.Any):  # nocover
     """
     faster version of :func:`_syspath_modname_to_modpath` using builtin
     python mechanisms, but unfortunately it doesn't play nice with pytest.
@@ -555,7 +555,7 @@ def _parse_static_node_value(node):
     )
 
 
-def _extension_module_tags():
+def _extension_module_tags() -> list[str]:
     """
     Returns valid tags an extension module might have
 
@@ -573,7 +573,7 @@ def _extension_module_tags():
     return tags
 
 
-def _static_parse(varname, fpath):
+def _static_parse(varname: typing.Any, fpath: typing.Any) -> typing.Any:
     """
     Statically parse the a constant variable from a python file
 
@@ -643,7 +643,7 @@ def _static_parse(varname, fpath):
     return value
 
 
-def _platform_pylib_exts():  # nocover
+def _platform_pylib_exts() -> tuple[str, ...]:  # nocover
     """
     Returns .so, .pyd, or .dylib depending on linux, win or mac.
     On python3 return the previous with and without abi (e.g.
@@ -666,7 +666,7 @@ def _platform_pylib_exts():  # nocover
 
 
 def _syspath_modname_to_modpath(
-    modname, sys_path=None, exclude=None
+    modname: typing.Any, sys_path: typing.Any = None, exclude: typing.Any = None
 ) -> str | None:
     """
     syspath version of modname_to_modpath
@@ -900,7 +900,7 @@ def _syspath_modname_to_modpath(
                     break
 
     if typing.TYPE_CHECKING:
-        found_modpath = typing.cast(str | None, found_modpath)
+        found_modpath = typing.cast(typing.Optional[str], found_modpath)
     return found_modpath
 
 

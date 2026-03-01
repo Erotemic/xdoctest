@@ -33,6 +33,10 @@ is easier to control strings sent to stdout than it is to control the
 representation of expression-based "got-strings".
 """
 
+from __future__ import annotations
+
+import typing
+
 import re
 import difflib
 from xdoctest import utils
@@ -66,7 +70,10 @@ _EXCEPTION_RE = re.compile(
 
 
 def check_got_vs_want(
-    want, got_stdout, got_eval=constants.NOT_EVALED, runstate=None
+    want: str,
+    got_stdout: str,
+    got_eval: typing.Any = constants.NOT_EVALED,
+    runstate: directive.RuntimeState | None = None,
 ):
     """
     Determines to check against either got_stdout or got_eval, and then does
@@ -121,7 +128,7 @@ def check_got_vs_want(
     return flag
 
 
-def _strip_exception_details(msg):
+def _strip_exception_details(msg: typing.Any) -> str:
     """
     Args:
         msg (str):
@@ -155,7 +162,7 @@ def _strip_exception_details(msg):
     return msg[start:end]
 
 
-def extract_exc_want(want):
+def extract_exc_want(want: str) -> str | None:
     """
     Args:
         want (str): the message supplied by the user
@@ -176,7 +183,11 @@ def extract_exc_want(want):
     return exc_want
 
 
-def check_exception(exc_got, want, runstate=None):
+def check_exception(
+    exc_got: str,
+    want: str,
+    runstate: directive.RuntimeState | None = None,
+) -> bool:
     """
     Checks want against an exception
 
@@ -200,6 +211,9 @@ def check_exception(exc_got, want, runstate=None):
     # print('exc_got = {!r}'.format(exc_got))
     # print('flag = {!r}'.format(flag))
 
+    if runstate is None:
+        runstate = directive.RuntimeState()
+
     if not flag and runstate['IGNORE_EXCEPTION_DETAIL']:
         exc_got1 = _strip_exception_details(exc_got)
         exc_want1 = _strip_exception_details(exc_want)
@@ -215,7 +229,11 @@ def check_exception(exc_got, want, runstate=None):
     return flag
 
 
-def check_output(got, want, runstate=None):
+def check_output(
+    got: str,
+    want: str,
+    runstate: directive.RuntimeState | None = None,
+) -> bool:
     """
     Does the actual comparison between `got` and `want` as long as the check is
     enabled.
@@ -243,7 +261,9 @@ def check_output(got, want, runstate=None):
     return False
 
 
-def _check_match(got, want, runstate):
+def _check_match(
+    got: typing.Any, want: typing.Any, runstate: typing.Any
+) -> bool:
     """
     Does the actual comparison between `got` and `want`
 
@@ -265,7 +285,7 @@ def _check_match(got, want, runstate):
     return False
 
 
-def _ellipsis_match(got, want):
+def _ellipsis_match(got: typing.Any, want: typing.Any) -> bool:
     r"""
     The ellipsis matching algorithm taken directly from standard doctest.
 
@@ -349,7 +369,11 @@ def _ellipsis_match(got, want):
     return True
 
 
-def normalize(got, want, runstate=None):
+def normalize(
+    got: str,
+    want: str,
+    runstate: directive.RuntimeState | dict[str, object] | None = None,
+) -> tuple[str, str]:
     r"""
     Normalizes the got and want string based on the runtime state.
 
@@ -452,11 +476,12 @@ def normalize(got, want, runstate=None):
 
 
 class ExtractGotReprException(AssertionError):
+    orig_ex: Exception
     """
     Exception used when we are unable to extract a string "got"
     """
 
-    def __init__(self, msg, orig_ex):
+    def __init__(self, msg: str, orig_ex: Exception) -> None:
         """
         Args:
             msg (str): The exception message
@@ -467,12 +492,14 @@ class ExtractGotReprException(AssertionError):
 
 
 class GotWantException(AssertionError):
+    got: str
+    want: str
     """
     Exception used when the "got" output of a doctest differs from the expected
     "want" output.
     """
 
-    def __init__(self, msg, got, want):
+    def __init__(self, msg: str, got: str, want: str) -> None:
         """
         Args:
             msg (str): The exception message
@@ -502,7 +529,11 @@ class GotWantException(AssertionError):
 
         return False
 
-    def output_difference(self, runstate=None, colored=True):
+    def output_difference(
+        self,
+        runstate: directive.RuntimeState | None = None,
+        colored: bool = True,
+    ) -> str:
         """
         Return a string describing the differences between the expected output
         for a given example (`example`) and the actual output (`got`).
@@ -548,12 +579,14 @@ class GotWantException(AssertionError):
             got_lines = got.splitlines(True)
             # Use difflib to find their differences.
             if runstate['REPORT_UDIFF']:
-                diff = difflib.unified_diff(want_lines, got_lines, n=2)
-                diff = list(diff)[2:]  # strip the diff header
+                diff = list(difflib.unified_diff(want_lines, got_lines, n=2))[
+                    2:
+                ]  # strip the diff header
                 kind = 'unified diff with -expected +actual'
             elif runstate['REPORT_CDIFF']:
-                diff = difflib.context_diff(want_lines, got_lines, n=2)
-                diff = list(diff)[2:]  # strip the diff header
+                diff = list(difflib.context_diff(want_lines, got_lines, n=2))[
+                    2:
+                ]  # strip the diff header
                 kind = 'context diff with expected followed by actual'
             elif runstate['REPORT_NDIFF']:
                 # TODO: Is there a way to make Differ ignore whitespace if that
@@ -594,7 +627,9 @@ class GotWantException(AssertionError):
                 text = 'Expected nothing\nGot nothing\n'
         return text
 
-    def output_repr_difference(self, runstate=None):
+    def output_repr_difference(
+        self, runstate: directive.RuntimeState | None = None
+    ) -> str:
         """
         Constructs a repr difference with minimal normalization.
 
@@ -625,7 +660,7 @@ class GotWantException(AssertionError):
         return '\n'.join(lines)
 
 
-def remove_blankline_marker(text):
+def remove_blankline_marker(text: str) -> str:
     r"""
     Args:
         text (str): input text

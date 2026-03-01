@@ -9,8 +9,10 @@ CommandLine:
     xdoctest -m xdoctest.demo --quiet
 """
 
+from __future__ import annotations
 
-def myfunc():
+
+def myfunc() -> int:
     """
     Demonstrates how to write a doctest.
     Prefix with ``>>>`` and ideally place in an `Example:` block.
@@ -39,7 +41,7 @@ class MyClass:
         >>> print('self.data = {!r}'.format(self.data))
     """
 
-    def __init__(self, *args, **kw):
+    def __init__(self, *args: object, **kw: object) -> None:
         """
         Example:
             >>> # xdoctest: +REQUIRES(--fail)
@@ -48,7 +50,7 @@ class MyClass:
         self.data = (args, kw)
 
     @classmethod
-    def demo(cls, **kw):
+    def demo(cls, **kw: object) -> MyClass:
         """
         CommandLine:
             xdoctest -m xdoctest.demo MyClass.demo
@@ -63,7 +65,7 @@ class MyClass:
         return MyClass(['spam'] * 42, ['eggs'], **kw)
 
     @staticmethod
-    def always_fails():
+    def always_fails() -> None:
         """
         CommandLine:
             xdoctest -m xdoctest.demo MyClass.always_fails

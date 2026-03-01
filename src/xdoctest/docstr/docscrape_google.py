@@ -21,16 +21,24 @@ References:
     .. [GoogleStyleDocs2] http://www.sphinx-doc.org/en/stable/ext/example_google.html#example-google
 """
 
+from __future__ import annotations
+
+import typing
+
 import re
 import textwrap
 import collections
+from typing import NamedTuple
 from xdoctest import exceptions
 from xdoctest.utils.util_str import ensure_unicode
 
-DocBlock = collections.namedtuple('DocBlock', ['text', 'offset'])
+
+class DocBlock(NamedTuple):
+    text: str
+    offset: int
 
 
-def split_google_docblocks(docstr):
+def split_google_docblocks(docstr: str) -> list[tuple[str, DocBlock]]:
     """
     Breaks a docstring into parts defined by google style
 
@@ -264,7 +272,7 @@ def split_google_docblocks(docstr):
     return groups
 
 
-def parse_google_args(docstr):
+def parse_google_args(docstr: str) -> typing.Iterator[dict[str, str]]:
     r"""
     Generates dictionaries of argument hints based on a google docstring
 
@@ -288,7 +296,9 @@ def parse_google_args(docstr):
                 yield argdict
 
 
-def parse_google_returns(docstr, return_annot=None):
+def parse_google_returns(
+    docstr: str, return_annot: str | None = None
+) -> typing.Iterator[dict[str, str]]:
     r"""
     Generates dictionaries of possible return hints based on a google docstring
 
@@ -324,7 +334,9 @@ def parse_google_returns(docstr, return_annot=None):
                 yield retdict
 
 
-def parse_google_retblock(lines, return_annot=None):
+def parse_google_retblock(
+    lines: str, return_annot: str | None = None
+) -> typing.Iterator[dict[str, typing.Any]]:
     r"""
     Parse information out of a returns or yields block.
 
@@ -390,7 +402,7 @@ def parse_google_retblock(lines, return_annot=None):
         # If the function has a return type annotation then the return block
         # should only be interpreted as a description. The formatting of the
         # lines is not modified in this case.
-        retdict = {'type': return_annot, 'desc': lines}
+        retdict = {'type': return_annot, 'desc': [lines]}
         yield retdict
     else:
         # Otherwise, this examines each line without any extra indentation (wrt
@@ -436,7 +448,7 @@ def parse_google_retblock(lines, return_annot=None):
                         except Exception:
                             # Not parseable, assume this is a description.
                             retdict = {
-                                'type': None,
+                                'type': '',
                                 'desc': [line.strip()],
                             }
                         else:
@@ -448,12 +460,16 @@ def parse_google_retblock(lines, return_annot=None):
             else:
                 # Lines with indentation should extend previous descriptions.
                 if retdict is not None:
-                    retdict['desc'].append(line.strip())
+                    desc_list = list(retdict['desc'])
+                    desc_list.append(line.strip())
+                    retdict['desc'] = desc_list
         if retdict is not None:
             yield finalize(retdict)
 
 
-def parse_google_argblock(lines, clean_desc=True):
+def parse_google_argblock(
+    lines: str, clean_desc: bool = True
+) -> typing.Iterator[dict[str, str | None]]:
     r"""
     Parse out individual items from google-style args blocks.
 
