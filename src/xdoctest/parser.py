@@ -482,7 +482,7 @@ class DoctestParser:
 
     def _locate_ps1_linenos(
         self, source_lines: typing.Any
-    ) -> tuple[list[int], bool]:
+    ) -> tuple[list[int], str]:
         """
         Determines which lines in the source begin a "logical block" of code.
 

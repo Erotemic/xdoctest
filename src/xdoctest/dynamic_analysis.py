@@ -5,13 +5,15 @@ Utilities for dynamically inspecting code
 from __future__ import annotations
 
 import typing
+if typing.TYPE_CHECKING:
+    from xdoctest.static_analysis import CallDefNode
 
 import inspect
 import os
 import types
 
 
-def parse_dynamic_calldefs(modpath_or_module: typing.Any) -> dict[str, object]:
+def parse_dynamic_calldefs(modpath_or_module: typing.Any) -> dict[str, "CallDefNode"]:
     """
     Dynamic parsing of module doctestable items.
 

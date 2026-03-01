@@ -583,7 +583,7 @@ def package_calldefs(
 
 def parse_calldefs(
     module_identifier: typing.Any, analysis: typing.Any = 'auto'
-) -> dict[str, static_analysis.CallDefNode]:
+) -> typing.Optional[dict[str, static_analysis.CallDefNode]]:
     """
     Parse calldefs from a single module using either static or dynamic
     analysis.

@@ -669,7 +669,7 @@ class Directive(utils.NiceRepr):
         return effects
 
 
-def _split_opstr(optstr: typing.Any) -> tuple[str, str, object]:
+def _split_opstr(optstr: typing.Any) -> list[str]:
     """
     Simplified balanced paren logic to only split commas outside of parens
 
@@ -896,7 +896,7 @@ DIRECTIVE_RE = re.compile('|'.join(DIRECTIVE_PATTERNS), flags=re.IGNORECASE)
 
 def parse_directive_optstr(
     optpart: typing.Any, inline: typing.Any = None
-) -> list[Directive]:
+) -> typing.Optional[Directive]:
     """
     Parses the information in the directive from the "optpart"
 
@@ -914,7 +914,7 @@ def parse_directive_optstr(
             True if the directive only applies to a single line.
 
     Returns:
-        Directive: the parsed directive
+        Optional[Directive]: the parsed directive (or None if parsing failed)
 
     Example:
         >>> print(str(parse_directive_optstr('+IGNORE_WHITESPACE')))

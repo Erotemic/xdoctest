@@ -363,7 +363,7 @@ class TopLevelVisitor(ast.NodeVisitor):
 
     # -- helpers ---
 
-    def _docnode_line_workaround(self, docnode: typing.Any) -> int | None:
+    def _docnode_line_workaround(self, docnode: typing.Any) -> tuple[int, int]:
         """
         Find the start and ending line numbers of a docstring
 
@@ -816,7 +816,11 @@ def _parse_static_node_value(node):
         values = map(_parse_static_node_value, node.values)
         value = OrderedDict(zip(keys, values))
         # value = dict(zip(keys, values))
-    elif IS_PY_LT_314 and isinstance(node, (ast.NameConstant)):
+    # Avoid direct reference to ast.NameConstant which is deprecated in
+    # Python 3.14; access it via getattr so linters won't emit a deprecation
+    # warning while preserving compatibility with older Pythons.
+    NameConstant = getattr(ast, 'NameConstant', None)
+    if IS_PY_LT_314 and NameConstant is not None and isinstance(node, NameConstant):
         value = node.value
     elif isinstance(node, ast.Constant):
         value = node.value

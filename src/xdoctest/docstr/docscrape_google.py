@@ -272,7 +272,7 @@ def split_google_docblocks(docstr: str) -> list[tuple[str, DocBlock]]:
     return groups
 
 
-def parse_google_args(docstr: str) -> list[dict[str, str]]:
+def parse_google_args(docstr: str) -> typing.Iterator[dict[str, str]]:
     r"""
     Generates dictionaries of argument hints based on a google docstring
 
@@ -298,7 +298,7 @@ def parse_google_args(docstr: str) -> list[dict[str, str]]:
 
 def parse_google_returns(
     docstr: str, return_annot: str | None = None
-) -> list[dict[str, str]]:
+) -> typing.Iterator[dict[str, str]]:
     r"""
     Generates dictionaries of possible return hints based on a google docstring
 

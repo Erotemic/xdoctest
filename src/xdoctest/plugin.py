@@ -340,7 +340,7 @@ class XDoctestItem(pytest.Item):
         else:
             return super(XDoctestItem, self).repr_failure(excinfo)
 
-    def reportinfo(self) -> tuple[str, int, str]:
+    def reportinfo(self) -> tuple[typing.Any, int | None, str]:
         """
         Returns:
             Tuple[str, int, str]
@@ -433,7 +433,7 @@ class XDoctestModule(_XDoctestBase):
                 yield XDoctestItem(name, self, dtest=dtest)
 
 
-def _setup_fixtures(xdoctest_item: typing.Any) -> fixtures.TopRequest:
+def _setup_fixtures(xdoctest_item: typing.Any) -> fixtures.FixtureRequest:
     """
     Used by XDoctestTextfile and XDoctestItem to setup fixture information.
 

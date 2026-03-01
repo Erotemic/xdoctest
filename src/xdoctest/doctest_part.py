@@ -164,7 +164,7 @@ class DoctestPart:
         return self._directives
 
     @property
-    def want(self) -> str:
+    def want(self) -> str | None:
         """
         Returns:
             str | None: what the test is expected to produce

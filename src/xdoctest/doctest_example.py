@@ -540,7 +540,7 @@ class DocTest:
             self.unique_callname,
         }
 
-    def wants(self) -> bool:
+    def wants(self) -> typing.Generator[str, None, None]:
         """
         Returns a list of the populated wants
 
@@ -648,7 +648,7 @@ class DocTest:
         full_source = '\n'.join(formated_parts)
         return full_source
 
-    def _parse(self) -> list[typing.Any]:
+    def _parse(self) -> None:
         """
         Divide the given string into examples and intervening text.
 
@@ -1300,7 +1300,7 @@ class DocTest:
                     self._color(self._block_prefix + ' STDOUT/STDERR', 'white')
                 )
 
-    def failed_line_offset(self) -> int:
+    def failed_line_offset(self) -> int | None:
         """
         Determine which line in the doctest failed.
 
@@ -1331,7 +1331,7 @@ class DocTest:
             offset -= 1
             return offset
 
-    def failed_lineno(self) -> int:
+    def failed_lineno(self) -> int | None:
         """
         Returns:
             int | None

@@ -227,7 +227,7 @@ def execute_notebook(
     ipynb_fpath: typing.Any,
     timeout: typing.Any = None,
     verbose: typing.Any = None,
-) -> dict[str, object]:
+) -> tuple[typing.Any, dict[str, object]]:
     """
     Execute an IPython notebook in a separate kernel
 
