@@ -96,6 +96,7 @@ ignore_missing_imports = true
 
 [tool.ty.rules]
 unused-type-ignore-comment = "ignore"
+unresolved-import = "ignore"
 
 [[tool.ty.overrides]]
 include = ["src/xdoctest/_tokenize.py"]
