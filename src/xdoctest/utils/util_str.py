@@ -10,6 +10,7 @@ import warnings
 import re
 import os
 import sys
+import typing
 
 
 # Global state that determines if ANSI-coloring text is allowed
@@ -249,6 +250,17 @@ def highlight_code(
         new_text = text
     return new_text
 
+@typing.overload
+def add_line_numbers(
+    source: list[str], start: int = 1, n_digits: int | None = None
+) -> list[str]:
+    ...
+
+@typing.overload
+def add_line_numbers(
+    source: str, start: int = 1, n_digits: int | None = None
+) -> str:
+    ...
 
 def add_line_numbers(
     source: str | list[str], start: int = 1, n_digits: int | None = None

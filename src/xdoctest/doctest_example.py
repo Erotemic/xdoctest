@@ -318,7 +318,7 @@ class DocTest:
         failed_tb_lineno (int | None):
             Line number a failure occurred on.
 
-        exc_info (None | TracebackType):
+        exc_info (None | tuple[type[BaseException], BaseException, types.TracebackType] | tuple[None, None, None]):
             traceback of a failure if one occurred.
 
         failed_part (None | DoctestPart):
@@ -371,14 +371,14 @@ class DocTest:
     num: int | None = None
     _parts: list['DoctestPart'] | None = None
     failed_tb_lineno: int | None = None
-    exc_info: types.TracebackType | None = None
+    exc_info: tuple[type[BaseException], BaseException, types.TracebackType] | tuple[None, None, None] | None = None
     failed_part: 'DoctestPart' | None = None
-    warn_list: list[str] | None = None
+    warn_list: list | None = None
     _partfilename: str | None = None
-    logged_evals: OrderedDict[str, str] | None = None
-    logged_stdout: OrderedDict[str, str] | None = None
+    logged_evals: OrderedDict[int, typing.Any] | None = None
+    logged_stdout: OrderedDict[int, str | None] | None = None
     _unmatched_stdout: list[str] | None = None
-    _skipped_parts: list[str] | None = None
+    _skipped_parts: list | None = None
     _runstate: typing.Any = None
     global_namespace: dict[str, typing.Any] | None = None
 
@@ -531,6 +531,7 @@ class DocTest:
             disable_patterns += [r'>>>\s*#\s*pytest.skip']
 
         pattern = '|'.join(disable_patterns)
+        assert self.docsrc is not None
         m = re.match(pattern, self.docsrc, flags=re.IGNORECASE)
         return m is not None
 
@@ -542,7 +543,7 @@ class DocTest:
         Returns:
             str
         """
-        return self.callname + ':' + str(self.num)
+        return f'{self.callname}:{self.num}'
 
     @property
     def node(self) -> str:
@@ -552,7 +553,7 @@ class DocTest:
         Returns:
             str
         """
-        return self.modpath + '::' + self.callname + ':' + str(self.num)
+        return  f'{self.modpath}::{self.callname}:{self.num}'
 
     @property
     def valid_testnames(self) -> set[str]:
@@ -605,11 +606,12 @@ class DocTest:
         assert self._parts is not None
         val = self.config.getvalue('colored', colored)
         if val is None:
-            colored = None
+            colored = False
         else:
             # allow ints or bools from config and coerce to bool
             colored = bool(val)
         partnos = self.config.getvalue('partnos')
+        assert isinstance(partnos, bool)
         val2 = self.config.getvalue('offset_linenos', offset_linenos)
         if val2 is None:
             offset_linenos = None
@@ -620,12 +622,13 @@ class DocTest:
         startline = 1
         if linenos:
             if offset_linenos:
+                assert self.lineno is not None
                 startline = self.lineno
             n_lines = sum(p.n_lines for p in self._parts)
             endline = startline + n_lines
 
-            n_digits = math.log(max(1, endline), 10)
-            n_digits = int(math.ceil(n_digits))
+            n_digits_ = math.log(max(1, endline), 10)
+            n_digits = int(math.ceil(n_digits_))
 
         for part in self._parts:
             part_text = part.format_part(
@@ -740,6 +743,7 @@ class DocTest:
                 lineno=self.lineno,
                 fpath=self.fpath,
             )
+            assert self.docsrc is not None
             raw_parts = parser.DoctestParser().parse(self.docsrc, info)
             # filter out strings that are inserted for text chunks
             self._parts = [p for p in raw_parts if not isinstance(p, str)]
@@ -748,7 +752,7 @@ class DocTest:
         for partno, part in enumerate(self._parts):
             part.partno = partno
 
-    def _import_module(self) -> object:
+    def _import_module(self):
         """
         After this point we are in dynamic analysis mode, in most cases
         xdoctest should have been in static-analysis-only mode.
@@ -757,6 +761,7 @@ class DocTest:
             None
         """
         if self.module is None:
+            assert self.modname is not None
             if not self.modname.startswith('<'):
                 # self.module = utils.import_module_from_path(self.modpath, index=0)
                 if global_state.DEBUG_DOCTEST:
@@ -861,6 +866,7 @@ class DocTest:
             bool
         """
         # If everything was skipped, then there will be no stdout
+        assert self.logged_stdout is not None
         return len(self.logged_stdout) > 0
 
     def run(
@@ -885,6 +891,8 @@ class DocTest:
         self._pre_run(verbose)
 
         # Prepare for actual test run
+        assert self.logged_evals is not None
+        assert self.logged_stdout is not None
         self.logged_evals.clear()
         self.logged_stdout.clear()
         self._unmatched_stdout = []
@@ -921,6 +929,7 @@ class DocTest:
         # NOTE: this will prevent any custom handling of warnings
         # See: https://github.com/Erotemic/xdoctest/issues/169
         with warnings.catch_warnings(record=True) as self.warn_list:
+            assert self._parts is not None
             for partx, part in enumerate(self._parts):
                 if DEBUG:
                     print(f'part[{partx}] checking')
@@ -937,6 +946,7 @@ class DocTest:
                     try:
                         runstate.update(part_directive)
                     except Exception as ex:
+                        assert self.lineno is not None
                         msg = 'Failed to parse directive: {} in {} at line {}. Caused by {}'.format(
                             part_directive,
                             self.fpath,
@@ -979,7 +989,7 @@ class DocTest:
                     except Exception:
                         self.failed_part = '<IMPORT>'
                         self._partfilename = (
-                            '<doctest:' + self.node + ':pre_import>'
+                            f'<doctest:{self.node}:pre_import>'
                         )
                         self.exc_info = sys.exc_info()
                         if on_error == 'raise':
@@ -1000,16 +1010,14 @@ class DocTest:
                     global_exec = self.config.getvalue('global_exec')
                     if global_exec:
                         # Hack to make it easier to specify multi-line input on the CLI
+                        assert isinstance(global_exec, str)
                         global_source = utils.codeblock(
                             global_exec.replace('\\n', '\n')
                         )
                         global_code = compile(
                             global_source,
                             mode='exec',
-                            filename='<doctest:'
-                            + self.node
-                            + ':'
-                            + 'global_exec>',
+                            filename=f'<doctest:{self.node}:global_exec>',
                             flags=compileflags,
                             dont_inherit=True,
                         )
@@ -1021,7 +1029,7 @@ class DocTest:
                     # Compile code, handle syntax errors
                     #   part.compile_mode can be single, exec, or eval.
                     #   Typically single is used instead of eval
-                    self._partfilename = '<doctest:' + self.node + '>'
+                    self._partfilename = f'<doctest:{self.node}>'
                     source_text = part.compilable_source()
 
                     code = compile(
@@ -1294,26 +1302,15 @@ class DocTest:
                 if in_path:
                     # should be able to find the module by name
                     return (
-                        'python -m xdoctest '
-                        + self.modname
-                        + ' '
-                        + self.unique_callname
+                        f'python -m xdoctest {self.modname} {self.unique_callname}'
                     )
                 else:
                     # needs the full path to be able to run the module
-                    return (
-                        'python -m xdoctest '
-                        + self.modpath
-                        + ' '
-                        + self.unique_callname
-                    )
+                    return f'python -m xdoctest {self.modpath} {self.unique_callname}'
             else:
                 # Probably safer to always use the path
                 return (
-                    'python -m xdoctest '
-                    + self.modpath
-                    + ' '
-                    + self.unique_callname
+                    'python -m xdoctest {self.modpath} {self.unique_callname}'
                 )
         else:
             raise KeyError(self.mode)

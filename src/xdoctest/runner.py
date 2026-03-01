@@ -107,6 +107,7 @@ def doctest_callable(func: Callable[..., typing.Any]):
         # that the parent function was defined in.
         # HACK: to add module context, this might not be robust.
         doctest.module = sys.modules[func.__module__]
+        assert doctest.global_namespace is not None
         doctest.global_namespace[func.__name__] = func
         doctest.run(verbose=3)
 

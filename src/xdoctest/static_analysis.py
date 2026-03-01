@@ -220,11 +220,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         self.process_finished(node)
         super(TopLevelVisitor, self).visit(node)
 
-    def visit_FunctionDef(self, node: ast.FunctionDef):
-        """
-        Args:
-            node (ast.FunctionDef):
-        """
+    def _visit_generic_FunctionDef(self, node: ast.FunctionDef | ast.AsyncFunctionDef):
         if self._current_classname is None:
             callname = node.name
         else:
@@ -257,12 +253,19 @@ class TopLevelVisitor(ast.NodeVisitor):
 
         self._finish_queue.append(calldef)
 
+    def visit_FunctionDef(self, node: ast.FunctionDef):
+        """
+        Args:
+            node (ast.FunctionDef):
+        """
+        return self._visit_generic_FunctionDef(node)
+
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef):
         """
         Args:
             node (ast.AsyncFunctionDef):
         """
-        self.visit_FunctionDef(node)
+        return self._visit_generic_FunctionDef(node)
 
     def visit_ClassDef(self, node: ast.ClassDef):
         """
@@ -367,12 +370,12 @@ class TopLevelVisitor(ast.NodeVisitor):
 
     # -- helpers ---
 
-    def _docnode_line_workaround(self, docnode: ast.AST) -> tuple[int, int]:
+    def _docnode_line_workaround(self, docnode: ast.Expr) -> tuple[int, int]:
         """
         Find the start and ending line numbers of a docstring
 
         Args:
-            docnode (ast.AST):
+            docnode (ast.Expr):
 
         Returns:
             Tuple[int, int]
@@ -430,14 +433,15 @@ class TopLevelVisitor(ast.NodeVisitor):
         """
         # lineno points to the last line of a string in CPython < 3.8
         if hasattr(docnode, 'end_lineno'):
+            assert docnode.end_lineno is not None
             endpos = docnode.end_lineno - 1
         else:
             if PLAT_IMPL == 'PyPy':
                 startpos = docnode.lineno - 1
                 if IS_PY_GE_312:
-                    docstr = utils.ensure_unicode(docnode.value.value)
+                    docstr = utils.ensure_unicode(docnode.value.value)  # type: ignore[attr-defined]
                 else:
-                    docstr = utils.ensure_unicode(docnode.value.s)
+                    docstr = utils.ensure_unicode(docnode.value.s)  # type: ignore[attr-defined]
                 sourcelines = self.sourcelines
                 start, stop = self._find_docstr_endpos_workaround(
                     docstr, sourcelines, startpos
@@ -452,10 +456,11 @@ class TopLevelVisitor(ast.NodeVisitor):
                 endpos = docnode.lineno - 1
 
         if IS_PY_GE_312:
-            docstr = utils.ensure_unicode(docnode.value.value)
+            docstr = utils.ensure_unicode(docnode.value.value)  # type: ignore[attr-defined]
         else:
-            docstr = utils.ensure_unicode(docnode.value.s)
+            docstr = utils.ensure_unicode(docnode.value.s)  # type: ignore[attr-defined]
         sourcelines = self.sourcelines
+        assert sourcelines is not None
         start, stop = self._find_docstr_startpos_workaround(
             docstr, sourcelines, endpos
         )
@@ -851,7 +856,7 @@ def _parse_static_node_value(node):
 
 
 def parse_static_value(
-    key: str, source: str | None = None, fpath: str | None = None
+    key: str, source: str | bytes | None = None, fpath: str | None = None
 ) -> object:
     """
     Statically parse a constant variable's value from python code.
@@ -886,6 +891,7 @@ def parse_static_value(
         >>> #parse_static_value('bar', source='foo=1; bar = [1, foo]')
     """
     if source is None:  # pragma: no branch
+        assert fpath is not None
         try:
             with open(fpath, 'rb') as file_:
                 source = file_.read().decode('utf-8')
@@ -1193,6 +1199,7 @@ def _strip_hashtag_comments_and_newlines(source: str | list[str]):
         >>> assert non_comments.count(chr(10)) == 10
         >>> assert non_comments.count('#') == 1
     """
+    readline: typing.Callable
     if isinstance(source, str):
         import io
 

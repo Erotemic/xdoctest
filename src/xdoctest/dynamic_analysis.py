@@ -53,6 +53,7 @@ def parse_dynamic_calldefs(modpath_or_module: typing.Union[str, os.PathLike, typ
         module = modpath_or_module
     else:
         modpath = modpath_or_module
+        assert isinstance(modpath, str)
         if modpath.endswith('.ipynb'):
             """
             # Devnote:
@@ -69,11 +70,11 @@ def parse_dynamic_calldefs(modpath_or_module: typing.Union[str, os.PathLike, typ
             module = util_import.import_module_from_path(modpath)
 
     calldefs = {}
-
-    if getattr(module, '__doc__'):
+    module_doc = getattr(module, '__doc__')
+    if module_doc:
         calldefs['__doc__'] = static.CallDefNode(
             callname='__doc__',
-            docstr=module.__doc__,
+            docstr=module_doc,
             lineno=0,
             doclineno=1,
             doclineno_end=1,

@@ -603,7 +603,7 @@ class DoctestParser:
 
         source_block = '\n'.join(exec_source_lines)
         try:
-            pt = static.six_axt_parse(source_block)
+            pt = ast.parse(source_block, filename='<source_block>')
         except SyntaxError as syn_ex:
             # Assign missing information to the syntax error.
             if syn_ex.text is None:

@@ -206,7 +206,7 @@ class DoctestPart:
         return '<%s(%s)>' % (classname, devnice)
 
     def check(
-        part: typing.Any,
+        self,
         got_stdout: str,
         got_eval: typing.Any = constants.NOT_EVALED,
         runstate: directive.RuntimeState | None = None,
@@ -254,7 +254,7 @@ class DoctestPart:
             # Try the i-th trailing sequence
             got_ = ''.join(trailing_gots[-i:])
             try:
-                checker.check_got_vs_want(part.want, got_, got_eval, runstate)
+                checker.check_got_vs_want(self.want, got_, got_eval, runstate)
             except checker.GotWantException as ex:
                 exceptions.append(ex)
             else:
@@ -272,13 +272,13 @@ class DoctestPart:
 
     def format_part(
         self,
-        linenos: typing.Any = True,
-        want: typing.Any = True,
-        startline: typing.Any = 1,
-        n_digits: typing.Any = None,
-        colored: typing.Any = False,
-        partnos: typing.Any = False,
-        prefix: typing.Any = True,
+        linenos: bool = True,
+        want: bool = True,
+        startline: int = 1,
+        n_digits: int | None = None,
+        colored: bool = False,
+        partnos: bool = False,
+        prefix: bool = True,
     ) -> str:
         """
         Customizable formatting of the source and want for this doctest.
@@ -287,7 +287,7 @@ class DoctestPart:
             linenos (bool): show line numbers
             want (bool): include the want value if it exists
             startline (int): offsets the line numbering
-            n_digits (int): number of digits to use for line numbers
+            n_digits (int | None): number of digits to use for line numbers
             colored (bool): pygmentize the code
             partnos (bool): if True, shows the part number in the string
             prefix (bool): if False, exclude the doctest ``>>> `` prefix
@@ -329,8 +329,8 @@ class DoctestPart:
 
         if n_digits is None:
             endline = startline + self.n_lines
-            n_digits = math.log(max(1, endline), 10)
-            n_digits = int(math.ceil(n_digits))
+            _n_digits = math.log(max(1, endline), 10)
+            n_digits = int(math.ceil(_n_digits))
 
         part_lines = src_text.splitlines()
         n_spaces = 0

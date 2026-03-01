@@ -349,7 +349,7 @@ class RuntimeState(utils.NiceRepr):
         Update the runtime state given a set of directives
 
         Args:
-            directives (List[Directive]):
+            directives (list[Directive]):
                 list of directives. The ``effects`` method is used to update
                 this object.
         """
@@ -404,7 +404,7 @@ class Directive(utils.NiceRepr):
 
             positive (bool): if it is enabling / disabling
 
-            args (List[str]): arguments given to the directive
+            args (list[str]): arguments given to the directive
 
             inline (bool | None):
                 True if this is an inline directive (i.e. only impacts a single
@@ -563,7 +563,7 @@ class Directive(utils.NiceRepr):
         return effects[0]
 
     def effects(
-        self, argv: typing.Any = None, environ: typing.Any = None
+        self, argv: list[str] | None = None, environ: dict[str, str] | None = None
     ) -> list[Effect]:
         """
         Returns how this directive modifies a RuntimeState object
@@ -575,7 +575,7 @@ class Directive(utils.NiceRepr):
                 Command line the directive is interpreted in the context of.
                 If unspecified, uses ``sys.argv``.
 
-            environ (Dict[str, str] | None):
+            environ (dict[str, str] | None):
                 Environment variables the directive is interpreted in the
                 context of. If unspecified, uses ``os.environ``.
 
@@ -636,11 +636,12 @@ class Directive(utils.NiceRepr):
             effect = Effect(action='noop', key='REQUIRES', value='module:xdoctest')
         """
         key = self.name
-        value = None
+        value: typing.Any = None
 
         effects = []
         if self.name == 'REQUIRES':
             # Special handling of REQUIRES
+            assert isinstance(self.args, list)
             for arg in self.args:
                 value = arg
                 if _is_requires_satisfied(arg, argv=argv, environ=environ):
@@ -701,6 +702,7 @@ def _split_opstr(optstr: str) -> list[str]:
 
     parts = []
     prev = 0
+    curr: int | None
     for curr in split_pos:
         parts.append(optstr[prev:curr].strip())
         prev = curr + 1
@@ -710,15 +712,15 @@ def _split_opstr(optstr: str) -> list[str]:
 
 
 def _is_requires_satisfied(
-    arg: typing.Any, argv: typing.Any = None, environ: typing.Any = None
+    arg: str, argv: list[str] | None = None, environ: dict[str, str] | None = None
 ) -> bool:
     """
     Determines if the argument to a REQUIRES directive is satisfied
 
     Args:
         arg (str): condition code
-        argv (List[str] | None): cmdline if arg is cmd code usually ``sys.argv``
-        environ (Dict[str, str] | None): environment variables usually ``os.environ``
+        argv (list[str] | None): cmdline if arg is cmd code usually ``sys.argv``
+        environ (dict[str, str] | None): environment variables usually ``os.environ``
 
     Returns:
         bool: flag - True if the requirement is met
@@ -786,8 +788,12 @@ def _is_requires_satisfied(
         modname = parts[1]
         flag = _module_exists(modname)
     elif arg.startswith('env:'):
+        environ_: typing.Mapping[str, str]
         if environ is None:
-            environ = os.environ
+            environ_ = os.environ
+        else:
+            environ_ = environ
+
         parts = arg.split(':')
         if len(parts) != 2:
             raise ValueError(
@@ -798,11 +804,12 @@ def _is_requires_satisfied(
         if len(expr_parts) == 1:
             # Test if the environment variable is truthy
             env_key = expr_parts[0]
-            flag = bool(environ.get(env_key, None))
+            
+            flag = bool(environ_.get(env_key, None))
         elif len(expr_parts) == 3:
             # Test if the environment variable is equal to an expression
             env_key, op_code, value = expr_parts
-            env_val = environ.get(env_key, None)
+            env_val = environ_.get(env_key, None)
             if op_code == '==':
                 op = operator.eq
             elif op_code == '!=':
@@ -895,7 +902,7 @@ DIRECTIVE_RE = re.compile('|'.join(DIRECTIVE_PATTERNS), flags=re.IGNORECASE)
 
 
 def parse_directive_optstr(
-    optpart: typing.Any, inline: typing.Any = None
+    optpart: str, inline: None | bool = None
 ) -> Directive | None:
     """
     Parses the information in the directive from the "optpart"
@@ -946,6 +953,7 @@ def parse_directive_optstr(
     if name not in COMMANDS:
         msg = 'Unknown directive: {!r}'.format(optpart)
         warnings.warn(msg)
+        return None
     else:
         directive = Directive(name, positive, args, inline)
         return directive
