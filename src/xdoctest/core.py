@@ -22,25 +22,26 @@ The following is a glossary of terms and jargon used in this repo.
 
 from __future__ import annotations
 
-import typing
-
-import textwrap
-import warnings
 import itertools as it
-import types
 import os
-from os.path import exists
+import textwrap
+import types
+import typing
+import warnings
 from fnmatch import fnmatch
-from xdoctest import dynamic_analysis
-from xdoctest import static_analysis
-from xdoctest import parser
-from xdoctest import exceptions
-from xdoctest import doctest_example
-from xdoctest import utils
+from os.path import exists
+
+from xdoctest import (
+    doctest_example,
+    dynamic_analysis,
+    exceptions,
+    global_state,
+    parser,
+    static_analysis,
+    utils,
+)
 from xdoctest.docstr import docscrape_google
 from xdoctest.utils import util_import
-from xdoctest import global_state
-
 
 DOCTEST_STYLES = [
     'freeform',
@@ -552,7 +553,8 @@ def package_calldefs(
     else:
         pkgpath = _rectify_to_modpath(pkg_identifier)
         _ideniter = static_analysis.package_modpaths(
-            pkgpath, with_pkg=True, with_libs=True)
+            pkgpath, with_pkg=True, with_libs=True
+        )
         identifiers = list(_ideniter)
 
     for module_identifier in identifiers:
@@ -654,7 +656,7 @@ def parse_calldefs(
         calldefs = static_analysis.parse_static_calldefs(
             fpath=module_identifier
         )
-    
+
     assert calldefs is not None
     if global_state.DEBUG_CORE:  # nocover
         print(f'Found {len(calldefs)} calldefs')

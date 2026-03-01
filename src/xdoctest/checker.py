@@ -35,13 +35,11 @@ representation of expression-based "got-strings".
 
 from __future__ import annotations
 
+import difflib
+import re
 import typing
 
-import re
-import difflib
-from xdoctest import utils
-from xdoctest import constants
-from xdoctest import directive
+from xdoctest import constants, directive, utils
 
 unicode_literal_re = re.compile(r'(\W|^)[uU]([rR]?[\'\"])', re.UNICODE)
 bytes_literal_re = re.compile(r'(\W|^)[bB]([rR]?[\'\"])', re.UNICODE)

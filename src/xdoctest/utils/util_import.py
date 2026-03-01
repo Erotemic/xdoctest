@@ -4,25 +4,27 @@ dev/port_ubelt_utils.py in the xdoctest repo
 """
 
 from __future__ import annotations
-from os.path import abspath
-from os.path import exists
-from os.path import expanduser
-from os.path import isdir
-from os.path import join
+
 import os
-from os.path import split
-from os.path import dirname
-from os.path import relpath
-from os.path import splitext
-from os.path import basename
-from os.path import isfile
-from os.path import realpath
 import sys
 import typing
-from types import ModuleType
-from types import TracebackType
-from typing import Type
 import warnings
+from os.path import (
+    abspath,
+    basename,
+    dirname,
+    exists,
+    expanduser,
+    isdir,
+    isfile,
+    join,
+    realpath,
+    relpath,
+    split,
+    splitext,
+)
+from types import ModuleType, TracebackType
+from typing import Type
 
 
 def is_modname_importable(

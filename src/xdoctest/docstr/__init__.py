@@ -1,5 +1,4 @@
 from xdoctest.docstr import docscrape_google
-
 from xdoctest.docstr.docscrape_google import (
     parse_google_argblock,
     parse_google_args,

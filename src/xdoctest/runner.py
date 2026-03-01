@@ -50,19 +50,21 @@ run the doctests as such:
 
 from __future__ import annotations
 
-import typing
-
-from xdoctest import dynamic_analysis
-from xdoctest import core
-from xdoctest import doctest_example
-from xdoctest import utils
-from functools import partial
+import sys
 import time
 import types
+import typing
 import warnings
-import sys
-from xdoctest import global_state
 from collections.abc import Callable
+from functools import partial
+
+from xdoctest import (
+    core,
+    doctest_example,
+    dynamic_analysis,
+    global_state,
+    utils,
+)
 
 
 def log(msg: str, verbose: bool | int, level: int = 1):
@@ -77,6 +79,7 @@ def log(msg: str, verbose: bool | int, level: int = 1):
     """
     if verbose >= level:
         print(msg)
+
 
 def doctest_callable(func: Callable[..., typing.Any]):
     """
@@ -265,7 +268,7 @@ def doctest_module(
         parsable_identifier = modinfo['module']
     else:
         parsable_identifier = modinfo['modpath']
-    
+
     assert parsable_identifier is not None
 
     _log('Start doctest_module({!r})'.format(parsable_identifier), level=2)

@@ -8,11 +8,8 @@ part.
 from __future__ import annotations
 
 import math
-from xdoctest import utils
-from xdoctest import checker
-from xdoctest import directive
-from xdoctest import constants
 
+from xdoctest import checker, constants, directive, utils
 
 __devnotes__ = """
 TODO:

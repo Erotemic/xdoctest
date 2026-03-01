@@ -45,16 +45,12 @@ References:
 from __future__ import annotations
 
 import ast
-import sys
 import re
+import sys
 import tokenize
-from xdoctest import utils
-from xdoctest import directive
-from xdoctest import exceptions
-from xdoctest import doctest_part
-from xdoctest import static_analysis as static
-from xdoctest import global_state
 
+from xdoctest import directive, doctest_part, exceptions, global_state, utils
+from xdoctest import static_analysis as static
 
 INDENT_RE = re.compile(r'^([ ]*)(?=\S)', re.MULTILINE)
 
@@ -205,8 +201,9 @@ class DoctestParser:
                 print('!!! FAILED !!!')
                 print('failpoint = {!r}'.format(failpoint))
 
-                import ubelt as ub
                 import traceback
+
+                import ubelt as ub
 
                 tb_text = traceback.format_exc()
                 tb_text = ub.highlight_code(tb_text)
@@ -382,9 +379,7 @@ class DoctestParser:
             print('<YIELD CHUNK>')
         yield example
 
-    def _group_labeled_lines(
-        self, labeled_lines
-    ) -> list[list | tuple | str]:
+    def _group_labeled_lines(self, labeled_lines) -> list[list | tuple | str]:
         """
         Group labeled lines into logical parts to be executed together
 
