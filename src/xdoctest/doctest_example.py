@@ -243,7 +243,7 @@ class DoctestConfig(dict):
             if argname in environ_aware:
                 env_argname = 'XDOCTEST_' + argname.replace('-', '_').upper()
                 if 'default' in kw:
-                    kw['default'] = os.environ.get(env_argname, kw['default'])
+                    kw['default'] = os.environ.get(env_argname, kw['default'])  # type: ignore[invalid-assignment]
 
             alias = [
                 a.replace('--', '--' + p + '-') if p else a
@@ -251,7 +251,7 @@ class DoctestConfig(dict):
                 for p in prefix
             ]
             if prefix[0]:
-                kw['dest'] = prefix[0] + '_' + kw['dest']
+                kw['dest'] = f"{prefix[0]} {kw['dest']}"
             add_argument(*alias, **kw)
 
     def getvalue(self, key: str, given: typing.Any = None) -> object:
@@ -770,6 +770,7 @@ class DocTest:
                     # Note: there is a possibility of conflicts that arises
                     # here depending on your local environment. We may want to
                     # try and detect that.
+                    assert self.modpath is not None
                     self.module = utils.import_module_from_path(
                         self.modpath, index=-1
                     )
@@ -884,6 +885,7 @@ class DocTest:
         """
         on_error = self.config.getvalue('on_error', on_error)
         verbose = self.config.getvalue('verbose', verbose)
+        assert isinstance(verbose, int)
         if on_error not in {'raise', 'return'}:
             raise KeyError(on_error)
 
@@ -1572,8 +1574,8 @@ class DocTest:
         if hasattr(ex_value, 'output_difference'):
             assert hasattr(ex_value, 'output_repr_difference')
             lines += [
-                ex_value.output_difference(self._runstate, colored=colored),
-                ex_value.output_repr_difference(self._runstate),
+                ex_value.output_difference(self._runstate, colored=colored),  # type: ignore[call-non-callable]
+                ex_value.output_repr_difference(self._runstate),  # type: ignore[call-non-callable]
             ]
         else:
             if with_tb:
@@ -1658,6 +1660,7 @@ class DocTest:
         return lines
 
     def _print_captured(self):
+        assert self.logged_stdout is not None
         out_text = ''.join([v for v in self.logged_stdout.values() if v])
         if out_text is not None:
             assert isinstance(out_text, str), 'do not use bytes'

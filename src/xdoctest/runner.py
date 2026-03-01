@@ -62,6 +62,7 @@ import types
 import warnings
 import sys
 from xdoctest import global_state
+from collections.abc import Callable
 
 
 def log(msg: str, verbose: typing.Union[bool, int], level: int = 1):
@@ -76,9 +77,6 @@ def log(msg: str, verbose: typing.Union[bool, int], level: int = 1):
     """
     if verbose >= level:
         print(msg)
-
-
-from collections.abc import Callable
 
 def doctest_callable(func: Callable[..., typing.Any]):
     """
@@ -100,7 +98,10 @@ def doctest_callable(func: Callable[..., typing.Any]):
     """
     from xdoctest.core import parse_docstr_examples
 
-    doctests = list(parse_docstr_examples(func.__doc__, callname=func.__name__))
+    callname = getattr(func, '__name__', None)
+    assert callname is not None
+
+    doctests = list(parse_docstr_examples(func.__doc__, callname=callname))
     # TODO: can this be hooked up into runner to get nice summaries?
     for doctest in doctests:
         # FIXME: each doctest needs a way of getting the globals of the scope
@@ -108,7 +109,7 @@ def doctest_callable(func: Callable[..., typing.Any]):
         # HACK: to add module context, this might not be robust.
         doctest.module = sys.modules[func.__module__]
         assert doctest.global_namespace is not None
-        doctest.global_namespace[func.__name__] = func
+        doctest.global_namespace[callname] = func
         doctest.run(verbose=3)
 
 
@@ -584,6 +585,7 @@ def _print_summary_report(
     """
     Summary report formatting and printing
     """
+    assert _log is not None
 
     def cprint(text, color):
         if config is not None and config.get('colored', True):
@@ -718,6 +720,7 @@ def _run_examples(enabled_examples, verbose, config=None, _log=None):
     Internal helper, loops over each example, runs it, returns a summary
     """
     n_total = len(enabled_examples)
+    assert _log is not None
     _log('running %d test(s)' % n_total)
     summaries = []
     failed = []

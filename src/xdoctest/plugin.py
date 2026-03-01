@@ -28,7 +28,7 @@ from _pytest._code import code
 try:
     from packaging import version as _packaging_version
 except ImportError:  # nocover
-    from distutils import version as _distutils_version
+    from distutils import version as _distutils_version  # type: ignore[unresolved-import]
 
     def _parse_version(version_text):
         return _distutils_version.LooseVersion(version_text)
@@ -272,7 +272,7 @@ class XDoctestItem(pytest.Item):
             name,
             runner=None,
             dtest=None,
-        ):
+        ):  # type: ignore[invalid-method-override]
             # incompatible signature due to imposed limits on subclass
             """The public named constructor."""
             return super().from_parent(
@@ -320,7 +320,7 @@ class XDoctestItem(pytest.Item):
         if not self.dtest.anything_ran():
             pytest.skip('doctest is empty or all parts were skipped')
 
-    def repr_failure(self, excinfo):
+    def repr_failure(self, excinfo):  # type: ignore[invalid-method-override]
         """
         # Args:
         #     excinfo (_pytest._code.code.ExceptionInfo):

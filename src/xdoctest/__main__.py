@@ -146,7 +146,7 @@ def main(argv: list[str] | None = None) -> int:
                 import tomllib
             except ImportError:
                 try:
-                    import tomli
+                    import tomli  # type: ignore[unresolved-import]
                 except ImportError:
                     pass
                 else:

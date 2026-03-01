@@ -376,10 +376,10 @@ class RuntimeState(utils.NiceRepr):
                 elif action == 'assign':
                     state[key] = value
                 elif action == 'set.add':
-                    state[key].add(value)
+                    state[key].add(value)  # type: ignore[unresolved-attribute]
                 elif action == 'set.remove':
                     try:
-                        state[key].remove(value)
+                        state[key].remove(value)  # type: ignore[unresolved-attribute]
                     except KeyError:
                         pass
                 else:
@@ -537,6 +537,7 @@ class Directive(utils.NiceRepr):
             remove='1.2.0',
         )
         nargs = self.args
+        assert nargs is not None
         if len(nargs) != 1:
             raise TypeError(
                 '{} directive expected exactly {} argument(s), got {}'.format(

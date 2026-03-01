@@ -2,24 +2,6 @@
 requires = [ "setuptools>=41.0.1",]
 build-backend = "setuptools.build_meta"
 
-[tool.mypy]
-ignore_missing_imports = true
-
-[tool.ty.rules]
-call-non-callable = "ignore"
-invalid-argument-type = "ignore"
-invalid-assignment = "ignore"
-invalid-method-override = "ignore"
-missing-argument = "ignore"
-no-matching-overload = "ignore"
-not-iterable = "ignore"
-not-subscriptable = "ignore"
-unresolved-attribute = "ignore"
-unresolved-import = "ignore"
-unsupported-operator = "ignore"
-possibly-missing-attribute = "ignore"
-unused-ignore-comment = "ignore"
-
 [tool.xcookie]
 tags = [ "erotemic", "github", "purepy",]
 mod_name = "xdoctest"
@@ -107,6 +89,32 @@ skip = ['./docs/build', './*.egg-info', './build', './htmlcov']
 count = true
 quiet-level = 3
 ignore-words-list = ['wont', 'cant', 'ANS', 'doesnt', 'arent', 'ans', 'thats', 'datas', 'isnt', 'didnt', 'wasnt']
+
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[tool.ty.rules]
+unused-type-ignore-comment = "ignore"
+
+# call-non-callable = "ignore"
+# invalid-argument-type = "ignore"
+# invalid-assignment = "ignore"
+# invalid-method-override = "ignore"
+# missing-argument = "ignore"
+# no-matching-overload = "ignore"
+# not-iterable = "ignore"
+# not-subscriptable = "ignore"
+# unresolved-attribute = "ignore"
+# unresolved-import = "ignore"
+# unsupported-operator = "ignore"
+# possibly-missing-attribute = "ignore"
+
+[[tool.ty.overrides]]
+include = ["src/xdoctest/_tokenize.py"]
+[tool.ty.overrides.rules]
+unsupported-operator = "ignore"
+invalid-assignment = "ignore"
 
 [tool.ruff]
 line-length = 80

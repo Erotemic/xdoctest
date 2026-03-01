@@ -103,7 +103,7 @@ def schedule_deprecation(
 
         _parse_version = _pkg_version.parse
     except ImportError:
-        import distutils.version as _dist_version
+        import distutils.version as _dist_version  # type: ignore[unresolved-import]
 
         _parse_version = _dist_version.LooseVersion
 

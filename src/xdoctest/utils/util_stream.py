@@ -84,7 +84,7 @@ class TeeStringIO(io.StringIO):
             >>> assert TeeStringIO(redirect).encoding is redirect.encoding
         """
         if self.redirect is not None:
-            return self.redirect.encoding
+            return self.redirect.encoding  # type: ignore[unresolved-attribute]
         else:
             return super(TeeStringIO, self).encoding
 

@@ -124,12 +124,13 @@ class NotebookLoader:
         # load the notebook object
         nb_version = nbformat.current_nbformat
 
-        with io.open(fpath, 'r', encoding=self.options['encoding']) as f:
+        with io.open(fpath, 'r', encoding=self.options['encoding']) as f:  # type: ignore[invalid-argument-type]
             nb = nbformat.read(f, nb_version)
 
         # create the module and add it to sys.modules
         # if name in sys.modules:
         #    return sys.modules[name]
+        assert isinstance(fullname, str)
         mod = types.ModuleType(fullname)
         mod.__file__ = fpath
         mod.__loader__ = self
@@ -141,7 +142,7 @@ class NotebookLoader:
         #     return mod
 
         # print("Importing Jupyter notebook from %s" % fpath)
-        sys.modules[fullname] = mod
+        sys.modules[fullname] = mod  # type: ignore[invalid-assignment]
 
         # extra work to ensure that magics that would affect the user_ns
         # actually affect the notebook module's ns
@@ -161,7 +162,7 @@ class NotebookLoader:
                 else:
                     tree = ast.parse(code)
                 # run the code in the module
-                codeobj = compile(tree, filename=fpath, mode='exec')
+                codeobj = compile(tree, filename=fpath, mode='exec')  # type: ignore[invalid-argument-type]
                 exec(codeobj, mod.__dict__)
         finally:
             self.shell.user_ns = save_user_ns
@@ -170,7 +171,7 @@ class NotebookLoader:
         if self.options['run_nbinit'] and '__nbinit_done__' not in mod.__dict__:
             try:
                 mod.__nbinit__()
-                mod.__nbinit_done__ = True
+                setattr(mod, '__nbinit_done__', True)
             except (KeyError, AttributeError):
                 pass
 

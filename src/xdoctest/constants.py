@@ -54,6 +54,7 @@ class _NOT_EVAL_TYPE:
 
     __nonzero__ = __bool__
 
+NOT_EVALED: _NOT_EVAL_TYPE
 
 if 'NOT_EVALED' not in globals():
     NOT_EVALED = object.__new__(_NOT_EVAL_TYPE)

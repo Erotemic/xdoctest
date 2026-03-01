@@ -738,6 +738,7 @@ class TopLevelVisitor(ast.NodeVisitor):
             linex = node.lineno - 1
             pattern = r'\s*def\s*' + node.name
             # I think this is actually robust
+            assert self.sourcelines is not None
             while not re.match(pattern, self.sourcelines[linex]):
                 linex += 1
             lineno = linex + 1
@@ -747,7 +748,7 @@ class TopLevelVisitor(ast.NodeVisitor):
 
 
 def parse_static_calldefs(
-    source: typing.Any = None, fpath: typing.Any = None
+    source: str | None = None, fpath: str | os.PathLike |  None = None
 ) -> dict[str, CallDefNode]:
     """
     Statically finds top-level callable functions and methods in python source
@@ -768,18 +769,20 @@ def parse_static_calldefs(
         >>> assert 'parse_static_calldefs' in calldefs
     """
     if source is None:  # pragma: no branch
+        assert fpath is not None
         try:
             with open(fpath, 'rb') as file_:
                 source = file_.read().decode('utf-8')
         except Exception:
             try:
+                # fixme: This might never happen, could clean up this code if we can confirm
                 with open(fpath, 'rb') as file_:
-                    source = file_.read()
+                    source = file_.read()  # type: ignore[invalid-assignment]
             except Exception:
                 print('Unable to read fpath = {!r}'.format(fpath))
                 raise
     try:
-        self = TopLevelVisitor.parse(source)
+        self = TopLevelVisitor.parse(source)  # type: ignore[invalid-argument-type]
         return self.calldefs
     except Exception:  # nocover
         if fpath:
@@ -829,7 +832,7 @@ def _parse_static_node_value(node):
         # Sequence-like node (list/tuple) — accept any iterable of elts
         elts = [(_parse_static_node_value(e)) for e in getattr(node, 'elts')]
         # Preserve tuple vs list if possible by checking node class name
-        if getattr(node, '__class__', None).__name__ == 'Tuple':
+        if node.__class__.__name__  == 'Tuple':
             value = tuple(elts)
         else:
             value = list(elts)
