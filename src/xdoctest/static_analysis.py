@@ -777,12 +777,12 @@ def parse_static_calldefs(
             try:
                 # fixme: This might never happen, could clean up this code if we can confirm
                 with open(fpath, 'rb') as file_:
-                    source = file_.read()  # type: ignore[invalid-assignment]
+                    source = file_.read()  # type: ignore[invalid-assignment, assignment, arg-type]
             except Exception:
                 print('Unable to read fpath = {!r}'.format(fpath))
                 raise
     try:
-        self = TopLevelVisitor.parse(source)  # type: ignore[invalid-argument-type]
+        self = TopLevelVisitor.parse(source)  # type: ignore[invalid-argument-type, arg-type]
         return self.calldefs
     except Exception:  # nocover
         if fpath:
