@@ -450,7 +450,7 @@ def _setup_fixtures(xdoctest_item: XDoctestItem) -> fixtures.FixtureRequest:
     xdoctest_item.funcargs = {}
     fm = xdoctest_item.session._fixturemanager
     xdoctest_item._fixtureinfo = fm.getfixtureinfo(
-        node=xdoctest_item, func=func, cls=None, funcargs=False  # type: ignore[attr-defined]
+        node=xdoctest_item, func=func, cls=None, funcargs=False  # type: ignore[attr-defined, call-arg]
     )
     # Note: FixtureRequest may change in the future, we are using
     # private functionality. Hopefully it wont break, but we should
@@ -458,9 +458,9 @@ def _setup_fixtures(xdoctest_item: XDoctestItem) -> fixtures.FixtureRequest:
     # https://github.com/pytest-dev/pytest/discussions/8512#discussioncomment-563347
     if _PYTEST_IS_GE_620:
         # The "_ispytest" arg was added in 3.6.1
-        fixture_request = fixtures.FixtureRequest(xdoctest_item, _ispytest=True)  # type: ignore[abstract, call-arg]
+        fixture_request = fixtures.FixtureRequest(xdoctest_item, _ispytest=True)  # type: ignore[abstract, call-arg, arg-type]
     else:
-        fixture_request = fixtures.FixtureRequest(xdoctest_item)  # type: ignore[abstract, call-arg]
+        fixture_request = fixtures.FixtureRequest(xdoctest_item)  # type: ignore[abstract, call-arg, arg-type]
     fixture_request._fillfixtures()  # type: ignore[attr-defined]
     return fixture_request
 

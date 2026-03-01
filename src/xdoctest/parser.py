@@ -722,7 +722,7 @@ class DoctestParser:
         """
 
         # parse and differentiate between doctest source and want statements.
-        labeled_lines = []
+        labeled_lines: list[tuple[str, str]] = []
         state_indent = 0
 
         # line states
@@ -837,8 +837,8 @@ class DoctestParser:
                         print('line = {!r}'.format(line))
                         print('Failed to label source lines')
                         print('Labeled lines so far: <[[[[[[[[[[')
-                        for line in labeled_lines:
-                            print(line)
+                        for _line in labeled_lines:
+                            print(_line)
                         print(']]]]]]]]]]>')
                         print('</LABEL FAIL>')
                     raise
