@@ -141,7 +141,7 @@ def parse_version(fpath):
 
 
 project = 'xdoctest'
-copyright = '2025, Jon Crall'
+copyright = '2026, Jon Crall'
 author = 'Jon Crall'
 modname = 'xdoctest'
 
