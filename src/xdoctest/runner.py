@@ -64,7 +64,7 @@ import sys
 from xdoctest import global_state
 
 
-def log(msg: typing.Any, verbose: typing.Any, level: typing.Any = 1):
+def log(msg: str, verbose: typing.Union[bool, int], level: int = 1):
     """
     Simple conditional print logger
 
@@ -78,7 +78,9 @@ def log(msg: typing.Any, verbose: typing.Any, level: typing.Any = 1):
         print(msg)
 
 
-def doctest_callable(func: typing.Any):
+from collections.abc import Callable
+
+def doctest_callable(func: Callable[..., typing.Any]):
     """
     Executes doctests an in-memory function or class.
 
@@ -116,7 +118,7 @@ def gather_doctests(
 
 
 def doctest_module(
-    module_identifier: typing.Any = None,
+    module_identifier: typing.Union[str, types.ModuleType, None] = None,
     command: typing.Any = None,
     argv: typing.Any = None,
     exclude: typing.Any = [],
@@ -125,7 +127,7 @@ def doctest_module(
     config: typing.Any = None,
     durations: typing.Any = None,
     analysis: typing.Any = 'auto',
-) -> dict[str, object]:
+) -> dict[str, typing.Any]:
     """
     Executes requestsed google-style doctests in a package or module.
     Main entry point into the testing framework.
@@ -211,7 +213,7 @@ def doctest_module(
     _debug('style = {!r}'.format(style))
     _debug('------+ /DEBUG +------')
 
-    modinfo = {
+    modinfo: dict[str, typing.Any] = {
         'modpath': None,
         'modname': None,
         'module': None,
@@ -232,7 +234,7 @@ def doctest_module(
     else:
         if isinstance(module_identifier, types.ModuleType):
             modinfo['module'] = module_identifier
-            modinfo['modpath'] = modinfo['module'].__file__
+            modinfo['modpath'] = getattr(modinfo['module'], '__file__', None)
         else:
             # Allow the modname to contain the name of the test to be run
             if '::' in module_identifier:

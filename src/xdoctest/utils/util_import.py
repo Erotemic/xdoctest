@@ -1048,7 +1048,7 @@ def normalize_modpath(
 
 
 def modpath_to_modname(
-    modpath: str,
+    modpath: str | os.PathLike,
     hide_init: bool = True,
     hide_main: bool = False,
     check: bool = True,
@@ -1065,7 +1065,7 @@ def modpath_to_modname(
     encountered.
 
     Args:
-        modpath (str):
+        modpath (str | os.PathLike):
             Module filepath
 
         hide_init (bool):

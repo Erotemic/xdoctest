@@ -13,7 +13,7 @@ import os
 import types
 
 
-def parse_dynamic_calldefs(modpath_or_module: typing.Any) -> dict[str, "CallDefNode"]:
+def parse_dynamic_calldefs(modpath_or_module: typing.Union[str, os.PathLike, types.ModuleType]) -> dict[str, "CallDefNode"]:
     """
     Dynamic parsing of module doctestable items.
 
@@ -94,7 +94,7 @@ def parse_dynamic_calldefs(modpath_or_module: typing.Any) -> dict[str, "CallDefN
     return calldefs
 
 
-def get_stack_frame(n: typing.Any = 0, strict: typing.Any = True) -> object:
+def get_stack_frame(n: int = 0, strict: bool = True) -> types.FrameType:
     """
     Gets the current stack frame or any of its ancestors dynamically
 
@@ -112,6 +112,11 @@ def get_stack_frame(n: typing.Any = 0, strict: typing.Any = True) -> object:
         >>> assert frame_cur.f_globals['frame_cur'] is frame_cur
     """
     frame_cur = inspect.currentframe()
+    if frame_cur is None:
+        if strict:
+            raise AssertionError('Unable to obtain current frame')
+        else:
+            raise AssertionError('Unable to obtain current frame')
     # Use n+1 to always skip the frame of this function
     for ix in range(n + 1):
         frame_next = frame_cur.f_back
@@ -124,7 +129,7 @@ def get_stack_frame(n: typing.Any = 0, strict: typing.Any = True) -> object:
     return frame_cur
 
 
-def get_parent_frame(n: typing.Any = 0) -> object:
+def get_parent_frame(n: int = 0) -> types.FrameType:
     """
     Returns the frame of that called you.
     This is equivalent to `get_stack_frame(n=1)`
@@ -159,7 +164,7 @@ def get_parent_frame(n: typing.Any = 0) -> object:
 
 
 def iter_module_doctestables(
-    module: typing.Any,
+    module: types.ModuleType,
 ) -> typing.Iterator[tuple[str, typing.Any]]:
     r"""
     Yields doctestable objects that belong to a live python module
@@ -271,7 +276,9 @@ def is_defined_by_module(item: typing.Any, module: typing.Any):
             except Exception:
                 flag = False
         else:
-            item_modpath = os.path.realpath(os.path.dirname(item.__file__))
+            fname = getattr(item, '__file__', None)
+            assert fname is not None
+            item_modpath = os.path.realpath(os.path.dirname(fname))
             mod_fpath = module.__file__.replace('.pyc', '.py')
             if not mod_fpath.endswith('__init__.py'):
                 flag = False

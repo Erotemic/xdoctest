@@ -28,10 +28,10 @@ class DoctestParseError(Exception):
 
     def __init__(
         self,
-        msg: typing.Any,
-        string: typing.Any = None,
-        info: typing.Any = None,
-        orig_ex: typing.Any = None,
+        msg: str,
+        string: str | None = None,
+        info: typing.Any | None = None,
+        orig_ex: Exception | None = None,
     ):
         """
         Args:

@@ -195,7 +195,7 @@ def parse_freeform_docstr_examples(
     info = dict(callname=callname, modpath=modpath, lineno=lineno, fpath=fpath)
     all_parts = list(parser.DoctestParser().parse(docstr, info))
 
-    curr_parts = []
+    curr_parts: list[typing.Any] = []
     curr_offset = 0
     num = 0
     prev_part = None
@@ -406,6 +406,7 @@ def parse_docstr_examples(
                 callname, modpath
             )
         )
+    parser: typing.Any
     if style == 'freeform':
         parser = parse_freeform_docstr_examples
     elif style == 'google':
@@ -583,7 +584,7 @@ def package_calldefs(
 
 def parse_calldefs(
     module_identifier: typing.Any, analysis: typing.Any = 'auto'
-) -> typing.Optional[dict[str, static_analysis.CallDefNode]]:
+) -> dict[str, static_analysis.CallDefNode] | None:
     """
     Parse calldefs from a single module using either static or dynamic
     analysis.

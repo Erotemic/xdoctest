@@ -148,7 +148,7 @@ class DoctestPart:
         return not all(not line or line.startswith('#') for line in slines)
 
     @property
-    def directives(self) -> list[object]:
+    def directives(self) -> list:
         """
         Returns:
             List[directive.Directive]: The extracted or provided directives to

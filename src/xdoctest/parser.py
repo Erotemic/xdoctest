@@ -401,12 +401,12 @@ class DoctestParser:
         # Now that lines have types, groups them. This could have done this
         # above, but functionality is split for readability.
         prev_source = None
-        grouped_lines = []
+        grouped_lines: list[typing.Any] = []
 
         # WORKON_BACKWARDS_COMPAT_CONTINUE_EVAL
         # Break up explicit continuations for backwards compat
-        groups = []
-        current = []
+        groups: list[typing.Any] = []
+        current: list[typing.Any] = []
         state = None
         if global_state.DEBUG_PARSER > 4:
             print('labeled_lines = {!r}'.format(labeled_lines))
@@ -431,23 +431,23 @@ class DoctestParser:
             print('groups = {!r}'.format(groups))
 
         # need to merge consecutive dsrc groups without want statements
-        merged_groups = []
-        current = []
+        merged_groups: list[typing.Any] = []
+        merge_current: list[typing.Any] = []
         state = None
         for left, mid, right in _iterthree(groups, pad_value=(None, None)):
             # Merge consecutive groups unless it is followed by a want
             if left[0] == mid[0] and right[0] != 'want':
                 # extend the previous group
-                current.extend(mid[1])
+                merge_current.extend(mid[1])
             else:
                 # start a new group
                 if state is not None:
-                    merged_groups.append((left[0], current))
+                    merged_groups.append((left[0], merge_current))
                 state = mid[0]
-                current = []
-                current.extend(mid[1])
-        if current:
-            merged_groups.append((state, current))
+                merge_current = []
+                merge_current.extend(mid[1])
+        if merge_current:
+            merged_groups.append((state, merge_current))
 
         # More iterating and grouping. This section needs a careful rewrite
         prev_source = None

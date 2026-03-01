@@ -168,7 +168,7 @@ from collections import OrderedDict
 from collections import namedtuple
 
 
-def named(key: typing.Any, pattern: typing.Any) -> str:
+def named(key: str, pattern: str) -> str:
     """
     helper for regex
 
@@ -266,7 +266,7 @@ class RuntimeState(utils.NiceRepr):
         })>
     """
 
-    def __init__(self, default_state: typing.Any = None):
+    def __init__(self, default_state: dict[str, object] | None = None):
         """
         Args:
             default_state (None | dict): starting default state, if unspecified
@@ -275,7 +275,7 @@ class RuntimeState(utils.NiceRepr):
         self._global_state = copy.deepcopy(DEFAULT_RUNTIME_STATE)
         if default_state:
             self._global_state.update(default_state)
-        self._inline_state = {}
+        self._inline_state: dict[str, typing.Any] = {}
 
     def to_dict(self) -> dict[str, object]:
         """
@@ -295,7 +295,7 @@ class RuntimeState(utils.NiceRepr):
         parts = ['{}: {}'.format(*item) for item in self.to_dict().items()]
         return '{' + ', '.join(parts) + '}'
 
-    def __getitem__(self, key: typing.Any) -> object:
+    def __getitem__(self, key: str) -> object:
         """
         Args:
             key (str):
@@ -310,7 +310,7 @@ class RuntimeState(utils.NiceRepr):
         else:
             return self._global_state[key]
 
-    def __setitem__(self, key: typing.Any, value: typing.Any):
+    def __setitem__(self, key: str, value: object):
         """
         Args:
             key (str):
@@ -321,7 +321,7 @@ class RuntimeState(utils.NiceRepr):
         self._global_state[key] = value
 
     def set_report_style(
-        self, reportchoice: typing.Any, state: typing.Any = None
+        self, reportchoice: str, state: dict[str, object] | None = None
     ):
         """
         Args:
@@ -344,7 +344,7 @@ class RuntimeState(utils.NiceRepr):
                 state[k] = False
         state['REPORT_' + reportchoice.upper()] = True
 
-    def update(self, directives: typing.Any):
+    def update(self, directives: list[Directive]):
         """
         Update the runtime state given a set of directives
 
@@ -393,10 +393,10 @@ class Directive(utils.NiceRepr):
 
     def __init__(
         self,
-        name: typing.Any,
-        positive: typing.Any = True,
-        args: typing.Any = [],
-        inline: typing.Any = None,
+        name: str,
+        positive: bool = True,
+        args: list[str] | None = None,
+        inline: bool | None = None,
     ):
         """
         Args:
@@ -416,7 +416,7 @@ class Directive(utils.NiceRepr):
         self.positive = positive
 
     @classmethod
-    def extract(cls, text: typing.Any) -> typing.Iterator[typing.Any]:
+    def extract(cls, text: str) -> typing.Iterator[Directive]:
         """
         Parses directives from a line or repl line
 
@@ -669,7 +669,7 @@ class Directive(utils.NiceRepr):
         return effects
 
 
-def _split_opstr(optstr: typing.Any) -> list[str]:
+def _split_opstr(optstr: str) -> list[str]:
     """
     Simplified balanced paren logic to only split commas outside of parens
 
@@ -686,7 +686,7 @@ def _split_opstr(optstr: typing.Any) -> list[str]:
     """
     import re
 
-    stack = []
+    stack: list[typing.Any] = []
     split_pos = []
     for match in re.finditer(r',|\(|\)', optstr):
         token = match.group()
@@ -896,7 +896,7 @@ DIRECTIVE_RE = re.compile('|'.join(DIRECTIVE_PATTERNS), flags=re.IGNORECASE)
 
 def parse_directive_optstr(
     optpart: typing.Any, inline: typing.Any = None
-) -> typing.Optional[Directive]:
+) -> Directive | None:
     """
     Parses the information in the directive from the "optpart"
 

@@ -5,10 +5,12 @@ This module defines the main class that holds a DocTest example
 from __future__ import annotations
 
 import typing
+from typing import TYPE_CHECKING
 import __future__
 
 import ast
 import math
+import os
 import re
 import sys
 import traceback
@@ -26,6 +28,9 @@ from xdoctest import (
     parser,
     utils,
 )
+
+if TYPE_CHECKING:
+    from xdoctest.doctest_part import DoctestPart
 from xdoctest import static_analysis as static
 
 __devnotes__ = """
@@ -94,9 +99,9 @@ class DoctestConfig(dict):
 
     def _update_argparse_cli(
         self,
-        add_argument: typing.Any,
-        prefix: typing.Any = None,
-        defaults: typing.Any = {},
+        add_argument: typing.Callable[..., typing.Any],
+        prefix: str | list[str] | None = None,
+        defaults: dict[str, typing.Any] = {},
     ):
         """
         Updates a pytest or argparse CLI
@@ -225,6 +230,8 @@ class DoctestConfig(dict):
 
         if prefix is None:
             prefix = ['']
+        # mypy: after this point prefix should be a list of strings
+        assert isinstance(prefix, list)
 
         # TODO: make environment variables as args more general
         import os
@@ -247,7 +254,7 @@ class DoctestConfig(dict):
                 kw['dest'] = prefix[0] + '_' + kw['dest']
             add_argument(*alias, **kw)
 
-    def getvalue(self, key: typing.Any, given: typing.Any = None) -> object:
+    def getvalue(self, key: str, given: typing.Any = None) -> object:
         """
         Args:
             key (str): The configuration key
@@ -271,7 +278,7 @@ class DocTest:
         docsrc (str):
             doctest source code
 
-        modpath (str | PathLike):
+        modpath (str | PathLike | None):
             module the source was read from
 
         callname (str):
@@ -355,16 +362,36 @@ class DocTest:
     UNKNOWN_CALLNAME = '<callname?>'
     UNKNOWN_FPATH = '<fpath?>'
 
+    # Attribute annotations derived from docstring
+    module: types.ModuleType | None = None
+    modname: str | None = None
+    fpath: str | os.PathLike | None = None
+    docsrc: str | None = None
+    lineno: int | None = None
+    num: int | None = None
+    _parts: list['DoctestPart'] | None = None
+    failed_tb_lineno: int | None = None
+    exc_info: types.TracebackType | None = None
+    failed_part: 'DoctestPart' | None = None
+    warn_list: list[str] | None = None
+    _partfilename: str | None = None
+    logged_evals: OrderedDict[str, str] | None = None
+    logged_stdout: OrderedDict[str, str] | None = None
+    _unmatched_stdout: list[str] | None = None
+    _skipped_parts: list[str] | None = None
+    _runstate: typing.Any = None
+    global_namespace: dict[str, typing.Any] | None = None
+
     def __init__(
         self,
-        docsrc: typing.Any,
-        modpath: typing.Any = None,
-        callname: typing.Any = None,
-        num: typing.Any = 0,
-        lineno: typing.Any = 1,
-        fpath: typing.Any = None,
-        block_type: typing.Any = None,
-        mode: typing.Any = 'pytest',
+        docsrc: str,
+        modpath: typing.Union[str, os.PathLike, None] = None,
+        callname: str | None = None,
+        num: int = 0,
+        lineno: int = 1,
+        fpath: typing.Union[str, os.PathLike, None] = None,
+        block_type: str | None = None,
+        mode: str = 'pytest',
     ):
         """
         Args:
@@ -438,8 +465,8 @@ class DocTest:
         Returns:
             str
         """
-        parts = []
-        parts.append(self.modname)
+        parts: list[str] = []
+        parts.append(str(self.modname))
         parts.append('%s:%s' % (self.callname, self.num))
         if self.lineno is not None:
             parts.append('ln %s' % (self.lineno))
@@ -548,17 +575,19 @@ class DocTest:
             str
         """
         self._parse()
+        # _parse ensures _parts is a list
+        assert self._parts is not None
         for part in self._parts:
             if part.want:
                 yield part.want
 
     def format_parts(
         self,
-        linenos: typing.Any = True,
-        colored: typing.Any = None,
-        want: typing.Any = True,
-        offset_linenos: typing.Any = None,
-        prefix: typing.Any = True,
+        linenos: bool = True,
+        colored: bool | None = None,
+        want: bool = True,
+        offset_linenos: bool | None = None,
+        prefix: bool = True,
     ):
         """
         Used by :func:`format_src`
@@ -572,9 +601,20 @@ class DocTest:
             prefix (bool): if False, exclude the doctest ``>>> `` prefix
         """
         self._parse()
-        colored = self.config.getvalue('colored', colored)
+        # ensure parts exists for subsequent loops
+        assert self._parts is not None
+        val = self.config.getvalue('colored', colored)
+        if val is None:
+            colored = None
+        else:
+            # allow ints or bools from config and coerce to bool
+            colored = bool(val)
         partnos = self.config.getvalue('partnos')
-        offset_linenos = self.config.getvalue('offset_linenos', offset_linenos)
+        val2 = self.config.getvalue('offset_linenos', offset_linenos)
+        if val2 is None:
+            offset_linenos = None
+        else:
+            offset_linenos = bool(val2)
 
         n_digits = None
         startline = 1
@@ -601,11 +641,11 @@ class DocTest:
 
     def format_src(
         self,
-        linenos: typing.Any = True,
-        colored: typing.Any = None,
-        want: typing.Any = True,
-        offset_linenos: typing.Any = None,
-        prefix: typing.Any = True,
+        linenos: bool = True,
+        colored: bool | None = None,
+        want: bool = True,
+        offset_linenos: bool | None = None,
+        prefix: bool = True,
     ) -> str:
         """
         Adds prefix and line numbers to a doctest
@@ -700,9 +740,11 @@ class DocTest:
                 lineno=self.lineno,
                 fpath=self.fpath,
             )
-            self._parts = parser.DoctestParser().parse(self.docsrc, info)
-            self._parts = [p for p in self._parts if not isinstance(p, str)]
+            raw_parts = parser.DoctestParser().parse(self.docsrc, info)
+            # filter out strings that are inserted for text chunks
+            self._parts = [p for p in raw_parts if not isinstance(p, str)]
         # Ensure part numbers are given
+        assert self._parts is not None
         for partno, part in enumerate(self._parts):
             part.partno = partno
 
@@ -823,7 +865,7 @@ class DocTest:
 
     def run(
         self, verbose: typing.Any = None, on_error: typing.Any = None
-    ) -> dict[str, object]:
+    ) -> dict[str, typing.Any]:
         """
         Executes the doctest, checks the results, reports the outcome.
 
