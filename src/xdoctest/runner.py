@@ -65,7 +65,7 @@ from xdoctest import global_state
 from collections.abc import Callable
 
 
-def log(msg: str, verbose: typing.Union[bool, int], level: int = 1):
+def log(msg: str, verbose: bool | int, level: int = 1):
     """
     Simple conditional print logger
 
@@ -120,7 +120,7 @@ def gather_doctests(
 
 
 def doctest_module(
-    module_identifier: typing.Union[str, types.ModuleType, None] = None,
+    module_identifier: str | types.ModuleType | None = None,
     command: typing.Any = None,
     argv: typing.Any = None,
     exclude: typing.Any = [],

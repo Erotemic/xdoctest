@@ -922,7 +922,7 @@ def parse_directive_optstr(
             True if the directive only applies to a single line.
 
     Returns:
-        Optional[Directive]: the parsed directive (or None if parsing failed)
+        Directive | None: the parsed directive (or None if parsing failed)
 
     Example:
         >>> print(str(parse_directive_optstr('+IGNORE_WHITESPACE')))

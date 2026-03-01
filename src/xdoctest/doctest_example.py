@@ -251,7 +251,6 @@ class DoctestConfig(dict):
                 for p in prefix
             ]
             if prefix[0]:
-                # use underscore in dest so pytest option names are valid
                 kw['dest'] = f"{prefix[0]}_{kw['dest']}"
             add_argument(*alias, **kw)
 
@@ -386,11 +385,11 @@ class DocTest:
     def __init__(
         self,
         docsrc: str,
-        modpath: typing.Union[str, os.PathLike, None] = None,
+        modpath: str | os.PathLike | None = None,
         callname: str | None = None,
         num: int = 0,
         lineno: int = 1,
-        fpath: typing.Union[str, os.PathLike, None] = None,
+        fpath: str | os.PathLike | None = None,
         block_type: str | None = None,
         mode: str = 'pytest',
     ):
