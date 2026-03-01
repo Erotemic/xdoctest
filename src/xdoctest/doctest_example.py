@@ -1310,7 +1310,7 @@ class DocTest:
             else:
                 # Probably safer to always use the path
                 return (
-                    'python -m xdoctest {self.modpath} {self.unique_callname}'
+                    f'python -m xdoctest {self.modpath} {self.unique_callname}'
                 )
         else:
             raise KeyError(self.mode)
