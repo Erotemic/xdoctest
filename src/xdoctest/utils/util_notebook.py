@@ -179,7 +179,7 @@ class NotebookLoader:
 
 
 def import_notebook_from_path(
-    ipynb_fpath: typing.Any, only_defs: typing.Any = False
+    ipynb_fpath: str | os.PathLike, only_defs: bool = False
 ):
     """
     Import an IPython notebook as a module from a full path and try to maintain
@@ -225,9 +225,9 @@ def import_notebook_from_path(
 
 
 def execute_notebook(
-    ipynb_fpath: typing.Any,
+    ipynb_fpath: str | os.PathLike,
     timeout: typing.Any = None,
-    verbose: typing.Any = None,
+    verbose: bool | int | None = None,
 ) -> tuple[typing.Any, dict[str, object]]:
     """
     Execute an IPython notebook in a separate kernel

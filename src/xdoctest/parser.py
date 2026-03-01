@@ -44,8 +44,6 @@ References:
 
 from __future__ import annotations
 
-import typing
-
 import ast
 import sys
 import re
@@ -386,7 +384,7 @@ class DoctestParser:
 
     def _group_labeled_lines(
         self, labeled_lines
-    ) -> list[list[tuple[str, str]]]:
+    ) -> list[list | tuple | str]:
         """
         Group labeled lines into logical parts to be executed together
 
@@ -401,12 +399,13 @@ class DoctestParser:
         # Now that lines have types, groups them. This could have done this
         # above, but functionality is split for readability.
         prev_source = None
-        grouped_lines: list[typing.Any] = []
+        # TODO: make typing more sane here.
+        grouped_lines: list[list | tuple | str] = []
 
         # WORKON_BACKWARDS_COMPAT_CONTINUE_EVAL
         # Break up explicit continuations for backwards compat
-        groups: list[typing.Any] = []
-        current: list[typing.Any] = []
+        groups: list[tuple] = []
+        current: list[str] = []
         state = None
         if global_state.DEBUG_PARSER > 4:
             print('labeled_lines = {!r}'.format(labeled_lines))
@@ -431,8 +430,8 @@ class DoctestParser:
             print('groups = {!r}'.format(groups))
 
         # need to merge consecutive dsrc groups without want statements
-        merged_groups: list[typing.Any] = []
-        merge_current: list[typing.Any] = []
+        merged_groups: list[tuple] = []
+        merge_current: list[str] = []
         state = None
         for left, mid, right in _iterthree(groups, pad_value=(None, None)):
             # Merge consecutive groups unless it is followed by a want
@@ -453,7 +452,7 @@ class DoctestParser:
         prev_source = None
         grouped_lines = []
         for state, group in merged_groups:
-            block = [t[1] for t in group]
+            block: list[str] = [t[1] for t in group]
             if state == 'text':
                 if prev_source is not None:
                     # accept a source block without a want block
@@ -481,7 +480,7 @@ class DoctestParser:
         return grouped_lines
 
     def _locate_ps1_linenos(
-        self, source_lines: typing.Any
+        self, source_lines: list[str]
     ) -> tuple[list[int], str]:
         """
         Determines which lines in the source begin a "logical block" of code.
@@ -558,7 +557,7 @@ class DoctestParser:
             # note, this hack never leaves this function because we only are
             # returning line numbers.
             # FIXME: there is probably a better way to do this.
-            def balanced_intervals(lines: typing.Any):
+            def balanced_intervals(lines: list[str]):
                 """
                 Finds intervals of balanced nesting syntax
 
@@ -678,7 +677,7 @@ class DoctestParser:
 
         return ps1_linenos, mode_hint
 
-    def _label_docsrc_lines(self, string: typing.Any) -> list[tuple[str, str]]:
+    def _label_docsrc_lines(self, string: str) -> list[tuple[str, str]]:
         """
         Give each line in the docstring a label so we can distinguish
         what parts are text, what parts are code, and what parts are "want"

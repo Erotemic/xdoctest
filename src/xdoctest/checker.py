@@ -128,7 +128,7 @@ def check_got_vs_want(
     return flag
 
 
-def _strip_exception_details(msg: typing.Any) -> str:
+def _strip_exception_details(msg: str) -> str:
     """
     Args:
         msg (str):
@@ -262,7 +262,7 @@ def check_output(
 
 
 def _check_match(
-    got: typing.Any, want: typing.Any, runstate: typing.Any
+    got: str, want: str, runstate: directive.RuntimeState | dict
 ) -> bool:
     """
     Does the actual comparison between `got` and `want`
@@ -270,7 +270,7 @@ def _check_match(
     Args:
         got (str): normalized text produced by the test
         want (str): normalized target to match against
-        runstate (xdoctest.directive.RuntimeState | None): current state
+        runstate (xdoctest.directive.RuntimeState): current state
 
     Returns:
         bool: True if got matches want

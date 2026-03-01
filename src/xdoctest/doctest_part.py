@@ -7,8 +7,6 @@ part.
 
 from __future__ import annotations
 
-import typing
-
 import math
 from xdoctest import utils
 from xdoctest import checker
@@ -148,7 +146,7 @@ class DoctestPart:
         return not all(not line or line.startswith('#') for line in slines)
 
     @property
-    def directives(self) -> list:
+    def directives(self) -> list[directive.Directive]:
         """
         Returns:
             List[directive.Directive]: The extracted or provided directives to
@@ -208,7 +206,7 @@ class DoctestPart:
     def check(
         self,
         got_stdout: str,
-        got_eval: typing.Any = constants.NOT_EVALED,
+        got_eval: str | constants._NOT_EVAL_TYPE = constants.NOT_EVALED,
         runstate: directive.RuntimeState | None = None,
         unmatched: list | None = None,
     ) -> None:

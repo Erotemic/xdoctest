@@ -218,7 +218,7 @@ def _is_xdoctest(config, path, parent):
 
 
 class ReprFailXDoctest(code.TerminalRepr):
-    def __init__(self, reprlocation: typing.Any, lines: typing.Any):
+    def __init__(self, reprlocation: typing.Any, lines: list[str]):
         """
         Args:
             reprlocation (Any):
@@ -237,7 +237,7 @@ class ReprFailXDoctest(code.TerminalRepr):
 class XDoctestItem(pytest.Item):
     def __init__(
         self,
-        name: typing.Any,
+        name: str,
         parent: typing.Any,
         runner: typing.Any = None,
         dtest: typing.Any = None,
@@ -372,7 +372,7 @@ class _XDoctestBase(pytest.Module):
 class XDoctestTextfile(_XDoctestBase):
     obj = None
 
-    def collect(self) -> typing.Iterator[typing.Any]:
+    def collect(self) -> typing.Iterator[XDoctestItem]:
         """
         Yields:
             XDoctestItem
@@ -433,7 +433,7 @@ class XDoctestModule(_XDoctestBase):
                 yield XDoctestItem(name, self, dtest=dtest)
 
 
-def _setup_fixtures(xdoctest_item: typing.Any) -> fixtures.FixtureRequest:
+def _setup_fixtures(xdoctest_item: XDoctestItem) -> fixtures.FixtureRequest:
     """
     Used by XDoctestTextfile and XDoctestItem to setup fixture information.
 
@@ -450,7 +450,7 @@ def _setup_fixtures(xdoctest_item: typing.Any) -> fixtures.FixtureRequest:
     xdoctest_item.funcargs = {}
     fm = xdoctest_item.session._fixturemanager
     xdoctest_item._fixtureinfo = fm.getfixtureinfo(
-        node=xdoctest_item, func=func, cls=None, funcargs=False
+        node=xdoctest_item, func=func, cls=None, funcargs=False  # type: ignore[attr-defined]
     )
     # Note: FixtureRequest may change in the future, we are using
     # private functionality. Hopefully it wont break, but we should

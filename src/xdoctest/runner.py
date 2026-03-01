@@ -122,14 +122,14 @@ def gather_doctests(
 
 def doctest_module(
     module_identifier: str | types.ModuleType | None = None,
-    command: typing.Any = None,
-    argv: typing.Any = None,
-    exclude: typing.Any = [],
-    style: typing.Any = 'auto',
-    verbose: typing.Any = None,
-    config: typing.Any = None,
-    durations: typing.Any = None,
-    analysis: typing.Any = 'auto',
+    command: str | None = None,
+    argv: list[str] | None = None,
+    exclude: list[str] = [],
+    style: str = 'auto',
+    verbose: int | None = None,
+    config: dict[str, typing.Any] | None = None,
+    durations: int | None = None,
+    analysis: str = 'auto',
 ) -> dict[str, typing.Any]:
     """
     Executes requestsed google-style doctests in a package or module.
@@ -532,7 +532,7 @@ def _convert_to_test_module(enabled_examples):
     return module_text
 
 
-def undefined_names(sourcecode: typing.Any) -> set[str]:
+def undefined_names(sourcecode: str) -> set[str]:
     """
     Parses source code for undefined names
 
