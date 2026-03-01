@@ -8,14 +8,15 @@ This __init__ file is generated using mkinit:
     mkinit xdoctest.utils
 """
 
-from xdoctest.utils import util_asyncio
-from xdoctest.utils import util_import
-from xdoctest.utils import util_misc
-from xdoctest.utils import util_mixins
-from xdoctest.utils import util_path
-from xdoctest.utils import util_str
-from xdoctest.utils import util_stream
-
+from xdoctest.utils import (
+    util_asyncio,
+    util_import,
+    util_misc,
+    util_mixins,
+    util_path,
+    util_str,
+    util_stream,
+)
 from xdoctest.utils.util_import import (
     PythonPathContext,
     import_module_from_name,
@@ -80,4 +81,5 @@ __all__ = [
     'util_path',
     'util_str',
     'util_stream',
+    'util_asyncio',
 ]

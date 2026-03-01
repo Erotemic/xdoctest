@@ -4,8 +4,9 @@ Utilities that are mainly used in self-testing
 
 from __future__ import annotations
 
-from os.path import join
 import random
+from os.path import join
+
 from .util_path import TempDir
 
 
@@ -62,8 +63,8 @@ class TempModule:
         """
         For debugging on windows
         """
-        import pathlib
         import os
+        import pathlib
 
         print(f'--- <TempModule {self!r}> ---')
         print(f'self.modname={self.modname!r}')
@@ -95,8 +96,7 @@ def _run_case(source: str, style: str = 'auto') -> str | None:
 
     TODO: run case is over-duplicated and should be separated into a test utils directory
     """
-    from xdoctest import utils
-    from xdoctest import runner
+    from xdoctest import runner, utils
 
     COLOR = 'yellow'
 

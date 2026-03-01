@@ -3,7 +3,7 @@ requires = [ "setuptools>=41.0.1",]
 build-backend = "setuptools.build_meta"
 
 [tool.xcookie]
-tags = [ "erotemic", "github", "purepy",]
+tags = [ "erotemic", "github", "purepy", "mypy"]
 mod_name = "xdoctest"
 repo_name = "xdoctest"
 rel_mod_parent_dpath = "./src"
@@ -96,6 +96,7 @@ ignore_missing_imports = true
 
 [tool.ty.rules]
 unused-type-ignore-comment = "ignore"
+unresolved-import = "ignore"
 
 [[tool.ty.overrides]]
 include = ["src/xdoctest/_tokenize.py"]

@@ -23,12 +23,12 @@ References:
 
 from __future__ import annotations
 
-import typing
-
+import collections
 import re
 import textwrap
-import collections
+import typing
 from typing import NamedTuple
+
 from xdoctest import exceptions
 from xdoctest.utils.util_str import ensure_unicode
 

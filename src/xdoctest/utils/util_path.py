@@ -5,10 +5,8 @@ Utilities related to filesystem paths
 from __future__ import annotations
 
 import os
-from os.path import exists
-from os.path import join
-from os.path import normpath
 import shutil
+from os.path import exists, join, normpath
 
 
 class TempDir:
@@ -37,8 +35,8 @@ class TempDir:
         self.cleanup()
 
     def ensure(self) -> str:
-        import tempfile
         import sys
+        import tempfile
 
         if not self.dpath:
             dpath = tempfile.mkdtemp()

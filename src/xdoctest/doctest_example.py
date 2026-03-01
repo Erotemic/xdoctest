@@ -3,9 +3,6 @@ This module defines the main class that holds a DocTest example
 """
 
 from __future__ import annotations
-
-import typing
-from typing import TYPE_CHECKING
 import __future__
 
 import ast
@@ -15,9 +12,11 @@ import re
 import sys
 import traceback
 import types
+import typing
 import warnings
 from collections import OrderedDict
 from inspect import CO_COROUTINE
+from typing import TYPE_CHECKING
 
 from xdoctest import (
     checker,
@@ -251,7 +250,7 @@ class DoctestConfig(dict):
                 for p in prefix
             ]
             if prefix[0]:
-                kw['dest'] = f"{prefix[0]}_{kw['dest']}"
+                kw['dest'] = f'{prefix[0]}_{kw["dest"]}'
             add_argument(*alias, **kw)
 
     def getvalue(self, key: str, given: typing.Any = None) -> object:
@@ -365,20 +364,24 @@ class DocTest:
     # Attribute annotations derived from docstring
     module: types.ModuleType | None
     modname: str | None
-    fpath: str | os.PathLike | None 
+    fpath: str | os.PathLike | None
     docsrc: str | None
-    lineno: int | None 
-    num: int | None 
+    lineno: int | None
+    num: int | None
     _parts: list['DoctestPart'] | None
     failed_tb_lineno: int | None
-    exc_info: tuple[type[BaseException], BaseException, types.TracebackType] | tuple[None, None, None] | None
-    failed_part: 'DoctestPart' | str | None 
+    exc_info: (
+        tuple[type[BaseException], BaseException, types.TracebackType]
+        | tuple[None, None, None]
+        | None
+    )
+    failed_part: 'DoctestPart' | str | None
     warn_list: list | None
-    _partfilename: str | None 
-    logged_evals: OrderedDict[int, typing.Any] | None 
-    logged_stdout: OrderedDict[int, str | None] | None 
-    _unmatched_stdout: list[str] | None 
-    _skipped_parts: list | None 
+    _partfilename: str | None
+    logged_evals: OrderedDict[int, typing.Any] | None
+    logged_stdout: OrderedDict[int, str | None] | None
+    _unmatched_stdout: list[str] | None
+    _skipped_parts: list | None
     _runstate: typing.Any
     global_namespace: dict[str, typing.Any]
 
@@ -553,7 +556,7 @@ class DocTest:
         Returns:
             str
         """
-        return  f'{self.modpath}::{self.callname}:{self.num}'
+        return f'{self.modpath}::{self.callname}:{self.num}'
 
     @property
     def valid_testnames(self) -> set[str]:
@@ -990,9 +993,7 @@ class DocTest:
                         self._import_module()
                     except Exception:
                         self.failed_part = '<IMPORT>'
-                        self._partfilename = (
-                            f'<doctest:{self.node}:pre_import>'
-                        )
+                        self._partfilename = f'<doctest:{self.node}:pre_import>'
                         self.exc_info = sys.exc_info()
                         if on_error == 'raise':
                             raise
@@ -1298,9 +1299,7 @@ class DocTest:
         if self.mode == 'pytest':
             return 'pytest ' + self.node
         elif self.mode == 'native':
-            return (
-                f'python -m xdoctest {self.modpath} {self.unique_callname}'
-            )
+            return f'python -m xdoctest {self.modpath} {self.unique_callname}'
         else:
             raise KeyError(self.mode)
 
@@ -1532,7 +1531,7 @@ class DocTest:
         temp = [before_part_lines, fail_part_lines, after_parts_lines]
         tindex = 0
         indent_text = ' ' * (5 + n_digits)
-        
+
         assert self._parts is not None
         assert self._skipped_parts is not None
         assert self.logged_stdout is not None

@@ -321,17 +321,16 @@ __submodules__ = [
 ]
 
 
-from xdoctest import utils
-from xdoctest import docstr
-from xdoctest.runner import (
-    doctest_module,
-    doctest_callable,
-)
+from xdoctest import docstr, utils
 from xdoctest.exceptions import (
     DoctestParseError,
+    ExistingEventLoopError,
     ExitTestException,
     MalformedDocstr,
-    ExistingEventLoopError,
+)
+from xdoctest.runner import (
+    doctest_callable,
+    doctest_module,
 )
 
 __all__ = [

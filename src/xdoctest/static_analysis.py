@@ -4,14 +4,13 @@ The core logic that allows for xdoctest to parse source statically
 
 from __future__ import annotations
 
-import typing
-
 import ast
 import importlib
 import os
 import platform
 import re
 import sys
+import typing
 from collections import OrderedDict, deque
 from os.path import exists, isfile, join, splitext
 
@@ -220,7 +219,9 @@ class TopLevelVisitor(ast.NodeVisitor):
         self.process_finished(node)
         super(TopLevelVisitor, self).visit(node)
 
-    def _visit_generic_FunctionDef(self, node: ast.FunctionDef | ast.AsyncFunctionDef):
+    def _visit_generic_FunctionDef(
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef
+    ):
         if self._current_classname is None:
             callname = node.name
         else:
@@ -748,7 +749,7 @@ class TopLevelVisitor(ast.NodeVisitor):
 
 
 def parse_static_calldefs(
-    source: str | None = None, fpath: str | os.PathLike |  None = None
+    source: str | None = None, fpath: str | os.PathLike | None = None
 ) -> dict[str, CallDefNode]:
     """
     Statically finds top-level callable functions and methods in python source
@@ -832,7 +833,7 @@ def _parse_static_node_value(node):
         # Sequence-like node (list/tuple) — accept any iterable of elts
         elts = [(_parse_static_node_value(e)) for e in getattr(node, 'elts')]
         # Preserve tuple vs list if possible by checking node class name
-        if node.__class__.__name__  == 'Tuple':
+        if node.__class__.__name__ == 'Tuple':
             value = tuple(elts)
         else:
             value = list(elts)
@@ -845,7 +846,11 @@ def _parse_static_node_value(node):
     # Python 3.14; access it via getattr so linters won't emit a deprecation
     # warning while preserving compatibility with older Pythons.
     NameConstant = getattr(ast, 'NameConstant', None)
-    if IS_PY_LT_314 and NameConstant is not None and isinstance(node, NameConstant):
+    if (
+        IS_PY_LT_314
+        and NameConstant is not None
+        and isinstance(node, NameConstant)
+    ):
         value = node.value
     elif isinstance(node, ast.Constant):
         value = node.value
@@ -1252,6 +1257,7 @@ def _strip_hashtag_comments_and_newlines(source: str | list[str]):
     tokens = strip_consecutive_newlines(tokens)
     new_source = tokenize.untokenize(tokens)
     return new_source
+
 
 if __name__ == '__main__':
     import xdoctest as xdoc

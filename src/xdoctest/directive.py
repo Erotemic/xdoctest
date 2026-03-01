@@ -154,18 +154,17 @@ Example:
 
 from __future__ import annotations
 
-import typing
-
-import sys
+import copy
+import operator
 import os
 import re
-import copy
+import sys
+import typing
 import warnings
-import operator
+from collections import OrderedDict, namedtuple
+
 from xdoctest import static_analysis as static
 from xdoctest import utils
-from collections import OrderedDict
-from collections import namedtuple
 
 
 def named(key: str, pattern: str) -> str:
@@ -564,7 +563,9 @@ class Directive(utils.NiceRepr):
         return effects[0]
 
     def effects(
-        self, argv: list[str] | None = None, environ: dict[str, str] | None = None
+        self,
+        argv: list[str] | None = None,
+        environ: dict[str, str] | None = None,
     ) -> list[Effect]:
         """
         Returns how this directive modifies a RuntimeState object
@@ -713,7 +714,9 @@ def _split_opstr(optstr: str) -> list[str]:
 
 
 def _is_requires_satisfied(
-    arg: str, argv: list[str] | None = None, environ: dict[str, str] | None = None
+    arg: str,
+    argv: list[str] | None = None,
+    environ: dict[str, str] | None = None,
 ) -> bool:
     """
     Determines if the argument to a REQUIRES directive is satisfied
@@ -805,7 +808,7 @@ def _is_requires_satisfied(
         if len(expr_parts) == 1:
             # Test if the environment variable is truthy
             env_key = expr_parts[0]
-            
+
             flag = bool(environ_.get(env_key, None))
         elif len(expr_parts) == 3:
             # Test if the environment variable is equal to an expression

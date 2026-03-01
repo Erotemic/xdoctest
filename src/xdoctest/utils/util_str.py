@@ -5,13 +5,12 @@ Utilities related to string manipulations
 from __future__ import annotations
 
 import math
-import textwrap
-import warnings
-import re
 import os
+import re
 import sys
+import textwrap
 import typing
-
+import warnings
 
 # Global state that determines if ANSI-coloring text is allowed
 # (which is mainly to address non-ANSI compliant windows consoles)
@@ -232,9 +231,9 @@ def highlight_code(
             #     return text
 
         import pygments
-        import pygments.lexers
         import pygments.formatters
         import pygments.formatters.terminal
+        import pygments.lexers
 
         formatter = pygments.formatters.terminal.TerminalFormatter(bg='dark')
         lexer = pygments.lexers.get_lexer_by_name(
@@ -250,17 +249,18 @@ def highlight_code(
         new_text = text
     return new_text
 
+
 @typing.overload
 def add_line_numbers(
     source: list[str], start: int = 1, n_digits: int | None = None
-) -> list[str]:
-    ...
+) -> list[str]: ...
+
 
 @typing.overload
 def add_line_numbers(
     source: str, start: int = 1, n_digits: int | None = None
-) -> str:
-    ...
+) -> str: ...
+
 
 def add_line_numbers(
     source: str | list[str], start: int = 1, n_digits: int | None = None

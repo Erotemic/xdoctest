@@ -18,7 +18,6 @@ https://github.com/pytest-dev/pytest
 from __future__ import annotations
 
 import typing
-
 from typing import cast
 
 import pytest
@@ -28,7 +27,9 @@ from _pytest._code import code
 try:
     from packaging import version as _packaging_version
 except ImportError:  # nocover
-    from distutils import version as _distutils_version  # type: ignore[unresolved-import]
+    from distutils import (
+        version as _distutils_version,  # type: ignore[unresolved-import]
+    )
 
     def _parse_version(version_text):
         return _distutils_version.LooseVersion(version_text)
@@ -450,7 +451,10 @@ def _setup_fixtures(xdoctest_item: XDoctestItem) -> fixtures.FixtureRequest:
     xdoctest_item.funcargs = {}
     fm = xdoctest_item.session._fixturemanager
     xdoctest_item._fixtureinfo = fm.getfixtureinfo(
-        node=xdoctest_item, func=func, cls=None, funcargs=False  # type: ignore[attr-defined, call-arg]
+        node=xdoctest_item,
+        func=func,
+        cls=None,
+        funcargs=False,  # type: ignore[attr-defined, call-arg]
     )
     # Note: FixtureRequest may change in the future, we are using
     # private functionality. Hopefully it wont break, but we should

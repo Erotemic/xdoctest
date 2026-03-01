@@ -33,13 +33,12 @@ NotebookLoader.default_options['encoding']. The default is 'utf-8'.
 
 from __future__ import annotations
 
-import typing
-
+import ast
 import io
 import os
 import sys
 import types
-import ast
+import typing
 from os.path import basename, dirname
 
 
@@ -115,8 +114,8 @@ class NotebookLoader:
 
     def load_module(self, fullname=None, fpath=None):
         """import a notebook as a module"""
-        from IPython import get_ipython
         import nbformat
+        from IPython import get_ipython
 
         if fpath is None:
             fpath = _find_notebook(fullname, self.path)
@@ -262,8 +261,9 @@ def execute_notebook(
         >>>                       'described [here](https://github.com/nteract/papermill/issues/426)?')
 
     """
-    import nbformat
     import logging
+
+    import nbformat
     from nbconvert.preprocessors import ExecutePreprocessor
 
     dpath = dirname(ipynb_fpath)
@@ -297,9 +297,10 @@ def _make_test_notebook_fpath(fpath: typing.Any, cell_sources: typing.Any):
         https://stackoverflow.com/questions/38193878/create-notebook-from-code
         https://gist.github.com/fperez/9716279
     """
-    import nbformat as nbf
     import json
+
     import jupyter_client.kernelspec
+    import nbformat as nbf
 
     # TODO: is there an API to generate kernelspec json correctly?
     kernel_name = jupyter_client.kernelspec.NATIVE_KERNEL_NAME
