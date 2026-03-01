@@ -36,6 +36,9 @@ jobs:
         flake8 ./src/xdoctest --count --select=E9,F63,F7,F82 --show-source --statistics
     - name: Typecheck
       run: |-
+        python -m pip install mypy
+        pip install -r requirements/runtime.txt
+        mypy ./src/xdoctest
         python -m pip install ty
         pip install -r requirements/runtime.txt
         ty check ./src/xdoctest
