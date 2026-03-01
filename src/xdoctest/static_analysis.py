@@ -924,7 +924,7 @@ def package_modpaths(
     recursive: bool = True,
     with_libs: bool = False,
     check: bool = True,
-) -> typing.Iterator[str]:
+) -> typing.Iterable[str]:
     r"""
     Finds sub-packages and sub-modules belonging to a package.
 
