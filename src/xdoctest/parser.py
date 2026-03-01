@@ -958,11 +958,12 @@ def _complete_source(line, state_indent, line_iter):
                 ub.codeblock(
                     r"""
                 from xdoctest import static_analysis as static
+                import ast
                 static.is_balanced_statement(source_parts, only_tokens=False)
                 static.is_balanced_statement(source_parts, only_tokens=True)
                 text = '\n'.join(source_parts)
                 print(text)
-                static.six_axt_parse(text)
+                ast.parse(text, filename='<source_block>')
                 """
                 )
             )

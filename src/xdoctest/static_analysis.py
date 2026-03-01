@@ -1110,7 +1110,7 @@ def is_balanced_statement(
                 text = '\n'.join(lines)
                 # from textwrap import dedent
                 # text = dedent(text)
-                six_axt_parse(text)
+                ast.parse(text, filename='<source_block>')
             except SyntaxError:
                 if reraise:
                     raise
@@ -1252,27 +1252,6 @@ def _strip_hashtag_comments_and_newlines(source: str | list[str]):
     tokens = strip_consecutive_newlines(tokens)
     new_source = tokenize.untokenize(tokens)
     return new_source
-
-
-def six_axt_parse(
-    source_block: str,
-    filename: str = '<source_block>',
-    compatible: bool = True,
-) -> ast.AST:
-    """
-    Python 2/3 compatible replacement for ast.parse(source_block, filename='<source_block>')
-
-    Args:
-        source (str):
-        filename (str):
-        compatible (bool):
-
-    Returns:
-        ast.Module | types.CodeType
-    """
-    pt = ast.parse(source_block, filename=filename)
-    return pt
-
 
 if __name__ == '__main__':
     import xdoctest as xdoc
