@@ -1128,6 +1128,7 @@ class DocTest:
                             if part.want:
                                 got_stdout = cap.text
                                 if not runstate['IGNORE_WANT']:
+                                    assert got_stdout is not None
                                     part.check(
                                         got_stdout,
                                         got_eval,
