@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Version 1.3.2 - Unreleased
 
+### Fixed
+* Correctly find line numbers for decorated `async def` functions (without crashing).
+
 
 ## Version 1.3.1 - Released 2026-03-25
 
