@@ -1,8 +1,4 @@
-from xdoctest import doctest_example
-from xdoctest import exceptions
-from xdoctest import utils
-from xdoctest import constants
-from xdoctest import checker
+from xdoctest import checker, constants, doctest_example, exceptions, utils
 
 
 def test_exit_test_exception():
@@ -405,6 +401,7 @@ def test_await_in_running_loop():
         """
     )
     import asyncio
+
     import pytest
 
     self = doctest_example.DocTest(docsrc=string)
@@ -446,8 +443,7 @@ def test_tabs_in_doctest():
     """
     pytest tests/test_doctest_example.py::test_tabs_in_doctest
     """
-    from xdoctest import utils
-    from xdoctest import doctest_example
+    from xdoctest import doctest_example, utils
 
     tab = '\t'
     assert ord(tab) == 9

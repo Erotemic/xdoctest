@@ -6,10 +6,12 @@ Adapted from the original `pytest/tests/test_doctest.py` module at:
 
 import shlex
 import sys
+
 import _pytest._code
-from xdoctest.plugin import XDoctestItem, XDoctestModule, XDoctestTextfile
-from xdoctest import utils
 import pytest
+
+from xdoctest import utils
+from xdoctest.plugin import XDoctestItem, XDoctestModule, XDoctestTextfile
 
 try:
     from packaging.version import parse as LooseVersion

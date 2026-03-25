@@ -1,7 +1,9 @@
-import sys
 import os
 import subprocess
+import sys
+
 import pytest
+
 from xdoctest import utils
 
 

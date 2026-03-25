@@ -9,6 +9,7 @@ pip install sphinx_rtd_theme
 
 def initialize_docs():
     from os.path import join
+
     import setup
 
     setupkw = setup.setupkw

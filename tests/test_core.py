@@ -1,7 +1,7 @@
 from os.path import join
+
 import xdoctest
-from xdoctest import core
-from xdoctest import utils
+from xdoctest import core, utils
 
 
 def _test_status(docstr):
@@ -11,8 +11,9 @@ def _test_status(docstr):
     except Exception:
         raise
         # pytest seems to load an older version of xdoctest for some reason
-        import xdoctest
         import inspect
+
+        import xdoctest
 
         print('xdoctest.__version__ = {!r}'.format(xdoctest.__version__))
         print('utils = {!r}'.format(utils))

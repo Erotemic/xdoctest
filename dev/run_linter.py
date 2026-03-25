@@ -34,8 +34,9 @@ def main():
     ]
     flake8_args = ' '.join(flake8_args_list)
 
-    import ubelt as ub
     import sys
+
+    import ubelt as ub
 
     loc = ub.expandpath('~/code/xdoctest/xdoctest')
     command = 'flake8 ' + flake8_args + ' ' + loc

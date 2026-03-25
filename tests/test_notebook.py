@@ -1,6 +1,7 @@
-import pytest
 import sys
-from os.path import join, exists, dirname
+from os.path import dirname, exists, join
+
+import pytest
 
 try:
     from packaging.version import parse as LooseVersion

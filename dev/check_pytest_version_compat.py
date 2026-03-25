@@ -1,6 +1,7 @@
 import os
-import ubelt as ub
 from distutils.version import LooseVersion
+
+import ubelt as ub
 
 os.chdir(ub.expandpath('$HOME/code/pytest'))
 

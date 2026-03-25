@@ -1,12 +1,10 @@
-from os.path import join
 import warnings
-import pytest
-from xdoctest import runner
-from xdoctest import core
-from xdoctest import exceptions
-from xdoctest import utils
-from xdoctest.utils.util_misc import _run_case
+from os.path import join
 
+import pytest
+
+from xdoctest import core, exceptions, runner, utils
+from xdoctest.utils.util_misc import _run_case
 
 # def _check_syntaxerror_behavior():
 #     import ubelt as ub

@@ -4,7 +4,6 @@ https://tohtml.com/
 
 import operator
 
-
 # def paragraph(text):
 #     r"""
 #     Remove leading, trailing, and double whitespace from multi-line strings.

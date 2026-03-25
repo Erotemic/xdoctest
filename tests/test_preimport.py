@@ -1,4 +1,5 @@
 from os.path import join
+
 from xdoctest import utils
 
 
@@ -7,8 +8,9 @@ def test_preimport_skiped_on_disabled_module():
     If our module has no enabled tests, pre-import should never run.
     """
 
-    from xdoctest import runner
     import os
+
+    from xdoctest import runner
 
     source = utils.codeblock(
         '''

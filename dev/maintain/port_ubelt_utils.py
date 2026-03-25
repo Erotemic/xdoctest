@@ -9,8 +9,8 @@ Similar Scripts:
 
 
 def _autogen_xdoctest_utils():
-    import ubelt as ub
     import liberator
+    import ubelt as ub
 
     lib = liberator.Liberator()
 
@@ -36,6 +36,7 @@ def _autogen_xdoctest_utils():
 
     # target_fpath = ub.Path('~/code/xdoctest/src/xdoctest/utils/util_import.py').expand()
     import parso
+
     import xdoctest
 
     target_fpath = ub.Path(xdoctest.utils.util_import.__file__)
