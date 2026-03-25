@@ -1,5 +1,5 @@
-from xdoctest import checker
-from xdoctest import directive
+from xdoctest import checker, directive
+
 # from xdoctest import utils
 
 

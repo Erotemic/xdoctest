@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 if __name__ == '__main__':
-    import pytest
     import sys
+
+    import pytest
 
     package_name = 'xdoctest'
     mod_dpath = 'src/xdoctest'

@@ -1,6 +1,7 @@
-from xdoctest.utils import util_misc
 import sys
+
 from xdoctest import utils
+from xdoctest.utils import util_misc
 
 
 def cmd(command):

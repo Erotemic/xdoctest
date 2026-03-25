@@ -162,6 +162,7 @@ import sys
 import typing
 import warnings
 from collections import OrderedDict, namedtuple
+from typing import cast
 
 from xdoctest import static_analysis as static
 from xdoctest import utils
@@ -183,7 +184,12 @@ def named(key: str, pattern: str) -> str:
 
 # TODO: modify global directive defaults via a config file
 
-DEFAULT_RUNTIME_STATE = {
+# Type alias for the runtime state dictionary
+if typing.TYPE_CHECKING:
+    # TODO: we can use a more structured dictionary for better type checks.
+    RuntimeStateDict = dict[str, bool | set[str]]
+
+DEFAULT_RUNTIME_STATE: RuntimeStateDict = {
     'DONT_ACCEPT_BLANKLINE': False,
     'ELLIPSIS': True,
     'IGNORE_WHITESPACE': False,
@@ -265,18 +271,18 @@ class RuntimeState(utils.NiceRepr):
         })>
     """
 
-    def __init__(self, default_state: dict[str, object] | None = None):
+    def __init__(self, default_state: RuntimeStateDict | None = None):
         """
         Args:
             default_state (None | dict): starting default state, if unspecified
                 falls back to the global DEFAULT_RUNTIME_STATE
         """
-        self._global_state = copy.deepcopy(DEFAULT_RUNTIME_STATE)
+        self._global_state: RuntimeStateDict = copy.deepcopy(DEFAULT_RUNTIME_STATE)
         if default_state:
             self._global_state.update(default_state)
         self._inline_state: dict[str, typing.Any] = {}
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> OrderedDict[str, bool | set[str]]:
         """
         Returns:
             OrderedDict
@@ -309,23 +315,23 @@ class RuntimeState(utils.NiceRepr):
         else:
             return self._global_state[key]
 
-    def __setitem__(self, key: str, value: object):
+    def __setitem__(self, key: str, value: bool | set[str]):
         """
         Args:
             key (str):
-            value (Any):
+            value (bool | set[str]):
         """
         if key not in self._global_state:
             raise KeyError('Unknown key: {}'.format(key))
         self._global_state[key] = value
 
     def set_report_style(
-        self, reportchoice: str, state: dict[str, object] | None = None
+        self, reportchoice: str, state: RuntimeStateDict | None = None
     ):
         """
         Args:
             reportchoice (str): name of report style
-            state (None | Dict): if unspecified defaults to the global state
+            state (None | RuntimeStateDict): if unspecified defaults to the global state
 
         Example:
             >>> from xdoctest.directive import *
@@ -375,10 +381,10 @@ class RuntimeState(utils.NiceRepr):
                 elif action == 'assign':
                     state[key] = value
                 elif action == 'set.add':
-                    state[key].add(value)  # type: ignore[unresolved-attribute]
+                    cast(set, state[key]).add(value)
                 elif action == 'set.remove':
                     try:
-                        state[key].remove(value)  # type: ignore[unresolved-attribute]
+                        cast(set, state[key]).remove(value)
                     except KeyError:
                         pass
                 else:
@@ -573,7 +579,7 @@ class Directive(utils.NiceRepr):
         This is called by :func:`RuntimeState.update` to update itself
 
         Args:
-            argv (List[str] | None):
+            argv (list[str] | None):
                 Command line the directive is interpreted in the context of.
                 If unspecified, uses ``sys.argv``.
 
@@ -582,7 +588,7 @@ class Directive(utils.NiceRepr):
                 context of. If unspecified, uses ``os.environ``.
 
         Returns:
-            List[Effect]: list of named tuples containing:
+            list[Effect]: list of named tuples containing:
                 action (str): code indicating how to update
                 key (str): name of runtime state item to modify
                 value (object): value to modify with
@@ -680,7 +686,7 @@ def _split_opstr(optstr: str) -> list[str]:
         opstr (str): the command, which may contain more than one directive
 
     Returns:
-        List[str]: individual directive optstrings
+        list[str]: individual directive optstrings
 
     Example:
         >>> optstr = '+FOO, REQUIRES(foo,bar), +ELLIPSIS'

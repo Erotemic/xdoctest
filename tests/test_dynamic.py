@@ -6,6 +6,7 @@ Example:
 """
 
 import sys
+
 from xdoctest import dynamic_analysis as dynamic
 from xdoctest import static_analysis as static
 

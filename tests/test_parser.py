@@ -1,7 +1,6 @@
 import pytest
-from xdoctest import parser
-from xdoctest import utils
-from xdoctest import exceptions
+
+from xdoctest import exceptions, parser, utils
 
 
 def test_final_eval_exec():

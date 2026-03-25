@@ -1,7 +1,6 @@
-from os.path import dirname
-from os.path import join
-from xdoctest import utils
+from os.path import dirname, join
 
+from xdoctest import utils
 
 __NOTES__ = """
 
@@ -101,10 +100,10 @@ def build_demo_extmod():
     CommandLine:
         python tests/test_binary_ext.py build_demo_extmod
     """
-    import os
     import glob
-    import sys
+    import os
     import platform
+    import sys
 
     plat_impl = platform.python_implementation()
     if plat_impl == 'PyPy':

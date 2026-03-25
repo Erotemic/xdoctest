@@ -1,5 +1,5 @@
-from xdoctest.utils.util_misc import _run_case
 from xdoctest import utils
+from xdoctest.utils.util_misc import _run_case
 
 
 def test_properties():
@@ -143,9 +143,10 @@ def test_correct_skipping_on_decorators1():
     the skip state was cleared after it was executed, so it executed the bad
     code. This fixes that.
     """
+    from os.path import join
+
     import xdoctest
     from xdoctest import runner
-    from os.path import join
 
     source = utils.codeblock(
         '''
@@ -207,9 +208,10 @@ def test_correct_skipping_on_decorators_simple():
     minimal test for decorator skips
     """
 
+    from os.path import join
+
     import xdoctest
     from xdoctest import runner
-    from os.path import join
 
     source = utils.codeblock(
         '''

@@ -1,5 +1,4 @@
-from xdoctest import doctest_example
-from xdoctest import utils
+from xdoctest import doctest_example, utils
 
 
 def test_inline_skip_directive():

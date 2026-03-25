@@ -40,7 +40,9 @@ def demo():
     xdoctest.doctest_callable(demo_requires_skips_all_v1)
     xdoctest.doctest_callable(demo_requires_skips_all_v2)
 
-    import sys, ubelt
+    import sys
+
+    import ubelt
 
     sys.path.append(ubelt.expandpath('~/code/xdoctest/dev/demo'))
     import demo_issues
