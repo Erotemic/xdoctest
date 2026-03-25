@@ -325,7 +325,7 @@ class RuntimeState(utils.NiceRepr):
         """
         Args:
             reportchoice (str): name of report style
-            state (None | Dict): if unspecified defaults to the global state
+            state (None | dict): if unspecified defaults to the global state
 
         Example:
             >>> from xdoctest.directive import *
@@ -573,7 +573,7 @@ class Directive(utils.NiceRepr):
         This is called by :func:`RuntimeState.update` to update itself
 
         Args:
-            argv (List[str] | None):
+            argv (list[str] | None):
                 Command line the directive is interpreted in the context of.
                 If unspecified, uses ``sys.argv``.
 
@@ -582,7 +582,7 @@ class Directive(utils.NiceRepr):
                 context of. If unspecified, uses ``os.environ``.
 
         Returns:
-            List[Effect]: list of named tuples containing:
+            list[Effect]: list of named tuples containing:
                 action (str): code indicating how to update
                 key (str): name of runtime state item to modify
                 value (object): value to modify with
@@ -680,7 +680,7 @@ def _split_opstr(optstr: str) -> list[str]:
         opstr (str): the command, which may contain more than one directive
 
     Returns:
-        List[str]: individual directive optstrings
+        list[str]: individual directive optstrings
 
     Example:
         >>> optstr = '+FOO, REQUIRES(foo,bar), +ELLIPSIS'
