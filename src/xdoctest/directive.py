@@ -185,7 +185,9 @@ def named(key: str, pattern: str) -> str:
 # TODO: modify global directive defaults via a config file
 
 # Type alias for the runtime state dictionary
-RuntimeStateDict = dict[str, bool | set[str]]
+if typing.TYPE_CHECKING:
+    # TODO: we can use a more structured dictionary for better type checks.
+    RuntimeStateDict = dict[str, bool | set[str]]
 
 DEFAULT_RUNTIME_STATE: RuntimeStateDict = {
     'DONT_ACCEPT_BLANKLINE': False,
