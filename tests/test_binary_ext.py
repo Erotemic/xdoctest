@@ -143,8 +143,20 @@ def build_demo_extmod():
     utils.ensuredir(bin_dpath)
     candidates = list(glob.glob(join(bin_dpath, 'my_ext.*')))
     if len(candidates) == 0:
-        pip_args = ['install', '--target={}'.format(bin_dpath), src_dpath]
+        # Use --no-build-isolation to allow the build environment to access
+        # installed build dependencies (skbuild, pybind11, cmake, ninja)
+        # Also set CMAKE_POLICY_VERSION_MINIMUM to fix CMake 3.25+ compatibility
+        import os
+        os.environ['SKBUILD_CMAKE_ARGS'] = '-DCMAKE_POLICY_VERSION_MINIMUM=3.5'
+        
+        pip_args = [
+            'install',
+            '--no-build-isolation',
+            '--target={}'.format(bin_dpath),
+            src_dpath,
+        ]
         print('pip_args = {!r}'.format(pip_args))
+        print('SKBUILD_CMAKE_ARGS = {!r}'.format(os.environ['SKBUILD_CMAKE_ARGS']))
         if 0:
             pyexe = sys.executable
             ret = os.system(pyexe + ' -m pip ' + ' '.join(pip_args))
