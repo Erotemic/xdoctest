@@ -300,18 +300,18 @@ class RuntimeState(utils.NiceRepr):
         parts = ['{}: {}'.format(*item) for item in self.to_dict().items()]
         return '{' + ', '.join(parts) + '}'
 
-    def __getitem__(self, key: str) -> object:
+    def __getitem__(self, key: str) -> bool | set[str]:
         """
         Args:
             key (str):
 
         Returns:
-            Any
+            bool | set[str]
         """
         if key not in self._global_state:
             raise KeyError('Unknown key: {}'.format(key))
         if key in self._inline_state:
-            return self._inline_state[key]
+            return self._inline_state[key]  # type: ignore[return-value]
         else:
             return self._global_state[key]
 
