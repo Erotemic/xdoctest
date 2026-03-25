@@ -244,8 +244,7 @@ class TopLevelVisitor(ast.NodeVisitor):
                         # callname = callname + '.fset'
                         return
 
-        # TODO: Is this still necessary in modern Python versions?
-        lineno = self._workaround_func_lineno(node)
+        lineno = node.lineno
         docstr, doclineno, doclineno_end = self._get_docstring(node)
         calldef = CallDefNode(
             callname, lineno, docstr, doclineno, doclineno_end, args=node.args
@@ -713,39 +712,6 @@ class TopLevelVisitor(ast.NodeVisitor):
             doclineno = None
             doclineno_end = None
         return (docstr, doclineno, doclineno_end)
-
-    def _workaround_func_lineno(self, node):
-        """
-        Finds the correct line for the original function definition even when
-        decorators are involved.
-
-        Example:
-            >>> source = utils.codeblock(
-                '''
-                @bar
-                @baz
-                def foo():
-                    'docstr'
-                ''')
-            >>> self = TopLevelVisitor(source)
-            >>> node = self.syntax_tree().body[0]
-            >>> self._workaround_func_lineno(node)
-            3
-        """
-        # Try and find the lineno of the function definition
-        # (maybe the fact that its on a decorator is actually right...)
-        if node.decorator_list:
-            # Decorators can throw off the line the function is declared on
-            linex = node.lineno - 1
-            pattern = r'\s*def\s*' + node.name
-            # I think this is actually robust
-            assert self.sourcelines is not None
-            while not re.match(pattern, self.sourcelines[linex]):
-                linex += 1
-            lineno = linex + 1
-        else:
-            lineno = node.lineno
-        return lineno
 
 
 def parse_static_calldefs(
