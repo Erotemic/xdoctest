@@ -5,7 +5,10 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Version 1.3.1 - Unreleased
+## Version 1.3.2 - Unreleased
+
+
+## Version 1.3.1 - Released 2026-03-25
 
 ### Fixed
 * Static discovery now includes doctests defined in `async def` functions.
