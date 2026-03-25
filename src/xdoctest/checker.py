@@ -38,6 +38,7 @@ from __future__ import annotations
 import difflib
 import re
 import typing
+from collections import OrderedDict
 
 from xdoctest import constants, directive, utils
 
@@ -370,7 +371,7 @@ def _ellipsis_match(got: typing.Any, want: typing.Any) -> bool:
 def normalize(
     got: str,
     want: str,
-    runstate: directive.RuntimeState | dict[str, object] | None = None,
+    runstate: directive.RuntimeState | dict[str, object] | OrderedDict[str, bool | set[str]] | None = None,
 ) -> tuple[str, str]:
     r"""
     Normalizes the got and want string based on the runtime state.

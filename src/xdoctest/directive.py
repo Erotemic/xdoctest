@@ -162,6 +162,7 @@ import sys
 import typing
 import warnings
 from collections import OrderedDict, namedtuple
+from typing import cast
 
 from xdoctest import static_analysis as static
 from xdoctest import utils
@@ -183,7 +184,10 @@ def named(key: str, pattern: str) -> str:
 
 # TODO: modify global directive defaults via a config file
 
-DEFAULT_RUNTIME_STATE = {
+# Type alias for the runtime state dictionary
+RuntimeStateDict = dict[str, bool | set[str]]
+
+DEFAULT_RUNTIME_STATE: RuntimeStateDict = {
     'DONT_ACCEPT_BLANKLINE': False,
     'ELLIPSIS': True,
     'IGNORE_WHITESPACE': False,
@@ -265,18 +269,18 @@ class RuntimeState(utils.NiceRepr):
         })>
     """
 
-    def __init__(self, default_state: dict[str, object] | None = None):
+    def __init__(self, default_state: RuntimeStateDict | None = None):
         """
         Args:
             default_state (None | dict): starting default state, if unspecified
                 falls back to the global DEFAULT_RUNTIME_STATE
         """
-        self._global_state = copy.deepcopy(DEFAULT_RUNTIME_STATE)
+        self._global_state: RuntimeStateDict = copy.deepcopy(DEFAULT_RUNTIME_STATE)
         if default_state:
             self._global_state.update(default_state)
         self._inline_state: dict[str, typing.Any] = {}
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> OrderedDict[str, bool | set[str]]:
         """
         Returns:
             OrderedDict
@@ -309,23 +313,23 @@ class RuntimeState(utils.NiceRepr):
         else:
             return self._global_state[key]
 
-    def __setitem__(self, key: str, value: object):
+    def __setitem__(self, key: str, value: bool | set[str]):
         """
         Args:
             key (str):
-            value (Any):
+            value (bool | set[str]):
         """
         if key not in self._global_state:
             raise KeyError('Unknown key: {}'.format(key))
         self._global_state[key] = value
 
     def set_report_style(
-        self, reportchoice: str, state: dict[str, object] | None = None
+        self, reportchoice: str, state: RuntimeStateDict | None = None
     ):
         """
         Args:
             reportchoice (str): name of report style
-            state (None | dict): if unspecified defaults to the global state
+            state (None | RuntimeStateDict): if unspecified defaults to the global state
 
         Example:
             >>> from xdoctest.directive import *
@@ -375,10 +379,10 @@ class RuntimeState(utils.NiceRepr):
                 elif action == 'assign':
                     state[key] = value
                 elif action == 'set.add':
-                    state[key].add(value)  # type: ignore[unresolved-attribute]
+                    cast(set, state[key]).add(value)
                 elif action == 'set.remove':
                     try:
-                        state[key].remove(value)  # type: ignore[unresolved-attribute]
+                        cast(set, state[key]).remove(value)
                     except KeyError:
                         pass
                 else:
