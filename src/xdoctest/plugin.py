@@ -273,7 +273,7 @@ class XDoctestItem(pytest.Item):
             name,
             runner=None,
             dtest=None,
-        ):  # type: ignore[invalid-method-override]
+        ):  # type: ignore
             # incompatible signature due to imposed limits on subclass
             """The public named constructor."""
             return super().from_parent(
@@ -321,7 +321,7 @@ class XDoctestItem(pytest.Item):
         if not self.dtest.anything_ran():
             pytest.skip('doctest is empty or all parts were skipped')
 
-    def repr_failure(self, excinfo):  # type: ignore[invalid-method-override]
+    def repr_failure(self, excinfo):  # type: ignore
         """
         # Args:
         #     excinfo (_pytest._code.code.ExceptionInfo):
@@ -454,7 +454,7 @@ def _setup_fixtures(xdoctest_item: XDoctestItem) -> fixtures.FixtureRequest:
         node=xdoctest_item,
         func=func,
         cls=None,
-        funcargs=False,  # type: ignore[attr-defined, call-arg]
+        funcargs=False,  # type: ignore
     )
     # Note: FixtureRequest may change in the future, we are using
     # private functionality. Hopefully it wont break, but we should
@@ -462,10 +462,10 @@ def _setup_fixtures(xdoctest_item: XDoctestItem) -> fixtures.FixtureRequest:
     # https://github.com/pytest-dev/pytest/discussions/8512#discussioncomment-563347
     if _PYTEST_IS_GE_620:
         # The "_ispytest" arg was added in 3.6.1
-        fixture_request = fixtures.FixtureRequest(xdoctest_item, _ispytest=True)  # type: ignore[abstract, call-arg, arg-type]
+        fixture_request = fixtures.FixtureRequest(xdoctest_item, _ispytest=True)  # type: ignore
     else:
-        fixture_request = fixtures.FixtureRequest(xdoctest_item)  # type: ignore[abstract, call-arg, arg-type]
-    fixture_request._fillfixtures()  # type: ignore[attr-defined]
+        fixture_request = fixtures.FixtureRequest(xdoctest_item)  # type: ignore
+    fixture_request._fillfixtures()  # type: ignore
     return fixture_request
 
 

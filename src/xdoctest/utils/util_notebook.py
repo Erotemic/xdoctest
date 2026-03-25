@@ -123,7 +123,7 @@ class NotebookLoader:
         # load the notebook object
         nb_version = nbformat.current_nbformat
 
-        with io.open(fpath, 'r', encoding=self.options['encoding']) as f:  # type: ignore[invalid-argument-type]
+        with io.open(fpath, 'r', encoding=self.options['encoding']) as f:  # type: ignore
             nb = nbformat.read(f, nb_version)
 
         # create the module and add it to sys.modules
@@ -155,13 +155,14 @@ class NotebookLoader:
                 code = self.shell.input_transformer_manager.transform_cell(
                     cell.source
                 )
+                tree: ast.AST
                 if self.options['only_defs']:
                     # Remove anything that isn't a def or a class
                     tree = deleter.generic_visit(ast.parse(code))
                 else:
-                    tree = ast.parse(code)
+                    tree = typing.cast(ast.AST, ast.parse(code))
                 # run the code in the module
-                codeobj = compile(tree, filename=fpath, mode='exec')  # type: ignore[invalid-argument-type]
+                codeobj = compile(tree, filename=fpath, mode='exec')  # type: ignore
                 exec(codeobj, mod.__dict__)
         finally:
             self.shell.user_ns = save_user_ns

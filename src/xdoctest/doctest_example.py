@@ -242,7 +242,7 @@ class DoctestConfig(dict):
             if argname in environ_aware:
                 env_argname = 'XDOCTEST_' + argname.replace('-', '_').upper()
                 if 'default' in kw:
-                    kw['default'] = os.environ.get(env_argname, kw['default'])  # type: ignore[invalid-assignment]
+                    kw['default'] = os.environ.get(env_argname, kw['default'])  # type: ignore
 
             alias = [
                 a.replace('--', '--' + p + '-') if p else a
@@ -972,7 +972,7 @@ class DocTest:
                     print(f'runstate._global_state={runstate._global_state}')
 
                 # Handle runtime actions
-                if runstate['SKIP'] or len(runstate['REQUIRES']) > 0:  # type: ignore[arg-type]
+                if runstate['SKIP'] or len(runstate['REQUIRES']) > 0:  # type: ignore
                     if DEBUG:
                         print(f'part[{partx}] runstate requests skipping')
                     self._skipped_parts.append(part)
@@ -1573,8 +1573,8 @@ class DocTest:
         if hasattr(ex_value, 'output_difference'):
             assert hasattr(ex_value, 'output_repr_difference')
             lines += [
-                ex_value.output_difference(self._runstate, colored=colored),  # type: ignore[call-non-callable]
-                ex_value.output_repr_difference(self._runstate),  # type: ignore[call-non-callable]
+                ex_value.output_difference(self._runstate, colored=colored),  # type: ignore
+                ex_value.output_repr_difference(self._runstate),  # type: ignore
             ]
         else:
             if with_tb:

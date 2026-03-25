@@ -457,9 +457,9 @@ class TopLevelVisitor(ast.NodeVisitor):
                 endpos = docnode.lineno - 1
 
         if IS_PY_GE_312:
-            docstr = utils.ensure_unicode(docnode.value.value)  # type: ignore[attr-defined]
+            docstr = utils.ensure_unicode(docnode.value.value)  # type: ignore
         else:
-            docstr = utils.ensure_unicode(docnode.value.s)  # type: ignore[attr-defined]
+            docstr = utils.ensure_unicode(docnode.value.s)  # type: ignore
         sourcelines = self.sourcelines
         assert sourcelines is not None
         start, stop = self._find_docstr_startpos_workaround(
@@ -778,12 +778,12 @@ def parse_static_calldefs(
             try:
                 # fixme: This might never happen, could clean up this code if we can confirm
                 with open(fpath, 'rb') as file_:
-                    source = file_.read()  # type: ignore[invalid-assignment, assignment, arg-type]
+                    source = file_.read()  # type: ignore
             except Exception:
                 print('Unable to read fpath = {!r}'.format(fpath))
                 raise
     try:
-        self = TopLevelVisitor.parse(source)  # type: ignore[invalid-argument-type, arg-type]
+        self = TopLevelVisitor.parse(source)  # type: ignore
         return self.calldefs
     except Exception:  # nocover
         if fpath:
