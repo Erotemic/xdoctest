@@ -39,6 +39,7 @@ import difflib
 import re
 import typing
 from collections import OrderedDict
+from typing import Dict, OrderedDict as OrderedDictType, Set
 
 from xdoctest import constants, directive, utils
 
@@ -372,8 +373,8 @@ def normalize(
     got: str,
     want: str,
     runstate: directive.RuntimeState
-    | dict[str, bool | set[str]]
-    | OrderedDict[str, bool | set[str]]
+    | Dict[str, bool | Set[str]]
+    | OrderedDictType[str, bool | Set[str]]
     | None = None,
 ) -> tuple[str, str]:
     r"""

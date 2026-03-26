@@ -162,7 +162,7 @@ import sys
 import typing
 import warnings
 from collections import OrderedDict, namedtuple
-from typing import Literal, TypedDict, cast
+from typing import Dict, Literal, Set, TypedDict, cast
 
 from xdoctest import static_analysis as static
 from xdoctest import utils
@@ -312,8 +312,8 @@ class RuntimeState(utils.NiceRepr):
         Returns:
             OrderedDict
         """
-        state: dict[str, bool | set[str]] = cast(
-            dict[str, bool | set[str]], self._global_state.copy()
+        state: Dict[str, bool | Set[str]] = cast(
+            Dict[str, bool | Set[str]], self._global_state.copy()
         )
         state.update(self._inline_state)
         state = OrderedDict(sorted(state.items()))
@@ -338,9 +338,9 @@ class RuntimeState(utils.NiceRepr):
         if key not in self._global_state:
             raise KeyError('Unknown key: {}'.format(key))
         if key in self._inline_state:
-            return cast(bool | set[str], self._inline_state[key])
+            return cast(bool | Set[str], self._inline_state[key])
         else:
-            return cast(dict[str, bool | set[str]], self._global_state)[key]
+            return cast(Dict[str, bool | Set[str]], self._global_state)[key]
 
     def __setitem__(self, key: str, value: bool | set[str]):
         """
@@ -350,7 +350,7 @@ class RuntimeState(utils.NiceRepr):
         """
         if key not in self._global_state:
             raise KeyError('Unknown key: {}'.format(key))
-        cast(dict[str, bool | set[str]], self._global_state)[key] = value
+        cast(Dict[str, bool | Set[str]], self._global_state)[key] = value
 
     def set_report_style(
         self,
@@ -374,7 +374,7 @@ class RuntimeState(utils.NiceRepr):
         # When enabling a report flag, toggle all others off
         if state is None:
             state = self._global_state
-        state_dict = cast(dict[str, bool | set[str]], state)
+        state_dict = cast(Dict[str, bool | Set[str]], state)
         for k in state_dict.keys():
             if k.startswith('REPORT_'):
                 state_dict[k] = False
@@ -402,9 +402,9 @@ class RuntimeState(utils.NiceRepr):
 
                 # Determine if this impacts the local (inline) or global state.
                 if directive.inline:
-                    state: dict[str, typing.Any] = self._inline_state
+                    state: Dict[str, typing.Any] = self._inline_state
                 else:
-                    state = cast(dict[str, typing.Any], self._global_state)
+                    state = cast(Dict[str, typing.Any], self._global_state)
 
                 if action == 'set_report_style':
                     # Special handling of report style
@@ -412,10 +412,10 @@ class RuntimeState(utils.NiceRepr):
                 elif action == 'assign':
                     state[key] = value
                 elif action == 'set.add':
-                    cast(set, state[key]).add(value)
+                    cast(Set[str], state[key]).add(value)
                 elif action == 'set.remove':
                     try:
-                        cast(set, state[key]).remove(value)
+                        cast(Set[str], state[key]).remove(value)
                     except KeyError:
                         pass
                 else:
