@@ -71,7 +71,7 @@ class TeeStringIO(io.StringIO):
             return super(TeeStringIO, self).fileno()
 
     @property
-    def encoding(self):
+    def encoding(self) -> str | None:  # type: ignore[override]
         """
         Gets the encoding of the `redirect` IO object
 
@@ -84,7 +84,9 @@ class TeeStringIO(io.StringIO):
             >>> assert TeeStringIO(redirect).encoding is redirect.encoding
         """
         if self.redirect is not None:
-            return self.redirect.encoding  # type: ignore
+            if hasattr(self.redirect, 'encoding'):
+                return typing.cast(str, self.redirect.encoding)
+            return None
         else:
             return super(TeeStringIO, self).encoding
 

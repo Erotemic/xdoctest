@@ -300,7 +300,9 @@ class RuntimeState(utils.NiceRepr):
             default_state (None | dict): starting default state, if unspecified
                 falls back to the global DEFAULT_RUNTIME_STATE
         """
-        self._global_state: RuntimeStateDict = copy.deepcopy(DEFAULT_RUNTIME_STATE)
+        self._global_state: RuntimeStateDict = copy.deepcopy(
+            DEFAULT_RUNTIME_STATE
+        )
         if default_state:
             self._global_state.update(default_state)
         self._inline_state: dict[str, typing.Any] = {}
@@ -336,7 +338,7 @@ class RuntimeState(utils.NiceRepr):
         if key not in self._global_state:
             raise KeyError('Unknown key: {}'.format(key))
         if key in self._inline_state:
-            return self._inline_state[key]  # type: ignore[return-value]
+            return cast(bool | set[str], self._inline_state[key])
         else:
             return cast(dict[str, bool | set[str]], self._global_state)[key]
 
@@ -400,9 +402,9 @@ class RuntimeState(utils.NiceRepr):
 
                 # Determine if this impacts the local (inline) or global state.
                 if directive.inline:
-                    state = self._inline_state
+                    state: dict[str, typing.Any] = self._inline_state
                 else:
-                    state = self._global_state
+                    state = cast(dict[str, typing.Any], self._global_state)
 
                 if action == 'set_report_style':
                     # Special handling of report style

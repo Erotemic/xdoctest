@@ -24,10 +24,25 @@ class NiceRepr:
         >>> assert 'object at' in repr(foo)
     """
 
-    def __repr__(self):
+    def __nice__(self) -> str:
+        """
+        Returns a string representation of the object's state.
+
+        Subclasses must override this method to provide a custom
+        string representation.
+
+        Returns:
+            str: A string describing the object's state.
+
+        Raises:
+            AttributeError: If the subclass has not implemented this method.
+        """
+        raise AttributeError(f'{self.__class__.__name__} must define __nice__')
+
+    def __repr__(self) -> str:
         try:
             classname = self.__class__.__name__
-            devnice = self.__nice__()  # type: ignore
+            devnice = self.__nice__()
             return '<%s(%s) at %s>' % (classname, devnice, hex(id(self)))
         except AttributeError:
             if hasattr(self, '__nice__'):
@@ -37,10 +52,10 @@ class NiceRepr:
             return object.__repr__(self)
             # return super(NiceRepr, self).__repr__()
 
-    def __str__(self):
+    def __str__(self) -> str:
         try:
             classname = self.__class__.__name__
-            devnice = self.__nice__()  # type: ignore
+            devnice = self.__nice__()
             return '<%s(%s)>' % (classname, devnice)
         except AttributeError:
             if hasattr(self, '__nice__'):

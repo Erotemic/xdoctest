@@ -112,7 +112,11 @@ class NotebookLoader:
         self.path = path
         self.options = self.default_options.copy()
 
-    def load_module(self, fullname=None, fpath=None):
+    def load_module(
+        self,
+        fullname: str | None = None,
+        fpath: str | os.PathLike | None = None,
+    ):
         """import a notebook as a module"""
         import nbformat
         from IPython import get_ipython
@@ -123,7 +127,9 @@ class NotebookLoader:
         # load the notebook object
         nb_version = nbformat.current_nbformat
 
-        with io.open(fpath, 'r', encoding=self.options['encoding']) as f:  # type: ignore
+        assert fpath is not None
+        fpath_str = str(fpath)
+        with io.open(fpath_str, 'r', encoding=self.options['encoding']) as f:  # type: ignore
             nb = nbformat.read(f, nb_version)
 
         # create the module and add it to sys.modules
@@ -131,7 +137,7 @@ class NotebookLoader:
         #    return sys.modules[name]
         assert isinstance(fullname, str)
         mod = types.ModuleType(fullname)
-        mod.__file__ = fpath
+        mod.__file__ = fpath_str
         mod.__loader__ = self
         mod.__dict__['get_ipython'] = get_ipython
 
@@ -141,7 +147,7 @@ class NotebookLoader:
         #     return mod
 
         # print("Importing Jupyter notebook from %s" % fpath)
-        sys.modules[fullname] = mod  # type: ignore[invalid-assignment]
+        sys.modules[fullname] = mod
 
         # extra work to ensure that magics that would affect the user_ns
         # actually affect the notebook module's ns
@@ -162,7 +168,13 @@ class NotebookLoader:
                 else:
                     tree = typing.cast(ast.AST, ast.parse(code))
                 # run the code in the module
-                codeobj = compile(tree, filename=fpath, mode='exec')  # type: ignore
+                codeobj = compile(
+                    typing.cast(
+                        ast.Module | ast.Expression | ast.Interactive, tree
+                    ),
+                    filename=fpath,
+                    mode='exec',
+                )
                 exec(codeobj, mod.__dict__)
         finally:
             self.shell.user_ns = save_user_ns
