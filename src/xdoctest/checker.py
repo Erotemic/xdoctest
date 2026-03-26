@@ -39,7 +39,7 @@ import difflib
 import re
 import typing
 from collections import OrderedDict
-from typing import Dict, OrderedDict as OrderedDictType, Set
+from typing import Dict, OrderedDict as OrderedDictType, Set, Union
 
 from xdoctest import constants, directive, utils
 

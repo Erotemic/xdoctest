@@ -162,7 +162,7 @@ import sys
 import typing
 import warnings
 from collections import OrderedDict, namedtuple
-from typing import Dict, Literal, Set, TypedDict, cast
+from typing import Dict, Literal, Set, TypedDict, Union, cast
 
 from xdoctest import static_analysis as static
 from xdoctest import utils
@@ -312,8 +312,8 @@ class RuntimeState(utils.NiceRepr):
         Returns:
             OrderedDict
         """
-        state: Dict[str, bool | Set[str]] = cast(
-            Dict[str, bool | Set[str]], self._global_state.copy()
+        state: Dict[str, Union[bool, Set[str]]] = cast(
+            Dict[str, Union[bool, Set[str]]], self._global_state.copy()
         )
         state.update(self._inline_state)
         state = OrderedDict(sorted(state.items()))
@@ -338,9 +338,9 @@ class RuntimeState(utils.NiceRepr):
         if key not in self._global_state:
             raise KeyError('Unknown key: {}'.format(key))
         if key in self._inline_state:
-            return cast(bool | Set[str], self._inline_state[key])
+            return cast(Union[bool, Set[str]], self._inline_state[key])
         else:
-            return cast(Dict[str, bool | Set[str]], self._global_state)[key]
+            return cast(Dict[str, Union[bool, Set[str]]], self._global_state)[key]
 
     def __setitem__(self, key: str, value: bool | set[str]):
         """
@@ -350,7 +350,7 @@ class RuntimeState(utils.NiceRepr):
         """
         if key not in self._global_state:
             raise KeyError('Unknown key: {}'.format(key))
-        cast(Dict[str, bool | Set[str]], self._global_state)[key] = value
+        cast(Dict[str, Union[bool, Set[str]]], self._global_state)[key] = value
 
     def set_report_style(
         self,
@@ -374,7 +374,7 @@ class RuntimeState(utils.NiceRepr):
         # When enabling a report flag, toggle all others off
         if state is None:
             state = self._global_state
-        state_dict = cast(Dict[str, bool | Set[str]], state)
+        state_dict = cast(Dict[str, Union[bool, Set[str]]], state)
         for k in state_dict.keys():
             if k.startswith('REPORT_'):
                 state_dict[k] = False
