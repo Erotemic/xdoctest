@@ -277,7 +277,9 @@ class RuntimeState(utils.NiceRepr):
             default_state (None | dict): starting default state, if unspecified
                 falls back to the global DEFAULT_RUNTIME_STATE
         """
-        self._global_state: RuntimeStateDict = copy.deepcopy(DEFAULT_RUNTIME_STATE)
+        self._global_state: RuntimeStateDict = copy.deepcopy(
+            DEFAULT_RUNTIME_STATE
+        )
         if default_state:
             self._global_state.update(default_state)
         self._inline_state: dict[str, typing.Any] = {}

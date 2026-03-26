@@ -974,7 +974,9 @@ class DocTest:
 
                 # Handle runtime actions
                 requires = runstate['REQUIRES']
-                if runstate['SKIP'] or (isinstance(requires, set) and len(requires) > 0):
+                if runstate['SKIP'] or (
+                    isinstance(requires, set) and len(requires) > 0
+                ):
                     if DEBUG:
                         print(f'part[{partx}] runstate requests skipping')
                     self._skipped_parts.append(part)

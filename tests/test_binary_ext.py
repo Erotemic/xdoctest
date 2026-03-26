@@ -147,8 +147,9 @@ def build_demo_extmod():
         # installed build dependencies (skbuild, pybind11, cmake, ninja)
         # Also set CMAKE_POLICY_VERSION_MINIMUM to fix CMake 3.25+ compatibility
         import os
+
         os.environ['SKBUILD_CMAKE_ARGS'] = '-DCMAKE_POLICY_VERSION_MINIMUM=3.5'
-        
+
         pip_args = [
             'install',
             '--no-build-isolation',
@@ -156,7 +157,9 @@ def build_demo_extmod():
             src_dpath,
         ]
         print('pip_args = {!r}'.format(pip_args))
-        print('SKBUILD_CMAKE_ARGS = {!r}'.format(os.environ['SKBUILD_CMAKE_ARGS']))
+        print(
+            'SKBUILD_CMAKE_ARGS = {!r}'.format(os.environ['SKBUILD_CMAKE_ARGS'])
+        )
         if 0:
             pyexe = sys.executable
             ret = os.system(pyexe + ' -m pip ' + ' '.join(pip_args))

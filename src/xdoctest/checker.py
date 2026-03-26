@@ -371,7 +371,10 @@ def _ellipsis_match(got: typing.Any, want: typing.Any) -> bool:
 def normalize(
     got: str,
     want: str,
-    runstate: directive.RuntimeState | dict[str, bool | set[str]] | OrderedDict[str, bool | set[str]] | None = None,
+    runstate: directive.RuntimeState
+    | dict[str, bool | set[str]]
+    | OrderedDict[str, bool | set[str]]
+    | None = None,
 ) -> tuple[str, str]:
     r"""
     Normalizes the got and want string based on the runtime state.
