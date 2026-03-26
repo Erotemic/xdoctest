@@ -1,4 +1,5 @@
 import pytest
+
 from xdoctest import static_analysis as static
 from xdoctest import utils
 
