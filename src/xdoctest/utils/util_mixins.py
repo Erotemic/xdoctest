@@ -3,6 +3,7 @@ Port of NiceRepr from ubelt.util_mixins
 """
 
 from __future__ import annotations
+import warnings
 
 
 class NiceRepr:
@@ -24,28 +25,45 @@ class NiceRepr:
         >>> assert 'object at' in repr(foo)
     """
 
-    def __repr__(self):
-        try:
-            classname = self.__class__.__name__
-            devnice = self.__nice__()  # type: ignore
-            return '<%s(%s) at %s>' % (classname, devnice, hex(id(self)))
-        except AttributeError:
-            if hasattr(self, '__nice__'):
-                raise
-            # warnings.warn('Define the __nice__ method for %r' %
-            #               (self.__class__,), category=RuntimeWarning)
-            return object.__repr__(self)
-            # return super(NiceRepr, self).__repr__()
+    def __nice__(self) -> str:
+        """
+        Returns:
+            str
+        """
+        if hasattr(self, '__len__'):
+            # It is a common pattern for objects to use __len__ in __nice__
+            # As a convenience we define a default __nice__ for these objects
+            # return str(len(self))
+            # hasattr doesn't narrow to Sized for ty, so call __len__ directly
+            return str(self.__len__())  # type: ignore
+        else:
+            # In all other cases force the subclass to overload __nice__
+            raise NotImplementedError(
+                'Define the __nice__ method for {!r}'.format(self.__class__)
+            )
 
-    def __str__(self):
+    def __repr__(self) -> str:
+        """
+        Returns:
+            str
+        """
+        try:
+            nice = self.__nice__()
+            classname = self.__class__.__name__
+            return '<{0}({1}) at {2}>'.format(classname, nice, hex(id(self)))
+        except Exception as ex:
+            warnings.warn(str(ex), category=RuntimeWarning)
+            return object.__repr__(self)
+
+    def __str__(self) -> str:
+        """
+        Returns:
+            str
+        """
         try:
             classname = self.__class__.__name__
-            devnice = self.__nice__()  # type: ignore
-            return '<%s(%s)>' % (classname, devnice)
-        except AttributeError:
-            if hasattr(self, '__nice__'):
-                raise
-            # warnings.warn('Define the __nice__ method for %r' %
-            #               (self.__class__,), category=RuntimeWarning)
-            return object.__str__(self)
-            # return super(NiceRepr, self).__str__()
+            nice = self.__nice__()
+            return '<{0}({1})>'.format(classname, nice)
+        except Exception as ex:
+            warnings.warn(str(ex), category=RuntimeWarning)
+            return object.__repr__(self)

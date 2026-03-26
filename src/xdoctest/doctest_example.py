@@ -974,7 +974,9 @@ class DocTest:
 
                 # Handle runtime actions
                 requires = runstate['REQUIRES']
-                if runstate['SKIP'] or (isinstance(requires, set) and len(requires) > 0):
+                if runstate['SKIP'] or (
+                    isinstance(requires, set) and len(requires) > 0
+                ):
                     if DEBUG:
                         print(f'part[{partx}] runstate requests skipping')
                     self._skipped_parts.append(part)
@@ -1574,9 +1576,13 @@ class DocTest:
         lines += [self._color(self._block_prefix + ' TRACEBACK', 'white')]
         if hasattr(ex_value, 'output_difference'):
             assert hasattr(ex_value, 'output_repr_difference')
+            # Cast to GotWantException since we verified it has the required methods
+            ex_value_cast = typing.cast(checker.GotWantException, ex_value)
             lines += [
-                ex_value.output_difference(self._runstate, colored=colored),  # type: ignore
-                ex_value.output_repr_difference(self._runstate),  # type: ignore
+                ex_value_cast.output_difference(
+                    self._runstate, colored=colored
+                ),
+                ex_value_cast.output_repr_difference(self._runstate),
             ]
         else:
             if with_tb:

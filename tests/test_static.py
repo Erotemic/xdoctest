@@ -1,4 +1,5 @@
 import pytest
+
 from xdoctest import static_analysis as static
 from xdoctest import utils
 
@@ -218,10 +219,12 @@ def test_parse_multi_decorated_async_function_lineno():
     assert '>>> 1 + 1' in calldef.docstr
 
 
-@pytest.mark.parametrize('case', [
-    {
-        'name': 'decorated_async_single',
-        'source': '''
+@pytest.mark.parametrize(
+    'case',
+    [
+        {
+            'name': 'decorated_async_single',
+            'source': '''
             def deco(func):
                 return func
 
@@ -234,12 +237,12 @@ def test_parse_multi_decorated_async_function_lineno():
                 """
                 return 42
         ''',
-        'callname': 'foo',
-        'expect_line': 'async def foo():',
-    },
-    {
-        'name': 'decorated_async_multiple',
-        'source': '''
+            'callname': 'foo',
+            'expect_line': 'async def foo():',
+        },
+        {
+            'name': 'decorated_async_multiple',
+            'source': '''
             def deco1(func):
                 return func
 
@@ -256,12 +259,12 @@ def test_parse_multi_decorated_async_function_lineno():
                 """
                 return 42
         ''',
-        'callname': 'foo',
-        'expect_line': 'async def foo():',
-    },
-    {
-        'name': 'decorated_async_with_args',
-        'source': '''
+            'callname': 'foo',
+            'expect_line': 'async def foo():',
+        },
+        {
+            'name': 'decorated_async_with_args',
+            'source': '''
             def deco(func):
                 return func
 
@@ -279,12 +282,12 @@ def test_parse_multi_decorated_async_function_lineno():
                 """
                 return 42
         ''',
-        'callname': 'foo',
-        'expect_line': 'async def foo():',
-    },
-    {
-        'name': 'decorated_async_mixed',
-        'source': '''
+            'callname': 'foo',
+            'expect_line': 'async def foo():',
+        },
+        {
+            'name': 'decorated_async_mixed',
+            'source': '''
             def deco1(func):
                 return func
 
@@ -303,12 +306,12 @@ def test_parse_multi_decorated_async_function_lineno():
                 """
                 return 42
         ''',
-        'callname': 'foo',
-        'expect_line': 'async def foo():',
-    },
-    {
-        'name': 'decorated_async_with_comment',
-        'source': '''
+            'callname': 'foo',
+            'expect_line': 'async def foo():',
+        },
+        {
+            'name': 'decorated_async_with_comment',
+            'source': '''
             def deco1(func):
                 return func
 
@@ -326,12 +329,12 @@ def test_parse_multi_decorated_async_function_lineno():
                 """
                 return 42
         ''',
-        'callname': 'foo',
-        'expect_line': 'async def foo():',
-    },
-    {
-        'name': 'decorated_async_multiline_signature',
-        'source': '''
+            'callname': 'foo',
+            'expect_line': 'async def foo():',
+        },
+        {
+            'name': 'decorated_async_multiline_signature',
+            'source': '''
             def deco(func):
                 return func
 
@@ -346,12 +349,12 @@ def test_parse_multi_decorated_async_function_lineno():
                 """
                 return 42
         ''',
-        'callname': 'foo',
-        'expect_line': 'async def foo(',
-    },
-    {
-        'name': 'decorated_sync_and_async_together',
-        'source': '''
+            'callname': 'foo',
+            'expect_line': 'async def foo(',
+        },
+        {
+            'name': 'decorated_sync_and_async_together',
+            'source': '''
             def deco(func):
                 return func
 
@@ -373,12 +376,12 @@ def test_parse_multi_decorated_async_function_lineno():
                 """
                 return 42
         ''',
-        'callname': 'foo',
-        'expect_line': 'async def foo():',
-    },
-    {
-        'name': 'decorated_method_in_class',
-        'source': '''
+            'callname': 'foo',
+            'expect_line': 'async def foo():',
+        },
+        {
+            'name': 'decorated_method_in_class',
+            'source': '''
             def deco(func):
                 return func
 
@@ -393,12 +396,12 @@ def test_parse_multi_decorated_async_function_lineno():
                     """
                     return 42
         ''',
-        'callname': 'C.foo',
-        'expect_line': 'async def foo(cls):',
-    },
-    {
-        'name': 'decorated_staticmethod_in_class',
-        'source': '''
+            'callname': 'C.foo',
+            'expect_line': 'async def foo(cls):',
+        },
+        {
+            'name': 'decorated_staticmethod_in_class',
+            'source': '''
             def deco(func):
                 return func
 
@@ -413,12 +416,12 @@ def test_parse_multi_decorated_async_function_lineno():
                     """
                     return 42
         ''',
-        'callname': 'C.foo',
-        'expect_line': 'async def foo():',
-    },
-    {
-        'name': 'decorated_async_after_module_docstring_and_blanks',
-        'source': '''
+            'callname': 'C.foo',
+            'expect_line': 'async def foo():',
+        },
+        {
+            'name': 'decorated_async_after_module_docstring_and_blanks',
+            'source': '''
             """
             module docstring
             """
@@ -437,12 +440,12 @@ def test_parse_multi_decorated_async_function_lineno():
                 """
                 return 42
         ''',
-        'callname': 'foo',
-        'expect_line': 'async def foo():',
-    },
-    {
-        'name': 'decorated_async_non_ascii_prefix',
-        'source': '''
+            'callname': 'foo',
+            'expect_line': 'async def foo():',
+        },
+        {
+            'name': 'decorated_async_non_ascii_prefix',
+            'source': '''
             # café
 
             def deco(func):
@@ -457,10 +460,11 @@ def test_parse_multi_decorated_async_function_lineno():
                 """
                 return 42
         ''',
-        'callname': 'foo',
-        'expect_line': 'async def foo():',
-    },
-])
+            'callname': 'foo',
+            'expect_line': 'async def foo():',
+        },
+    ],
+)
 def test_parse_decorated_function_lineno_cases(case):
     source = utils.codeblock(case['source'])
 
@@ -471,7 +475,8 @@ def test_parse_decorated_function_lineno_cases(case):
 
     assert case['callname'] in calldefs, (
         'Missing calldef {!r} in case {!r}. Got keys={!r}'.format(
-            case['callname'], case['name'], sorted(calldefs.keys()))
+            case['callname'], case['name'], sorted(calldefs.keys())
+        )
     )
 
     calldef = calldefs[case['callname']]
@@ -481,10 +486,11 @@ def test_parse_decorated_function_lineno_cases(case):
     assert got_line == case['expect_line'], (
         'Wrong lineno for case={!r}. Expected line={!r}, got line={!r}, '
         'lineno={!r}'.format(
-            case['name'], case['expect_line'], got_line, calldef.lineno)
+            case['name'], case['expect_line'], got_line, calldef.lineno
+        )
     )
 
-    assert '>>> 1 + 1' in calldef.docstr or ">>> \"bar\"" in calldef.docstr
+    assert '>>> 1 + 1' in calldef.docstr or '>>> "bar"' in calldef.docstr
 
 
 if __name__ == '__main__':

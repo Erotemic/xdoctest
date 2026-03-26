@@ -744,12 +744,13 @@ def parse_static_calldefs(
             try:
                 # fixme: This might never happen, could clean up this code if we can confirm
                 with open(fpath, 'rb') as file_:
-                    source = file_.read()  # type: ignore
+                    source_bytes = file_.read()
+                    source = source_bytes.decode('utf-8')
             except Exception:
                 print('Unable to read fpath = {!r}'.format(fpath))
                 raise
     try:
-        self = TopLevelVisitor.parse(source)  # type: ignore
+        self = TopLevelVisitor.parse(source)
         return self.calldefs
     except Exception:  # nocover
         if fpath:

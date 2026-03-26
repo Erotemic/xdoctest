@@ -1053,7 +1053,7 @@ def postprocess_hyperlinks(app, doctree, docname):
 
 
 def fix_rst_todo_section(lines):
-    new_lines = []
+    # new_lines = []
     for line in lines:
         ...
     ...
