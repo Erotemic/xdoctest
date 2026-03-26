@@ -17,6 +17,8 @@ license = "Apache 2"
 dev_status = "stable"
 typed = true
 skip_autogen = ["MANIFEST.in"]
+# CI extras configuration - adds tests-binary to full-loose variant
+ci_extras = 'full-loose: [tests-binary]'
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
