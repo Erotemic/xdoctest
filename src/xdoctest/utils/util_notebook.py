@@ -170,7 +170,7 @@ class NotebookLoader:
                 # run the code in the module
                 codeobj = compile(
                     typing.cast(
-                        ast.Module | ast.Expression | ast.Interactive, tree
+                        typing.Union[ast.Module, ast.Expression, ast.Interactive], tree
                     ),
                     filename=fpath,
                     mode='exec',
