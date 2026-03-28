@@ -197,9 +197,7 @@ def test_correct_skipping_on_decorators1() -> None:
             file.write(source)
 
         examples = list(
-            core.parse_doctestables(
-                modpath, style='google', analysis='static'
-            )
+            core.parse_doctestables(modpath, style='google', analysis='static')
         )
         print(f'examples={examples}')
 
@@ -247,9 +245,7 @@ def test_correct_skipping_on_decorators_simple() -> None:
             file.write(source)
 
         examples = list(
-            core.parse_doctestables(
-                modpath, style='google', analysis='static'
-            )
+            core.parse_doctestables(modpath, style='google', analysis='static')
         )
         print(f'examples={examples}')
 

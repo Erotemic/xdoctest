@@ -20,23 +20,38 @@ def test_parse_syntax_error() -> None:
             """
     )
 
-    info = {'callname': 'test_synerr', 'lineno': 42, 'fpath': None, 'parser_kw': None}
+    info = {
+        'callname': 'test_synerr',
+        'lineno': 42,
+        'fpath': None,
+        'parser_kw': None,
+    }
 
     # Eager parsing should cause no doctests with errors to be found
     # and warnings should be raised
     with warnings.catch_warnings(record=True) as f_warnlist:
         f_doctests = list(
             core.parse_docstr_examples(
-                docstr, callname=info['callname'], lineno=info['lineno'],
-                style='freeform', modpath=None, fpath=None, parser_kw=None
+                docstr,
+                callname=info['callname'],
+                lineno=info['lineno'],
+                style='freeform',
+                modpath=None,
+                fpath=None,
+                parser_kw=None,
             )
         )
 
     with warnings.catch_warnings(record=True) as g_warnlist:
         g_doctests = list(
             core.parse_docstr_examples(
-                docstr, callname=info['callname'], lineno=info['lineno'],
-                style='google', modpath=None, fpath=None, parser_kw=None
+                docstr,
+                callname=info['callname'],
+                lineno=info['lineno'],
+                style='google',
+                modpath=None,
+                fpath=None,
+                parser_kw=None,
             )
         )
 
@@ -55,8 +70,12 @@ def test_parse_syntax_error() -> None:
     # results in an error.
     g_doctests2 = list(
         core.parse_google_docstr_examples(
-            docstr, callname=info['callname'], lineno=info['lineno'],
-            eager_parse=False, modpath=None, fpath=None
+            docstr,
+            callname=info['callname'],
+            lineno=info['lineno'],
+            eager_parse=False,
+            modpath=None,
+            fpath=None,
         )
     )
     assert len(g_doctests2) == 1

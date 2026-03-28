@@ -142,7 +142,9 @@ def test_format_src() -> None:
         utils.strip_ansi(self.format_src(colored=True, linenos=True))
         == string_with_lineno
     )
-    assert utils.strip_ansi(self.format_src(colored=True, linenos=False)) == string
+    assert (
+        utils.strip_ansi(self.format_src(colored=True, linenos=False)) == string
+    )
 
 
 def test_eval_expr_capture() -> None:

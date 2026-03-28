@@ -80,8 +80,8 @@ def explicit_testdir() -> None:
     # _pytest.config._preloadplugins()  # to populate pytest.* namespace so help(pytest) works
     import _pytest
 
-    config = _pytest.config._prepareconfig(['-s'], plugins=['pytester'])    # type: ignore
-    session = _pytest.main.Session(config)    # type: ignore
+    config = _pytest.config._prepareconfig(['-s'], plugins=['pytester'])  # type: ignore
+    session = _pytest.main.Session(config)  # type: ignore
 
     _pytest.tmpdir.pytest_configure(config)  # type: ignore
     _pytest.fixtures.pytest_sessionstart(session)  # type: ignore
@@ -90,10 +90,10 @@ def explicit_testdir() -> None:
     def func(testdir) -> None:
         pass
 
-    parent = _pytest.python.Module(    # type: ignore
+    parent = _pytest.python.Module(  # type: ignore
         'parent', config=config, session=session, nodeid='myparent'
     )
-    function = _pytest.python.Function(    # type: ignore
+    function = _pytest.python.Function(  # type: ignore
         'func',
         parent,
         callobj=func,
@@ -1767,7 +1767,9 @@ class TestXDoctestReportingOption:
         )
 
     @pytest.mark.parametrize('format', ['none', 'only_first_failure'])
-    def test_doctest_report_none_or_only_first_failure(self, testdir, format) -> None:
+    def test_doctest_report_none_or_only_first_failure(
+        self, testdir, format
+    ) -> None:
         """
         pytest tests/test_plugin.py::TestXDoctestReportingOption::test_doctest_report_none_or_only_first_failure
         """

@@ -25,7 +25,10 @@ def test_final_eval_exec() -> None:
     if DEBUG:
         print(string)
         print([p.compile_mode for p in parts if isinstance(p, DoctestPart)])
-    assert [p.compile_mode for p in parts if isinstance(p, DoctestPart)] == ['exec', 'eval']
+    assert [p.compile_mode for p in parts if isinstance(p, DoctestPart)] == [
+        'exec',
+        'eval',
+    ]
 
     string = utils.codeblock(
         """
@@ -38,7 +41,9 @@ def test_final_eval_exec() -> None:
     if DEBUG:
         print(string)
         print([p.compile_mode for p in parts if isinstance(p, DoctestPart)])
-    assert [p.compile_mode for p in parts if isinstance(p, DoctestPart)] == ['exec']
+    assert [p.compile_mode for p in parts if isinstance(p, DoctestPart)] == [
+        'exec'
+    ]
 
     string = utils.codeblock(
         r'''
@@ -55,7 +60,10 @@ def test_final_eval_exec() -> None:
     if DEBUG:
         print(string)
         print([p.compile_mode for p in parts if isinstance(p, DoctestPart)])
-    assert [p.compile_mode for p in parts if isinstance(p, DoctestPart)] == ['exec', 'single']
+    assert [p.compile_mode for p in parts if isinstance(p, DoctestPart)] == [
+        'exec',
+        'single',
+    ]
 
     string = utils.codeblock(
         r"""
@@ -69,7 +77,10 @@ def test_final_eval_exec() -> None:
     if DEBUG:
         print(string)
         print([p.compile_mode for p in parts if isinstance(p, DoctestPart)])
-    assert [p.compile_mode for p in parts if isinstance(p, DoctestPart)] == ['exec', 'eval']
+    assert [p.compile_mode for p in parts if isinstance(p, DoctestPart)] == [
+        'exec',
+        'eval',
+    ]
 
     string = utils.codeblock(
         r"""
@@ -83,7 +94,9 @@ def test_final_eval_exec() -> None:
     if DEBUG:
         print(string)
         print([p.compile_mode for p in parts if isinstance(p, DoctestPart)])
-    assert [p.compile_mode for p in parts if isinstance(p, DoctestPart)] == ['single']
+    assert [p.compile_mode for p in parts if isinstance(p, DoctestPart)] == [
+        'single'
+    ]
 
 
 def test_compile_mode_print() -> None:
@@ -97,7 +110,10 @@ def test_compile_mode_print() -> None:
     )
     self = parser.DoctestParser()
     parts = self.parse(string)
-    assert [p.compile_mode for p in parts if isinstance(p, DoctestPart)] == ['exec', 'eval']
+    assert [p.compile_mode for p in parts if isinstance(p, DoctestPart)] == [
+        'exec',
+        'eval',
+    ]
 
 
 def test_label_lines() -> None:
@@ -392,7 +408,7 @@ def test_parse_comment() -> None:
 def test_parse_comment_with_inconsistent_indent() -> None:
     """Comments that ignore indentation should still parse."""
     string = utils.codeblock(
-        '''
+        """
         >>> class MyClass:
         >>> # comment separating members
         >>>     def method1(self):
@@ -402,7 +418,7 @@ def test_parse_comment_with_inconsistent_indent() -> None:
         >>>         ...
         >>> # end comment
         >>> self = MyClass()
-        '''
+        """
     )
     self = parser.DoctestParser()
     source_lines = string.split('\n')[:]
@@ -412,14 +428,16 @@ def test_parse_comment_with_inconsistent_indent() -> None:
     parts_: list[DoctestPart | str] = self.parse(string)
     parts: list[DoctestPart] = [p for p in parts_ if not isinstance(p, str)]
     # Ensure the comment lines were preserved in the resulting doctest part
-    assert any('# comment' in '\n'.join(cast(List[str], part.orig_lines))
-               for part in parts)
+    assert any(
+        '# comment' in '\n'.join(cast(List[str], part.orig_lines))
+        for part in parts
+    )
 
 
 def test_parse_comment_with_blank_lines_and_varying_indent() -> None:
     """Handle comment separators that include blank lines between blocks."""
     string = utils.codeblock(
-        '''
+        """
         >>> class WeirdSpacing:
         >>> # first separator
         >>>
@@ -435,7 +453,7 @@ def test_parse_comment_with_blank_lines_and_varying_indent() -> None:
         >>> # trailing separator
         >>>
         >>> weird = WeirdSpacing()
-        '''
+        """
     )
     self = parser.DoctestParser()
     source_lines = string.split('\n')[:]
@@ -444,17 +462,22 @@ def test_parse_comment_with_blank_lines_and_varying_indent() -> None:
     assert mode_hint == 'exec'
     parts_: list[DoctestPart | str] = self.parse(string)
     parts: list[DoctestPart] = [p for p in parts_ if not isinstance(p, str)]
-    combined = '\n'.join('\n'.join(cast(List[str], part.orig_lines))
-                         for part in parts)
-    for text in ['# first separator', '# second separator',
-                 '# nested separator', '# trailing separator']:
+    combined = '\n'.join(
+        '\n'.join(cast(List[str], part.orig_lines)) for part in parts
+    )
+    for text in [
+        '# first separator',
+        '# second separator',
+        '# nested separator',
+        '# trailing separator',
+    ]:
         assert text in combined
 
 
 def test_parse_comment_with_mixed_indentation_levels() -> None:
     """Comments should be tolerated even as indentation changes."""
     string = utils.codeblock(
-        '''
+        """
         >>> class Outer:
         >>> # before inner class
         >>>     class Inner:
@@ -467,7 +490,7 @@ def test_parse_comment_with_mixed_indentation_levels() -> None:
         >>>             ...
         >>> # after all class blocks
         >>> helper = Outer.Inner()
-        '''
+        """
     )
     self = parser.DoctestParser()
     source_lines = string.split('\n')[:]
@@ -476,10 +499,15 @@ def test_parse_comment_with_mixed_indentation_levels() -> None:
     assert mode_hint == 'exec'
     parts_: list[DoctestPart | str] = self.parse(string)
     parts: list[DoctestPart] = [p for p in parts_ if not isinstance(p, str)]
-    combined = '\n'.join('\n'.join(cast(List[str], part.orig_lines))
-                         for part in parts)
-    for text in ['# before inner class', '# inner comment missing indent',
-                 '# properly indented comment', '# after all class blocks']:
+    combined = '\n'.join(
+        '\n'.join(cast(List[str], part.orig_lines)) for part in parts
+    )
+    for text in [
+        '# before inner class',
+        '# inner comment missing indent',
+        '# properly indented comment',
+        '# after all class blocks',
+    ]:
         assert text in combined
 
 
@@ -549,7 +577,7 @@ def test_nonbalanced_statement() -> None:
     self = parser.DoctestParser()
     with pytest.raises(exceptions.DoctestParseError) as exc_info:
         self.parse(string)
-    ex : exceptions.DoctestParseError = exc_info.value
+    ex: exceptions.DoctestParseError = exc_info.value
     orig_ex = ex.orig_ex
     assert isinstance(orig_ex, exceptions.IncompleteParseError)
     msg = orig_ex.msg.lower()
@@ -572,7 +600,7 @@ def test_bad_indent() -> None:
     self = parser.DoctestParser()
     with pytest.raises(exceptions.DoctestParseError) as exc_info:
         self.parse(string)
-    ex : exceptions.DoctestParseError = exc_info.value
+    ex: exceptions.DoctestParseError = exc_info.value
     orig_ex = ex.orig_ex
     assert isinstance(orig_ex, SyntaxError), repr(type(orig_ex))
     msg = orig_ex.msg.lower()
@@ -606,7 +634,10 @@ def test_repl_twoline() -> None:
     )
     self = parser.DoctestParser(simulate_repl=True)
     parts = self.parse(string)
-    assert [p.source for p in parts if isinstance(p, DoctestPart)] == ['x = 1', 'x = 2']
+    assert [p.source for p in parts if isinstance(p, DoctestPart)] == [
+        'x = 1',
+        'x = 2',
+    ]
 
 
 def test_repl_comment_in_string() -> None:

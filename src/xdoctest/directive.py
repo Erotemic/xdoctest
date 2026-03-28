@@ -340,7 +340,9 @@ class RuntimeState(utils.NiceRepr):
         if key in self._inline_state:
             return cast(Union[bool, Set[str]], self._inline_state[key])
         else:
-            return cast(Dict[str, Union[bool, Set[str]]], self._global_state)[key]
+            return cast(Dict[str, Union[bool, Set[str]]], self._global_state)[
+                key
+            ]
 
     def __setitem__(self, key: str, value: bool | set[str]):
         """
