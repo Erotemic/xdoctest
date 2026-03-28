@@ -16,7 +16,7 @@ from xdoctest.plugin import XDoctestItem, XDoctestModule, XDoctestTextfile
 try:
     from packaging.version import parse as LooseVersion
 except ImportError:
-    from distutils.version import LooseVersion
+    from distutils.version import LooseVersion  # type: ignore
 
 IS_GE_PY306 = sys.version_info[:2] >= (3, 6)
 IS_GE_PY307 = sys.version_info[:2] >= (3, 7)
@@ -37,10 +37,10 @@ OLD_TEXT_ARGS = ['--xdoc-glob=*.txt']
 #         file.write(str(text) + '\n')
 
 
-def explicit_testdir() -> None:
+def explicit_testdir() -> object:
     r"""
     Explicitly constructs a testdir for use in IPython development
-    Note used by any tests.
+    Not used by any tests. We likely should just delete this, or add it to dev. q
 
     # https://xr.gs/2017/07/pytest-dynamic-runtime-fixtures-python3/
     https://stackoverflow.com/questions/45970572/how-to-get-a-pytest-fixture-interactively
@@ -121,10 +121,10 @@ def explicit_testdir() -> None:
         self = function._request
         # argname = 'tmpdir_factory'
         argname = 'testdir'
-        fixturedef = self._arg2fixturedefs.get(argname, None)[0]
-        fixturedef.scope = 'function'
-        self._compute_fixture_value(fixturedef)
-        testdir = fixturedef.cached_result[0]
+        fixturedef = self._arg2fixturedefs.get(argname, None)[0]  # type: ignore
+        fixturedef.scope = 'function'  # type: ignore
+        self._compute_fixture_value(fixturedef)  # type: ignore
+        testdir = fixturedef.cached_result[0]  # type: ignore
 
     # from _pytest.compat import _setup_collect_fakemodule
     # _setup_collect_fakemodule()
@@ -146,8 +146,7 @@ class TestXDoctestActivation:
         Activate `xdoctest` via command-line arguments.
 
         CommandLine:
-            pytest tests/test_plugin.py::TestXDoctestActivation::\
-test_xdoctest_cli_activation
+            pytest tests/test_plugin.py::TestXDoctestActivation::test_xdoctest_cli_activation
         """
         self._check_activation(request, flags, load)
 
@@ -156,8 +155,7 @@ test_xdoctest_cli_activation
         Activate `xdoctest` via config file.
 
         CommandLine:
-            pytest tests/test_plugin.py::TestXDoctestActivation::\
-test_xdoctest_config_activation
+            pytest tests/test_plugin.py::TestXDoctestActivation::test_xdoctest_config_activation
         """
         self._get_tester(request).makeini("""
         [pytest]
@@ -171,8 +169,7 @@ test_xdoctest_config_activation
         command line.
 
         CommandLine:
-            pytest tests/test_plugin.py::TestXDoctestActivation::\
-test_xdoctest_explicit_suppression
+            pytest tests/test_plugin.py::TestXDoctestActivation::test_xdoctest_explicit_suppression
         """
         pdt_namespace_before = self._get_pytest_doctest_module_dict()
         try:

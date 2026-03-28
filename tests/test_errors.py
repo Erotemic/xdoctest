@@ -3,6 +3,7 @@ from os.path import join
 
 import pytest
 
+from typing import cast
 from xdoctest import core, exceptions, runner, utils
 from xdoctest.utils.util_misc import _run_case
 
@@ -20,7 +21,7 @@ def test_parse_syntax_error() -> None:
             """
     )
 
-    info = {
+    info : dict[str, str | int | None] = {
         'callname': 'test_synerr',
         'lineno': 42,
         'fpath': None,
@@ -33,8 +34,8 @@ def test_parse_syntax_error() -> None:
         f_doctests = list(
             core.parse_docstr_examples(
                 docstr,
-                callname=info['callname'],
-                lineno=info['lineno'],
+                callname=cast(str, info['callname']),
+                lineno=cast(int, info['lineno']),
                 style='freeform',
                 modpath=None,
                 fpath=None,
@@ -46,8 +47,8 @@ def test_parse_syntax_error() -> None:
         g_doctests = list(
             core.parse_docstr_examples(
                 docstr,
-                callname=info['callname'],
-                lineno=info['lineno'],
+                callname=cast(str, info['callname']),
+                lineno=cast(int, info['lineno']),
                 style='google',
                 modpath=None,
                 fpath=None,
@@ -71,8 +72,8 @@ def test_parse_syntax_error() -> None:
     g_doctests2 = list(
         core.parse_google_docstr_examples(
             docstr,
-            callname=info['callname'],
-            lineno=info['lineno'],
+            callname=cast(str, info['callname']),
+            lineno=cast(int, info['lineno']),
             eager_parse=False,
             modpath=None,
             fpath=None,

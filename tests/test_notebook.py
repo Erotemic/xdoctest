@@ -6,7 +6,7 @@ import pytest
 try:
     from packaging.version import parse as LooseVersion
 except ImportError:
-    from distutils.version import LooseVersion
+    from distutils.version import LooseVersion  # type: ignore
 
 PY_VERSION = LooseVersion('{}.{}'.format(*sys.version_info[0:2]))
 IS_MODERN_PYTHON = PY_VERSION > LooseVersion('3.4')

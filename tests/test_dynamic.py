@@ -17,7 +17,7 @@ TopLevelVisitor = static.TopLevelVisitor
 
 class SimpleDescriptor:
     def __init__(self) -> None:
-        self.value = 0
+        self.value : float | int = 0
 
     def __get__(self, instance, owner):
         return self.value
