@@ -96,6 +96,10 @@ ignore-words-list = ['wont', 'cant', 'ANS', 'doesnt', 'arent', 'ans', 'thats', '
 [tool.mypy]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "xdoctest._tokenize"
+ignore_errors = true
+
 [tool.ty.rules]
 unused-type-ignore-comment = "ignore"
 unresolved-import = "ignore"
