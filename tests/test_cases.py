@@ -1,5 +1,4 @@
-from xdoctest import utils
-from xdoctest import core
+from xdoctest import core, utils
 from xdoctest.utils.util_misc import _run_case
 
 
@@ -151,7 +150,6 @@ def test_correct_skipping_on_decorators1() -> None:
     """
     from os.path import join
 
-    import xdoctest
     from xdoctest import runner
 
     source = utils.codeblock(
@@ -215,7 +213,6 @@ def test_correct_skipping_on_decorators_simple() -> None:
 
     from os.path import join
 
-    import xdoctest
     from xdoctest import runner
 
     source = utils.codeblock(

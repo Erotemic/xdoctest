@@ -1,7 +1,9 @@
-import pytest
 from typing import List, cast
-from xdoctest.doctest_part import DoctestPart
+
+import pytest
+
 from xdoctest import exceptions, parser, utils
+from xdoctest.doctest_part import DoctestPart
 
 
 def test_final_eval_exec() -> None:
