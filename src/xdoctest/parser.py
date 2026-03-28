@@ -234,7 +234,7 @@ class DoctestParser:
             print('\n===== FINISHED PARSE ====')
         return all_parts
 
-    def _package_groups(self, grouped_lines):
+    def _package_groups(self, grouped_lines) -> None:
         if global_state.DEBUG_PARSER > 1:
             import ubelt as ub
 
@@ -254,7 +254,7 @@ class DoctestParser:
         if global_state.DEBUG_PARSER > 1:
             print('</PACKAGE LABEL GROUPS>')
 
-    def _package_chunk(self, raw_source_lines, raw_want_lines, lineno=0):
+    def _package_chunk(self, raw_source_lines, raw_want_lines, lineno=0) -> None:
         """
         if `self.simulate_repl` is True, then each statement is broken into its
         own part.  Otherwise, statements are grouped by the closest `want`
@@ -903,7 +903,7 @@ def _min_indentation(s):
         return 0
 
 
-def _complete_source(line, state_indent, line_iter):
+def _complete_source(line, state_indent, line_iter) -> None:
     """
     helper
     remove lines from the iterator if they are needed to complete source

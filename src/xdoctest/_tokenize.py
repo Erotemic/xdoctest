@@ -166,13 +166,13 @@ class StopTokenizing(Exception): pass
 
 class Untokenizer:
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.tokens = []
         self.prev_row = 1
         self.prev_col = 0
         self.encoding = None
 
-    def add_whitespace(self, start):
+    def add_whitespace(self, start) -> None:
         row, col = start
         if row < self.prev_row or row == self.prev_row and col < self.prev_col:
             raise ValueError("start ({},{}) precedes previous end ({},{})"
@@ -222,7 +222,7 @@ class Untokenizer:
                 self.prev_col = 0
         return "".join(self.tokens)
 
-    def compat(self, token, iterable):
+    def compat(self, token, iterable) -> None:
         indents = []
         toks_append = self.tokens.append
         startline = token[0] in (NEWLINE, NL)
@@ -431,7 +431,7 @@ def tokenize(readline):
     return _tokenize(rl_gen.__next__, encoding)
 
 
-def _tokenize(readline, encoding):
+def _tokenize(readline, encoding) -> None:
     lnum = parenlev = continued = 0
     numchars = '0123456789'
     contstr, needcont = '', 0
@@ -622,15 +622,15 @@ def generate_tokens(readline):
     """
     return _tokenize(readline, None)
 
-def main():
+def main() -> None:
     import argparse
 
     # Helper error handling routines
-    def perror(message):
+    def perror(message) -> None:
         sys.stderr.write(message)
         sys.stderr.write('\n')
 
-    def error(message, filename=None, location=None):
+    def error(message, filename=None, location=None) -> None:
         if location:
             args = (filename,) + location + (message,)
             perror("%s:%d:%d: error: %s" % args)
@@ -683,7 +683,7 @@ def main():
         perror("unexpected error: %s" % err)
         raise
 
-def _generate_tokens_from_c_tokenizer(source):
+def _generate_tokens_from_c_tokenizer(source) -> None:
     """Tokenize a source reading Python code as unicode strings using the internal C tokenizer"""
     import _tokenize as c_tokenizer  # type: ignore[unresolved-import]
     for info in c_tokenizer.TokenizerIter(source):

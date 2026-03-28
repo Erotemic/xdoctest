@@ -67,7 +67,7 @@ from xdoctest import (
 )
 
 
-def log(msg: str, verbose: bool | int, level: int = 1):
+def log(msg: str, verbose: bool | int, level: int = 1) -> None:
     """
     Simple conditional print logger
 
@@ -81,7 +81,7 @@ def log(msg: str, verbose: bool | int, level: int = 1):
         print(msg)
 
 
-def doctest_callable(func: Callable[..., typing.Any]):
+def doctest_callable(func: Callable[..., typing.Any]) -> None:
     """
     Executes doctests an in-memory function or class.
 
@@ -119,7 +119,7 @@ def doctest_callable(func: Callable[..., typing.Any]):
 
 def gather_doctests(
     doctest_identifiers, style='auto', analysis='auto', verbose=None
-):
+) -> None:
     raise NotImplementedError('todo')
 
 
@@ -399,7 +399,7 @@ def doctest_module(
     return run_summary
 
 
-def _auto_disable_failing_tests_hook(context):
+def _auto_disable_failing_tests_hook(context) -> None:
     """
     Experimental feature to modify code based on failing tests.
     This should likely be moved to its own submodule.
@@ -554,18 +554,18 @@ def undefined_names(sourcecode: str) -> set[str]:
     import pyflakes.reporter
 
     class CaptureReporter(pyflakes.reporter.Reporter):
-        def __init__(reporter, warningStream, errorStream):
+        def __init__(reporter, warningStream, errorStream) -> None:
             reporter.syntax_errors = []
             reporter.messages = []
             reporter.unexpected = []
 
-        def unexpectedError(reporter, filename, msg):
+        def unexpectedError(reporter, filename, msg) -> None:
             reporter.unexpected.append(msg)
 
-        def syntaxError(reporter, filename, msg, lineno, offset, text):
+        def syntaxError(reporter, filename, msg, lineno, offset, text) -> None:
             reporter.syntax_errors.append(msg)
 
-        def flake(reporter, message):
+        def flake(reporter, message) -> None:
             reporter.messages.append(message)
 
     names = set()
@@ -587,13 +587,13 @@ def _print_summary_report(
     durations,
     config=None,
     _log=None,
-):
+) -> None:
     """
     Summary report formatting and printing
     """
     assert _log is not None
 
-    def cprint(text, color):
+    def cprint(text, color) -> None:
         if config is not None and config.get('colored', True):
             _log(utils.color_text(text, color))
         else:
@@ -698,7 +698,7 @@ def _print_summary_report(
             _log('time: {:0.8f}, test: {}'.format(n_secs, example.cmdline))
 
 
-def _gather_zero_arg_examples(modpath):
+def _gather_zero_arg_examples(modpath) -> None:
     """
     Find functions in `modpath` args  with no args (so we can automatically
     make a dummy docstring).
@@ -846,7 +846,7 @@ def _parse_commandline(command=None, style='auto', verbose=None, argv=None):
     return command, style, verbose
 
 
-def _update_argparse_cli(add_argument, prefix=None):
+def _update_argparse_cli(add_argument, prefix=None) -> None:
     """
     Update the CLI with arguments that control how doctests are collected ando
     how aggregate results are reported.

@@ -294,7 +294,7 @@ class RuntimeState(utils.NiceRepr):
         })>
     """
 
-    def __init__(self, default_state: RuntimeStateDict | None = None):
+    def __init__(self, default_state: RuntimeStateDict | None = None) -> None:
         """
         Args:
             default_state (None | dict): starting default state, if unspecified
@@ -344,7 +344,7 @@ class RuntimeState(utils.NiceRepr):
                 key
             ]
 
-    def __setitem__(self, key: str, value: bool | set[str]):
+    def __setitem__(self, key: str, value: bool | set[str]) -> None:
         """
         Args:
             key (str):
@@ -358,7 +358,7 @@ class RuntimeState(utils.NiceRepr):
         self,
         reportchoice: ReportStyle,
         state: RuntimeStateDict | None = None,
-    ):
+    ) -> None:
         """
         Args:
             reportchoice (ReportStyle): name of report style. Must be one of
@@ -382,7 +382,7 @@ class RuntimeState(utils.NiceRepr):
                 state_dict[k] = False
         state_dict['REPORT_' + reportchoice.upper()] = True
 
-    def update(self, directives: list[Directive]):
+    def update(self, directives: list[Directive]) -> None:
         """
         Update the runtime state given a set of directives
 
@@ -435,7 +435,7 @@ class Directive(utils.NiceRepr):
         positive: bool = True,
         args: list[str] | None = None,
         inline: bool | None = None,
-    ):
+    ) -> None:
         """
         Args:
             name (str): The name of the directive

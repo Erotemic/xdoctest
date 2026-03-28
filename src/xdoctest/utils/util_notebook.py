@@ -105,7 +105,7 @@ class NotebookLoader:
         'encoding': 'utf-8',
     }
 
-    def __init__(self, path=None):
+    def __init__(self, path=None) -> None:
         from IPython.core.interactiveshell import InteractiveShell
 
         self.shell = InteractiveShell.instance()

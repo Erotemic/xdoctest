@@ -623,13 +623,13 @@ def _static_parse(varname: typing.Any, fpath: typing.Any) -> typing.Any:
     pt = ast.parse(sourcecode)
 
     class StaticVisitor(ast.NodeVisitor):
-        def visit_Assign(self, node):
+        def visit_Assign(self, node) -> None:
             for target in node.targets:
                 target_id = getattr(target, 'id', None)
                 if target_id == varname:
                     self.static_value = _parse_static_node_value(node.value)
 
-        def visit_AnnAssign(self, node):
+        def visit_AnnAssign(self, node) -> None:
             target = node.target
             target_id = getattr(target, 'id', None)
             if target_id == varname:

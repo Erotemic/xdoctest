@@ -52,7 +52,7 @@ class CallDefNode:
         doclineno: int,
         doclineno_end: int,
         args: ast.arguments | None = None,
-    ):
+    ) -> None:
         """
         Args:
             callname (str):
@@ -164,7 +164,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         self.process_finished(lineno_end)
         return self
 
-    def __init__(self, source: str | None = None):
+    def __init__(self, source: str | None = None) -> None:
         """
         Args:
             source (None | str):
@@ -194,7 +194,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         pt = ast.parse(self.source)
         return pt
 
-    def process_finished(self, node: ast.AST | int):
+    def process_finished(self, node: ast.AST | int) -> None:
         """
         process (get ending lineno) for everything marked as finished
 
@@ -211,7 +211,7 @@ class TopLevelVisitor(ast.NodeVisitor):
                 calldef = self._finish_queue.pop()
                 calldef.lineno_end = lineno_end
 
-    def visit(self, node: ast.AST):
+    def visit(self, node: ast.AST) -> None:
         """
         Args:
             node (ast.AST):
@@ -267,7 +267,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         """
         return self._visit_generic_FunctionDef(node)
 
-    def visit_ClassDef(self, node: ast.ClassDef):
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """
         Args:
             node (ast.ClassDef):
@@ -286,7 +286,7 @@ class TopLevelVisitor(ast.NodeVisitor):
 
             self._finish_queue.append(calldef)
 
-    def visit_Module(self, node: ast.Module):
+    def visit_Module(self, node: ast.Module) -> None:
         """
         Args:
             node (ast.Module):
@@ -305,7 +305,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         self.generic_visit(node)
         # self._finish_queue.append(calldef)
 
-    def visit_Assign(self, node: ast.Assign):
+    def visit_Assign(self, node: ast.Assign) -> None:
         """
         Args:
             node (ast.Assign):
@@ -876,7 +876,7 @@ def parse_static_value(
     pt = ast.parse(source)
 
     class AssignentVisitor(ast.NodeVisitor):
-        def visit_Assign(self, node):
+        def visit_Assign(self, node) -> None:
             for target in node.targets:
                 target_id = getattr(target, 'id', None)
                 if target_id == key:
@@ -1090,7 +1090,7 @@ def is_balanced_statement(
         return True
 
 
-def extract_comments(source: str | list[str]):
+def extract_comments(source: str | list[str]) -> None:
     """
     Returns the text in each comment in a block of python code.
     Uses tokenize to account for quotations.
@@ -1133,7 +1133,7 @@ def extract_comments(source: str | list[str]):
         pass
 
 
-def _strip_hashtag_comments_and_newlines(source: str | list[str]):
+def _strip_hashtag_comments_and_newlines(source: str | list[str]) -> None:
     """
     Removes hashtag comments from underlying source
 
@@ -1189,7 +1189,7 @@ def _strip_hashtag_comments_and_newlines(source: str | list[str]):
         """
         return (t for t in tokens if t[0] != tokenize.COMMENT)
 
-    def strip_consecutive_newlines(tokens):
+    def strip_consecutive_newlines(tokens) -> None:
         """
         Consecutive newlines are dropped and trailing whitespace
 

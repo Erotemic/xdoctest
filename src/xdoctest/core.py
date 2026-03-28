@@ -319,7 +319,7 @@ def parse_google_docstr_examples(
         yield example
 
 
-def parse_auto_docstr_examples(docstr, *args, **kwargs):
+def parse_auto_docstr_examples(docstr, *args, **kwargs) -> None:
     """
     First try to parse google style, but if no tests are found use freeform
     style.

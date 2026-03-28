@@ -32,7 +32,7 @@ class DoctestParseError(Exception):
         string: str | None = None,
         info: typing.Any | None = None,
         orig_ex: Exception | None = None,
-    ):
+    ) -> None:
         """
         Args:
             msg (str): error message

@@ -53,7 +53,7 @@ class DoctestConfig(dict):
     RuntimeState.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(DoctestConfig, self).__init__(*args, **kwargs)
         self.update(
             {
@@ -396,7 +396,7 @@ class DocTest:
         fpath: str | os.PathLike | None = None,
         block_type: str | None = None,
         mode: str = 'pytest',
-    ):
+    ) -> None:
         """
         Args:
             docsrc (str): the text of the doctest
@@ -593,7 +593,7 @@ class DocTest:
         want: bool = True,
         offset_linenos: bool | None = None,
         prefix: bool = True,
-    ):
+    ) -> None:
         """
         Used by :func:`format_src`
 
@@ -756,7 +756,7 @@ class DocTest:
         for partno, part in enumerate(self._parts):
             part.partno = partno
 
-    def _import_module(self):
+    def _import_module(self) -> None:
         """
         After this point we are in dynamic analysis mode, in most cases
         xdoctest should have been in static-analysis-only mode.
@@ -1311,7 +1311,7 @@ class DocTest:
     def _block_prefix(self):
         return 'ZERO-ARG' if self.block_type == 'zero-arg' else 'DOCTEST'
 
-    def _pre_run(self, verbose):
+    def _pre_run(self, verbose) -> None:
         if verbose >= 1:
             if verbose >= 2:
                 barrier = self._color('====== <exec> ======', 'white')
@@ -1590,7 +1590,7 @@ class DocTest:
                 # where the error occurred in the doctest
                 tblines = traceback.format_exception(*self.exc_info)
 
-                def _alter_traceback_linenos(self, tblines):
+                def _alter_traceback_linenos(self, tblines) -> None:
                     def overwrite_lineno(linepart):
                         # Replace the trailing part which is the lineno
                         old_linestr = linepart[-1]  # noqa
@@ -1666,7 +1666,7 @@ class DocTest:
         lines += ['    ' + self.cmdline]
         return lines
 
-    def _print_captured(self):
+    def _print_captured(self) -> None:
         assert self.logged_stdout is not None
         out_text = ''.join([v for v in self.logged_stdout.values() if v])
         if out_text is not None:
@@ -1732,7 +1732,7 @@ class DocTest:
         return summary
 
 
-def _traverse_traceback(tb):
+def _traverse_traceback(tb) -> None:
     # Lives down here to avoid issue calling exec in a function that contains a
     # nested function with free variable.  Not sure how necessary this is
     # because this doesn't have free variables.
