@@ -1,5 +1,6 @@
 import pytest
-
+from typing import List, cast
+from xdoctest.doctest_part import DoctestPart
 from xdoctest import exceptions, parser, utils
 
 
@@ -384,7 +385,7 @@ def test_parse_comment():
     assert parts[0].source.strip().startswith('#')
 
 
-def test_parse_comment_with_inconsistent_indent():
+def test_parse_comment_with_inconsistent_indent() -> None:
     """Comments that ignore indentation should still parse."""
     string = utils.codeblock(
         '''
@@ -404,13 +405,14 @@ def test_parse_comment_with_inconsistent_indent():
     linenos, mode_hint = self._locate_ps1_linenos(source_lines)
     assert linenos[0] == 0
     assert mode_hint == 'exec'
-    parts = self.parse(string)
+    parts_: list[DoctestPart | str] = self.parse(string)
+    parts: list[DoctestPart] = [p for p in parts_ if not isinstance(p, str)]
     # Ensure the comment lines were preserved in the resulting doctest part
-    assert any('# comment' in '\n'.join(part.orig_lines)
+    assert any('# comment' in '\n'.join(cast(List[str], part.orig_lines))
                for part in parts)
 
 
-def test_parse_comment_with_blank_lines_and_varying_indent():
+def test_parse_comment_with_blank_lines_and_varying_indent() -> None:
     """Handle comment separators that include blank lines between blocks."""
     string = utils.codeblock(
         '''
@@ -436,14 +438,16 @@ def test_parse_comment_with_blank_lines_and_varying_indent():
     linenos, mode_hint = self._locate_ps1_linenos(source_lines)
     assert linenos[0] == 0
     assert mode_hint == 'exec'
-    parts = self.parse(string)
-    combined = '\n'.join('\n'.join(part.orig_lines) for part in parts)
+    parts_: list[DoctestPart | str] = self.parse(string)
+    parts: list[DoctestPart] = [p for p in parts_ if not isinstance(p, str)]
+    combined = '\n'.join('\n'.join(cast(List[str], part.orig_lines))
+                         for part in parts)
     for text in ['# first separator', '# second separator',
                  '# nested separator', '# trailing separator']:
         assert text in combined
 
 
-def test_parse_comment_with_mixed_indentation_levels():
+def test_parse_comment_with_mixed_indentation_levels() -> None:
     """Comments should be tolerated even as indentation changes."""
     string = utils.codeblock(
         '''
@@ -466,8 +470,10 @@ def test_parse_comment_with_mixed_indentation_levels():
     linenos, mode_hint = self._locate_ps1_linenos(source_lines)
     assert linenos[0] == 0
     assert mode_hint == 'exec'
-    parts = self.parse(string)
-    combined = '\n'.join('\n'.join(part.orig_lines) for part in parts)
+    parts_: list[DoctestPart | str] = self.parse(string)
+    parts: list[DoctestPart] = [p for p in parts_ if not isinstance(p, str)]
+    combined = '\n'.join('\n'.join(cast(List[str], part.orig_lines))
+                         for part in parts)
     for text in ['# before inner class', '# inner comment missing indent',
                  '# properly indented comment', '# after all class blocks']:
         assert text in combined

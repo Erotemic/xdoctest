@@ -586,10 +586,10 @@ class DoctestParser:
             intervals = balanced_intervals(lines)
             interval_starts = {t[0] for t in intervals}
 
-            def _indent(line):
+            def _indent(line: str) -> str:
                 return line[:len(line) - len(line.lstrip())]
 
-            def _infer_comment_indent(idx, line):
+            def _infer_comment_indent(idx: int, line: str) -> str:
                 """Infer the indentation a placeholder comment statement
                 should have.
 
