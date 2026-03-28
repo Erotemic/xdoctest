@@ -4,7 +4,7 @@ from xdoctest import static_analysis as static
 from xdoctest import utils
 
 
-def test_module_docstr():
+def test_module_docstr() -> None:
     source = utils.codeblock(
         '''
         # comment
@@ -21,7 +21,7 @@ def test_module_docstr():
     assert '__doc__' in self.calldefs
 
 
-def test_lineno():
+def test_lineno() -> None:
     source = utils.codeblock(
         '''
         def foo():
@@ -70,7 +70,7 @@ def test_lineno():
         assert docsrc_lines[-1].strip().endswith('"""')
 
 
-def test_mod_lineno2():
+def test_mod_lineno2() -> None:
     source = utils.codeblock(
         '''
         class Fun:  #1
@@ -135,7 +135,7 @@ def test_mod_lineno2():
     assert calldefs['decor4'].doclineno_end == 38
 
 
-def test_async_function_docstr_collection():
+def test_async_function_docstr_collection() -> None:
     source = utils.codeblock(
         '''
         async def b():
@@ -153,7 +153,7 @@ def test_async_function_docstr_collection():
     assert self.calldefs['b'].doclineno_end == 5
 
 
-def test_parse_decorated_async_function_lineno():
+def test_parse_decorated_async_function_lineno() -> None:
     source = utils.codeblock(
         '''
         def deco(func):
@@ -187,7 +187,7 @@ def test_parse_decorated_async_function_lineno():
     assert '>>> 1 + 1' in calldef.docstr
 
 
-def test_parse_multi_decorated_async_function_lineno():
+def test_parse_multi_decorated_async_function_lineno() -> None:
     source = utils.codeblock(
         '''
         def deco1(func):
@@ -465,7 +465,7 @@ def test_parse_multi_decorated_async_function_lineno():
         },
     ],
 )
-def test_parse_decorated_function_lineno_cases(case):
+def test_parse_decorated_function_lineno_cases(case) -> None:
     source = utils.codeblock(case['source'])
 
     calldefs = static.parse_static_calldefs(

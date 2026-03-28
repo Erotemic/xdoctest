@@ -185,7 +185,7 @@ def named(key: str, pattern: str) -> str:
 # TODO: modify global directive defaults via a config file
 
 
-class RuntimeStateDict(TypedDict):
+class RuntimeStateDict(TypedDict, total=False):
     """
     TypedDict representing the xdoctest runtime state.
 

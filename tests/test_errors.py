@@ -6,52 +6,8 @@ import pytest
 from xdoctest import core, exceptions, runner, utils
 from xdoctest.utils.util_misc import _run_case
 
-# def _check_syntaxerror_behavior():
-#     import ubelt as ub
-#     source_block = ub.codeblock(
-#         '''
-#         x = 3
-#         3 = 5
-#         ''')
-#     try:
-#         compile(source_block, filename='<string>', mode='exec')
-#     except SyntaxError as ex1:
-#         print('ex1.text = {!r}'.format(ex1.text))
-#         print('ex1.offset = {!r}'.format(ex1.offset))
-#         print('ex1.lineno = {!r}'.format(ex1.lineno))
 
-#     import ast
-#     try:
-#         pt = ast.parse(source_block)
-#     except SyntaxError as ex2:
-#         print('ex2.text = {!r}'.format(ex2.text))
-#         print('ex2.offset = {!r}'.format(ex2.offset))
-#         print('ex2.lineno = {!r}'.format(ex2.lineno))
-
-#     fpath = join(ub.ensure_app_cache_dir('xdoctest', 'test'), 'source.py')
-#     ub.writeto(fpath, source_block)
-#     try:
-#         compile(source_block, filename=fpath, mode='exec')
-#     except SyntaxError as ex2:
-#         print('ex2.text = {!r}'.format(ex2.text))
-#         print('ex2.offset = {!r}'.format(ex2.offset))
-#         print('ex2.lineno = {!r}'.format(ex2.lineno))
-
-#     import tempfile
-#     import ast
-#     temp = tempfile.NamedTemporaryFile()
-#     temp.file.write((source_block + '\n').encode('utf8'))
-#     temp.file.seek(0)
-#     try:
-#         ast.parse(source_block, temp.name)
-#     except SyntaxError as ex2:
-#         print('ex2.text = {!r}'.format(ex2.text))
-#         print('ex2.offset = {!r}'.format(ex2.offset))
-#         print('ex2.lineno = {!r}'.format(ex2.lineno))
-#         raise
-
-
-def test_parse_syntax_error():
+def test_parse_syntax_error() -> None:
     """
     CommandLine:
         python tests/test_errors.py test_parse_syntax_error
@@ -64,18 +20,24 @@ def test_parse_syntax_error():
             """
     )
 
-    info = {'callname': 'test_synerr', 'lineno': 42}
+    info = {'callname': 'test_synerr', 'lineno': 42, 'fpath': None, 'parser_kw': None}
 
     # Eager parsing should cause no doctests with errors to be found
     # and warnings should be raised
     with warnings.catch_warnings(record=True) as f_warnlist:
         f_doctests = list(
-            core.parse_docstr_examples(docstr, style='freeform', **info)
+            core.parse_docstr_examples(
+                docstr, callname=info['callname'], lineno=info['lineno'],
+                style='freeform', modpath=None, fpath=None, parser_kw=None
+            )
         )
 
     with warnings.catch_warnings(record=True) as g_warnlist:
         g_doctests = list(
-            core.parse_docstr_examples(docstr, style='google', **info)
+            core.parse_docstr_examples(
+                docstr, callname=info['callname'], lineno=info['lineno'],
+                style='google', modpath=None, fpath=None, parser_kw=None
+            )
         )
 
     for w in g_warnlist:
@@ -92,7 +54,10 @@ def test_parse_syntax_error():
     # Google style can find doctests with bad syntax, but parsing them
     # results in an error.
     g_doctests2 = list(
-        core.parse_google_docstr_examples(docstr, eager_parse=False, **info)
+        core.parse_google_docstr_examples(
+            docstr, callname=info['callname'], lineno=info['lineno'],
+            eager_parse=False, modpath=None, fpath=None
+        )
     )
     assert len(g_doctests2) == 1
     for example in g_doctests2:
@@ -100,7 +65,7 @@ def test_parse_syntax_error():
             example._parse()
 
 
-def test_runner_syntax_error():
+def test_runner_syntax_error() -> None:
     """
     python tests/test_errors.py test_runner_syntax_error
     pytest tests/test_errors.py -k test_runner_syntax_error
@@ -146,6 +111,7 @@ def test_runner_syntax_error():
     temp = utils.TempDir(persist=True)
     temp.ensure()
     dpath = temp.dpath
+    assert dpath is not None
     modpath = join(dpath, 'demo_runner_syntax_error.py')
     with open(modpath, 'w') as file:
         file.write(source)
@@ -156,6 +122,7 @@ def test_runner_syntax_error():
         )
 
     print('CAPTURED [[[[[[[[')
+    assert cap.text is not None
     print(utils.indent(cap.text))
     print(']]]]]]]] # CAPTURED')
 
@@ -170,7 +137,7 @@ def test_runner_syntax_error():
     assert '1 passed' in captext
 
 
-def test_parse_doctset_error():
+def test_parse_doctset_error() -> None:
     source = utils.codeblock(
         '''
         def func_with_an_unparsable_google_docstr(a):
@@ -194,7 +161,7 @@ def test_parse_doctset_error():
     del text
 
 
-def test_extract_got_exception():
+def test_extract_got_exception() -> None:
     """
     Make a repr that fails
 
@@ -216,6 +183,7 @@ def test_extract_got_exception():
           '''
     )
     text = _run_case(source, style='google')
+    assert text is not None
     assert 'ExtractGotReprException' in text
 
 

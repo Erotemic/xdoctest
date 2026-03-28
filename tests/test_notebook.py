@@ -12,7 +12,7 @@ PY_VERSION = LooseVersion('{}.{}'.format(*sys.version_info[0:2]))
 IS_MODERN_PYTHON = PY_VERSION > LooseVersion('3.4')
 
 
-def skip_notebook_tests_if_unsupported():
+def skip_notebook_tests_if_unsupported() -> None:
     if not IS_MODERN_PYTHON:
         pytest.skip('jupyter support is only for modern python versions')
 
@@ -69,7 +69,7 @@ def demodata_notebook_fpath():
     return notebook_fpath
 
 
-def test_xdoctest_inside_notebook():
+def test_xdoctest_inside_notebook() -> None:
     """
     xdoctest ~/code/xdoctest/tests/test_notebook.py test_xdoctest_inside_notebook
     xdoctest tests/test_notebook.py test_xdoctest_inside_notebook
@@ -96,7 +96,7 @@ def test_xdoctest_inside_notebook():
         )
 
 
-def test_xdoctest_outside_notebook():
+def test_xdoctest_outside_notebook() -> None:
     skip_notebook_tests_if_unsupported()
 
     if sys.platform.startswith('win32'):

@@ -4,7 +4,7 @@ from xdoctest.doctest_part import DoctestPart
 from xdoctest import exceptions, parser, utils
 
 
-def test_final_eval_exec():
+def test_final_eval_exec() -> None:
     """
     Ensure that if the line before a want is able to be evaled, it is so we can
     compare its value to the want value.
@@ -24,8 +24,8 @@ def test_final_eval_exec():
     DEBUG = 0
     if DEBUG:
         print(string)
-        print([p.compile_mode for p in parts])
-    assert [p.compile_mode for p in parts] == ['exec', 'eval']
+        print([p.compile_mode for p in parts if isinstance(p, DoctestPart)])
+    assert [p.compile_mode for p in parts if isinstance(p, DoctestPart)] == ['exec', 'eval']
 
     string = utils.codeblock(
         """
@@ -37,8 +37,8 @@ def test_final_eval_exec():
     parts = self.parse(string)
     if DEBUG:
         print(string)
-        print([p.compile_mode for p in parts])
-    assert [p.compile_mode for p in parts] == ['exec']
+        print([p.compile_mode for p in parts if isinstance(p, DoctestPart)])
+    assert [p.compile_mode for p in parts if isinstance(p, DoctestPart)] == ['exec']
 
     string = utils.codeblock(
         r'''
@@ -54,8 +54,8 @@ def test_final_eval_exec():
     parts = self.parse(string)
     if DEBUG:
         print(string)
-        print([p.compile_mode for p in parts])
-    assert [p.compile_mode for p in parts] == ['exec', 'single']
+        print([p.compile_mode for p in parts if isinstance(p, DoctestPart)])
+    assert [p.compile_mode for p in parts if isinstance(p, DoctestPart)] == ['exec', 'single']
 
     string = utils.codeblock(
         r"""
@@ -68,8 +68,8 @@ def test_final_eval_exec():
     parts = self.parse(string)
     if DEBUG:
         print(string)
-        print([p.compile_mode for p in parts])
-    assert [p.compile_mode for p in parts] == ['exec', 'eval']
+        print([p.compile_mode for p in parts if isinstance(p, DoctestPart)])
+    assert [p.compile_mode for p in parts if isinstance(p, DoctestPart)] == ['exec', 'eval']
 
     string = utils.codeblock(
         r"""
@@ -82,11 +82,11 @@ def test_final_eval_exec():
     parts = self.parse(string)
     if DEBUG:
         print(string)
-        print([p.compile_mode for p in parts])
-    assert [p.compile_mode for p in parts] == ['single']
+        print([p.compile_mode for p in parts if isinstance(p, DoctestPart)])
+    assert [p.compile_mode for p in parts if isinstance(p, DoctestPart)] == ['single']
 
 
-def test_compile_mode_print():
+def test_compile_mode_print() -> None:
     string = utils.codeblock(
         r"""
         >>> x = 2
@@ -97,10 +97,10 @@ def test_compile_mode_print():
     )
     self = parser.DoctestParser()
     parts = self.parse(string)
-    assert [p.compile_mode for p in parts] == ['exec', 'eval']
+    assert [p.compile_mode for p in parts if isinstance(p, DoctestPart)] == ['exec', 'eval']
 
 
-def test_label_lines():
+def test_label_lines() -> None:
     string = utils.codeblock(
         r"""
         >>> i = 0
@@ -117,7 +117,7 @@ def test_label_lines():
     ]
 
 
-def test_label_indented_lines():
+def test_label_indented_lines() -> None:
     string = '''
             text
             >>> dsrc1()
@@ -185,7 +185,7 @@ def test_label_indented_lines():
     assert labeled == expected
 
 
-def test_ps1_linenos_1():
+def test_ps1_linenos_1() -> None:
     """
     Test we can find the line numbers for every "evaluatable" statement
     """
@@ -202,7 +202,7 @@ def test_ps1_linenos_1():
     assert linenos == [0, 1]
 
 
-def test_ps1_linenos_2():
+def test_ps1_linenos_2() -> None:
     source_lines = utils.codeblock(
         '''
         >>> x = """
@@ -218,7 +218,7 @@ def test_ps1_linenos_2():
     assert linenos == [0, 3]
 
 
-def test_ps1_linenos_3():
+def test_ps1_linenos_3() -> None:
     source_lines = utils.codeblock(
         '''
         >>> x = """
@@ -234,7 +234,7 @@ def test_ps1_linenos_3():
     assert linenos == [0, 3]
 
 
-def test_ps1_linenos_4():
+def test_ps1_linenos_4() -> None:
     source_lines = utils.codeblock(
         '''
         >>> x = """
@@ -267,7 +267,7 @@ def test_ps1_linenos_4():
     assert linenos == [0, 3, 5, 9, 13, 16, 17, 20]
 
 
-def test_retain_source():
+def test_retain_source() -> None:
     """ """
     source = utils.codeblock(
         """
@@ -282,11 +282,13 @@ def test_retain_source():
     assert mode_hint == 'eval'
     assert linenos == [0, 1]
     p1, p2 = self.parse(source)
+    assert isinstance(p1, DoctestPart)
+    assert isinstance(p2, DoctestPart)
     assert p1.source == 'x = 2'
     assert p2.source == 'print("foo")'
 
 
-def test_package_string_tup():
+def test_package_string_tup() -> None:
     """
     pytest tests/test_parser.py::test_package_string_tup
     """
@@ -297,9 +299,9 @@ def test_package_string_tup():
     assert len(parts) == 1, 'should only want one string'
 
 
-def test_simulate_repl():
+def test_simulate_repl() -> None:
     """
-    pytest tests/test_parser.py::test_package_string_tup
+    pytest tests/test_parser.py::test_simulate_repl
     """
     string = utils.codeblock(
         """
@@ -315,7 +317,7 @@ def test_simulate_repl():
     assert len(self.parse(string)) == 3
 
 
-def test_parse_multi_want():
+def test_parse_multi_want() -> None:
     string = utils.codeblock(
         """
         >>> x = 2
@@ -331,11 +333,12 @@ def test_parse_multi_want():
     parts = self.parse(string)
 
     self._label_docsrc_lines(string)
+    assert isinstance(parts[2], DoctestPart)
     assert parts[2].source == "'string'"
     assert len(parts) == 4
 
 
-def test_parse_eval_nowant():
+def test_parse_eval_nowant() -> None:
     string = utils.codeblock(
         """
         >>> a = 1
@@ -352,7 +355,7 @@ def test_parse_eval_nowant():
     assert len(parts) == 1
 
 
-def test_parse_eval_single_want():
+def test_parse_eval_single_want() -> None:
     string = utils.codeblock(
         """
         >>> a = 1
@@ -370,7 +373,7 @@ def test_parse_eval_single_want():
     assert len(parts) == 2
 
 
-def test_parse_comment():
+def test_parse_comment() -> None:
     string = utils.codeblock(
         """
         >>> # nothing
@@ -382,6 +385,7 @@ def test_parse_comment():
     source_lines = string.split('\n')[:]
     linenos, mode_hint = self._locate_ps1_linenos(source_lines)
     parts = self.parse(string)
+    assert isinstance(parts[0], DoctestPart)
     assert parts[0].source.strip().startswith('#')
 
 
@@ -479,7 +483,7 @@ def test_parse_comment_with_mixed_indentation_levels() -> None:
         assert text in combined
 
 
-def test_text_after_want():
+def test_text_after_want() -> None:
     string = utils.codeblock("""
         Example:
             >>> dsrc()
@@ -497,7 +501,7 @@ def test_text_after_want():
     assert labeled == expected
 
 
-def test_want_ellipse_with_space():
+def test_want_ellipse_with_space() -> None:
     string = utils.codeblock("""
         Example:
             >>> dsrc()
@@ -517,7 +521,7 @@ def test_want_ellipse_with_space():
     assert labeled == expected
 
 
-def test_syntax_error():
+def test_syntax_error() -> None:
     string = utils.codeblock("""
         Example:
             >>> 03 = dsrc()
@@ -527,7 +531,7 @@ def test_syntax_error():
         self.parse(string)
 
 
-def test_nonbalanced_statement():
+def test_nonbalanced_statement() -> None:
     """
     xdoctest ~/code/xdoctest/tests/test_parser.py test_nonbalanced_statement
 
@@ -545,11 +549,14 @@ def test_nonbalanced_statement():
     self = parser.DoctestParser()
     with pytest.raises(exceptions.DoctestParseError) as exc_info:
         self.parse(string)
-    msg = exc_info.value.orig_ex.msg.lower()
+    ex : exceptions.DoctestParseError = exc_info.value
+    orig_ex = ex.orig_ex
+    assert isinstance(orig_ex, exceptions.IncompleteParseError)
+    msg = orig_ex.msg.lower()
     assert msg.startswith('ill-formed doctest'.lower())
 
 
-def test_bad_indent():
+def test_bad_indent() -> None:
     """
     CommandLine:
         python tests/test_parser.py test_bad_indent
@@ -565,18 +572,21 @@ def test_bad_indent():
     self = parser.DoctestParser()
     with pytest.raises(exceptions.DoctestParseError) as exc_info:
         self.parse(string)
-    msg = exc_info.value.orig_ex.msg.lower()
+    ex : exceptions.DoctestParseError = exc_info.value
+    orig_ex = ex.orig_ex
+    assert isinstance(orig_ex, SyntaxError), repr(type(orig_ex))
+    msg = orig_ex.msg.lower()
     assert msg.startswith('Bad indentation in doctest'.lower())
 
 
-def test_part_nice_no_lineoff():
+def test_part_nice_no_lineoff() -> None:
     from xdoctest import doctest_part
 
-    self = doctest_part.DoctestPart([], [], None)
-    assert str(self) == '<DoctestPart(src="", want=None)>'
+    self = doctest_part.DoctestPart([], [], 0)
+    assert str(self) == '<DoctestPart(ln 0, src="", want=None)>'
 
 
-def test_repl_oneline():
+def test_repl_oneline() -> None:
     string = utils.codeblock(
         """
         >>> x = 1
@@ -584,10 +594,10 @@ def test_repl_oneline():
     )
     self = parser.DoctestParser(simulate_repl=True)
     parts = self.parse(string)
-    assert [p.source for p in parts] == ['x = 1']
+    assert [p.source for p in parts if isinstance(p, DoctestPart)] == ['x = 1']
 
 
-def test_repl_twoline():
+def test_repl_twoline() -> None:
     string = utils.codeblock(
         """
         >>> x = 1
@@ -596,10 +606,10 @@ def test_repl_twoline():
     )
     self = parser.DoctestParser(simulate_repl=True)
     parts = self.parse(string)
-    assert [p.source for p in parts] == ['x = 1', 'x = 2']
+    assert [p.source for p in parts if isinstance(p, DoctestPart)] == ['x = 1', 'x = 2']
 
 
-def test_repl_comment_in_string():
+def test_repl_comment_in_string() -> None:
     source_lines = ['>>> x = """', '    # comment in a string', '    """']
     self = parser.DoctestParser()
     assert self._locate_ps1_linenos(source_lines) == ([0], 'exec')
@@ -616,7 +626,7 @@ def test_repl_comment_in_string():
     assert self._locate_ps1_linenos(source_lines) == ([0, 3], 'exec')
 
 
-def test_inline_directive():
+def test_inline_directive() -> None:
     """
     python ~/code/xdoctest/tests/test_parser.py test_inline_directive
     """
@@ -653,9 +663,10 @@ def test_inline_directive():
     parts = self.parse(string)
     # assert len(parts) ==
     for part in parts:
-        print('----')
-        print(part.source)
-        print('----')
+        if isinstance(part, DoctestPart):
+            print('----')
+            print(part.source)
+            print('----')
     try:
         print(parts)
     except ImportError:
@@ -663,7 +674,7 @@ def test_inline_directive():
     # TODO: finish me
 
 
-def test_block_directive_nowant1():
+def test_block_directive_nowant1() -> None:
     """
     python ~/code/xdoctest/tests/test_parser.py test_block_directive_nowant1
     """
@@ -679,7 +690,8 @@ def test_block_directive_nowant1():
     parts = self.parse(string)
     print('----')
     for part in parts:
-        print(part.source)
+        if isinstance(part, DoctestPart):
+            print(part.source)
         print('----')
     try:
         print(parts)
@@ -688,7 +700,7 @@ def test_block_directive_nowant1():
     assert len(parts) == 1
 
 
-def test_block_directive_nowant2():
+def test_block_directive_nowant2() -> None:
     """
     python ~/code/xdoctest/tests/test_parser.py test_block_directive_nowant
     """
@@ -709,7 +721,7 @@ def test_block_directive_nowant2():
     assert len(parts) == 2
 
 
-def test_block_directive_want1_assign():
+def test_block_directive_want1_assign() -> None:
     """
     python ~/code/xdoctest/tests/test_parser.py test_block_directive_want1
     """
@@ -725,7 +737,8 @@ def test_block_directive_want1_assign():
     parts = self.parse(string)
     print('----')
     for part in parts:
-        print(part.source)
+        if isinstance(part, DoctestPart):
+            print(part.source)
         print('----')
     try:
         print(parts)
@@ -734,7 +747,7 @@ def test_block_directive_want1_assign():
     assert len(parts) == 1
 
 
-def test_block_directive_want1_eval():
+def test_block_directive_want1_eval() -> None:
     """
     python ~/code/xdoctest/tests/test_parser.py test_block_directive_want1
     """
@@ -751,7 +764,7 @@ def test_block_directive_want1_eval():
     assert len(parts) == 2
 
 
-def test_block_directive_want2_assign():
+def test_block_directive_want2_assign() -> None:
     """
     python ~/code/xdoctest/tests/test_parser.py test_block_directive_want2
     """
@@ -769,7 +782,7 @@ def test_block_directive_want2_assign():
     assert len(parts) == 2
 
 
-def test_block_directive_want2_eval():
+def test_block_directive_want2_eval() -> None:
     """
     python ~/code/xdoctest/tests/test_parser.py test_block_directive_want2_eval
     """
@@ -786,7 +799,8 @@ def test_block_directive_want2_eval():
     parts = self.parse(string)
     print('----')
     for part in parts:
-        print(part.source)
+        if isinstance(part, DoctestPart):
+            print(part.source)
         print('----')
     try:
         print(parts)
@@ -795,7 +809,7 @@ def test_block_directive_want2_eval():
     assert len(parts) == 3
 
 
-def test_block_directive_want2_eval2():
+def test_block_directive_want2_eval2() -> None:
     """
     python ~/code/xdoctest/tests/test_parser.py test_block_directive_want2_eval
     """
@@ -819,7 +833,7 @@ def test_block_directive_want2_eval2():
     assert len(parts) == 4
 
 
-def test_gh_issue_25_parsing_failure():
+def test_gh_issue_25_parsing_failure() -> None:
     string = utils.codeblock(
         """
         >>> _, o = 0, 1
@@ -845,7 +859,7 @@ def test_gh_issue_25_parsing_failure():
     assert len(parts) == 1
 
 
-def test_parser_with_type_annot():
+def test_parser_with_type_annot() -> None:
     string = utils.codeblock(
         """
         >>> def foo(x: str) -> None:
@@ -860,7 +874,7 @@ def test_parser_with_type_annot():
     assert len(parts) == 1
 
 
-def test_parse_tabs():
+def test_parse_tabs() -> None:
     tab = '\t'
     string = utils.codeblock(
         f"""
@@ -870,6 +884,7 @@ def test_parse_tabs():
     self = parser.DoctestParser()
     parts = self.parse(string)
     doctest_part = parts[0]
+    assert isinstance(doctest_part, DoctestPart)
     assert tab in doctest_part.source
 
 

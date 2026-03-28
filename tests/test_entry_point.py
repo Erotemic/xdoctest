@@ -27,14 +27,14 @@ def cmd(command):
     return info
 
 
-def skip_if_not_installed():
+def skip_if_not_installed() -> None:
     # If xdoctest is not installed via `pip install -e`
     # then skip these tests because the entry point wont exist
     if not utils.is_modname_importable('xdoctest'):
         pytest.skip('Can only test entry points if xdoctest is installed.')
 
 
-def test_xdoc_console_script_location():
+def test_xdoc_console_script_location() -> None:
     skip_if_not_installed()
 
     if sys.platform.startswith('freebsd'):
@@ -63,7 +63,7 @@ def test_xdoc_console_script_location():
         assert script_fname.startswith('xdoctest')
 
 
-def test_xdoc_console_script_exec():
+def test_xdoc_console_script_exec() -> None:
     skip_if_not_installed()
     if sys.platform.startswith('freebsd'):
         pytest.skip(
@@ -84,7 +84,7 @@ def test_xdoc_console_script_exec():
     assert 'usage' in info['err']
 
 
-def test_xdoc_cli_version():
+def test_xdoc_cli_version() -> None:
     """
     CommandLine:
         python -m xdoctest -m ~/code/xdoctest/tests/test_entry_point.py test_xdoc_cli_version

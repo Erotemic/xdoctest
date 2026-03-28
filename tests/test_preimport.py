@@ -3,7 +3,7 @@ from os.path import join
 from xdoctest import utils
 
 
-def test_preimport_skiped_on_disabled_module():
+def test_preimport_skiped_on_disabled_module() -> None:
     """
     If our module has no enabled tests, pre-import should never run.
     """
@@ -28,18 +28,20 @@ def test_preimport_skiped_on_disabled_module():
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
-        modpath = join(dpath, 'test_bad_preimport.py')
+        modpath = join(str(dpath), 'test_bad_preimport.py')
         with open(modpath, 'w') as file:
             file.write(source)
         os.environ['XDOCTEST_TEST_DOITANYWAY'] = ''
         with utils.CaptureStdout() as cap:
             runner.doctest_module(modpath, 'all', argv=[''])
+        assert cap.text is not None
         assert 'Failed to import modname' not in cap.text
         assert '1 skipped' in cap.text
 
         os.environ['XDOCTEST_TEST_DOITANYWAY'] = '1'
         with utils.CaptureStdout() as cap:
             runner.doctest_module(modpath, 'all', argv=[])
+        assert cap.text is not None
         assert 'Failed to import modname' in cap.text
 
         del os.environ['XDOCTEST_TEST_DOITANYWAY']

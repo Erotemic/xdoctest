@@ -176,6 +176,7 @@ class DoctestPart:
         """
         parts = []
         if self.line_offset is not None:
+            # Note: dead code if we enforce current types
             parts.append('ln %s' % (self.line_offset))
         if self.source:
             head_src = self.source.splitlines()[0][0:8]

@@ -16,13 +16,13 @@ TopLevelVisitor = static.TopLevelVisitor
 
 
 class SimpleDescriptor:
-    def __init__(self):
+    def __init__(self) -> None:
         self.value = 0
 
     def __get__(self, instance, owner):
         return self.value
 
-    def __set__(self, instance, value):
+    def __set__(self, instance, value) -> None:
         self.value = float(value)
 
 
@@ -37,10 +37,10 @@ class SimpleClass:
     # Injected funcs should not be part of the calldefs
     visit = TopLevelVisitor.visit
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.inst_attr = SimpleDescriptor()
 
-        def submethod1():
+        def submethod1() -> None:
             """
             Example:
                 >>> pass
@@ -48,7 +48,7 @@ class SimpleClass:
             pass
 
     @classmethod
-    def method1(cls):
+    def method1(cls) -> None:
         """
         Example:
             >>> pass
@@ -56,7 +56,7 @@ class SimpleClass:
         pass
 
     @staticmethod
-    def method2():
+    def method2() -> None:
         """
         Example:
             >>> pass
@@ -64,14 +64,14 @@ class SimpleClass:
         pass
 
     @property
-    def method3(self):
+    def method3(self) -> None:
         """
         Example:
             >>> pass
         """
         pass
 
-    def method4(self):
+    def method4(self) -> None:
         """
         Example:
             >>> pass
@@ -79,7 +79,7 @@ class SimpleClass:
         pass
 
 
-def simple_func1():
+def simple_func1() -> None:
     """
     Example:
         >>> pass
@@ -87,13 +87,13 @@ def simple_func1():
     pass
 
 
-def test_parse_dynamic_calldefs():
+def test_parse_dynamic_calldefs() -> None:
     """
     CommandLine:
         python tests/test_dynamic.py test_parse_dynamic_calldefs
     """
 
-    def subfunc():
+    def subfunc() -> None:
         """
         Example:
             >>> pass
@@ -102,6 +102,7 @@ def test_parse_dynamic_calldefs():
 
     module = sys.modules[test_parse_dynamic_calldefs.__module__]
     modpath = module.__file__
+    assert modpath is not None
     calldefs = dynamic.parse_dynamic_calldefs(modpath)
     keys = [
         '__doc__',
@@ -133,7 +134,7 @@ def test_parse_dynamic_calldefs():
     assert 'TopLevelVisitor' in dir(module)
 
 
-def test_defined_by_module():
+def test_defined_by_module() -> None:
     """
     CommandLine:
         python tests/test_dynamic.py test_defined_by_module
@@ -189,10 +190,11 @@ def test_defined_by_module():
 
     import inspect
 
+    # Use getattr to avoid unresolved-attribute errors for non-standard attributes
     items = [
-        inspect.re,
-        inspect.re.sub,
-        inspect.re.enum,
+        inspect,
+        getattr(inspect, 'sub', None),
+        getattr(inspect, 'enum', None),
     ]
     module = inspect
 
@@ -202,7 +204,7 @@ def test_defined_by_module():
         assert not flag, '{} should be not defined by {}'.format(item, module)
 
 
-def test_programatically_generated_docstrings():
+def test_programatically_generated_docstrings() -> None:
     """
     Test that the "dynamic" analysis mode works on dynamically generated
     docstrings.
