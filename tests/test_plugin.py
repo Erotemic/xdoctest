@@ -9,6 +9,7 @@ import sys
 
 import _pytest._code
 import pytest
+from pathlib import Path
 
 from xdoctest import utils
 from xdoctest.plugin import XDoctestItem, XDoctestModule, XDoctestTextfile
@@ -480,7 +481,7 @@ class TestXDoctest:
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctest::test_doctest_property_lineno -v -s
         """
-        testdir.tmpdir.join('hello.py').write(
+        testdir.tmpdir.join(Path('hello.py')).write(
             _pytest._code.Source(
                 utils.codeblock(
                     """
@@ -517,7 +518,7 @@ class TestXDoctest:
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctest::test_doctest_property_lineno_freeform -v -s
         """
-        testdir.tmpdir.join('hello.py').write(
+        testdir.tmpdir.join(Path('hello.py')).write(
             _pytest._code.Source(
                 utils.codeblock(
                     """
@@ -559,7 +560,7 @@ class TestXDoctest:
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctest::test_doctest_property_lineno_google -v -s
         """
-        testdir.tmpdir.join('hello.py').write(
+        testdir.tmpdir.join(Path('hello.py')).write(
             _pytest._code.Source(
                 utils.codeblock(
                     """
@@ -604,7 +605,7 @@ class TestXDoctest:
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctest::test_doctest_property_lineno_google_v2 -v -s
         """
-        testdir.tmpdir.join('hello.py').write(
+        testdir.tmpdir.join(Path('hello.py')).write(
             _pytest._code.Source(
                 utils.codeblock(
                     """
@@ -727,7 +728,7 @@ class TestXDoctest:
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctest::test_doctest_unex_importerror_with_module
         """
-        testdir.tmpdir.join('hello.py').write(
+        testdir.tmpdir.join(Path('hello.py')).write(
             _pytest._code.Source("""
             import asdalsdkjaslkdjasd
         """)
@@ -787,7 +788,7 @@ class TestXDoctest:
             >>> self.test_doctestmodule_external_and_issue116(testdir)
         """
         p = testdir.mkpydir('hello_2')
-        p.join('__init__.py').write(
+        p.join(Path('__init__.py')).write(
             _pytest._code.Source("""
             def somefunc():
                 '''
@@ -1854,7 +1855,7 @@ class Disabled:
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctest::test_doctest_linedata_missing
         """
-        testdir.tmpdir.join('hello.py').write(
+        testdir.tmpdir.join(Path('hello.py')).write(
             _pytest._code.Source("""
             class Fun:
                 @property

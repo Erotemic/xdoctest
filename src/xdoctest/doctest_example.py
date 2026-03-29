@@ -1312,7 +1312,7 @@ class DocTest:
     def _block_prefix(self):
         return 'ZERO-ARG' if self.block_type == 'zero-arg' else 'DOCTEST'
 
-    def _pre_run(self, verbose) -> None:
+    def _pre_run(self, verbose : bool | int) -> None:
         if verbose >= 1:
             if verbose >= 2:
                 barrier = self._color('====== <exec> ======', 'white')
@@ -1516,7 +1516,7 @@ class DocTest:
         # source_text = utils.indent(source_text)
         # lines += source_text.splitlines()
 
-        def r1_strip_nl(text):
+        def r1_strip_nl(text: str | None) -> str | None:
             if text is None:
                 return None
             return text[:-1] if text.endswith('\n') else text

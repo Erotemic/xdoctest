@@ -320,7 +320,7 @@ class DoctestParser:
         if global_state.DEBUG_PARSER > 3:
             print(f'break_linenos={break_linenos}')
 
-        def slice_example(s1, s2, want_lines=None):
+        def slice_example(s1, s2, want_lines=None) -> doctest_part.DoctestPart:
             exec_lines = exec_source_lines[s1:s2]
             orig_lines = source_lines[s1:s2]
             directives = ps1_to_directive.get(s1, None)
@@ -1061,7 +1061,7 @@ def _iterthree(items, pad_value=None):
         yield left, mid, right
 
 
-def _hasprefix(line, prefixes):
+def _hasprefix(line, prefixes) -> bool:
     """helper prefix test"""
     # if not isinstance(prefixes, tuple):
     #     prefixes = [prefixes]

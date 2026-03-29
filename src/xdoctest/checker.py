@@ -74,7 +74,7 @@ def check_got_vs_want(
     got_stdout: str,
     got_eval: typing.Any = constants.NOT_EVALED,
     runstate: directive.RuntimeState | None = None,
-):
+) -> bool:
     """
     Determines to check against either got_stdout or got_eval, and then does
     the comparison.
@@ -405,10 +405,10 @@ def normalize(
     if runstate is None:
         runstate = directive.RuntimeState()
 
-    def remove_prefixes(regex, text):
+    def remove_prefixes(regex : str | re.Pattern[str], text : str) -> str:
         return re.sub(regex, r'\1\2', text)
 
-    def visible_text(lines):
+    def visible_text(lines : list[str]) -> list[str]:
         # TODO: backspaces
         # Any lines that end with only a carriage return are erased
         return [line for line in lines if not line.endswith('\r')]
@@ -463,7 +463,7 @@ def normalize(
 
     if runstate['NORMALIZE_REPR']:
 
-        def norm_repr(a, b):
+        def norm_repr(a: str, b: str) -> str:
             # If removing quotes would allow for a match, remove them.
             if not _check_match(a, b, runstate):
                 for q in ['"', "'"]:
@@ -513,7 +513,7 @@ class GotWantException(AssertionError):
         self.got = got
         self.want = want
 
-    def _do_a_fancy_diff(self, runstate=None):
+    def _do_a_fancy_diff(self, runstate: directive.RuntimeState | None = None) -> bool:
         # Not unless they asked for a fancy diff.
         got = self.got
         want = self.want
