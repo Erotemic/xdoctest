@@ -1686,7 +1686,7 @@ class DocTest:
             text = utils.color_text(text, color)
         return text
 
-    def _post_run(self, verbose) -> dict[str, typing.Any]:
+    def _post_run(self, verbose : bool | int | None) -> dict[str, typing.Any]:
         """
         Returns:
             Dict : summary
