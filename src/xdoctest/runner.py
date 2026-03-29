@@ -291,7 +291,7 @@ def doctest_module(
 
     # Parse all valid examples
     with warnings.catch_warnings(record=True) as parse_warnlist:
-        examples = list(
+        examples : list[doctest_example.DocTest] = list(
             core.parse_doctestables(
                 parsable_identifier,
                 exclude=exclude,
@@ -443,7 +443,7 @@ def _auto_disable_failing_tests_hook(context) -> None:
             file.write(''.join(lines))
 
 
-def _convert_to_test_module(enabled_examples):
+def _convert_to_test_module(enabled_examples: list[doctest_example.DocTest]) -> str:
     """
     Logic for the "dumps" command.
 
@@ -456,6 +456,7 @@ def _convert_to_test_module(enabled_examples):
 
     module_lines = []
     for example in enabled_examples:
+        assert example.modname is not None
         # Create a unit-testable function for this example
         func_name = (
             'test_'
@@ -479,6 +480,7 @@ def _convert_to_test_module(enabled_examples):
             global_lines = example.config['global_exec'].split('\\n')
             header_lines.extend([g + '  # NOQA' for g in global_lines])
 
+        assert example._parts is not None
         for part in example._parts:
             if dump_config['remove_import_star']:
                 new_exec_lines = []

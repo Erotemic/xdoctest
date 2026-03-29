@@ -519,16 +519,16 @@ def parse_google_argblock(
         >>> assert argdict_list[1]['desc'] == 'a description with a newline'
     """
 
-    def named(key, pattern) -> str:
+    def named(key: str, pattern: str) -> str:
         return '(?P<{}>{})'.format(key, pattern)
 
-    def optional(pattern) -> str:
+    def optional(pattern: str) -> str:
         return '({})?'.format(pattern)
 
-    def positive_lookahead(pattern) -> str:
+    def positive_lookahead(pattern: str) -> str:
         return '(?={})'.format(pattern)
 
-    def regex_or(patterns) -> str:
+    def regex_or(patterns: list[str]) -> str:
         return '({})'.format('|'.join(patterns))
 
     whitespace = r'\s*'

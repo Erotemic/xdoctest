@@ -1679,14 +1679,14 @@ class DocTest:
             print('type(out_text) = %r' % (type(out_text),))
             print('out_text = %r' % (out_text,))
 
-    def _color(self, text, color, enabled=None):
+    def _color(self, text : str, color : str, enabled : bool | None = None):
         """conditionally color text based on config and flags"""
         colored = self.config.getvalue('colored', enabled)
         if colored:
             text = utils.color_text(text, color)
         return text
 
-    def _post_run(self, verbose : bool | int | None) -> dict[str, typing.Any]:
+    def _post_run(self, verbose : bool | int) -> dict[str, typing.Any]:
         """
         Returns:
             Dict : summary

@@ -301,7 +301,7 @@ def execute_notebook(
     return nb, resources
 
 
-def _make_test_notebook_fpath(fpath: typing.Any, cell_sources: typing.Any):
+def _make_test_notebook_fpath(fpath: typing.Any, cell_sources: typing.Any) -> typing.Any:
     """
     Helper for testing
 
