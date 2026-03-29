@@ -95,12 +95,21 @@ ignore-words-list = ['wont', 'cant', 'ANS', 'doesnt', 'arent', 'ans', 'thats', '
 
 [tool.mypy]
 ignore_missing_imports = true
+exclude = '''(?x)(
+    ^tests/pybind11_test($|/)
+)'''
 
 [[tool.mypy.overrides]]
 module = "xdoctest._tokenize"
 ignore_errors = true
 
 # TODO: ingore tests/pybind11_test
+
+[tool.ty.src]
+exclude = [
+    # TODO: ignore tests/pybind11_test
+    "tests/pybind11_test",
+]
 
 [tool.ty.rules]
 unused-type-ignore-comment = "ignore"
