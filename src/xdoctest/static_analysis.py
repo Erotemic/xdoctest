@@ -26,9 +26,9 @@ from typing import Union
 PLAT_IMPL = platform.python_implementation()
 
 
-IS_PY_GE_312 = sys.version_info[0:2] >= (3, 12)
-IS_PY_GE_308 = sys.version_info[0:2] >= (3, 8)  # type: bool
-IS_PY_LT_314 = sys.version_info[0:2] < (3, 14)  # type: bool
+IS_PY_GE_312 : bool = sys.version_info[0:2] >= (3, 12)
+IS_PY_GE_308 : bool = sys.version_info[0:2] >= (3, 8) 
+IS_PY_LT_314 : bool = sys.version_info[0:2] < (3, 14)  
 
 
 if IS_PY_GE_312:
@@ -36,6 +36,12 @@ if IS_PY_GE_312:
 else:
     tokenize = importlib.import_module('tokenize')
 
+DocNode = typing.Union[
+    ast.AsyncFunctionDef,
+    ast.FunctionDef,
+    ast.ClassDef,
+    ast.Module,
+]
 
 class CallDefNode:
     """
@@ -692,7 +698,7 @@ class TopLevelVisitor(ast.NodeVisitor):
         return start, stop
 
     def _get_docstring(
-        self, node: ast.AST | ast.AsyncFunctionDef | ast.FunctionDef | ast.ClassDef | ast.Module
+        self, node: DocNode
     ) -> tuple[str | None, int | None, int | None]:
         """
         CommandLine:
@@ -709,11 +715,9 @@ class TopLevelVisitor(ast.NodeVisitor):
             >>> self._get_docstring(node)
             ('docstr', 2, 2)
         """
-        if typing.TYPE_CHECKING:
-            assert isinstance(node, (Union[ast.AsyncFunctionDef, ast.FunctionDef, ast.ClassDef, ast.Module]))
         docstr = ast.get_docstring(node, clean=False)
         if docstr is not None:
-            docnode = node.body[0]
+            docnode = node.body[0]  # type: ignore
             doclineno, doclineno_end = self._docnode_line_workaround(docnode)
         else:
             doclineno = None
