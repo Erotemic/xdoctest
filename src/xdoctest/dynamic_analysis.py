@@ -198,7 +198,7 @@ def iter_module_doctestables(
         property,
     )
 
-    def _recurse(item, module):
+    def _recurse(item: typing.Any, module: typing.Any) -> bool:
         return is_defined_by_module(item, module)
 
     for key, val in module.__dict__.items():
@@ -229,7 +229,7 @@ def iter_module_doctestables(
                     yield key + '.' + subkey, item
 
 
-def is_defined_by_module(item: typing.Any, module: typing.Any):
+def is_defined_by_module(item: typing.Any, module: typing.Any) -> bool:
     """
     Check if item is directly defined by a module.
 

@@ -95,7 +95,7 @@ cmake ..
 """
 
 
-def build_demo_extmod():
+def build_demo_extmod() -> str:
     """
     CommandLine:
         python tests/test_binary_ext.py build_demo_extmod

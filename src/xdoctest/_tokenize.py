@@ -431,7 +431,7 @@ def tokenize(readline):
     return _tokenize(rl_gen.__next__, encoding)
 
 
-def _tokenize(readline, encoding) -> None:
+def _tokenize(readline, encoding):
     lnum = parenlev = continued = 0
     numchars = '0123456789'
     contstr, needcont = '', 0
@@ -683,7 +683,7 @@ def main() -> None:
         perror("unexpected error: %s" % err)
         raise
 
-def _generate_tokens_from_c_tokenizer(source) -> None:
+def _generate_tokens_from_c_tokenizer(source):
     """Tokenize a source reading Python code as unicode strings using the internal C tokenizer"""
     import _tokenize as c_tokenizer  # type: ignore[unresolved-import]
     for info in c_tokenizer.TokenizerIter(source):

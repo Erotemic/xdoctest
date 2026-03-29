@@ -2,9 +2,10 @@ from os.path import join
 
 import xdoctest
 from xdoctest import core, utils
+import typing
 
 
-def _test_status(docstr):
+def _test_status(docstr: str) -> dict[str, typing.Any]:
     docstr = utils.codeblock(docstr)
     try:
         temp = utils.util_misc.TempDoctest(docstr=docstr)
@@ -22,7 +23,8 @@ def _test_status(docstr):
         print(inspect.getargspec(utils.TempDoctest))
         raise
     doctests = list(core.parse_doctestables(temp.modpath))
-    status = doctests[0].run(verbose=0, on_error='return')
+    doctest = doctests[0]
+    status = doctest.run(verbose=0, on_error='return')
     return status
 
 

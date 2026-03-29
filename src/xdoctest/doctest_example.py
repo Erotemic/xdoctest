@@ -17,6 +17,7 @@ import warnings
 from collections import OrderedDict
 from inspect import CO_COROUTINE
 from typing import TYPE_CHECKING
+from typing import Any, cast, Union
 
 from xdoctest import (
     checker,
@@ -53,7 +54,7 @@ class DoctestConfig(dict):
     RuntimeState.
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args : Any, **kwargs : Any) -> None:
         super(DoctestConfig, self).__init__(*args, **kwargs)
         self.update(
             {
@@ -593,7 +594,7 @@ class DocTest:
         want: bool = True,
         offset_linenos: bool | None = None,
         prefix: bool = True,
-    ) -> None:
+    ):
         """
         Used by :func:`format_src`
 
@@ -813,7 +814,7 @@ class DocTest:
                         )
 
     @staticmethod
-    def _extract_future_flags(namespace) -> int:
+    def _extract_future_flags(namespace: typing.Mapping) -> int:
         """
         Return the compiler-flags associated with the future features that
         have been imported into the given namespace (i.e. globals).
@@ -875,7 +876,7 @@ class DocTest:
         return len(self.logged_stdout) > 0
 
     def run(
-        self, verbose: typing.Any = None, on_error: typing.Any = None
+        self, verbose: int | None | bool = None, on_error: str | None = None
     ) -> dict[str, typing.Any]:
         """
         Executes the doctest, checks the results, reports the outcome.
@@ -887,8 +888,8 @@ class DocTest:
         Returns:
             Dict : summary
         """
-        on_error = self.config.getvalue('on_error', on_error)
-        verbose = self.config.getvalue('verbose', verbose)
+        on_error = cast(Union[str, None], self.config.getvalue('on_error', on_error))
+        verbose = cast(int, self.config.getvalue('verbose', verbose))
         assert isinstance(verbose, int)
         if on_error not in {'raise', 'return'}:
             raise KeyError(on_error)
@@ -1590,8 +1591,8 @@ class DocTest:
                 # where the error occurred in the doctest
                 tblines = traceback.format_exception(*self.exc_info)
 
-                def _alter_traceback_linenos(self, tblines) -> None:
-                    def overwrite_lineno(linepart):
+                def _alter_traceback_linenos(self, tblines: list[str]) -> list[str]:
+                    def overwrite_lineno(linepart: list[str]) -> list[str]:
                         # Replace the trailing part which is the lineno
                         old_linestr = linepart[-1]  # noqa
 
@@ -1732,7 +1733,7 @@ class DocTest:
         return summary
 
 
-def _traverse_traceback(tb) -> None:
+def _traverse_traceback(tb):
     # Lives down here to avoid issue calling exec in a function that contains a
     # nested function with free variable.  Not sure how necessary this is
     # because this doesn't have free variables.

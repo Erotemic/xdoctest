@@ -405,7 +405,7 @@ class XDoctestTextfile(_XDoctestBase):
 
 
 class XDoctestModule(_XDoctestBase):
-    def collect(self) -> None:
+    def collect(self):
         from xdoctest import core
 
         modpath = str(self.fspath)

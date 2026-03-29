@@ -47,10 +47,10 @@ class CallDefNode:
     def __init__(
         self,
         callname: str,
-        lineno: int,
-        docstr: str,
-        doclineno: int,
-        doclineno_end: int,
+        lineno: int | None,
+        docstr: str | None,
+        doclineno: int | None,
+        doclineno_end: int | None,
         args: ast.arguments | None = None,
     ) -> None:
         """
@@ -146,7 +146,7 @@ class TopLevelVisitor(ast.NodeVisitor):
     """
 
     @classmethod
-    def parse(cls, source: str):
+    def parse(cls, source: str) -> TopLevelVisitor:
         """
         main entry point
 
@@ -221,7 +221,7 @@ class TopLevelVisitor(ast.NodeVisitor):
 
     def _visit_generic_FunctionDef(
         self, node: ast.FunctionDef | ast.AsyncFunctionDef
-    ):
+    ) -> None:
         if self._current_classname is None:
             callname = node.name
         else:
@@ -253,14 +253,14 @@ class TopLevelVisitor(ast.NodeVisitor):
 
         self._finish_queue.append(calldef)
 
-    def visit_FunctionDef(self, node: ast.FunctionDef):
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """
         Args:
             node (ast.FunctionDef):
         """
         return self._visit_generic_FunctionDef(node)
 
-    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef):
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
         """
         Args:
             node (ast.AsyncFunctionDef):
@@ -321,7 +321,7 @@ class TopLevelVisitor(ast.NodeVisitor):
             # self.const_lookup
         self.generic_visit(node)
 
-    def visit_If(self, node: ast.If):
+    def visit_If(self, node: ast.If) -> None:
         """
         Args:
             node (ast.If):
@@ -370,7 +370,7 @@ class TopLevelVisitor(ast.NodeVisitor):
 
     # -- helpers ---
 
-    def _docnode_line_workaround(self, docnode: ast.Expr) -> tuple[int, int]:
+    def _docnode_line_workaround(self, docnode: ast.Expr | ast.stmt) -> tuple[int, int]:
         """
         Find the start and ending line numbers of a docstring
 
@@ -443,6 +443,7 @@ class TopLevelVisitor(ast.NodeVisitor):
                 else:
                     docstr = utils.ensure_unicode(docnode.value.s)  # type: ignore[attr-defined]
                 sourcelines = self.sourcelines
+                assert sourcelines is not None
                 start, stop = self._find_docstr_endpos_workaround(
                     docstr, sourcelines, startpos
                 )
@@ -471,7 +472,9 @@ class TopLevelVisitor(ast.NodeVisitor):
         return doclineno, doclineno_end
 
     @classmethod
-    def _find_docstr_endpos_workaround(cls, docstr, sourcelines, startpos):
+    def _find_docstr_endpos_workaround(
+        cls, docstr: str, sourcelines: list[str], startpos: int
+    ) -> tuple[int, int]:
         """
         Like docstr_line_workaround, but works from the top-down instead of
         bottom-up. This is for pypy.
@@ -688,7 +691,9 @@ class TopLevelVisitor(ast.NodeVisitor):
                     start = stop - 1
         return start, stop
 
-    def _get_docstring(self, node):
+    def _get_docstring(
+        self, node: ast.AST | ast.AsyncFunctionDef | ast.FunctionDef | ast.ClassDef | ast.Module
+    ) -> tuple[str | None, int | None, int | None]:
         """
         CommandLine:
             xdoctest -m xdoctest.static_analysis.py TopLevelVisitor._get_docstring
@@ -704,6 +709,7 @@ class TopLevelVisitor(ast.NodeVisitor):
             >>> self._get_docstring(node)
             ('docstr', 2, 2)
         """
+        assert isinstance(node, (ast.AsyncFunctionDef | ast.FunctionDef | ast.ClassDef | ast.Module))
         docstr = ast.get_docstring(node, clean=False)
         if docstr is not None:
             docnode = node.body[0]
@@ -760,7 +766,9 @@ def parse_static_calldefs(
         raise
 
 
-def parse_calldefs(source=None, fpath=None):
+def parse_calldefs(
+    source: str | None = None, fpath: str | os.PathLike | None = None
+) -> dict[str, CallDefNode]:
     from xdoctest.utils import util_deprecation
 
     util_deprecation.schedule_deprecation(
@@ -775,7 +783,7 @@ def parse_calldefs(source=None, fpath=None):
     return parse_static_calldefs(source=source, fpath=fpath)
 
 
-def _parse_static_node_value(node):
+def _parse_static_node_value(node: ast.AST) -> typing.Any:
     """
     Extract a constant value from a node if possible
     """
@@ -789,6 +797,7 @@ def _parse_static_node_value(node):
 
     import numbers
 
+    value: typing.Any = None
     if isinstance(node, ast.Constant) and isinstance(
         node.value, numbers.Number
     ):
@@ -806,8 +815,8 @@ def _parse_static_node_value(node):
             value = list(elts)
     # Handle mapping-like nodes
     elif hasattr(node, 'keys') and hasattr(node, 'values'):
-        keys = list(map(_parse_static_node_value, node.keys))
-        values = list(map(_parse_static_node_value, node.values))
+        keys = list(map(_parse_static_node_value, node.keys))  # type: ignore
+        values = list(map(_parse_static_node_value, node.values))  # type: ignore
         value = OrderedDict(zip(keys, values))
     # Avoid direct reference to ast.NameConstant which is deprecated in
     # Python 3.14; access it via getattr so linters won't emit a deprecation
@@ -818,6 +827,7 @@ def _parse_static_node_value(node):
         and NameConstant is not None
         and isinstance(node, NameConstant)
     ):
+        assert hasattr(node, 'value')
         value = node.value
     elif isinstance(node, ast.Constant):
         value = node.value
@@ -876,7 +886,7 @@ def parse_static_value(
     pt = ast.parse(source)
 
     class AssignentVisitor(ast.NodeVisitor):
-        def visit_Assign(self, node) -> None:
+        def visit_Assign(self, node: ast.Assign) -> None:
             for target in node.targets:
                 target_id = getattr(target, 'id', None)
                 if target_id == key:
@@ -1048,7 +1058,7 @@ def is_balanced_statement(
     lines = list(lines)
     iterable = (line for line in lines if line)
 
-    def _readline():
+    def _readline() -> str:
         return next(iterable)
 
     try:
@@ -1090,7 +1100,7 @@ def is_balanced_statement(
         return True
 
 
-def extract_comments(source: str | list[str]) -> None:
+def extract_comments(source: str | list[str]) -> typing.Iterator[str]:
     """
     Returns the text in each comment in a block of python code.
     Uses tokenize to account for quotations.
@@ -1122,7 +1132,7 @@ def extract_comments(source: str | list[str]) -> None:
     # Only iterate through non-empty lines otherwise tokenize will stop short
     iterable = (line for line in lines if line)
 
-    def _readline():
+    def _readline() -> str:
         return next(iterable)
 
     try:
@@ -1131,9 +1141,10 @@ def extract_comments(source: str | list[str]) -> None:
                 yield t[1]
     except tokenize.TokenError:
         pass
+    return None
 
 
-def _strip_hashtag_comments_and_newlines(source: str | list[str]) -> None:
+def _strip_hashtag_comments_and_newlines(source: str | list[str]) -> str:
     """
     Removes hashtag comments from underlying source
 
@@ -1183,13 +1194,15 @@ def _strip_hashtag_comments_and_newlines(source: str | list[str]) -> None:
     else:
         readline = iter(source).__next__
 
-    def strip_hashtag_comments(tokens):
+    def strip_hashtag_comments(tokens: typing.Iterator[tuple]) -> typing.Iterator[tuple]:
         """
         Drop comment tokens from a `tokenize` stream.
         """
         return (t for t in tokens if t[0] != tokenize.COMMENT)
 
-    def strip_consecutive_newlines(tokens) -> None:
+    def strip_consecutive_newlines(
+        tokens: typing.Iterator[tuple]
+    ) -> typing.Iterator[tuple]:
         """
         Consecutive newlines are dropped and trailing whitespace
 

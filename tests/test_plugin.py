@@ -87,7 +87,7 @@ def explicit_testdir() -> object:
     _pytest.fixtures.pytest_sessionstart(session)  # type: ignore
     _pytest.runner.pytest_sessionstart(session)  # type: ignore
 
-    def func(testdir) -> None:
+    def func(testdir: pytest.Testdir) -> None:
         pass
 
     parent = _pytest.python.Module(  # type: ignore
@@ -141,7 +141,7 @@ class TestXDoctestActivation:
             ('--doctest-modules --xdoctest', True),
         ],
     )
-    def test_xdoctest_cli_activation(self, request, flags, load) -> None:
+    def test_xdoctest_cli_activation(self, request, flags: str, load: bool) -> None:
         """
         Activate `xdoctest` via command-line arguments.
 
@@ -220,7 +220,7 @@ class TestXDoctestActivation:
 
 
 class TestXDoctest:
-    def test_collect_testtextfile(self, testdir) -> None:
+    def test_collect_testtextfile(self, testdir: pytest.Testdir) -> None:
         """
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctest::test_collect_testtextfile
@@ -246,7 +246,7 @@ class TestXDoctest:
         items, reprec = testdir.inline_genitems(w)
         assert len(items) == 0
 
-    def test_collect_module_empty(self, testdir) -> None:
+    def test_collect_module_empty(self, testdir: pytest.Testdir) -> None:
         """
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctest::test_collect_module_empty
@@ -256,7 +256,7 @@ class TestXDoctest:
             items, reprec = testdir.inline_genitems(p, '--xdoctest-modules')
             assert len(items) == 0
 
-    def test_simple_doctestfile(self, testdir) -> None:
+    def test_simple_doctestfile(self, testdir: pytest.Testdir) -> None:
         """
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctest::test_simple_doctestfile
@@ -277,7 +277,7 @@ class TestXDoctest:
         reprec = testdir.inline_run(p, *(EXTRA_ARGS + OLD_TEXT_ARGS))
         reprec.assertoutcome(failed=1)
 
-    def test_new_pattern(self, testdir) -> None:
+    def test_new_pattern(self, testdir: pytest.Testdir) -> None:
         """
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctest::test_new_pattern
@@ -294,7 +294,7 @@ class TestXDoctest:
         )
         reprec.assertoutcome(failed=1)
 
-    def test_multiple_patterns(self, testdir) -> None:
+    def test_multiple_patterns(self, testdir: pytest.Testdir) -> None:
         """Test support for multiple --xdoctest-glob arguments (#1255).
 
         CommandLine:
@@ -402,7 +402,7 @@ class TestXDoctest:
 
             result.stdout.fnmatch_lines(['*1 passed*'])
 
-    def test_xdoctest_options(self, testdir) -> None:
+    def test_xdoctest_options(self, testdir: pytest.Testdir) -> None:
         """Test support for xdoctest_encoding ini option.
 
         CommandLine:
@@ -424,7 +424,7 @@ class TestXDoctest:
         reprec = testdir.inline_run(p, '--xdoctest-modules', *EXTRA_ARGS)
         reprec.assertoutcome(skipped=1, failed=0, passed=0)
 
-    def test_doctest_unexpected_exception(self, testdir) -> None:
+    def test_doctest_unexpected_exception(self, testdir: pytest.Testdir) -> None:
         """
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctest::test_doctest_unexpected_exception
@@ -472,7 +472,7 @@ class TestXDoctest:
         #     "*FAILED*ZeroDivision*",
         # ])
 
-    def test_doctest_property_lineno(self, testdir) -> None:
+    def test_doctest_property_lineno(self, testdir: pytest.Testdir) -> None:
         """
         REPLACES: test_doctest_linedata_missing
         REASON: Static parsing means we do know this line number.
@@ -509,7 +509,7 @@ class TestXDoctest:
             ]
         )
 
-    def test_doctest_property_lineno_freeform(self, testdir) -> None:
+    def test_doctest_property_lineno_freeform(self, testdir: pytest.Testdir) -> None:
         """
         REPLACES: test_doctest_linedata_missing
         REASON: Static parsing means we do know this line number.
@@ -551,7 +551,7 @@ class TestXDoctest:
             ]
         )
 
-    def test_doctest_property_lineno_google(self, testdir) -> None:
+    def test_doctest_property_lineno_google(self, testdir: pytest.Testdir) -> None:
         """
         REPLACES: test_doctest_linedata_missing
         REASON: Static parsing means we do know this line number.
@@ -593,7 +593,7 @@ class TestXDoctest:
             ]
         )
 
-    def test_doctest_property_lineno_google_v2(self, testdir) -> None:
+    def test_doctest_property_lineno_google_v2(self, testdir: pytest.Testdir) -> None:
         """
         REPLACES: test_doctest_linedata_missing
         REASON: Static parsing means we do know this line number.
@@ -637,7 +637,7 @@ class TestXDoctest:
             ]
         )
 
-    def test_docstring_show_entire_doctest(self, testdir) -> None:
+    def test_docstring_show_entire_doctest(self, testdir: pytest.Testdir) -> None:
         """Test that we show the entire doctest when there is a failure
 
         REPLACES: test_docstring_context_around_error
@@ -697,7 +697,7 @@ class TestXDoctest:
         assert 'Example:' not in result.stdout.str()
         assert 'text-line-after' not in result.stdout.str()
 
-    def test_doctest_unex_importerror_only_txt(self, testdir) -> None:
+    def test_doctest_unex_importerror_only_txt(self, testdir: pytest.Testdir) -> None:
         """
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctest::test_doctest_unex_importerror_only_txt
@@ -718,7 +718,7 @@ class TestXDoctest:
             ]
         )
 
-    def test_doctest_unex_importerror_with_module(self, testdir) -> None:
+    def test_doctest_unex_importerror_with_module(self, testdir: pytest.Testdir) -> None:
         """
         CHANGES:
             No longer fails during collection because we're doing
@@ -757,7 +757,7 @@ class TestXDoctest:
         sys.path.pop()
 
     @pytest.mark.skip('pytest 3.7.0 broke this. Not sure why')
-    def test_doctestmodule_external_and_issue116(self, testdir) -> None:
+    def test_doctestmodule_external_and_issue116(self, testdir: pytest.Testdir) -> None:
         """
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctest::test_doctestmodule_external_and_issue116
@@ -813,7 +813,7 @@ class TestXDoctest:
             ]
         )
 
-    def test_txtfile_failing(self, testdir) -> None:
+    def test_txtfile_failing(self, testdir: pytest.Testdir) -> None:
         """
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctest::test_txtfile_failing -s
@@ -840,7 +840,7 @@ class TestXDoctest:
             ]
         )
 
-    def test_txtfile_with_fixtures(self, testdir) -> None:
+    def test_txtfile_with_fixtures(self, testdir: pytest.Testdir) -> None:
         """
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctest::test_txtfile_with_fixtures
@@ -855,7 +855,7 @@ class TestXDoctest:
         )
         reprec.assertoutcome(passed=1)
 
-    def test_txtfile_with_usefixtures_in_ini(self, testdir) -> None:
+    def test_txtfile_with_usefixtures_in_ini(self, testdir: pytest.Testdir) -> None:
         """
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctest::test_txtfile_with_usefixtures_in_ini
@@ -881,7 +881,7 @@ class TestXDoctest:
         )
         reprec.assertoutcome(passed=1)
 
-    def test_ignored_whitespace(self, testdir) -> None:
+    def test_ignored_whitespace(self, testdir: pytest.Testdir) -> None:
         testdir.makeini("""
             [pytest]
             doctest_optionflags = ELLIPSIS NORMALIZE_WHITESPACE
@@ -898,7 +898,7 @@ class TestXDoctest:
         reprec = testdir.inline_run(p, '--xdoctest-modules', *EXTRA_ARGS)
         reprec.assertoutcome(passed=1)
 
-    def test_ignored_whitespace_glob(self, testdir) -> None:
+    def test_ignored_whitespace_glob(self, testdir: pytest.Testdir) -> None:
         testdir.makeini("""
             [pytest]
             doctest_optionflags = ELLIPSIS NORMALIZE_WHITESPACE
@@ -915,7 +915,7 @@ class TestXDoctest:
         )
         reprec.assertoutcome(passed=1)
 
-    def test_contains_unicode(self, testdir) -> None:
+    def test_contains_unicode(self, testdir: pytest.Testdir) -> None:
         """Fix internal error with docstrings containing non-ascii characters.
 
         pytest tests/test_plugin.py -k test_contains_unicode
@@ -936,7 +936,7 @@ class TestXDoctest:
             ]
         )
 
-    def test_junit_report_for_doctest(self, testdir) -> None:
+    def test_junit_report_for_doctest(self, testdir: pytest.Testdir) -> None:
         """
         #713: Fix --junit-xml option when used with --xdoctest-modules.
         """
@@ -953,7 +953,7 @@ class TestXDoctest:
         )
         reprec.assertoutcome(failed=1)
 
-    def test_unicode_doctest_module(self, testdir) -> None:
+    def test_unicode_doctest_module(self, testdir: pytest.Testdir) -> None:
         """
         Test case for issue 2434: DecodeError on Python 2 when xdoctest docstring
         contains non-ascii characters.
@@ -975,7 +975,7 @@ class TestXDoctest:
         result = testdir.runpytest(p, '--xdoctest-modules', *EXTRA_ARGS)
         result.stdout.fnmatch_lines(['* 1 passed*'])
 
-    def test_xdoctest_multiline_list(self, testdir) -> None:
+    def test_xdoctest_multiline_list(self, testdir: pytest.Testdir) -> None:
         """
         pytest tests/test_plugin.py -k test_xdoctest_multiline_list
         """
@@ -992,7 +992,7 @@ class TestXDoctest:
         result = testdir.runpytest(p, '--xdoctest-modules', *EXTRA_ARGS)
         result.stdout.fnmatch_lines(['* 1 passed*'])
 
-    def test_xdoctest_multiline_string(self, testdir) -> None:
+    def test_xdoctest_multiline_string(self, testdir: pytest.Testdir) -> None:
         """
         pytest -rsxX -p pytester tests/test_plugin.py::TestXDoctest::test_xdoctest_multiline_string
         """
@@ -1032,7 +1032,7 @@ class TestXDoctest:
         )
         result.stdout.fnmatch_lines(['* 1 passed*'])
 
-    def test_xdoctest_trycatch(self, testdir) -> None:
+    def test_xdoctest_trycatch(self, testdir: pytest.Testdir) -> None:
         """
         CommandLine:
             pytest -rsxX -p pytester tests/test_plugin.py::TestXDoctest::test_xdoctest_trycatch
@@ -1067,7 +1067,7 @@ class TestXDoctest:
         )
         result.stdout.fnmatch_lines(['* 1 passed*'])
 
-    def test_xdoctest_functions(self, testdir) -> None:
+    def test_xdoctest_functions(self, testdir: pytest.Testdir) -> None:
         """
         CommandLine:
             pytest -rsxX -p pytester tests/test_plugin.py::TestXDoctest::test_xdoctest_functions
@@ -1094,7 +1094,7 @@ class TestXDoctest:
         )
         result.stdout.fnmatch_lines(['* 1 passed*'])
 
-    def test_stdout_capture_no(self, testdir) -> None:
+    def test_stdout_capture_no(self, testdir: pytest.Testdir) -> None:
         """
         Test for xdoctest#3
 
@@ -1124,7 +1124,7 @@ class TestXDoctest:
         result.stdout.fnmatch_lines(['in-doctest-print'])
         result.stdout.fnmatch_lines(['in-func-print'])
 
-    def test_stdout_capture_yes(self, testdir) -> None:
+    def test_stdout_capture_yes(self, testdir: pytest.Testdir) -> None:
         """
         Test for xdoctest#3
 
@@ -1149,7 +1149,7 @@ class TestXDoctest:
 
 
 class TestXDoctestModuleLevel:
-    def test_doctestmodule(self, testdir) -> None:
+    def test_doctestmodule(self, testdir: pytest.Testdir) -> None:
         """
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctestModuleLevel::test_doctestmodule
@@ -1174,7 +1174,7 @@ class TestXDoctestModuleLevel:
         # print(reprec.listoutcomes())
         reprec.assertoutcome(failed=1)
 
-    def test_collect_module_single_modulelevel_doctest(self, testdir) -> None:
+    def test_collect_module_single_modulelevel_doctest(self, testdir: pytest.Testdir) -> None:
         """
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctestModuleLevel::test_collect_module_single_modulelevel_doctest
@@ -1193,7 +1193,7 @@ class TestXDoctestModuleLevel:
             assert isinstance(items[0], XDoctestItem)
             assert isinstance(items[0].parent, XDoctestModule)
 
-    def test_collect_module_two_doctest_one_modulelevel(self, testdir) -> None:
+    def test_collect_module_two_doctest_one_modulelevel(self, testdir: pytest.Testdir) -> None:
         path = testdir.makepyfile(
             whatever="""
             '>>> x = None'
@@ -1209,7 +1209,7 @@ class TestXDoctestModuleLevel:
             assert isinstance(items[0].parent, XDoctestModule)
             assert items[0].parent is items[1].parent
 
-    def test_collect_module_two_doctest_no_modulelevel(self, testdir) -> None:
+    def test_collect_module_two_doctest_no_modulelevel(self, testdir: pytest.Testdir) -> None:
         """
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctestModuleLevel::test_collect_module_two_doctest_no_modulelevel
@@ -1323,7 +1323,7 @@ class TestLiterals:
         reprec.assertoutcome(passed=2)
 
     @pytest.mark.skip('bytes are not supported yet')
-    def test_unicode_string(self, testdir) -> None:
+    def test_unicode_string(self, testdir: pytest.Testdir) -> None:
         """Test that doctests which output unicode fail in Python 2 when
         the ALLOW_UNICODE option is not used. The same test should pass
         in Python 3.
@@ -1341,7 +1341,7 @@ class TestLiterals:
         reprec.assertoutcome(passed=passed, failed=int(not passed))
 
     @pytest.mark.skip('bytes are not supported yet')
-    def test_bytes_literal(self, testdir) -> None:
+    def test_bytes_literal(self, testdir: pytest.Testdir) -> None:
         """Test that doctests which output bytes fail in Python 3 when
         the ALLOW_BYTES option is not used. The same test should pass
         in Python 2 (#1287).
@@ -1368,7 +1368,7 @@ class TestXDoctestSkips:
         pytest tests/test_plugin.py::TestXDoctestSkips
     """
 
-    def test_xdoctest_skips_diabled(self, testdir) -> None:
+    def test_xdoctest_skips_diabled(self, testdir: pytest.Testdir) -> None:
         testdir.makepyfile(
             foo="""
             import sys
@@ -1451,7 +1451,7 @@ class TestXDoctestSkips:
         # is the case here.
         reprec.assertoutcome(passed=0, skipped=1)
 
-    def test_all_skipped_global(self, testdir, makedoctest) -> None:
+    def test_all_skipped_global(self, testdir: pytest.Testdir, makedoctest) -> None:
         """
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctestSkips::test_all_skipped_global
@@ -1478,7 +1478,7 @@ class TestXDoctestSkips:
 class TestXDoctestAutoUseFixtures:
     SCOPES = ['module', 'session', 'class', 'function']
 
-    def test_doctest_module_session_fixture(self, testdir) -> None:
+    def test_doctest_module_session_fixture(self, testdir: pytest.Testdir) -> None:
         """
         Test that session fixtures are initialized for xdoctest modules (#768)
 
@@ -1592,7 +1592,7 @@ class TestXDoctestAutoUseFixtures:
         result.stdout.fnmatch_lines(['* 1 passed*'])
 
     @pytest.mark.parametrize('scope', SCOPES)
-    def test_auto_use_request_attributes(self, testdir, scope) -> None:
+    def test_auto_use_request_attributes(self, testdir: pytest.Testdir, scope: str) -> None:
         """Check that all attributes of a request in an autouse fixture
         behave as expected when requested for a xdoctest item.
         """
@@ -1638,7 +1638,7 @@ class TestXDoctestNamespaceFixture:
     SCOPES = ['module', 'session', 'class', 'function']
 
     @pytest.mark.parametrize('scope', SCOPES)
-    def test_namespace_doctestfile(self, testdir, scope) -> None:
+    def test_namespace_doctestfile(self, testdir: pytest.Testdir, scope: str) -> None:
         """
         Check that inserting something into the namespace works in a
         simple text file xdoctest
@@ -1663,7 +1663,7 @@ class TestXDoctestNamespaceFixture:
         reprec.assertoutcome(passed=1)
 
     @pytest.mark.parametrize('scope', SCOPES)
-    def test_namespace_pyfile(self, testdir, scope) -> None:
+    def test_namespace_pyfile(self, testdir: pytest.Testdir, scope: str) -> None:
         """
         Check that inserting something into the namespace works in a
         simple Python file docstring xdoctest
@@ -1692,7 +1692,7 @@ class TestXDoctestNamespaceFixture:
 
 
 class TestXDoctestReportingOption:
-    def _run_doctest_report(self, testdir, format):
+    def _run_doctest_report(self, testdir: pytest.Testdir, format: str):
         testdir.makepyfile("""
             def foo():
                 '''
@@ -1713,7 +1713,7 @@ class TestXDoctestReportingOption:
         )
 
     @pytest.mark.parametrize('format', ['udiff', 'UDIFF', 'uDiFf'])
-    def test_doctest_report_udiff(self, testdir, format) -> None:
+    def test_doctest_report_udiff(self, testdir: pytest.Testdir, format: str) -> None:
         """
         pytest tests/test_plugin.py::TestXDoctestReportingOption::test_doctest_report_udiff
         """
@@ -1727,7 +1727,7 @@ class TestXDoctestReportingOption:
             ]
         )
 
-    def test_doctest_report_cdiff(self, testdir) -> None:
+    def test_doctest_report_cdiff(self, testdir: pytest.Testdir) -> None:
         """
         pytest tests/test_plugin.py::TestXDoctestReportingOption::test_doctest_report_cdiff
         """
@@ -1746,7 +1746,7 @@ class TestXDoctestReportingOption:
             ]
         )
 
-    def test_doctest_report_ndiff(self, testdir) -> None:
+    def test_doctest_report_ndiff(self, testdir: pytest.Testdir) -> None:
         """
         pytest tests/test_plugin.py::TestXDoctestReportingOption::test_doctest_report_ndiff
         """
@@ -1764,8 +1764,8 @@ class TestXDoctestReportingOption:
         )
 
     @pytest.mark.parametrize('format', ['none', 'only_first_failure'])
-    def test_doctest_report_none_or_only_first_failure(
-        self, testdir, format
+    def test_doctst_report_neone_or_only_first_failure(
+        self, testdir: pytest.Testdir, format: str
     ) -> None:
         """
         pytest tests/test_plugin.py::TestXDoctestReportingOption::test_doctest_report_none_or_only_first_failure
@@ -1786,7 +1786,7 @@ class TestXDoctestReportingOption:
             ]
         )
 
-    def test_doctest_report_invalid(self, testdir) -> None:
+    def test_doctest_report_invalid(self, testdir: pytest.Testdir) -> None:
         """
         pytest tests/test_plugin.py::TestXDoctestReportingOption::test_doctest_report_invalid
         """
@@ -1799,7 +1799,7 @@ class TestXDoctestReportingOption:
 
 
 class Disabled:
-    def test_docstring_context_around_error(self, testdir) -> None:
+    def test_docstring_context_around_error(self, testdir: pytest.Testdir) -> None:
         """Test that we show some context before the actual line of a failing
         xdoctest.
 
@@ -1846,7 +1846,7 @@ class Disabled:
         assert 'text-line-2' not in result.stdout.str()
         assert 'text-line-after' not in result.stdout.str()
 
-    def test_doctest_linedata_missing(self, testdir) -> None:
+    def test_doctest_linedata_missing(self, testdir: pytest.Testdir) -> None:
         """
         REPLACES: test_doctest_linedata_missing
         REASON: Static parsing means we do know this line number.
@@ -1876,7 +1876,7 @@ class Disabled:
             ]
         )
 
-    def test_doctestmodule_with_fixtures(self, testdir) -> None:
+    def test_doctestmodule_with_fixtures(self, testdir: pytest.Testdir) -> None:
         p = testdir.makepyfile("""
             '''
                 >>> dir = getfixture('tmpdir')
@@ -1887,7 +1887,7 @@ class Disabled:
         reprec = testdir.inline_run(p, '--xdoctest-modules')
         reprec.assertoutcome(passed=1)
 
-    def test_doctestmodule_three_tests(self, testdir) -> None:
+    def test_doctestmodule_three_tests(self, testdir: pytest.Testdir) -> None:
         p = testdir.makepyfile("""
             '''
             >>> dir = getfixture('tmpdir')
@@ -1912,7 +1912,7 @@ class Disabled:
         reprec = testdir.inline_run(p, '--xdoctest-modules')
         reprec.assertoutcome(passed=3)
 
-    def test_doctestmodule_two_tests_one_fail(self, testdir) -> None:
+    def test_doctestmodule_two_tests_one_fail(self, testdir: pytest.Testdir) -> None:
         """
         CommandLine:
             pytest tests/test_plugin.py::TestXDoctest::test_doctestmodule_two_tests_one_fail
@@ -1935,7 +1935,7 @@ class Disabled:
         reprec = testdir.inline_run(p, '--xdoctest-modules')
         reprec.assertoutcome(failed=1, passed=1)
 
-    def test_non_ignored_whitespace(self, testdir) -> None:
+    def test_non_ignored_whitespace(self, testdir: pytest.Testdir) -> None:
         testdir.makeini("""
             [pytest]
             doctest_optionflags = ELLIPSIS
@@ -1952,7 +1952,7 @@ class Disabled:
         reprec = testdir.inline_run(p, '--xdoctest-modules')
         reprec.assertoutcome(failed=1, passed=0)
 
-    def test_non_ignored_whitespace_glob(self, testdir) -> None:
+    def test_non_ignored_whitespace_glob(self, testdir: pytest.Testdir) -> None:
         testdir.makeini("""
             [pytest]
             doctest_optionflags = ELLIPSIS
@@ -1969,7 +1969,7 @@ class Disabled:
         )
         reprec.assertoutcome(failed=1, passed=0)
 
-    def test_ignore_import_errors_on_doctest(self, testdir) -> None:
+    def test_ignore_import_errors_on_doctest(self, testdir: pytest.Testdir) -> None:
         p = testdir.makepyfile("""
             import asdf
 
@@ -1986,7 +1986,7 @@ class Disabled:
         )
         reprec.assertoutcome(skipped=1, failed=1, passed=0)
 
-    def test_unicode_doctest(self, testdir) -> None:
+    def test_unicode_doctest(self, testdir: pytest.Testdir) -> None:
         """
         Test case for issue 2434: DecodeError on Python 2 when xdoctest contains non-ascii
         characters.
@@ -2014,7 +2014,7 @@ class Disabled:
             ]
         )
 
-    def test_reportinfo(self, testdir) -> None:
+    def test_reportinfo(self, testdir: pytest.Testdir) -> None:
         """
         Test case to make sure that XDoctestItem.reportinfo() returns lineno.
         """

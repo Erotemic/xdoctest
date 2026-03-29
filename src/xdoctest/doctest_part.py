@@ -191,12 +191,12 @@ class DoctestPart:
             parts.append('want="%s..."' % (head_wnt,))
         return ', '.join(parts)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         classname = self.__class__.__name__
         devnice = self.__nice__()
         return '<%s(%s) at %s>' % (classname, devnice, hex(id(self)))
 
-    def __str__(self):
+    def __str__(self) -> str:
         classname = self.__class__.__name__
         devnice = self.__nice__()
         return '<%s(%s)>' % (classname, devnice)

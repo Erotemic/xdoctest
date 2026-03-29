@@ -19,10 +19,10 @@ class SimpleDescriptor:
     def __init__(self) -> None:
         self.value : float | int = 0
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance, owner) -> float | int:
         return self.value
 
-    def __set__(self, instance, value) -> None:
+    def __set__(self, instance, value : float | int) -> None:
         self.value = float(value)
 
 

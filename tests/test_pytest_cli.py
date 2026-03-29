@@ -4,7 +4,7 @@ from xdoctest import utils
 from xdoctest.utils import util_misc
 
 
-def cmd(command):
+def cmd(command: str) -> dict[str, object]:
     # simplified version of ub.cmd no fancy tee behavior
     import subprocess
 

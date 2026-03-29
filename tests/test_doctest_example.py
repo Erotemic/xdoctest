@@ -1,5 +1,5 @@
 from xdoctest import checker, constants, doctest_example, exceptions, utils
-
+import typing
 
 def test_exit_test_exception() -> None:
     """
@@ -426,7 +426,7 @@ def test_await_in_running_loop() -> None:
 
     self = doctest_example.DocTest(docsrc=string)
 
-    async def run_in_loop(doctest, on_error, verbose=None):
+    async def run_in_loop(doctest: doctest_example.DocTest, on_error: str, verbose : int | None = None) -> dict[str, typing.Any]:
         return doctest.run(on_error=on_error, verbose=verbose)
 
     with pytest.raises(exceptions.ExistingEventLoopError):

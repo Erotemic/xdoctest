@@ -698,7 +698,7 @@ def _print_summary_report(
             _log('time: {:0.8f}, test: {}'.format(n_secs, example.cmdline))
 
 
-def _gather_zero_arg_examples(modpath) -> None:
+def _gather_zero_arg_examples(modpath):
     """
     Find functions in `modpath` args  with no args (so we can automatically
     make a dummy docstring).

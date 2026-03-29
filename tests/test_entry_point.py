@@ -5,9 +5,10 @@ import sys
 import pytest
 
 from xdoctest import utils
+from typing import cast
 
 
-def cmd(command):
+def cmd(command: str) -> dict[str, object]:
     # simplified version of ub.cmd no fancy tee behavior
     proc = subprocess.Popen(
         command,
@@ -81,7 +82,7 @@ def test_xdoc_console_script_exec() -> None:
     else:
         info = cmd('xdoctest')
     print('info = {!r}'.format(info))
-    assert 'usage' in info['err']
+    assert 'usage' in cast(str, info['err'])
 
 
 def test_xdoc_cli_version() -> None:
@@ -116,7 +117,7 @@ def test_xdoc_cli_version() -> None:
         info = ub.cmd(sys.executable + ' -m xdoctest --version')
     print('info = {!r}'.format(info))
     print('xdoctest.__version__ = {!r}'.format(xdoctest.__version__))
-    assert xdoctest.__version__ in info['out']
+    assert xdoctest.__version__ in cast(str, info['out'])
 
 
 if __name__ == '__main__':

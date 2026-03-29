@@ -31,6 +31,7 @@ import warnings
 from fnmatch import fnmatch
 from os.path import exists
 
+from typing import cast, List
 from xdoctest import (
     doctest_example,
     dynamic_analysis,
@@ -133,13 +134,14 @@ def parse_freeform_docstr_examples(
         >>> examples = list(parse_freeform_docstr_examples(docstr, asone=False))
         >>> assert len(examples) == 3
     """
+    from xdoctest.doctest_part import DoctestPart
 
-    def doctest_from_parts(parts, num, curr_offset):
+    def doctest_from_parts(parts : list[DoctestPart], num: int, curr_offset: int) -> doctest_example.DocTest:
         # FIXME: this will cause line numbers to become misaligned
-        nested = [
-            p.orig_lines
+        nested: list[list[str]] = [
+            cast(List[str], p.orig_lines)
             if p.want is None
-            else p.orig_lines + p.want.splitlines()
+            else cast(List[str], p.orig_lines) + p.want.splitlines()
             for p in parts
         ]
         docsrc = '\n'.join(list(it.chain.from_iterable(nested)))
@@ -319,7 +321,9 @@ def parse_google_docstr_examples(
         yield example
 
 
-def parse_auto_docstr_examples(docstr, *args, **kwargs) -> None:
+def parse_auto_docstr_examples(
+    docstr: str, *args: typing.Any, **kwargs: typing.Any
+) -> typing.Iterator[doctest_example.DocTest]:
     """
     First try to parse google style, but if no tests are found use freeform
     style.
@@ -408,7 +412,6 @@ def parse_docstr_examples(
                 callname, modpath
             )
         )
-    parser: typing.Any
     if style == 'freeform':
         parser = parse_freeform_docstr_examples
     elif style == 'google':
@@ -742,8 +745,9 @@ def parse_doctestables(
     ):
         for callname, calldef in calldefs.items():
             docstr = calldef.docstr
-            if calldef.docstr is not None:
+            if docstr is not None:
                 lineno = calldef.doclineno
+                assert isinstance(lineno, int)
                 example_gen = parse_docstr_examples(
                     docstr,
                     callname=callname,

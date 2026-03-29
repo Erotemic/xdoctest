@@ -58,7 +58,9 @@ def test_lineno() -> None:
     sourcelines = source.split('\n')
 
     for k, calldef in calldefs.items():
-        line = sourcelines[calldef.lineno - 1]
+        lineno = calldef.lineno
+        assert isinstance(lineno, int)
+        line = sourcelines[lineno - 1]
         callname = calldef.callname
         # Ensure linenumbers correspond with start of func/class def
         assert callname.split('.')[-1] in line

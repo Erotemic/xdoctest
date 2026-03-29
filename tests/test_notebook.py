@@ -34,7 +34,7 @@ def skip_notebook_tests_if_unsupported() -> None:
         pytest.skip('Missing jupyter')
 
 
-def cmd(command):
+def cmd(command: str) -> dict[str, object]:
     # simplified version of ub.cmd no fancy tee behavior
     import subprocess
 
@@ -56,7 +56,7 @@ def cmd(command):
     return info
 
 
-def demodata_notebook_fpath():
+def demodata_notebook_fpath() -> str:
     try:
         testdir = dirname(__file__)
     except NameError:
@@ -105,4 +105,5 @@ def test_xdoctest_outside_notebook() -> None:
     notebook_fpath = demodata_notebook_fpath()
     info = cmd(sys.executable + ' -m xdoctest ' + notebook_fpath)
     text = info['out']
+    assert isinstance(text, str)
     assert '3 / 3 passed' in text

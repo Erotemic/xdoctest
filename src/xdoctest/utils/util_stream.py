@@ -98,7 +98,7 @@ class TeeStringIO(io.StringIO):
             self.redirect.write(msg)
         return super(TeeStringIO, self).write(msg)
 
-    def flush(self):  # nocover
+    def flush(self) -> None:  # nocover
         """
         Flush to this and the redirected stream
         """
