@@ -1389,7 +1389,7 @@ class TestXDoctestSkips:
             result.stdout.fnmatch_lines(['*no tests ran*'])
 
     @pytest.fixture(params=['text', 'module'])
-    def makedoctest(self, testdir, request) -> None:
+    def makedoctest(self, testdir, request):
         def makeit(xdoctest) -> None:
             mode = request.param
             if mode == 'text':

@@ -1,10 +1,12 @@
+from __future__ import annotations
 import sys
+from typing import Any
 
 from xdoctest import utils
 from xdoctest.utils import util_misc
 
 
-def cmd(command: str) -> dict[str, object]:
+def cmd(command: str) -> dict[str, Any]:
     # simplified version of ub.cmd no fancy tee behavior
     import subprocess
 
@@ -17,7 +19,7 @@ def cmd(command: str) -> dict[str, object]:
     )
     out, err = proc.communicate()
     ret = proc.wait()
-    info = {
+    info: dict[str, Any] = {
         'proc': proc,
         'out': out,
         'err': err,

@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import subprocess
 import sys
@@ -8,7 +9,7 @@ from xdoctest import utils
 from typing import cast
 
 
-def cmd(command: str) -> dict[str, object]:
+def cmd(command: str) -> dict[str, 'subprocess.Popen[str] | str | int']:
     # simplified version of ub.cmd no fancy tee behavior
     proc = subprocess.Popen(
         command,
@@ -19,7 +20,7 @@ def cmd(command: str) -> dict[str, object]:
     )
     out, err = proc.communicate()
     ret = proc.wait()
-    info = {
+    info: dict[str, 'subprocess.Popen[str] | str | int'] = {
         'proc': proc,
         'out': out,
         'err': err,

@@ -64,6 +64,8 @@ def test_lineno() -> None:
         callname = calldef.callname
         # Ensure linenumbers correspond with start of func/class def
         assert callname.split('.')[-1] in line
+        assert calldef.doclineno is not None
+        assert calldef.doclineno_end is not None
         docsrc_lines = sourcelines[
             calldef.doclineno - 1 : calldef.doclineno_end
         ]
@@ -183,9 +185,11 @@ def test_parse_decorated_async_function_lineno() -> None:
 
     # Should point to the `async def foo():` line, not the decorator line.
     source_lines = source.splitlines()
+    assert calldef.lineno is not None
     assert source_lines[calldef.lineno - 1].strip() == 'async def foo():'
 
     # And it should still extract the docstring normally.
+    assert calldef.docstr is not None
     assert '>>> 1 + 1' in calldef.docstr
 
 
@@ -217,7 +221,9 @@ def test_parse_multi_decorated_async_function_lineno() -> None:
     calldef = calldefs['foo']
 
     source_lines = source.splitlines()
+    assert calldef.lineno is not None
     assert source_lines[calldef.lineno - 1].strip() == 'async def foo():'
+    assert calldef.docstr is not None
     assert '>>> 1 + 1' in calldef.docstr
 
 
@@ -484,6 +490,7 @@ def test_parse_decorated_function_lineno_cases(case) -> None:
     calldef = calldefs[case['callname']]
     source_lines = source.splitlines()
 
+    assert calldef.lineno is not None
     got_line = source_lines[calldef.lineno - 1].strip()
     assert got_line == case['expect_line'], (
         'Wrong lineno for case={!r}. Expected line={!r}, got line={!r}, '
@@ -492,6 +499,7 @@ def test_parse_decorated_function_lineno_cases(case) -> None:
         )
     )
 
+    assert calldef.docstr is not None
     assert '>>> 1 + 1' in calldef.docstr or '>>> "bar"' in calldef.docstr
 
 

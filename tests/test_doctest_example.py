@@ -1,3 +1,4 @@
+from __future__ import annotations
 from xdoctest import checker, constants, doctest_example, exceptions, utils
 import typing
 

@@ -22,7 +22,7 @@ from xdoctest.utils.util_import import (  # NOQA
     modpath_to_modname,
     split_modpath,
 )
-
+from typing import Union
 PLAT_IMPL = platform.python_implementation()
 
 
@@ -709,7 +709,8 @@ class TopLevelVisitor(ast.NodeVisitor):
             >>> self._get_docstring(node)
             ('docstr', 2, 2)
         """
-        assert isinstance(node, (ast.AsyncFunctionDef | ast.FunctionDef | ast.ClassDef | ast.Module))
+        if typing.TYPE_CHECKING:
+            assert isinstance(node, (Union[ast.AsyncFunctionDef, ast.FunctionDef, ast.ClassDef, ast.Module]))
         docstr = ast.get_docstring(node, clean=False)
         if docstr is not None:
             docnode = node.body[0]

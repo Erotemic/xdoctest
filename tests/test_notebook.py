@@ -1,5 +1,7 @@
+from __future__ import annotations
 import sys
 from os.path import dirname, exists, join
+from typing import Any
 
 import pytest
 
@@ -34,7 +36,7 @@ def skip_notebook_tests_if_unsupported() -> None:
         pytest.skip('Missing jupyter')
 
 
-def cmd(command: str) -> dict[str, object]:
+def cmd(command: str) -> dict[str, 'Any']:
     # simplified version of ub.cmd no fancy tee behavior
     import subprocess
 
@@ -47,7 +49,7 @@ def cmd(command: str) -> dict[str, object]:
     )
     out, err = proc.communicate()
     ret = proc.wait()
-    info = {
+    info: dict[str, 'Any'] = {
         'proc': proc,
         'out': out,
         'test_doctest_in_notebook.ipynberr': err,

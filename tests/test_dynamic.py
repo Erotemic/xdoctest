@@ -4,6 +4,7 @@ This mod has a docstring
 Example:
     >>> pass
 """
+from __future__ import annotations
 
 import sys
 
