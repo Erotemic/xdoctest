@@ -1639,10 +1639,12 @@ class DocTest:
                             new_line = ','.join(tbparts)
 
                             # failed_ctx = '>>> ' + self.failed_part.exec_lines[tb_lineno - 1]
-                            failed_ctx = self.failed_part.orig_lines[
-                                tb_lineno - 1
-                            ]
-                            extra = '    ' + failed_ctx
+                            _orig_lines = self.failed_part.orig_lines
+                            if not _orig_lines:
+                                failed_ctx = _orig_lines[tb_lineno - 1]
+                                extra = '    ' + failed_ctx
+                            else:
+                                extra = ' No lines?! Bug in xdoctest?'
                             line = new_line + extra + '\n'
 
                         # m = '(t{})'.format(i)
