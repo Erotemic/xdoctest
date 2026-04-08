@@ -207,6 +207,47 @@ def test_extract_got_exception() -> None:
     assert 'ExtractGotReprException' in text
 
 
+def test_traceback_rewrite_handles_inner_frame_from_prior_part():
+    """
+    Regression test for a traceback-formatting bug when a later doctest part
+    called a function defined in an earlier part.
+
+    Before the fix, `repr_failure()` assumed traceback lines always belonged to
+    `self.failed_part`. In this case that was wrong: the call site was in the
+    later part, but the actual exception came from the earlier part that
+    defined `foo`. As a result, traceback rewriting could index into the wrong
+    part's `orig_lines` and crash with `IndexError`.
+
+    The fix was to give each doctest part its own synthetic filename and map
+    traceback frames back to the part that actually owns them.
+
+    This test verifies that `repr_failure()` no longer crashes and that the
+    reported failure still points to the real exception.
+    """
+    from xdoctest import doctest_example, utils
+
+    docsrc = utils.codeblock(
+        '''
+        >>> def foo():
+        >>>     raise ValueError('boom')
+        >>> print('ready')
+        ready
+        >>> foo()
+        '''
+    )
+    self = doctest_example.DocTest(docsrc=docsrc, lineno=1)
+    result = self.run(on_error='return', verbose=0)
+    assert result['failed']
+
+    text = '\n'.join(self.repr_failure())
+    assert 'ValueError' in text
+    assert 'boom' in text
+
+    # This is the more important semantic check.
+    # The actual failing line is the raise inside foo(), not the foo() call.
+    assert self.failed_lineno() == 2
+
+
 if __name__ == '__main__':
     """
     CommandLine:
