@@ -558,6 +558,10 @@ def undefined_names(sourcecode: str) -> set[str]:
     import pyflakes.reporter
 
     class CaptureReporter(pyflakes.reporter.Reporter):
+        syntax_errors: list[str]
+        messages: list[typing.Any]
+        unexpected: list[str]
+
         def __init__(reporter, warningStream, errorStream) -> None:
             reporter.syntax_errors = []
             reporter.messages = []
@@ -910,7 +914,7 @@ def _update_argparse_cli(add_argument, prefix=None) -> None:
         help=('Same as if durations=0'),
     )
 
-    add_argument_kws = [
+    add_argument_kws: list[tuple[list, dict]] = [
         # (['--style'], dict(dest='style',
         #                    type=str, help='choose your style',
         #                    choices=['auto', 'google', 'freeform'], default='auto')),

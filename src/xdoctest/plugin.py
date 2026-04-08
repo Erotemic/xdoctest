@@ -303,11 +303,11 @@ class XDoctestItem(pytest.Item):
             self.dtest.globs.update(globs)
         else:
             if self.dtest is not None:
-                self.fixture_request = _setup_fixtures(self)
+                self.fixture_request = _setup_fixtures(self)  # type: ignore
                 global_namespace = dict(
-                    getfixture=self.fixture_request.getfixturevalue
+                    getfixture=self.fixture_request.getfixturevalue  # type: ignore
                 )
-                for name, value in self.fixture_request.getfixturevalue(
+                for name, value in self.fixture_request.getfixturevalue(  # type: ignore
                     'xdoctest_namespace'
                 ).items():
                     global_namespace[name] = value

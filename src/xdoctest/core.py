@@ -414,38 +414,54 @@ def parse_docstr_examples(
                 callname, modpath
             )
         )
-    if style == 'freeform':
-        parser = parse_freeform_docstr_examples
-    elif style == 'google':
-        parser = parse_google_docstr_examples
-    elif style == 'auto':
-        parser = parse_auto_docstr_examples
-    # TODO: epdoc
-    # TODO:
-    # elif style == 'numpy':
-    #     parser = parse_numpy_docstr_examples
-    else:
+
+    if style not in {'freeform', 'google', 'auto'}:
         raise KeyError(
             'Unknown style={}. Valid styles are {}'.format(
                 style, DOCTEST_STYLES
             )
         )
 
-    if global_state.DEBUG_CORE:  # nocover
-        print('parser = {!r}'.format(parser))
-
     n_parsed = 0
     try:
         if parser_kw is None:
             parser_kw = {}
-        for example in parser(
-            docstr,
-            callname=callname,
-            modpath=modpath,
-            fpath=fpath,
-            lineno=lineno,
-            **parser_kw,
-        ):
+
+        # TODO: we should ensure each style parser has the same exact signature.
+
+        if style == 'freeform':
+            examples = parse_freeform_docstr_examples(
+                docstr,
+                callname=callname,
+                modpath=modpath,
+                fpath=fpath,
+                lineno=lineno,
+                **parser_kw,
+            )
+        elif style == 'google':
+            examples = parse_google_docstr_examples(
+                docstr,
+                callname=callname,
+                modpath=modpath,
+                fpath=fpath,
+                lineno=lineno,
+                **parser_kw,
+            )
+        elif style == 'auto':
+            examples = parse_auto_docstr_examples(
+                docstr,
+                callname=callname,
+                modpath=modpath,
+                fpath=fpath,
+                lineno=lineno,
+                **parser_kw,
+            )
+        # TODO: epdoc
+        # TODO:
+        # elif style == 'numpy':
+        #     examples = parse_numpy_docstr_examples(...)
+
+        for example in examples:
             n_parsed += 1
             yield example
     except Exception as ex:

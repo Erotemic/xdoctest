@@ -448,9 +448,9 @@ class TopLevelVisitor(ast.NodeVisitor):
             if PLAT_IMPL == 'PyPy':
                 startpos = docnode.lineno - 1
                 if IS_PY_GE_312:
-                    docstr = utils.ensure_unicode(docnode.value.value)  # type: ignore[attr-defined]
+                    docstr = utils.ensure_unicode(docnode.value.value)  # type: ignore
                 else:
-                    docstr = utils.ensure_unicode(docnode.value.s)  # type: ignore[attr-defined]
+                    docstr = utils.ensure_unicode(docnode.value.s)  # type: ignore
                 sourcelines = self.sourcelines
                 assert sourcelines is not None
                 start, stop = self._find_docstr_endpos_workaround(
