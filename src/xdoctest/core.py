@@ -30,8 +30,8 @@ import typing
 import warnings
 from fnmatch import fnmatch
 from os.path import exists
+from typing import List, cast
 
-from typing import cast, List
 from xdoctest import (
     doctest_example,
     dynamic_analysis,
@@ -136,7 +136,9 @@ def parse_freeform_docstr_examples(
     """
     from xdoctest.doctest_part import DoctestPart
 
-    def doctest_from_parts(parts : list[DoctestPart], num: int, curr_offset: int) -> doctest_example.DocTest:
+    def doctest_from_parts(
+        parts: list[DoctestPart], num: int, curr_offset: int
+    ) -> doctest_example.DocTest:
         # FIXME: this will cause line numbers to become misaligned
         nested: list[list[str]] = [
             cast(List[str], p.orig_lines)

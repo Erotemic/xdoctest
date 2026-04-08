@@ -16,8 +16,7 @@ import typing
 import warnings
 from collections import OrderedDict
 from inspect import CO_COROUTINE
-from typing import TYPE_CHECKING
-from typing import Any, cast, Union
+from typing import TYPE_CHECKING, Any, Union, cast
 
 from xdoctest import (
     checker,
@@ -54,7 +53,7 @@ class DoctestConfig(dict):
     RuntimeState.
     """
 
-    def __init__(self, *args : Any, **kwargs : Any) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(DoctestConfig, self).__init__(*args, **kwargs)
         self.update(
             {
@@ -110,7 +109,6 @@ class DoctestConfig(dict):
             add_argument (callable): the parser.add_argument function
         """
         import argparse
-        from typing import Any
 
         def str_lower(x: str) -> str:
             # python2 fix
@@ -922,7 +920,9 @@ class DocTest:
         Returns:
             Dict : summary
         """
-        on_error = cast(Union[str, None], self.config.getvalue('on_error', on_error))
+        on_error = cast(
+            Union[str, None], self.config.getvalue('on_error', on_error)
+        )
         verbose = cast(int, self.config.getvalue('verbose', verbose))
         assert isinstance(verbose, int)
         if on_error not in {'raise', 'return'}:
@@ -1295,7 +1295,9 @@ class DocTest:
                     found_sub_tb = None
                     for sub_tb in _traverse_traceback(tb):
                         tb_filename = sub_tb.tb_frame.f_code.co_filename
-                        tb_part = self._partfilename_to_part.get(tb_filename, None)
+                        tb_part = self._partfilename_to_part.get(
+                            tb_filename, None
+                        )
                         if tb_part is not None:
                             # Walk up the traceback until we find the one that
                             # has the doctest as the base filename
@@ -1307,16 +1309,30 @@ class DocTest:
                         # The only traceback remaining should be
                         # the part that is relevant to the user
                         print('<DEBUG: best sub_tb>', file=sys.stderr)
-                        print('found_lineno = {!r}'.format(found_lineno), file=sys.stderr)
-                        print('found_tb_part = {!r}'.format(found_tb_part), file=sys.stderr)
-                        print(''.join(traceback.format_tb(sub_tb)), file=sys.stderr)
+                        print(
+                            'found_lineno = {!r}'.format(found_lineno),
+                            file=sys.stderr,
+                        )
+                        print(
+                            'found_tb_part = {!r}'.format(found_tb_part),
+                            file=sys.stderr,
+                        )
+                        print(
+                            ''.join(traceback.format_tb(sub_tb)),
+                            file=sys.stderr,
+                        )
                         if found_sub_tb is not None:
-                            print(''.join(traceback.format_tb(found_sub_tb)), file=sys.stderr)
+                            print(
+                                ''.join(traceback.format_tb(found_sub_tb)),
+                                file=sys.stderr,
+                            )
                         print('</DEBUG>', file=sys.stderr)
 
                     if found_lineno is None:
                         if DEBUG:
-                            print('UNABLE TO CLEAN TRACEBACK. EXIT DUE TO DEBUG')
+                            print(
+                                'UNABLE TO CLEAN TRACEBACK. EXIT DUE TO DEBUG'
+                            )
                             sys.exit(1)
                         raise ValueError(
                             f'Could not clean traceback: ex = {_ex_dbg!r}'
@@ -1396,7 +1412,7 @@ class DocTest:
     def _block_prefix(self):
         return 'ZERO-ARG' if self.block_type == 'zero-arg' else 'DOCTEST'
 
-    def _pre_run(self, verbose : bool | int) -> None:
+    def _pre_run(self, verbose: bool | int) -> None:
         if verbose >= 1:
             if verbose >= 2:
                 barrier = self._color('====== <exec> ======', 'white')
@@ -1684,9 +1700,14 @@ class DocTest:
                 # where the error occurred in the doctest
                 tblines = traceback.format_exception(*self.exc_info)
 
-                def _alter_traceback_linenos(self, tblines: list[str]) -> list[str]:
-                    def overwrite_lineno(linepart: list[str], tb_part: 'DoctestPart', tb_lineno: int) -> list[str]:
-
+                def _alter_traceback_linenos(
+                    self, tblines: list[str]
+                ) -> list[str]:
+                    def overwrite_lineno(
+                        linepart: list[str],
+                        tb_part: 'DoctestPart',
+                        tb_lineno: int,
+                    ) -> list[str]:
                         """
                         Rewrite the displayed traceback line number so it
                         refers to the user's doctest line numbers instead of
@@ -1704,7 +1725,9 @@ class DocTest:
                         linepart = linepart[:-1] + [new_linestr]
                         return linepart
 
-                    def lookup_tb_part(line) -> tuple[None, None] | tuple[str, 'DoctestPart']:
+                    def lookup_tb_part(
+                        line,
+                    ) -> tuple[None, None] | tuple[str, 'DoctestPart']:
                         """
                         Given a traceback text line, find which synthetic
                         per-part filename it refers to and then recover the
@@ -1715,13 +1738,13 @@ class DocTest:
                         ever be a substring of another.
                         """
                         _fname_to_part: dict[str, 'DoctestPart'] = (
-                            self._partfilename_to_part)
+                            self._partfilename_to_part
+                        )
                         if not _fname_to_part:
                             return None, None
 
                         partfilename_list: list[str] = sorted(
-                            _fname_to_part.keys(), key=str.__len__,
-                            reverse=True
+                            _fname_to_part.keys(), key=str.__len__, reverse=True
                         )
                         for partfilename in partfilename_list:
                             if partfilename in line:
@@ -1743,7 +1766,9 @@ class DocTest:
                         ownership, and only then use a small, defensive
                         fallback to `exec_lines` if needed.
                         """
-                        ctx_lines = tb_part.orig_lines or tb_part.exec_lines or []
+                        ctx_lines = (
+                            tb_part.orig_lines or tb_part.exec_lines or []
+                        )
                         if 1 <= tb_lineno <= len(ctx_lines):
                             return ctx_lines[tb_lineno - 1]
                         return ''
@@ -1762,7 +1787,9 @@ class DocTest:
                             tb_lineno = int(tbparts[-2].strip().split()[1])
 
                             linepart = tbparts[-2].split(' ')
-                            linepart = overwrite_lineno(linepart, tb_part, tb_lineno)
+                            linepart = overwrite_lineno(
+                                linepart, tb_part, tb_lineno
+                            )
                             tbparts[-2] = ' '.join(linepart)
                             new_line = ','.join(tbparts)
 
@@ -1872,14 +1899,14 @@ class DocTest:
             print('type(out_text) = %r' % (type(out_text),))
             print('out_text = %r' % (out_text,))
 
-    def _color(self, text : str, color : str, enabled : bool | None = None):
+    def _color(self, text: str, color: str, enabled: bool | None = None):
         """conditionally color text based on config and flags"""
         colored = self.config.getvalue('colored', enabled)
         if colored:
             text = utils.color_text(text, color)
         return text
 
-    def _post_run(self, verbose : bool | int) -> dict[str, typing.Any]:
+    def _post_run(self, verbose: bool | int) -> dict[str, typing.Any]:
         """
         Returns:
             Dict : summary

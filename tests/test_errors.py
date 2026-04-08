@@ -1,9 +1,9 @@
 import warnings
 from os.path import join
+from typing import cast
 
 import pytest
 
-from typing import cast
 from xdoctest import core, exceptions, runner, utils
 from xdoctest.utils.util_misc import _run_case
 
@@ -21,7 +21,7 @@ def test_parse_syntax_error() -> None:
             """
     )
 
-    info : dict[str, str | int | None] = {
+    info: dict[str, str | int | None] = {
         'callname': 'test_synerr',
         'lineno': 42,
         'fpath': None,
@@ -227,13 +227,13 @@ def test_traceback_rewrite_handles_inner_frame_from_prior_part():
     from xdoctest import doctest_example, utils
 
     docsrc = utils.codeblock(
-        '''
+        """
         >>> def foo():
         >>>     raise ValueError('boom')
         >>> print('ready')
         ready
         >>> foo()
-        '''
+        """
     )
     self = doctest_example.DocTest(docsrc=docsrc, lineno=1)
     result = self.run(on_error='return', verbose=0)

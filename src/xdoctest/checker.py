@@ -405,10 +405,10 @@ def normalize(
     if runstate is None:
         runstate = directive.RuntimeState()
 
-    def remove_prefixes(regex : str | re.Pattern[str], text : str) -> str:
+    def remove_prefixes(regex: str | re.Pattern[str], text: str) -> str:
         return re.sub(regex, r'\1\2', text)
 
-    def visible_text(lines : list[str]) -> list[str]:
+    def visible_text(lines: list[str]) -> list[str]:
         # TODO: backspaces
         # Any lines that end with only a carriage return are erased
         return [line for line in lines if not line.endswith('\r')]
@@ -513,7 +513,9 @@ class GotWantException(AssertionError):
         self.got = got
         self.want = want
 
-    def _do_a_fancy_diff(self, runstate: directive.RuntimeState | None = None) -> bool:
+    def _do_a_fancy_diff(
+        self, runstate: directive.RuntimeState | None = None
+    ) -> bool:
         # Not unless they asked for a fancy diff.
         got = self.got
         want = self.want

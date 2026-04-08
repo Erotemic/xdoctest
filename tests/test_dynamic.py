@@ -4,6 +4,7 @@ This mod has a docstring
 Example:
     >>> pass
 """
+
 from __future__ import annotations
 
 import sys
@@ -18,12 +19,12 @@ TopLevelVisitor = static.TopLevelVisitor
 
 class SimpleDescriptor:
     def __init__(self) -> None:
-        self.value : float | int = 0
+        self.value: float | int = 0
 
     def __get__(self, instance, owner) -> float | int:
         return self.value
 
-    def __set__(self, instance, value : float | int) -> None:
+    def __set__(self, instance, value: float | int) -> None:
         self.value = float(value)
 
 

@@ -562,7 +562,7 @@ class Directive(utils.NiceRepr):
         else:
             return '{}{}'.format(prefix, self.name)
 
-    def _unpack_args(self, num : int) -> list[str] | None:
+    def _unpack_args(self, num: int) -> list[str] | None:
         from xdoctest.utils import util_deprecation
 
         util_deprecation.schedule_deprecation(
@@ -584,7 +584,11 @@ class Directive(utils.NiceRepr):
             )
         return self.args
 
-    def effect(self, argv: list[str] | None = None, environ: dict[str, str] | None = None) -> Effect:
+    def effect(
+        self,
+        argv: list[str] | None = None,
+        environ: dict[str, str] | None = None,
+    ) -> Effect:
         from xdoctest.utils import util_deprecation
 
         util_deprecation.schedule_deprecation(

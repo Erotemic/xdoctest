@@ -22,13 +22,13 @@ from xdoctest.utils.util_import import (  # NOQA
     modpath_to_modname,
     split_modpath,
 )
-from typing import Union
+
 PLAT_IMPL = platform.python_implementation()
 
 
-IS_PY_GE_312 : bool = sys.version_info[0:2] >= (3, 12)
-IS_PY_GE_308 : bool = sys.version_info[0:2] >= (3, 8) 
-IS_PY_LT_314 : bool = sys.version_info[0:2] < (3, 14)  
+IS_PY_GE_312: bool = sys.version_info[0:2] >= (3, 12)
+IS_PY_GE_308: bool = sys.version_info[0:2] >= (3, 8)
+IS_PY_LT_314: bool = sys.version_info[0:2] < (3, 14)
 
 
 if IS_PY_GE_312:
@@ -42,6 +42,7 @@ DocNode = typing.Union[
     ast.ClassDef,
     ast.Module,
 ]
+
 
 class CallDefNode:
     """
@@ -376,7 +377,9 @@ class TopLevelVisitor(ast.NodeVisitor):
 
     # -- helpers ---
 
-    def _docnode_line_workaround(self, docnode: ast.Expr | ast.stmt) -> tuple[int, int]:
+    def _docnode_line_workaround(
+        self, docnode: ast.Expr | ast.stmt
+    ) -> tuple[int, int]:
         """
         Find the start and ending line numbers of a docstring
 
@@ -1199,14 +1202,16 @@ def _strip_hashtag_comments_and_newlines(source: str | list[str]) -> str:
     else:
         readline = iter(source).__next__
 
-    def strip_hashtag_comments(tokens: typing.Iterator[tuple]) -> typing.Iterator[tuple]:
+    def strip_hashtag_comments(
+        tokens: typing.Iterator[tuple],
+    ) -> typing.Iterator[tuple]:
         """
         Drop comment tokens from a `tokenize` stream.
         """
         return (t for t in tokens if t[0] != tokenize.COMMENT)
 
     def strip_consecutive_newlines(
-        tokens: typing.Iterator[tuple]
+        tokens: typing.Iterator[tuple],
     ) -> typing.Iterator[tuple]:
         """
         Consecutive newlines are dropped and trailing whitespace

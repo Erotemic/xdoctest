@@ -1,9 +1,10 @@
 from __future__ import annotations
+
+import typing
 from os.path import join
 
 import xdoctest
 from xdoctest import core, utils
-import typing
 
 
 def _test_status(docstr: str) -> dict[str, typing.Any]:

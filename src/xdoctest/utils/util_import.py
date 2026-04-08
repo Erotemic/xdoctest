@@ -59,7 +59,9 @@ def is_modname_importable(
     return flag
 
 
-def _importlib_import_modpath(modpath: str | os.PathLike) -> ModuleType:  # nocover
+def _importlib_import_modpath(
+    modpath: str | os.PathLike,
+) -> ModuleType:  # nocover
     """
     Alternative to import_module_from_path using importlib mechainsms
 
@@ -246,7 +248,9 @@ class PythonPathContext:
             sys.path.pop(self.index)
 
 
-def _custom_import_modpath(modpath: str | os.PathLike, index: int = -1) -> ModuleType:
+def _custom_import_modpath(
+    modpath: str | os.PathLike, index: int = -1
+) -> ModuleType:
     dpath, rel_modpath = split_modpath(modpath)
     modname = modpath_to_modname(modpath)
     try:

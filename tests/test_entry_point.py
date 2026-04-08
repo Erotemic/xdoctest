@@ -1,12 +1,13 @@
 from __future__ import annotations
+
 import os
 import subprocess
 import sys
+from typing import cast
 
 import pytest
 
 from xdoctest import utils
-from typing import cast
 
 
 def cmd(command: str) -> dict[str, 'subprocess.Popen[str] | str | int']:

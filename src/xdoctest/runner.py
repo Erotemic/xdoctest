@@ -291,7 +291,7 @@ def doctest_module(
 
     # Parse all valid examples
     with warnings.catch_warnings(record=True) as parse_warnlist:
-        examples : list[doctest_example.DocTest] = list(
+        examples: list[doctest_example.DocTest] = list(
             core.parse_doctestables(
                 parsable_identifier,
                 exclude=exclude,
@@ -443,7 +443,9 @@ def _auto_disable_failing_tests_hook(context) -> None:
             file.write(''.join(lines))
 
 
-def _convert_to_test_module(enabled_examples: list[doctest_example.DocTest]) -> str:
+def _convert_to_test_module(
+    enabled_examples: list[doctest_example.DocTest],
+) -> str:
     """
     Logic for the "dumps" command.
 
