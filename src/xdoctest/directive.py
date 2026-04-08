@@ -922,20 +922,6 @@ def _module_exists(modname: typing.Any) -> bool:
     return exists_flag
 
 
-# __docstubs__ = '''
-# import re
-
-# if hasattr(re, 'Pattern'):
-#     RE_Pattern = re.Pattern
-# else:
-#     # sys.version_info[0:2] <= 3.6
-#     RE_Pattern = type(re.compile('.*'))
-
-# DIRECTIVE_RE: RE_Pattern
-# DIRECTIVE_PATTERNS: list
-# COMMANDS: list
-# '''
-
 COMMANDS = list(DEFAULT_RUNTIME_STATE.keys()) + [
     # Define extra commands that can resolve to a runtime state modification
     'REQUIRES',

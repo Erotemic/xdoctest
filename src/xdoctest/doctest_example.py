@@ -39,11 +39,6 @@ TODO:
 """
 
 
-__docstubs__ = """
-from xdoctest.doctest_part import DoctestPart
-"""
-
-
 class DoctestConfig(dict):
     """
     Doctest configuration
@@ -1793,7 +1788,6 @@ class DocTest:
                             tbparts[-2] = ' '.join(linepart)
                             new_line = ','.join(tbparts)
 
-                            # IMPORTANT:
                             # We now fetch the context line from the part that actually owns the
                             # traceback frame, not from `self.failed_part`.
                             #
@@ -1807,72 +1801,7 @@ class DocTest:
 
                     return new_tblines
 
-                # # old buggy _alter_traceback_linenos, remove once we fix the
-                # issue
-                # def _alter_traceback_linenos(self, tblines: list[str]) -> list[str]:
-                #     def overwrite_lineno(linepart: list[str]) -> list[str]:
-                #         # Replace the trailing part which is the lineno
-                #         old_linestr = linepart[-1]  # noqa
-
-                #         # This is the lineno we will insert
-                #         rel_lineno = self.failed_part.line_offset + tb_lineno
-                #         abs_lineno = self.lineno + rel_lineno - 1
-
-                #         new_linestr = 'rel: {rel}, abs: {abs}'.format(
-                #             rel=rel_lineno,
-                #             abs=abs_lineno,
-                #         )
-
-                #         linepart = linepart[:-1] + [new_linestr]
-                #         return linepart
-
-                #     new_tblines = []
-                #     for i, line in enumerate(tblines):
-                #         # if '<frozen importlib._bootstrap' in line:
-                #         #     # not sure if this should be removed or not
-                #         #     continue
-
-                #         if 0:
-                #             # Not a robust acheck
-                #             if 'xdoctest/xdoctest/doctest_example' in line:
-                #                 # hack, remove ourselves from the tracback
-                #                 continue
-                #                 # new_tblines.append('!!!!!')
-                #                 # raise Exception('foo')
-                #                 # continue
-
-                #         if (
-                #             self._partfilename is not None
-                #             and self._partfilename in line
-                #         ):
-                #             # Intercept the line corresponding to the doctest
-                #             tbparts = line.split(',')
-                #             tb_lineno = int(tbparts[-2].strip().split()[1])
-                #             # modify the line number to match the doctest
-                #             linepart = tbparts[-2].split(' ')
-
-                #             linepart = overwrite_lineno(linepart)
-
-                #             tbparts[-2] = ' '.join(linepart)
-                #             new_line = ','.join(tbparts)
-
-                #             # failed_ctx = '>>> ' + self.failed_part.exec_lines[tb_lineno - 1]
-                #             _orig_lines = self.failed_part.orig_lines
-                #             if not _orig_lines:
-                #                 failed_ctx = _orig_lines[tb_lineno - 1]
-                #                 extra = '    ' + failed_ctx
-                #             else:
-                #                 extra = ' No lines?! Bug in xdoctest?'
-                #             line = new_line + extra + '\n'
-
-                #         # m = '(t{})'.format(i)
-                #         # line = m + line.replace('\n', '\n' + m)
-                #         new_tblines.append(line)
-
-                #     return new_tblines
-
                 new_tblines = _alter_traceback_linenos(self, tblines)
-                # new_tblines = tblines
 
                 if colored:
                     tbtext = '\n'.join(new_tblines)

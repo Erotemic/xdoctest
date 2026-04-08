@@ -76,10 +76,6 @@ _INCOMPATIBLE_PLUGINS = frozenset({'doctest'})
 #     with open(fpath, 'a') as file:
 #         file.write(str(text) + '\n')
 
-__docstubs__ = """
-import xdoctest.doctest_example
-"""
-
 
 def pytest_configure(config) -> None:
     manager = config.pluginmanager
