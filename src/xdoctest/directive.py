@@ -185,7 +185,7 @@ def named(key: str, pattern: str) -> str:
 # TODO: modify global directive defaults via a config file
 
 
-class RuntimeStateDict(TypedDict):
+class RuntimeStateDict(TypedDict, total=False):
     """
     TypedDict representing the xdoctest runtime state.
 
@@ -294,7 +294,7 @@ class RuntimeState(utils.NiceRepr):
         })>
     """
 
-    def __init__(self, default_state: RuntimeStateDict | None = None):
+    def __init__(self, default_state: RuntimeStateDict | None = None) -> None:
         """
         Args:
             default_state (None | dict): starting default state, if unspecified
@@ -340,9 +340,11 @@ class RuntimeState(utils.NiceRepr):
         if key in self._inline_state:
             return cast(Union[bool, Set[str]], self._inline_state[key])
         else:
-            return cast(Dict[str, Union[bool, Set[str]]], self._global_state)[key]
+            return cast(Dict[str, Union[bool, Set[str]]], self._global_state)[
+                key
+            ]
 
-    def __setitem__(self, key: str, value: bool | set[str]):
+    def __setitem__(self, key: str, value: bool | set[str]) -> None:
         """
         Args:
             key (str):
@@ -356,7 +358,7 @@ class RuntimeState(utils.NiceRepr):
         self,
         reportchoice: ReportStyle,
         state: RuntimeStateDict | None = None,
-    ):
+    ) -> None:
         """
         Args:
             reportchoice (ReportStyle): name of report style. Must be one of
@@ -380,7 +382,7 @@ class RuntimeState(utils.NiceRepr):
                 state_dict[k] = False
         state_dict['REPORT_' + reportchoice.upper()] = True
 
-    def update(self, directives: list[Directive]):
+    def update(self, directives: list[Directive]) -> None:
         """
         Update the runtime state given a set of directives
 
@@ -433,7 +435,7 @@ class Directive(utils.NiceRepr):
         positive: bool = True,
         args: list[str] | None = None,
         inline: bool | None = None,
-    ):
+    ) -> None:
         """
         Args:
             name (str): The name of the directive
@@ -560,7 +562,7 @@ class Directive(utils.NiceRepr):
         else:
             return '{}{}'.format(prefix, self.name)
 
-    def _unpack_args(self, num):
+    def _unpack_args(self, num: int) -> list[str] | None:
         from xdoctest.utils import util_deprecation
 
         util_deprecation.schedule_deprecation(
@@ -582,7 +584,11 @@ class Directive(utils.NiceRepr):
             )
         return self.args
 
-    def effect(self, argv=None, environ=None):
+    def effect(
+        self,
+        argv: list[str] | None = None,
+        environ: dict[str, str] | None = None,
+    ) -> Effect:
         from xdoctest.utils import util_deprecation
 
         util_deprecation.schedule_deprecation(
@@ -915,20 +921,6 @@ def _module_exists(modname: typing.Any) -> bool:
     exists_flag = _MODNAME_EXISTS_CACHE[modname]
     return exists_flag
 
-
-# __docstubs__ = '''
-# import re
-
-# if hasattr(re, 'Pattern'):
-#     RE_Pattern = re.Pattern
-# else:
-#     # sys.version_info[0:2] <= 3.6
-#     RE_Pattern = type(re.compile('.*'))
-
-# DIRECTIVE_RE: RE_Pattern
-# DIRECTIVE_PATTERNS: list
-# COMMANDS: list
-# '''
 
 COMMANDS = list(DEFAULT_RUNTIME_STATE.keys()) + [
     # Define extra commands that can resolve to a runtime state modification

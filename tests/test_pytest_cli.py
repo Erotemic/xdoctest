@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 import sys
+from typing import Any
 
 from xdoctest import utils
 from xdoctest.utils import util_misc
 
 
-def cmd(command):
+def cmd(command: str) -> dict[str, Any]:
     # simplified version of ub.cmd no fancy tee behavior
     import subprocess
 
@@ -17,7 +20,7 @@ def cmd(command):
     )
     out, err = proc.communicate()
     ret = proc.wait()
-    info = {
+    info: dict[str, Any] = {
         'proc': proc,
         'out': out,
         'err': err,
@@ -26,7 +29,7 @@ def cmd(command):
     return info
 
 
-def test_simple_pytest_cli():
+def test_simple_pytest_cli() -> None:
     module_text = utils.codeblock(
         '''
         def module_func1():
@@ -52,7 +55,7 @@ def test_simple_pytest_cli():
     assert info['ret'] == 0
 
 
-def test_simple_pytest_import_error_cli():
+def test_simple_pytest_import_error_cli() -> None:
     """
     This test case triggers an excessively long callback in xdoctest <
     dev/0.15.7
@@ -133,7 +136,7 @@ def test_simple_pytest_import_error_cli():
     assert info['ret'] != 0
 
 
-def test_simple_pytest_syntax_error_cli():
+def test_simple_pytest_syntax_error_cli() -> None:
     """ """
     module_text = utils.codeblock(
         '''
@@ -158,7 +161,7 @@ def test_simple_pytest_syntax_error_cli():
     assert info['ret'] != 0
 
 
-def test_simple_pytest_import_error_no_xdoctest():
+def test_simple_pytest_import_error_no_xdoctest() -> None:
     """ """
     module_text = utils.codeblock(
         """
@@ -178,7 +181,7 @@ def test_simple_pytest_import_error_no_xdoctest():
     assert info['ret'] != 0
 
 
-def test_simple_pytest_syntax_error_no_xdoctest():
+def test_simple_pytest_syntax_error_no_xdoctest() -> None:
     """ """
     module_text = utils.codeblock(
         """
@@ -198,7 +201,7 @@ def test_simple_pytest_syntax_error_no_xdoctest():
     assert info['ret'] != 0
 
 
-def test_version_and_cli_info():
+def test_version_and_cli_info() -> None:
     """ """
     import xdoctest
 
@@ -209,7 +212,7 @@ def test_version_and_cli_info():
     assert xdoctest.__version__ in info['out']
 
 
-def test_simple_xdoctest_cli():
+def test_simple_xdoctest_cli() -> None:
     module_text = utils.codeblock(
         '''
         def module_func1():
@@ -235,7 +238,7 @@ def test_simple_xdoctest_cli():
     assert info['out'].strip() == ''
 
 
-def test_simple_xdoctest_cli_errors():
+def test_simple_xdoctest_cli_errors() -> None:
     module_text = utils.codeblock(
         '''
         def module_func1():

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import sys
+import typing
 
 
 # see asyncio.runners.Runner
@@ -13,9 +14,9 @@ class FallbackRunner:
     """A fallback implementation of :class:`asyncio.Runner` for Python<3.11."""
 
     def __init__(self) -> None:
-        self._loop = None
+        self._loop: asyncio.AbstractEventLoop | None = None
 
-    def run(self, coro):
+    def run(self, coro: typing.Any) -> typing.Any:
         """
         Run code in the embedded event loop.
 

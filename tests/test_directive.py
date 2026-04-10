@@ -1,7 +1,7 @@
 from xdoctest import doctest_example, utils
 
 
-def test_inline_skip_directive():
+def test_inline_skip_directive() -> None:
     """
     pytest tests/test_directive.py::test_inline_skip_directive
     """
@@ -18,7 +18,7 @@ def test_inline_skip_directive():
     assert result['passed']
 
 
-def test_block_skip_directive():
+def test_block_skip_directive() -> None:
     """
     pytest tests/test_directive.py::test_block_skip_directive
     """
@@ -34,7 +34,7 @@ def test_block_skip_directive():
     assert result['passed']
 
 
-def test_multi_requires_directive():
+def test_multi_requires_directive() -> None:
     """
     Test semi-complex case with multiple requirements in a single line
 
@@ -66,13 +66,14 @@ def test_multi_requires_directive():
     )
     self = doctest_example.DocTest(docsrc=string)
     result = self.run(on_error='raise')
-    stdout = ''.join(list(self.logged_stdout.values()))
+    assert self.logged_stdout is not None
+    stdout = ''.join(str(v) for v in self.logged_stdout.values())
     assert result['passed']
     assert stdout.count('not-skipped') == 3
     assert stdout.count('is-skipped') == 0
 
 
-def test_directive_syntax_error():
+def test_directive_syntax_error() -> None:
     string = utils.codeblock(
         """
         >>> x = 0
@@ -87,7 +88,8 @@ def test_directive_syntax_error():
     assert not result['passed']
     assert 'Failed to parse' in result['exc_info'][1].args[0]
     assert 'line 4' in result['exc_info'][1].args[0]
-    stdout = ''.join(list(self.logged_stdout.values()))
+    assert self.logged_stdout is not None
+    stdout = ''.join(str(v) for v in self.logged_stdout.values())
     assert stdout.count('not-skipped') == 1
 
 

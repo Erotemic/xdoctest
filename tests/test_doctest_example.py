@@ -1,7 +1,11 @@
+from __future__ import annotations
+
+import typing
+
 from xdoctest import checker, constants, doctest_example, exceptions, utils
 
 
-def test_exit_test_exception():
+def test_exit_test_exception() -> None:
     """
     pytest tests/test_doctest_example.py::test_exit_test_exception
     """
@@ -18,7 +22,7 @@ def test_exit_test_exception():
     assert result['passed']
 
 
-def test_failed_assign_want():
+def test_failed_assign_want() -> None:
     """
     pytest tests/test_doctest_example.py::test_exit_test_exception
     """
@@ -35,7 +39,7 @@ def test_failed_assign_want():
     assert 'Got nothing' in fail_text
 
 
-def test_continue_ambiguity():
+def test_continue_ambiguity() -> None:
     """
     pytest tests/test_doctest_example.py::test_exit_test_exception
     """
@@ -55,7 +59,7 @@ def test_continue_ambiguity():
     assert result['passed']
 
 
-def test_contination_want_ambiguity():
+def test_contination_want_ambiguity() -> None:
     """
     xdoctest ~/code/xdoctest/tests/test_doctest_example.py test_contination_want_ambiguity
     """
@@ -75,7 +79,7 @@ def test_contination_want_ambiguity():
     assert result['passed']
 
 
-def test_multiline_list():
+def test_multiline_list() -> None:
     """
     pytest tests/test_doctest_example.py::test_multiline_list
     """
@@ -92,7 +96,7 @@ def test_multiline_list():
     assert result['passed']
 
 
-def test_failure():
+def test_failure() -> None:
     string = utils.codeblock(
         """
         >>> i = 0
@@ -113,7 +117,7 @@ def test_failure():
     assert not result['passed']
 
 
-def test_format_src():
+def test_format_src() -> None:
     """
     python tests/test_doctest_example.py test_format_src
 
@@ -136,16 +140,18 @@ def test_format_src():
     self = doctest_example.DocTest(docsrc=string)
     self._parse()
 
-    assert self.format_src(colored=0, linenos=1) == string_with_lineno
-    assert self.format_src(colored=0, linenos=0) == string
+    assert self.format_src(colored=False, linenos=True) == string_with_lineno
+    assert self.format_src(colored=False, linenos=False) == string
     assert (
-        utils.strip_ansi(self.format_src(colored=1, linenos=1))
+        utils.strip_ansi(self.format_src(colored=True, linenos=True))
         == string_with_lineno
     )
-    assert utils.strip_ansi(self.format_src(colored=1, linenos=0)) == string
+    assert (
+        utils.strip_ansi(self.format_src(colored=True, linenos=False)) == string
+    )
 
 
-def test_eval_expr_capture():
+def test_eval_expr_capture() -> None:
     """
     pytest tests/test_doctest_example.py::test_eval_expr_capture -s
     """
@@ -159,6 +165,7 @@ def test_eval_expr_capture():
     )
     self = doctest_example.DocTest(docsrc=docsrc)
     self._parse()
+    assert self._parts is not None
     p1, p2 = self._parts
 
     # test_globals = {}
@@ -170,7 +177,19 @@ def test_eval_expr_capture():
         self.run()
     except Exception as ex:
         assert hasattr(ex, 'output_difference')
-        msg = ex.output_difference(colored=False)
+        assert callable(ex.output_difference)
+        # Narrow type for type checker
+        assert isinstance(ex, checker.GotWantException)
+        output_diff = ex.output_difference  # type: ignore[call-overload, misc]
+        msg = output_diff(colored=False)  # type: ignore[call-top-callable, unknown-argument, missing-argument]
+        assert msg == utils.codeblock(
+            """
+            Expected:
+                2
+            Got:
+                7
+            """
+        )
         assert msg == utils.codeblock(
             """
             Expected:
@@ -181,7 +200,7 @@ def test_eval_expr_capture():
         )
 
 
-def test_run_multi_want():
+def test_run_multi_want() -> None:
     docsrc = utils.codeblock(
         """
         >>> x = 2
@@ -199,7 +218,9 @@ def test_run_multi_want():
     result = self.run()
 
     assert result['passed']
+    assert self.logged_stdout is not None
     assert list(self.logged_stdout.values()) == ['', '', '', 'string\n']
+    assert self.logged_evals is not None
     assert list(self.logged_evals.values()) == [
         constants.NOT_EVALED,
         2,
@@ -208,7 +229,7 @@ def test_run_multi_want():
     ]
 
 
-def test_comment():
+def test_comment() -> None:
     docsrc = utils.codeblock(
         """
         >>> # foobar
@@ -216,6 +237,7 @@ def test_comment():
     )
     self = doctest_example.DocTest(docsrc=docsrc)
     self._parse()
+    assert self._parts is not None
     assert len(self._parts) == 1
     self.run(verbose=0)
 
@@ -227,6 +249,7 @@ def test_comment():
     )
     self = doctest_example.DocTest(docsrc=docsrc)
     self._parse()
+    assert self._parts is not None
     assert len(self._parts) == 1
     self.run(verbose=0)
 
@@ -240,6 +263,7 @@ def test_comment():
     )
     self = doctest_example.DocTest(docsrc=docsrc, lineno=1)
     self._parse()
+    assert self._parts is not None
     assert len(self._parts) == 1
     result = self.run(on_error='return', verbose=0)
     assert not result['passed']
@@ -247,7 +271,7 @@ def test_comment():
     assert self.failed_lineno() == 3
 
 
-def test_want_error_msg():
+def test_want_error_msg() -> None:
     """
     python tests/test_doctest_example.py test_want_error_msg
     pytest tests/test_doctest_example.py::test_want_error_msg
@@ -264,7 +288,7 @@ def test_want_error_msg():
     assert result['passed']
 
 
-def test_want_error_msg_failure():
+def test_want_error_msg_failure() -> None:
     """
     python tests/test_doctest_example.py test_want_error_msg_failure
     pytest tests/test_doctest_example.py::test_want_error_msg_failure
@@ -284,7 +308,7 @@ def test_want_error_msg_failure():
         self.run(on_error='raise')
 
 
-def test_await():
+def test_await() -> None:
     """
     python tests/test_doctest_example.py test_await
     pytest tests/test_doctest_example.py::test_await
@@ -302,7 +326,7 @@ def test_await():
     assert result['passed']
 
 
-def test_async_for():
+def test_async_for() -> None:
     """
     python tests/test_doctest_example.py test_async_for
     pytest tests/test_doctest_example.py::test_async_for
@@ -323,7 +347,7 @@ def test_async_for():
     assert result['passed']
 
 
-def test_async_with():
+def test_async_with() -> None:
     """
     python tests/test_doctest_example.py test_async_with
     pytest tests/test_doctest_example.py::test_async_with
@@ -348,7 +372,7 @@ def test_async_with():
     assert result['passed']
 
 
-def test_async_future_without_directive():
+def test_async_future_without_directive() -> None:
     """
     python tests/test_doctest_example.py test_async_future_without_directive
     pytest tests/test_doctest_example.py::test_async_future_without_directive
@@ -367,7 +391,7 @@ def test_async_future_without_directive():
     assert result['failed']
 
 
-def test_async_future_with_directive():
+def test_async_future_with_directive() -> None:
     """
     python tests/test_doctest_example.py test_async_future_with_directive
     pytest tests/test_doctest_example.py::test_async_future_with_directive
@@ -387,7 +411,7 @@ def test_async_future_with_directive():
     assert result['passed']
 
 
-def test_await_in_running_loop():
+def test_await_in_running_loop() -> None:
     """
     python tests/test_doctest_example.py test_await_in_running_loop
     pytest tests/test_doctest_example.py::test_await_in_running_loop
@@ -406,7 +430,11 @@ def test_await_in_running_loop():
 
     self = doctest_example.DocTest(docsrc=string)
 
-    async def run_in_loop(doctest, on_error, verbose=None):
+    async def run_in_loop(
+        doctest: doctest_example.DocTest,
+        on_error: str,
+        verbose: int | None = None,
+    ) -> dict[str, typing.Any]:
         return doctest.run(on_error=on_error, verbose=verbose)
 
     with pytest.raises(exceptions.ExistingEventLoopError):
@@ -419,7 +447,7 @@ def test_await_in_running_loop():
     assert self.repr_failure()
 
 
-def test_async_def():
+def test_async_def() -> None:
     """
     python tests/test_doctest_example.py test_async_def
     pytest tests/test_doctest_example.py::test_async_def
@@ -439,7 +467,7 @@ def test_async_def():
     assert result['passed']
 
 
-def test_tabs_in_doctest():
+def test_tabs_in_doctest() -> None:
     """
     pytest tests/test_doctest_example.py::test_tabs_in_doctest
     """
@@ -458,6 +486,7 @@ def test_tabs_in_doctest():
     self = doctest_example.DocTest(docsrc=string)
 
     # This was ok in version 1.2.0
+    assert self.docsrc is not None
     assert tab in self.docsrc
 
     # Failed in 1.2.0

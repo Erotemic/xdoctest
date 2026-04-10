@@ -105,7 +105,7 @@ class NotebookLoader:
         'encoding': 'utf-8',
     }
 
-    def __init__(self, path=None):
+    def __init__(self, path=None) -> None:
         from IPython.core.interactiveshell import InteractiveShell
 
         self.shell = InteractiveShell.instance()
@@ -170,7 +170,10 @@ class NotebookLoader:
                 # run the code in the module
                 codeobj = compile(
                     typing.cast(
-                        typing.Union[ast.Module, ast.Expression, ast.Interactive], tree
+                        typing.Union[
+                            ast.Module, ast.Expression, ast.Interactive
+                        ],
+                        tree,
                     ),
                     filename=fpath,
                     mode='exec',
@@ -298,7 +301,9 @@ def execute_notebook(
     return nb, resources
 
 
-def _make_test_notebook_fpath(fpath: typing.Any, cell_sources: typing.Any):
+def _make_test_notebook_fpath(
+    fpath: typing.Any, cell_sources: typing.Any
+) -> typing.Any:
     """
     Helper for testing
 

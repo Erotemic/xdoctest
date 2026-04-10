@@ -1,8 +1,8 @@
-from xdoctest import utils
+from xdoctest import core, utils
 from xdoctest.utils.util_misc import _run_case
 
 
-def test_properties():
+def test_properties() -> None:
     """
     Test that all doctests are extracted from properties correctly.
     https://github.com/Erotemic/xdoctest/issues/73
@@ -29,6 +29,7 @@ def test_properties():
         '''
         )
     )
+    assert text is not None
     assert 'running 1 test' in text
 
     text = _run_case(
@@ -47,6 +48,7 @@ def test_properties():
         '''
         )
     )
+    assert text is not None
     assert 'running 1 test' in text
 
     text = _run_case(
@@ -74,6 +76,7 @@ def test_properties():
         '''
         )
     )
+    assert text is not None
     assert 'running 1 test' in text
 
     text = _run_case(
@@ -95,6 +98,7 @@ def test_properties():
         '''
         )
     )
+    assert text is not None
     assert 'running 0 test' in text
 
     text = _run_case(
@@ -125,10 +129,11 @@ def test_properties():
         '''
         )
     )
+    assert text is not None
     assert 'running 0 test' in text
 
 
-def test_correct_skipping_on_decorators1():
+def test_correct_skipping_on_decorators1() -> None:
     """
     This is a weird case similar to the torch dispatch doctest
 
@@ -145,7 +150,6 @@ def test_correct_skipping_on_decorators1():
     """
     from os.path import join
 
-    import xdoctest
     from xdoctest import runner
 
     source = utils.codeblock(
@@ -191,26 +195,24 @@ def test_correct_skipping_on_decorators1():
             file.write(source)
 
         examples = list(
-            xdoctest.core.parse_doctestables(
-                modpath, style='google', analysis='static'
-            )
+            core.parse_doctestables(modpath, style='google', analysis='static')
         )
         print(f'examples={examples}')
 
         with utils.CaptureStdout() as cap:
             runner.doctest_module(modpath, 'all', argv=[''], config=config)
         print(cap.text)
+        assert cap.text is not None
         assert '1 skipped' in cap.text
 
 
-def test_correct_skipping_on_decorators_simple():
+def test_correct_skipping_on_decorators_simple() -> None:
     """
     minimal test for decorator skips
     """
 
     from os.path import join
 
-    import xdoctest
     from xdoctest import runner
 
     source = utils.codeblock(
@@ -240,13 +242,12 @@ def test_correct_skipping_on_decorators_simple():
             file.write(source)
 
         examples = list(
-            xdoctest.core.parse_doctestables(
-                modpath, style='google', analysis='static'
-            )
+            core.parse_doctestables(modpath, style='google', analysis='static')
         )
         print(f'examples={examples}')
 
         with utils.CaptureStdout() as cap:
             runner.doctest_module(modpath, 'all', argv=[''], config=config)
         print(cap.text)
+        assert cap.text is not None
         assert '1 skipped' in cap.text

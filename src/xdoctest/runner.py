@@ -67,7 +67,7 @@ from xdoctest import (
 )
 
 
-def log(msg: str, verbose: bool | int, level: int = 1):
+def log(msg: str, verbose: bool | int, level: int = 1) -> None:
     """
     Simple conditional print logger
 
@@ -81,7 +81,7 @@ def log(msg: str, verbose: bool | int, level: int = 1):
         print(msg)
 
 
-def doctest_callable(func: Callable[..., typing.Any]):
+def doctest_callable(func: Callable[..., typing.Any]) -> None:
     """
     Executes doctests an in-memory function or class.
 
@@ -119,7 +119,7 @@ def doctest_callable(func: Callable[..., typing.Any]):
 
 def gather_doctests(
     doctest_identifiers, style='auto', analysis='auto', verbose=None
-):
+) -> None:
     raise NotImplementedError('todo')
 
 
@@ -291,7 +291,7 @@ def doctest_module(
 
     # Parse all valid examples
     with warnings.catch_warnings(record=True) as parse_warnlist:
-        examples = list(
+        examples: list[doctest_example.DocTest] = list(
             core.parse_doctestables(
                 parsable_identifier,
                 exclude=exclude,
@@ -399,7 +399,7 @@ def doctest_module(
     return run_summary
 
 
-def _auto_disable_failing_tests_hook(context):
+def _auto_disable_failing_tests_hook(context) -> None:
     """
     Experimental feature to modify code based on failing tests.
     This should likely be moved to its own submodule.
@@ -443,7 +443,9 @@ def _auto_disable_failing_tests_hook(context):
             file.write(''.join(lines))
 
 
-def _convert_to_test_module(enabled_examples):
+def _convert_to_test_module(
+    enabled_examples: list[doctest_example.DocTest],
+) -> str:
     """
     Logic for the "dumps" command.
 
@@ -456,6 +458,7 @@ def _convert_to_test_module(enabled_examples):
 
     module_lines = []
     for example in enabled_examples:
+        assert example.modname is not None
         # Create a unit-testable function for this example
         func_name = (
             'test_'
@@ -479,6 +482,7 @@ def _convert_to_test_module(enabled_examples):
             global_lines = example.config['global_exec'].split('\\n')
             header_lines.extend([g + '  # NOQA' for g in global_lines])
 
+        assert example._parts is not None
         for part in example._parts:
             if dump_config['remove_import_star']:
                 new_exec_lines = []
@@ -554,18 +558,22 @@ def undefined_names(sourcecode: str) -> set[str]:
     import pyflakes.reporter
 
     class CaptureReporter(pyflakes.reporter.Reporter):
-        def __init__(reporter, warningStream, errorStream):
+        syntax_errors: list[str]
+        messages: list[typing.Any]
+        unexpected: list[str]
+
+        def __init__(reporter, warningStream, errorStream) -> None:
             reporter.syntax_errors = []
             reporter.messages = []
             reporter.unexpected = []
 
-        def unexpectedError(reporter, filename, msg):
+        def unexpectedError(reporter, filename, msg) -> None:
             reporter.unexpected.append(msg)
 
-        def syntaxError(reporter, filename, msg, lineno, offset, text):
+        def syntaxError(reporter, filename, msg, lineno, offset, text) -> None:
             reporter.syntax_errors.append(msg)
 
-        def flake(reporter, message):
+        def flake(reporter, message) -> None:
             reporter.messages.append(message)
 
     names = set()
@@ -587,13 +595,13 @@ def _print_summary_report(
     durations,
     config=None,
     _log=None,
-):
+) -> None:
     """
     Summary report formatting and printing
     """
     assert _log is not None
 
-    def cprint(text, color):
+    def cprint(text, color) -> None:
         if config is not None and config.get('colored', True):
             _log(utils.color_text(text, color))
         else:
@@ -846,7 +854,7 @@ def _parse_commandline(command=None, style='auto', verbose=None, argv=None):
     return command, style, verbose
 
 
-def _update_argparse_cli(add_argument, prefix=None):
+def _update_argparse_cli(add_argument, prefix=None) -> None:
     """
     Update the CLI with arguments that control how doctests are collected ando
     how aggregate results are reported.
@@ -906,7 +914,7 @@ def _update_argparse_cli(add_argument, prefix=None):
         help=('Same as if durations=0'),
     )
 
-    add_argument_kws = [
+    add_argument_kws: list[tuple[list, dict]] = [
         # (['--style'], dict(dest='style',
         #                    type=str, help='choose your style',
         #                    choices=['auto', 'google', 'freeform'], default='auto')),

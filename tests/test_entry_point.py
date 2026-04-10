@@ -1,13 +1,16 @@
+from __future__ import annotations
+
 import os
 import subprocess
 import sys
+from typing import cast
 
 import pytest
 
 from xdoctest import utils
 
 
-def cmd(command):
+def cmd(command: str) -> dict[str, 'subprocess.Popen[str] | str | int']:
     # simplified version of ub.cmd no fancy tee behavior
     proc = subprocess.Popen(
         command,
@@ -18,7 +21,7 @@ def cmd(command):
     )
     out, err = proc.communicate()
     ret = proc.wait()
-    info = {
+    info: dict[str, 'subprocess.Popen[str] | str | int'] = {
         'proc': proc,
         'out': out,
         'err': err,
@@ -27,14 +30,14 @@ def cmd(command):
     return info
 
 
-def skip_if_not_installed():
+def skip_if_not_installed() -> None:
     # If xdoctest is not installed via `pip install -e`
     # then skip these tests because the entry point wont exist
     if not utils.is_modname_importable('xdoctest'):
         pytest.skip('Can only test entry points if xdoctest is installed.')
 
 
-def test_xdoc_console_script_location():
+def test_xdoc_console_script_location() -> None:
     skip_if_not_installed()
 
     if sys.platform.startswith('freebsd'):
@@ -63,7 +66,7 @@ def test_xdoc_console_script_location():
         assert script_fname.startswith('xdoctest')
 
 
-def test_xdoc_console_script_exec():
+def test_xdoc_console_script_exec() -> None:
     skip_if_not_installed()
     if sys.platform.startswith('freebsd'):
         pytest.skip(
@@ -81,10 +84,10 @@ def test_xdoc_console_script_exec():
     else:
         info = cmd('xdoctest')
     print('info = {!r}'.format(info))
-    assert 'usage' in info['err']
+    assert 'usage' in cast(str, info['err'])
 
 
-def test_xdoc_cli_version():
+def test_xdoc_cli_version() -> None:
     """
     CommandLine:
         python -m xdoctest -m ~/code/xdoctest/tests/test_entry_point.py test_xdoc_cli_version
@@ -116,7 +119,7 @@ def test_xdoc_cli_version():
         info = ub.cmd(sys.executable + ' -m xdoctest --version')
     print('info = {!r}'.format(info))
     print('xdoctest.__version__ = {!r}'.format(xdoctest.__version__))
-    assert xdoctest.__version__ in info['out']
+    assert xdoctest.__version__ in cast(str, info['out'])
 
 
 if __name__ == '__main__':

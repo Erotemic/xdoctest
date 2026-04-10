@@ -3,7 +3,7 @@ from os.path import join
 from xdoctest import utils
 
 
-def test_zero_args():
+def test_zero_args() -> None:
     """
     python tests/test_runner.py test_zero_args
     """
@@ -51,7 +51,7 @@ def test_zero_args():
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
-        modpath = join(dpath, 'test_zero_args.py')
+        modpath = join(str(dpath), 'test_zero_args.py')
 
         with open(modpath, 'w') as file:
             file.write(source)
@@ -65,7 +65,7 @@ def test_zero_args():
         )
 
 
-def test_list():
+def test_list() -> None:
     from xdoctest import runner
 
     source = utils.codeblock(
@@ -95,14 +95,14 @@ def test_list():
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
-        modpath = join(dpath, 'test_list.py')
+        modpath = join(str(dpath), 'test_list.py')
 
         with open(modpath, 'w') as file:
             file.write(source)
 
         with utils.CaptureStdout() as cap:
             runner.doctest_module(modpath, 'list', argv=[''])
-
+        assert cap.text is not None
         assert 'real_test1' in cap.text
         assert 'real_test2' in cap.text
         assert 'fake_test1' not in cap.text
@@ -111,14 +111,14 @@ def test_list():
         # test command=None
         with utils.CaptureStdout() as cap:
             runner.doctest_module(modpath, None, argv=[''])
-
+        assert cap.text is not None
         assert 'real_test1' in cap.text
         assert 'real_test2' in cap.text
         assert 'fake_test1' not in cap.text
         assert 'fake_test2' not in cap.text
 
 
-def test_example_run():
+def test_example_run() -> None:
     from xdoctest import runner
 
     source = utils.codeblock(
@@ -133,18 +133,18 @@ def test_example_run():
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
-        modpath = join(dpath, 'test_example_run.py')
+        modpath = join(str(dpath), 'test_example_run.py')
 
         with open(modpath, 'w') as file:
             file.write(source)
 
         with utils.CaptureStdout() as cap:
             runner.doctest_module(modpath, 'foo', argv=[''])
-
+    assert cap.text is not None
     assert 'i wanna see this' in cap.text
 
 
-def test_durations():
+def test_durations() -> None:
     from xdoctest import runner
 
     source = utils.codeblock(
@@ -164,18 +164,20 @@ def test_durations():
     )
     with utils.TempDir() as temp:
         dpath = temp.dpath
-        modpath = join(dpath, 'test_durations.py')
+        modpath = join(str(dpath), 'test_durations.py')
         with open(modpath, 'w') as file:
             file.write(source)
         with utils.CaptureStdout() as cap1:
             runner.doctest_module(modpath, 'all', argv=[''], durations=10)
         with utils.CaptureStdout() as cap2:
             runner.doctest_module(modpath, 'all', argv=[''], durations=1)
+    assert cap1.text is not None
+    assert cap2.text is not None
     assert cap1.text.count('time: ') == 2, '2 tests should have 2 durations'
     assert cap2.text.count('time: ') == 1, 'should only have gotten 1 durration'
 
 
-def test_dump():
+def test_dump() -> None:
     from xdoctest import runner
 
     source = utils.codeblock(
@@ -199,15 +201,16 @@ def test_dump():
     )
     with utils.TempDir() as temp:
         dpath = temp.dpath
-        modpath = join(dpath, 'test_durations.py')
+        modpath = join(str(dpath), 'test_durations.py')
         with open(modpath, 'w') as file:
             file.write(source)
         with utils.CaptureStdout() as cap:
             runner.doctest_module(modpath, 'dump', argv=[''])
+    assert cap.text is not None
     print(cap.text)
 
 
-def test_all_disabled():
+def test_all_disabled() -> None:
     """
     pytest tests/test_runner.py::test_all_disabled -s -vv
     python tests/test_runner.py test_all_disabled
@@ -233,7 +236,7 @@ def test_all_disabled():
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
-        modpath = join(dpath, 'test_all_disabled.py')
+        modpath = join(str(dpath), 'test_all_disabled.py')
 
         with open(modpath, 'w') as file:
             file.write(source)
@@ -241,6 +244,7 @@ def test_all_disabled():
         # disabled tests dont run in "all" mode
         with utils.CaptureStdout() as cap:
             runner.doctest_module(modpath, 'all', argv=[''])
+        assert cap.text is not None
         assert 'all will print this' in cap.text
         # print('    ' + cap.text.replace('\n', '\n    '))
         assert 'all will not print this' not in cap.text
@@ -248,11 +252,12 @@ def test_all_disabled():
         # Running an disabled example explicitly should work
         with utils.CaptureStdout() as cap:
             runner.doctest_module(modpath, 'foo', argv=[''])
+        assert cap.text is not None
         # print('    ' + cap.text.replace('\n', '\n    '))
         assert 'all will not print this' in cap.text
 
 
-def test_runner_failures():
+def test_runner_failures() -> None:
     """
     python tests/test_runner.py  test_runner_failures
     pytest tests/test_runner.py::test_runner_failures -s
@@ -298,7 +303,7 @@ def test_runner_failures():
     temp.ensure()
     # with utils.TempDir() as temp:
     dpath = temp.dpath
-    modpath = join(dpath, 'test_runner_failures.py')
+    modpath = join(str(dpath), 'test_runner_failures.py')
 
     with open(modpath, 'w') as file:
         file.write(source)
@@ -311,6 +316,7 @@ def test_runner_failures():
             pass
 
     print('\nNOTE: the following output is part of a test')
+    assert cap.text is not None
     print(utils.indent(cap.text, '... '))
     print('NOTE: above output is part of a test')
 
@@ -320,7 +326,7 @@ def test_runner_failures():
     assert '3 passed' in cap.text
 
 
-def test_run_zero_arg():
+def test_run_zero_arg() -> None:
     """
     pytest tests/test_runner.py::test_run_zero_arg -s
     """
@@ -335,7 +341,7 @@ def test_run_zero_arg():
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
-        modpath = join(dpath, 'test_run_zero_arg.py')
+        modpath = join(str(dpath), 'test_run_zero_arg.py')
 
         with open(modpath, 'w') as file:
             file.write(source)
@@ -346,6 +352,7 @@ def test_run_zero_arg():
                 runner.doctest_module(modpath, 'all', argv=[''], verbose=3)
             except Exception:
                 pass
+        assert cap.text is not None
         assert 'running zero arg' not in cap.text
 
         with utils.CaptureStdout() as cap:
@@ -355,11 +362,12 @@ def test_run_zero_arg():
                 )
             except Exception:
                 pass
+        assert cap.text is not None
         # print(cap.text)
         assert 'running zero arg' in cap.text
 
 
-def test_parse_cmdline():
+def test_parse_cmdline() -> None:
     """
     pytest tests/test_runner.py::test_parse_cmdline -s
     """
@@ -388,7 +396,7 @@ def test_parse_cmdline():
     )
 
 
-def test_runner_config():
+def test_runner_config() -> None:
     """
     pytest tests/test_runner.py::test_runner_config -s
     """
@@ -410,18 +418,18 @@ def test_runner_config():
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
-        modpath = join(dpath, 'test_example_run.py')
+        modpath = join(str(dpath), 'test_example_run.py')
 
         with open(modpath, 'w') as file:
             file.write(source)
 
         with utils.CaptureStdout() as cap:
             runner.doctest_module(modpath, 'foo', argv=[''], config=config)
-
+    assert cap.text is not None
     assert 'SKIPPED' in cap.text
 
 
-def test_global_exec():
+def test_global_exec() -> None:
     """
     pytest tests/test_runner.py::test_global_exec -s
     """
@@ -443,18 +451,18 @@ def test_global_exec():
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
-        modpath = join(dpath, 'test_example_run.py')
+        modpath = join(str(dpath), 'test_example_run.py')
 
         with open(modpath, 'w') as file:
             file.write(source)
 
         with utils.CaptureStdout() as cap:
             runner.doctest_module(modpath, 'foo', argv=[''], config=config)
-
+    assert cap.text is not None
     assert '1 passed' in cap.text
 
 
-def test_hack_the_sys_argv():
+def test_hack_the_sys_argv() -> None:
     """
     Tests hacky solution to issue #76
 
@@ -486,14 +494,14 @@ def test_hack_the_sys_argv():
 
     with utils.TempDir() as temp:
         dpath = temp.dpath
-        modpath = join(dpath, 'test_example_run.py')
+        modpath = join(str(dpath), 'test_example_run.py')
 
         with open(modpath, 'w') as file:
             file.write(source)
 
         with utils.CaptureStdout() as cap:
             runner.doctest_module(modpath, 'foo', argv=[''], config=config)
-
+    assert cap.text is not None
     if 0 and NEEDS_FIX:
         # Fix the global state
         sys.argv.remove('--hackedflag')

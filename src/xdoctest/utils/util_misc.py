@@ -100,7 +100,7 @@ def _run_case(source: str, style: str = 'auto') -> str | None:
 
     COLOR = 'yellow'
 
-    def cprint(msg, color=COLOR):
+    def cprint(msg: str, color: str = COLOR) -> None:
         print(utils.color_text(str(msg), COLOR))
 
     cprint('\n\n\n <RUN CASE> \n  ========  \n', COLOR)

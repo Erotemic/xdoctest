@@ -43,10 +43,10 @@ class _NOT_EVAL_TYPE:
     def __call__(self, default: object) -> None:
         pass
 
-    def __str__(cls):
+    def __str__(cls) -> str:
         return '<NOT_EVALED>'
 
-    def __repr__(cls):
+    def __repr__(cls) -> str:
         return '<NOT_EVALED>'
 
     def __bool__(self) -> bool:

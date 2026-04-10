@@ -59,7 +59,9 @@ def is_modname_importable(
     return flag
 
 
-def _importlib_import_modpath(modpath: typing.Any):  # nocover
+def _importlib_import_modpath(
+    modpath: str | os.PathLike,
+) -> ModuleType:  # nocover
     """
     Alternative to import_module_from_path using importlib mechainsms
 
@@ -78,7 +80,7 @@ def _importlib_import_modpath(modpath: typing.Any):  # nocover
     return module
 
 
-def _importlib_modname_to_modpath(modname: typing.Any):  # nocover
+def _importlib_modname_to_modpath(modname: str) -> str:  # nocover
     """
     faster version of :func:`_syspath_modname_to_modpath` using builtin
     python mechanisms, but unfortunately it doesn't play nice with pytest.
@@ -246,7 +248,9 @@ class PythonPathContext:
             sys.path.pop(self.index)
 
 
-def _custom_import_modpath(modpath, index=-1):
+def _custom_import_modpath(
+    modpath: str | os.PathLike, index: int = -1
+) -> ModuleType:
     dpath, rel_modpath = split_modpath(modpath)
     modname = modpath_to_modname(modpath)
     try:
@@ -510,7 +514,7 @@ IS_PY_LT_314: bool = sys.version_info[0:2] < (3, 14)
 IS_PY_GE_308: bool = sys.version_info[0:2] >= (3, 8)
 
 
-def _parse_static_node_value(node):
+def _parse_static_node_value(node: typing.Any) -> typing.Any:
     """
     Extract a constant value from a node if possible
     """
@@ -623,13 +627,13 @@ def _static_parse(varname: typing.Any, fpath: typing.Any) -> typing.Any:
     pt = ast.parse(sourcecode)
 
     class StaticVisitor(ast.NodeVisitor):
-        def visit_Assign(self, node):
+        def visit_Assign(self, node: ast.Assign) -> None:
             for target in node.targets:
                 target_id = getattr(target, 'id', None)
                 if target_id == varname:
                     self.static_value = _parse_static_node_value(node.value)
 
-        def visit_AnnAssign(self, node):
+        def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
             target = node.target
             target_id = getattr(target, 'id', None)
             if target_id == varname:
@@ -732,7 +736,7 @@ def _syspath_modname_to_modpath(
     """
     import glob
 
-    def _isvalid(modpath, base):
+    def _isvalid(modpath: str, base: str) -> bool:
         # every directory up to the module, should have an init
         subdir = dirname(modpath)
         while subdir and subdir != base:
@@ -758,7 +762,7 @@ def _syspath_modname_to_modpath(
 
     if exclude:
 
-        def normalize(p):
+        def normalize(p: str) -> str:
             if sys.platform.startswith('win32'):  # nocover
                 return realpath(p).lower()
             else:
@@ -770,7 +774,7 @@ def _syspath_modname_to_modpath(
             p for p in candidate_dpaths if normalize(p) not in real_exclude
         ]
 
-    def check_dpath(dpath):
+    def check_dpath(dpath: str) -> str | None:
         # Check for directory-based modules (has precedence over files)
         modpath = join(dpath, _fname_we)
         if exists(modpath):
@@ -784,6 +788,8 @@ def _syspath_modname_to_modpath(
             if isfile(modpath):
                 if _isvalid(modpath, dpath):
                     return modpath
+
+        return None
 
     _pkg_name = _fname_we.split(os.path.sep)[0]
     _pkg_name_hypen = _pkg_name.replace('_', '-')

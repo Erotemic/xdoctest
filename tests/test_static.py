@@ -4,7 +4,7 @@ from xdoctest import static_analysis as static
 from xdoctest import utils
 
 
-def test_module_docstr():
+def test_module_docstr() -> None:
     source = utils.codeblock(
         '''
         # comment
@@ -21,7 +21,7 @@ def test_module_docstr():
     assert '__doc__' in self.calldefs
 
 
-def test_lineno():
+def test_lineno() -> None:
     source = utils.codeblock(
         '''
         def foo():
@@ -58,10 +58,14 @@ def test_lineno():
     sourcelines = source.split('\n')
 
     for k, calldef in calldefs.items():
-        line = sourcelines[calldef.lineno - 1]
+        lineno = calldef.lineno
+        assert isinstance(lineno, int)
+        line = sourcelines[lineno - 1]
         callname = calldef.callname
         # Ensure linenumbers correspond with start of func/class def
         assert callname.split('.')[-1] in line
+        assert calldef.doclineno is not None
+        assert calldef.doclineno_end is not None
         docsrc_lines = sourcelines[
             calldef.doclineno - 1 : calldef.doclineno_end
         ]
@@ -70,7 +74,7 @@ def test_lineno():
         assert docsrc_lines[-1].strip().endswith('"""')
 
 
-def test_mod_lineno2():
+def test_mod_lineno2() -> None:
     source = utils.codeblock(
         '''
         class Fun:  #1
@@ -135,7 +139,7 @@ def test_mod_lineno2():
     assert calldefs['decor4'].doclineno_end == 38
 
 
-def test_async_function_docstr_collection():
+def test_async_function_docstr_collection() -> None:
     source = utils.codeblock(
         '''
         async def b():
@@ -153,7 +157,7 @@ def test_async_function_docstr_collection():
     assert self.calldefs['b'].doclineno_end == 5
 
 
-def test_parse_decorated_async_function_lineno():
+def test_parse_decorated_async_function_lineno() -> None:
     source = utils.codeblock(
         '''
         def deco(func):
@@ -181,13 +185,15 @@ def test_parse_decorated_async_function_lineno():
 
     # Should point to the `async def foo():` line, not the decorator line.
     source_lines = source.splitlines()
+    assert calldef.lineno is not None
     assert source_lines[calldef.lineno - 1].strip() == 'async def foo():'
 
     # And it should still extract the docstring normally.
+    assert calldef.docstr is not None
     assert '>>> 1 + 1' in calldef.docstr
 
 
-def test_parse_multi_decorated_async_function_lineno():
+def test_parse_multi_decorated_async_function_lineno() -> None:
     source = utils.codeblock(
         '''
         def deco1(func):
@@ -215,7 +221,9 @@ def test_parse_multi_decorated_async_function_lineno():
     calldef = calldefs['foo']
 
     source_lines = source.splitlines()
+    assert calldef.lineno is not None
     assert source_lines[calldef.lineno - 1].strip() == 'async def foo():'
+    assert calldef.docstr is not None
     assert '>>> 1 + 1' in calldef.docstr
 
 
@@ -465,7 +473,7 @@ def test_parse_multi_decorated_async_function_lineno():
         },
     ],
 )
-def test_parse_decorated_function_lineno_cases(case):
+def test_parse_decorated_function_lineno_cases(case) -> None:
     source = utils.codeblock(case['source'])
 
     calldefs = static.parse_static_calldefs(
@@ -482,6 +490,7 @@ def test_parse_decorated_function_lineno_cases(case):
     calldef = calldefs[case['callname']]
     source_lines = source.splitlines()
 
+    assert calldef.lineno is not None
     got_line = source_lines[calldef.lineno - 1].strip()
     assert got_line == case['expect_line'], (
         'Wrong lineno for case={!r}. Expected line={!r}, got line={!r}, '
@@ -490,6 +499,7 @@ def test_parse_decorated_function_lineno_cases(case):
         )
     )
 
+    assert calldef.docstr is not None
     assert '>>> 1 + 1' in calldef.docstr or '>>> "bar"' in calldef.docstr
 
 

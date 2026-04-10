@@ -1,18 +1,21 @@
+from __future__ import annotations
+
 import sys
 from os.path import dirname, exists, join
+from typing import Any
 
 import pytest
 
 try:
     from packaging.version import parse as LooseVersion
 except ImportError:
-    from distutils.version import LooseVersion
+    from distutils.version import LooseVersion  # type: ignore
 
 PY_VERSION = LooseVersion('{}.{}'.format(*sys.version_info[0:2]))
 IS_MODERN_PYTHON = PY_VERSION > LooseVersion('3.4')
 
 
-def skip_notebook_tests_if_unsupported():
+def skip_notebook_tests_if_unsupported() -> None:
     if not IS_MODERN_PYTHON:
         pytest.skip('jupyter support is only for modern python versions')
 
@@ -34,7 +37,7 @@ def skip_notebook_tests_if_unsupported():
         pytest.skip('Missing jupyter')
 
 
-def cmd(command):
+def cmd(command: str) -> dict[str, 'Any']:
     # simplified version of ub.cmd no fancy tee behavior
     import subprocess
 
@@ -47,7 +50,7 @@ def cmd(command):
     )
     out, err = proc.communicate()
     ret = proc.wait()
-    info = {
+    info: dict[str, 'Any'] = {
         'proc': proc,
         'out': out,
         'test_doctest_in_notebook.ipynberr': err,
@@ -56,7 +59,7 @@ def cmd(command):
     return info
 
 
-def demodata_notebook_fpath():
+def demodata_notebook_fpath() -> str:
     try:
         testdir = dirname(__file__)
     except NameError:
@@ -69,7 +72,7 @@ def demodata_notebook_fpath():
     return notebook_fpath
 
 
-def test_xdoctest_inside_notebook():
+def test_xdoctest_inside_notebook() -> None:
     """
     xdoctest ~/code/xdoctest/tests/test_notebook.py test_xdoctest_inside_notebook
     xdoctest tests/test_notebook.py test_xdoctest_inside_notebook
@@ -96,7 +99,7 @@ def test_xdoctest_inside_notebook():
         )
 
 
-def test_xdoctest_outside_notebook():
+def test_xdoctest_outside_notebook() -> None:
     skip_notebook_tests_if_unsupported()
 
     if sys.platform.startswith('win32'):
@@ -105,4 +108,5 @@ def test_xdoctest_outside_notebook():
     notebook_fpath = demodata_notebook_fpath()
     info = cmd(sys.executable + ' -m xdoctest ' + notebook_fpath)
     text = info['out']
+    assert isinstance(text, str)
     assert '3 / 3 passed' in text

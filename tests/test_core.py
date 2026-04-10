@@ -1,10 +1,13 @@
+from __future__ import annotations
+
+import typing
 from os.path import join
 
 import xdoctest
 from xdoctest import core, utils
 
 
-def _test_status(docstr):
+def _test_status(docstr: str) -> dict[str, typing.Any]:
     docstr = utils.codeblock(docstr)
     try:
         temp = utils.util_misc.TempDoctest(docstr=docstr)
@@ -22,13 +25,15 @@ def _test_status(docstr):
         print(inspect.getargspec(utils.TempDoctest))
         raise
     doctests = list(core.parse_doctestables(temp.modpath))
-    status = doctests[0].run(verbose=0, on_error='return')
+    doctest = doctests[0]
+    status = doctest.run(verbose=0, on_error='return')
     return status
 
 
-def test_mod_lineno():
+def test_mod_lineno() -> None:
     with utils.TempDir() as temp:
         dpath = temp.dpath
+        assert dpath is not None
         modpath = join(dpath, 'test_mod_lineno.py')
         source = utils.codeblock(
             '''
@@ -54,15 +59,17 @@ def test_mod_lineno():
         assert self.format_src(offset_linenos=False).strip().startswith('1')
         assert self.format_src(offset_linenos=True).strip().startswith('5')
 
+        assert dpath is not None
         with utils.PythonPathContext(dpath):
             status = self.run(verbose=10, on_error='return')
 
         assert not status['passed']
 
 
-def test_mod_globals():
+def test_mod_globals() -> None:
     with utils.TempDir() as temp:
         dpath = temp.dpath
+        assert dpath is not None
         modpath = join(dpath, 'test_mod_globals.py')
         source = utils.codeblock(
             '''
@@ -82,13 +89,15 @@ def test_mod_globals():
         assert len(doctests) == 1
         self = doctests[0]
 
+        assert dpath is not None
         with utils.PythonPathContext(dpath):
             status = self.run(verbose=0, on_error='return')
         assert status['passed']
+        assert self.logged_evals is not None
         assert self.logged_evals[0] == 10
 
 
-def test_show_entire():
+def test_show_entire() -> None:
     """
     pytest tests/test_core.py::test_show_entire
     """
@@ -135,6 +144,7 @@ def test_show_entire():
     self = doctests[0]
     self.config['colored'] = False
     print(self.lineno)
+    assert self._parts is not None
     print(self._parts[0].line_offset)
     print(self.format_src())
 
@@ -150,7 +160,7 @@ def test_show_entire():
     temp.cleanup()
 
 
-def test_freeform_parse_lineno():
+def test_freeform_parse_lineno() -> None:
     """
     python ~/code/xdoctest/tests/test_core.py test_freeform_parse_lineno
 
@@ -195,6 +205,7 @@ def test_freeform_parse_lineno():
     # This asserts if the lines are consecutive. Should we enforce this?
     # Perhaps its ok if they are not.
     for test in doctests:
+        assert test._parts is not None
         assert test._parts[0].line_offset == 0
         offset = 0
         for p in test._parts:
@@ -211,6 +222,7 @@ def test_freeform_parse_lineno():
 
     for test in doctests:
         test._parse()
+        assert test._parts is not None
         assert test._parts[0].line_offset == 0
         offset = 0
         for p in test._parts:
@@ -218,7 +230,7 @@ def test_freeform_parse_lineno():
             offset += p.n_lines
 
 
-def test_collect_module_level():
+def test_collect_module_level() -> None:
     """
     pytest tests/test_core.py::test_collect_module_level -s -vv
 
@@ -256,7 +268,7 @@ def test_collect_module_level():
     temp.cleanup()
 
 
-def test_collect_module_level_singleline():
+def test_collect_module_level_singleline() -> None:
     """
     pytest tests/test_core.py::test_collect_module_level
 
@@ -285,13 +297,14 @@ def test_collect_module_level_singleline():
     temp.cleanup()
 
 
-def test_no_docstr():
+def test_no_docstr() -> None:
     """
     CommandLine:
         python -m test_core test_no_docstr
     """
     with utils.TempDir() as temp:
         dpath = temp.dpath
+        assert dpath is not None
         modpath = join(dpath, 'test_no_docstr.py')
         source = utils.codeblock(
             '''
@@ -309,12 +322,13 @@ def test_no_docstr():
         assert len(doctests) == 0
 
 
-def test_oneliner():
+def test_oneliner() -> None:
     """
     python ~/code/xdoctest/tests/test_core.py test_oneliner
     """
     with utils.TempDir() as temp:
         dpath = temp.dpath
+        assert dpath is not None
         modpath = join(dpath, 'test_oneliner.py')
         source = utils.codeblock(
             '''
@@ -335,7 +349,7 @@ def test_oneliner():
             doctests[0].run()
 
 
-def test_delayed_want_pass_cases():
+def test_delayed_want_pass_cases() -> None:
     """
     The delayed want algorithm allows a want statement to match trailing
     unmatched stdout if it fails to directly match the most recent stdout.
@@ -382,7 +396,7 @@ def test_delayed_want_pass_cases():
     assert status['passed']
 
 
-def test_delayed_want_fail_cases():
+def test_delayed_want_fail_cases() -> None:
     """
     CommandLine:
         xdoctest -m ~/code/xdoctest/tests/test_core.py test_delayed_want_fail_cases
@@ -439,7 +453,7 @@ def test_delayed_want_fail_cases():
     assert not status['passed']
 
 
-def test_indented_grouping():
+def test_indented_grouping() -> None:
     """
     Initial changes in 0.10.0 broke parsing of some ubelt tests, check to
     ensure using `...` in indented blocks is ok (as long as there is no want
@@ -475,7 +489,7 @@ def test_indented_grouping():
     assert status['passed']
 
 
-def test_backwards_compat_eval_in_loop():
+def test_backwards_compat_eval_in_loop() -> None:
     """
     Test that changes in 0.10.0 fix backwards compatibility issue.
 
@@ -509,7 +523,7 @@ def test_backwards_compat_eval_in_loop():
     assert status['passed']
 
 
-def test_backwards_compat_indent_value():
+def test_backwards_compat_indent_value() -> None:
     """
     CommandLine:
         xdoctest -m ~/code/xdoctest/tests/test_core.py test_backwards_compat_indent_value
@@ -529,7 +543,7 @@ def test_backwards_compat_indent_value():
     assert status['passed']
 
 
-def test_concise_try_except():
+def test_concise_try_except() -> None:
     """
     CommandLine:
         xdoctest -m ~/code/xdoctest/tests/test_core.py test_concise_try_except
@@ -563,7 +577,7 @@ def test_concise_try_except():
     assert status['passed']
 
 
-def test_semicolon_line():
+def test_semicolon_line() -> None:
     r"""
     Test for https://github.com/Erotemic/xdoctest/issues/108
 
@@ -639,9 +653,10 @@ def test_semicolon_line():
     assert status['passed']
 
 
-def test_collect_async_function_doctest():
+def test_collect_async_function_doctest() -> None:
     with utils.TempDir() as temp:
         dpath = temp.dpath
+        assert dpath is not None
         modpath = join(dpath, 'test_collect_async_function_doctest.py')
         source = utils.codeblock(
             '''

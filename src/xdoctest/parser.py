@@ -48,6 +48,7 @@ import ast
 import re
 import sys
 import tokenize
+import typing
 
 from xdoctest import directive, doctest_part, exceptions, global_state, utils
 from xdoctest import static_analysis as static
@@ -320,7 +321,7 @@ class DoctestParser:
         if global_state.DEBUG_PARSER > 3:
             print(f'break_linenos={break_linenos}')
 
-        def slice_example(s1, s2, want_lines=None):
+        def slice_example(s1, s2, want_lines=None) -> doctest_part.DoctestPart:
             exec_lines = exec_source_lines[s1:s2]
             orig_lines = source_lines[s1:s2]
             directives = ps1_to_directive.get(s1, None)
@@ -547,12 +548,12 @@ class DoctestParser:
         # Strip indentation (and PS1 / PS2 from source)
         exec_source_lines = [p[4:] for p in source_lines]
 
-        def _hack_comment_statements(lines):
+        def _hack_comment_statements(lines) -> typing.Iterable[str]:
             # Hack to make comments appear like executable statements
             # note, this hack never leaves this function because we only are
             # returning line numbers.
             # FIXME: there is probably a better way to do this.
-            def balanced_intervals(lines: list[str]):
+            def balanced_intervals(lines: list[str]) -> list[tuple[int, int]]:
                 """
                 Finds intervals of balanced nesting syntax
 
@@ -587,7 +588,7 @@ class DoctestParser:
             interval_starts = {t[0] for t in intervals}
 
             def _indent(line: str) -> str:
-                return line[:len(line) - len(line.lstrip())]
+                return line[: len(line) - len(line.lstrip())]
 
             def _infer_comment_indent(idx: int, line: str) -> str:
                 """Infer the indentation a placeholder comment statement
@@ -659,7 +660,7 @@ class DoctestParser:
             ps1_linenos = []
             for node in statement_nodes:
                 if hasattr(node, 'decorator_list') and node.decorator_list:
-                    lineno = node.decorator_list[0].lineno - 1
+                    lineno = node.decorator_list[0].lineno - 1  # type: ignore
                 else:
                     lineno = node.lineno - 1
                 ps1_linenos.append(lineno)
@@ -698,7 +699,7 @@ class DoctestParser:
             # TODO: we probably could just save the tokens if we got them earlier?
             iterable = (line for line in exec_source_lines if line)
 
-            def _readline():
+            def _readline() -> str:
                 return next(iterable)
 
             # We cannot eval a statement with a semicolon in it
@@ -1061,7 +1062,7 @@ def _iterthree(items, pad_value=None):
         yield left, mid, right
 
 
-def _hasprefix(line, prefixes):
+def _hasprefix(line, prefixes) -> bool:
     """helper prefix test"""
     # if not isinstance(prefixes, tuple):
     #     prefixes = [prefixes]

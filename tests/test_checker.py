@@ -3,7 +3,7 @@ from xdoctest import checker, directive
 # from xdoctest import utils
 
 
-def test_visible_lines():
+def test_visible_lines() -> None:
     """
     pytest tests/test_checker.py
     """
@@ -13,7 +13,7 @@ def test_visible_lines():
     assert checker.check_output(got, want)
 
 
-def test_visible_lines_explicit():
+def test_visible_lines_explicit() -> None:
     """
     pytest tests/test_checker.py
     """
@@ -24,7 +24,7 @@ def test_visible_lines_explicit():
     assert checker.check_output(got, want)
 
 
-def test_blankline_accept():
+def test_blankline_accept() -> None:
     """
     pytest tests/test_checker.py
     """
@@ -35,7 +35,7 @@ def test_blankline_accept():
     assert checker.check_output(got, want, runstate)
 
 
-def test_blankline_failcase():
+def test_blankline_failcase() -> None:
     # Check that blankline is not normalizd in a "got" statement
     runstate = directive.RuntimeState({'DONT_ACCEPT_BLANKLINE': False})
     got = 'foo\n<BLANKLINE>\nbar'
@@ -43,7 +43,7 @@ def test_blankline_failcase():
     assert not checker.check_output(got, want, runstate)
 
 
-def test_blankline_not_accept():
+def test_blankline_not_accept() -> None:
     # Check that blankline is not normalized away when
     # DONT_ACCEPT_BLANKLINE is on
     runstate = directive.RuntimeState({'DONT_ACCEPT_BLANKLINE': True})

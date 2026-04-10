@@ -7,7 +7,7 @@ from xdoctest import utils
 from xdoctest.utils.util_misc import _run_case
 
 
-def test_pathological_property_case():
+def test_pathological_property_case() -> None:
     """
     This case actually wont error, but it displays a limitation of static
     analysis. We trick the doctest node parser into thinking there is a setter
@@ -41,6 +41,7 @@ def test_pathological_property_case():
         '''
         )
     )
+    assert text is not None
     # If there was a way to make this case fail, that would be ok
     assert 'Test.test:0' in text
     # assert 'Test.test.fset:0' in text

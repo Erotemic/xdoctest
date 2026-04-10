@@ -95,7 +95,7 @@ cmake ..
 """
 
 
-def build_demo_extmod():
+def build_demo_extmod() -> str:
     """
     CommandLine:
         python tests/test_binary_ext.py build_demo_extmod
@@ -182,7 +182,7 @@ def build_demo_extmod():
     return extmod_fpath
 
 
-def test_run_binary_doctests():
+def test_run_binary_doctests() -> None:
     """
     Tests that we can run doctests in a compiled pybind11 module
 

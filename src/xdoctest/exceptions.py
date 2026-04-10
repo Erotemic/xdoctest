@@ -32,7 +32,7 @@ class DoctestParseError(Exception):
         string: str | None = None,
         info: typing.Any | None = None,
         orig_ex: Exception | None = None,
-    ):
+    ) -> None:
         """
         Args:
             msg (str): error message
@@ -57,7 +57,7 @@ class IncompleteParseError(SyntaxError):
     """
 
 
-def _resolve_skipped_exception_class():
+def _resolve_skipped_exception_class() -> typing.Any:
     try:
         from _pytest.outcomes import Skipped as pytest_skipped
     except ImportError:  # nocover

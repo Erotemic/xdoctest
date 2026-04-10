@@ -76,12 +76,8 @@ _INCOMPATIBLE_PLUGINS = frozenset({'doctest'})
 #     with open(fpath, 'a') as file:
 #         file.write(str(text) + '\n')
 
-__docstubs__ = """
-import xdoctest.doctest_example
-"""
 
-
-def pytest_configure(config):
+def pytest_configure(config) -> None:
     manager = config.pluginmanager
     all_plugins = {
         manager.get_name(plugin): plugin for plugin in manager.get_plugins()
@@ -92,7 +88,7 @@ def pytest_configure(config):
             manager.unregister(all_plugins[incompatible])
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser) -> None:
     # TODO: make this programmatically mirror the argparse in __main__
     from xdoctest import core
 
@@ -219,7 +215,7 @@ def _is_xdoctest(config, path, parent):
 
 
 class ReprFailXDoctest(code.TerminalRepr):
-    def __init__(self, reprlocation: typing.Any, lines: list[str]):
+    def __init__(self, reprlocation: typing.Any, lines: list[str]) -> None:
         """
         Args:
             reprlocation (Any):
@@ -229,7 +225,7 @@ class ReprFailXDoctest(code.TerminalRepr):
         self.reprlocation = reprlocation
         self.lines = lines
 
-    def toterminal(self, tw):
+    def toterminal(self, tw) -> None:
         for line in self.lines:
             tw.line(line)
         self.reprlocation.toterminal(tw)
@@ -242,7 +238,7 @@ class XDoctestItem(pytest.Item):
         parent: typing.Any,
         runner: typing.Any = None,
         dtest: typing.Any = None,
-    ):
+    ) -> None:
         """
         Args:
             name (str):
@@ -292,7 +288,7 @@ class XDoctestItem(pytest.Item):
         self.funcargs: Dict[str, object] = {}
         self._request = TopRequest(cast(Any, self), _ispytest=True)
 
-    def setup(self):
+    def setup(self) -> None:
         if _PYTEST_IS_GE_800:
             self._request._fillfixtures()
             globs = dict(getfixture=self._request.getfixturevalue)
@@ -303,17 +299,17 @@ class XDoctestItem(pytest.Item):
             self.dtest.globs.update(globs)
         else:
             if self.dtest is not None:
-                self.fixture_request = _setup_fixtures(self)
+                self.fixture_request = _setup_fixtures(self)  # type: ignore
                 global_namespace = dict(
-                    getfixture=self.fixture_request.getfixturevalue
+                    getfixture=self.fixture_request.getfixturevalue  # type: ignore
                 )
-                for name, value in self.fixture_request.getfixturevalue(
+                for name, value in self.fixture_request.getfixturevalue(  # type: ignore
                     'xdoctest_namespace'
                 ).items():
                     global_namespace[name] = value
                 self.dtest.global_namespace.update(global_namespace)
 
-    def runtest(self):
+    def runtest(self) -> None:
         if self.dtest.is_disabled(pytest=True):
             pytest.skip('doctest encountered global skip directive')
         # verbose = self.dtest.config['verbose']
@@ -350,9 +346,9 @@ class XDoctestItem(pytest.Item):
 
 
 class _XDoctestBase(pytest.Module):
-    def _prepare_internal_config(self):
+    def _prepare_internal_config(self) -> None:
         class NamespaceLike:
-            def __init__(self, config):
+            def __init__(self, config) -> None:
                 self.config = config
 
             def __getitem__(self, attr):
@@ -445,7 +441,7 @@ def _setup_fixtures(xdoctest_item: XDoctestItem) -> fixtures.FixtureRequest:
         fixtures.FixtureRequest
     """
 
-    def func():
+    def func() -> None:
         pass
 
     xdoctest_item.funcargs = {}

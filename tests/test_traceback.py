@@ -2,11 +2,13 @@
 Need to enhance the tracebacks to spit out something more useful
 """
 
+from __future__ import annotations
+
 from xdoctest import utils
 from xdoctest.utils.util_misc import _run_case
 
 
-def test_fail_call_onefunc():
+def test_fail_call_onefunc() -> None:
     import warnings
 
     with warnings.catch_warnings():
@@ -25,11 +27,12 @@ def test_fail_call_onefunc():
             '''
             )
         )
+        assert text is not None
         assert '>>> func(a)' in text
         assert 'rel: 2, abs: 5' in text
 
 
-def test_fail_call_twofunc():
+def test_fail_call_twofunc() -> None:
     """
     python ~/code/xdoctest/tests/test_traceback.py test_fail_call_twofunc
 
@@ -59,12 +62,12 @@ def test_fail_call_twofunc():
             '''
             )
         )
-        assert text
+        assert text is not None
         assert '>>> func(a)' in text
         assert 'rel: 2, abs: 5,' in text
 
 
-def test_fail_inside_twofunc():
+def test_fail_inside_twofunc() -> None:
     """
     python ~/code/xdoctest/tests/test_traceback.py test_fail_inside_twofunc
 
@@ -97,12 +100,12 @@ def test_fail_inside_twofunc():
             '''
             )
         )
-        assert text
+        assert text is not None
         assert '>>> a = []()' in text
         assert 'rel: 5, abs: 8' in text
 
 
-def test_fail_inside_onefunc():
+def test_fail_inside_onefunc() -> None:
     """
     python ~/code/xdoctest/tests/test_traceback.py test_fail_inside_onefunc
 
@@ -125,12 +128,12 @@ def test_fail_inside_onefunc():
         '''
         )
     )
-    assert text
+    assert text is not None
     assert '>>> a = []()' in text
     assert 'rel: 6, abs: 9,' in text
 
 
-def test_failure_linenos():
+def test_failure_linenos() -> None:
     """
     Example:
         python ~/code/xdoctest/tests/test_linenos.py test_failure_linenos
@@ -167,9 +170,9 @@ def test_failure_linenos():
         )
     )
 
+    assert text is not None
     assert 'line 15' in text
     assert 'line 6' in text
-    assert text
 
 
 # There are three different types of traceback failure
@@ -191,7 +194,7 @@ SeeAlso:
 """
 
 
-def test_lineno_failcase_gotwant():
+def test_lineno_failcase_gotwant() -> None:
     """
     python ~/code/xdoctest/tests/test_linenos.py test_lineno_failcase_gotwant
 
@@ -210,12 +213,12 @@ def test_lineno_failcase_gotwant():
         '''
         )
     )
-    assert text
+    assert text is not None
     assert 'line 3' in text
     assert 'line 6' in text
 
 
-def test_lineno_failcase_called_code():
+def test_lineno_failcase_called_code() -> None:
     """
     python ~/code/xdoctest/tests/test_linenos.py test_lineno_failcase_called_code
     python ~/code/xdoctest/tests/test_linenos.py
@@ -246,11 +249,11 @@ def test_lineno_failcase_called_code():
         '''
         )
     )
+    assert text is not None
     assert 'rel: 6, abs: 9,' in text
-    assert text
 
 
-def test_lineno_failcase_doctest_code():
+def test_lineno_failcase_doctest_code() -> None:
     """
     python ~/code/xdoctest/tests/test_linenos.py test_lineno_failcase_doctest_code
 
@@ -279,8 +282,8 @@ def test_lineno_failcase_doctest_code():
         '''
         )
     )
+    assert text is not None
     assert 'rel: 5, abs: 11,' in text
-    assert text
 
 
 if __name__ == '__main__':

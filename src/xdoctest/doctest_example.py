@@ -16,7 +16,7 @@ import typing
 import warnings
 from collections import OrderedDict
 from inspect import CO_COROUTINE
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Union, cast
 
 from xdoctest import (
     checker,
@@ -39,11 +39,6 @@ TODO:
 """
 
 
-__docstubs__ = """
-from xdoctest.doctest_part import DoctestPart
-"""
-
-
 class DoctestConfig(dict):
     """
     Doctest configuration
@@ -53,7 +48,7 @@ class DoctestConfig(dict):
     RuntimeState.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(DoctestConfig, self).__init__(*args, **kwargs)
         self.update(
             {
@@ -109,7 +104,6 @@ class DoctestConfig(dict):
             add_argument (callable): the parser.add_argument function
         """
         import argparse
-        from typing import Any
 
         def str_lower(x: str) -> str:
             # python2 fix
@@ -386,6 +380,16 @@ class DocTest:
     _runstate: typing.Any
     global_namespace: dict[str, typing.Any]
 
+    # This is the doctest *part* that actually owns the traceback frame we
+    # chose as the "interesting" frame for reporting. This is important for
+    # doctests that define functions and fail in those functions.
+    failed_tb_part: 'DoctestPart' | None
+
+    # Internally we give each doctest part a synthetic file, this maps the name
+    # back to the actual doctest part so we can correctly report traceback
+    # frames in error reports
+    _partfilename_to_part: dict[str, 'DoctestPart']
+
     def __init__(
         self,
         docsrc: str,
@@ -396,7 +400,7 @@ class DocTest:
         fpath: str | os.PathLike | None = None,
         block_type: str | None = None,
         mode: str = 'pytest',
-    ):
+    ) -> None:
         """
         Args:
             docsrc (str): the text of the doctest
@@ -451,6 +455,15 @@ class DocTest:
         self.warn_list = None
 
         self._partfilename = None
+
+        # stores the specific doctest part that owns the traceback frame that
+        # we selected as the "user relevant" frame.
+        self.failed_tb_part = None
+        # Map synthetic per-part filenames back to the corresponding
+        # DoctestPart.  This lets traceback rewriting recover the correct
+        # source context even when a later part calls code defined in an
+        # earlier part.
+        self._partfilename_to_part = {}
 
         self.logged_evals = OrderedDict()
         self.logged_stdout = OrderedDict()
@@ -756,7 +769,7 @@ class DocTest:
         for partno, part in enumerate(self._parts):
             part.partno = partno
 
-    def _import_module(self):
+    def _import_module(self) -> None:
         """
         After this point we are in dynamic analysis mode, in most cases
         xdoctest should have been in static-analysis-only mode.
@@ -813,7 +826,7 @@ class DocTest:
                         )
 
     @staticmethod
-    def _extract_future_flags(namespace) -> int:
+    def _extract_future_flags(namespace: typing.Mapping) -> int:
         """
         Return the compiler-flags associated with the future features that
         have been imported into the given namespace (i.e. globals).
@@ -865,6 +878,21 @@ class DocTest:
         compileflags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
         return test_globals, compileflags
 
+    def _partfilename_for(self, partno: int) -> str:
+        """
+        Construct a synthetic filename for a specific doctest part.
+
+        We can't use one filename for the entire doctest because traceback
+        frames only record a filename + line number. If every compiled part
+        shares the same filename, then when a traceback points into code
+        defined in an earlier part, we cannot tell which part that line number
+        belongs to.
+
+        Giving each part its own pseudo-filename makes traceback ownership
+        unambiguous.
+        """
+        return f'<doctest:{self.node}:part{partno}>'
+
     def anything_ran(self) -> bool:
         """
         Returns:
@@ -875,7 +903,7 @@ class DocTest:
         return len(self.logged_stdout) > 0
 
     def run(
-        self, verbose: typing.Any = None, on_error: typing.Any = None
+        self, verbose: int | None | bool = None, on_error: str | None = None
     ) -> dict[str, typing.Any]:
         """
         Executes the doctest, checks the results, reports the outcome.
@@ -887,8 +915,10 @@ class DocTest:
         Returns:
             Dict : summary
         """
-        on_error = self.config.getvalue('on_error', on_error)
-        verbose = self.config.getvalue('verbose', verbose)
+        on_error = cast(
+            Union[str, None], self.config.getvalue('on_error', on_error)
+        )
+        verbose = cast(int, self.config.getvalue('verbose', verbose))
         assert isinstance(verbose, int)
         if on_error not in {'raise', 'return'}:
             raise KeyError(on_error)
@@ -906,6 +936,14 @@ class DocTest:
         self._skipped_parts = []
         self.exc_info = None
         self._suppressed_stdout = verbose <= 1
+
+        # Reset traceback bookkeeping from any prior run.
+        self.failed_tb_lineno = None
+        self.failed_tb_part = None
+
+        # Reset the synthetic filename bookkeeping for this run.
+        self._partfilename = None
+        self._partfilename_to_part = {}
 
         # Initialize a new runtime state
         default_state = self.config['default_runtime_state']
@@ -1033,12 +1071,32 @@ class DocTest:
                     did_pre_import = True
 
                 try:
+                    # Give every doctest part its own synthetic filename.
+                    #
+                    # This matters because the traceback only tells us
+                    # "filename X, line Y".
+                    #
+                    # Before this patch, every part in the doctest used the
+                    # same filename, so when an exception happened inside a
+                    # function defined earlier and called later, the traceback
+                    # line number was ambiguous. xdoctest would later assume
+                    # the traceback belonged to `self.failed_part`, which is
+                    # often just the *calling* part, not the part that
+                    # originally defined the code frame.
+                    #
+                    # By using a unique filename per part, traceback frames can
+                    # be mapped back to the exact DoctestPart that owns them.
+                    self._partfilename = self._partfilename_for(partx)
+
+                    # Record the owning part so traceback rewriting can recover
+                    # the correct part from the synthetic filename later.
+                    self._partfilename_to_part[self._partfilename] = part
+
+                    source_text = part.compilable_source()
+
                     # Compile code, handle syntax errors
                     #   part.compile_mode can be single, exec, or eval.
                     #   Typically single is used instead of eval
-                    self._partfilename = f'<doctest:{self.node}>'
-                    source_text = part.compilable_source()
-
                     code = compile(
                         source_text,
                         mode=part.compile_mode,
@@ -1211,13 +1269,37 @@ class DocTest:
                     # doctest, and remove the parts that point to
                     # boilerplate lines in this file.
                     found_lineno = None
+                    found_tb_part = None
+
+                    # Walk the traceback looking for the first frame that came
+                    # from one of our synthetic doctest-part filenames.
+                    #
+                    # We intentionally do NOT compare only against
+                    # `self._partfilename` here.
+                    #
+                    # `self._partfilename` is just the filename of the part we
+                    # most recently compiled / executed. But the traceback may
+                    # point into code defined in an *earlier* part, for example
+                    # a function or class method defined earlier and invoked by
+                    # the current part.
+                    #
+                    # Therefore we resolve traceback ownership against the full
+                    # `_partfilename_to_part` map for this run.
+                    found_lineno = None
+                    found_tb_part = None
+                    found_sub_tb = None
                     for sub_tb in _traverse_traceback(tb):
                         tb_filename = sub_tb.tb_frame.f_code.co_filename
-                        if tb_filename == self._partfilename:
-                            # Walk up the traceback until we find the one that has
-                            # the doctest as the base filename
+                        tb_part = self._partfilename_to_part.get(
+                            tb_filename, None
+                        )
+                        if tb_part is not None:
+                            # Walk up the traceback until we find the one that
+                            # has the doctest as the base filename
                             found_lineno = sub_tb.tb_lineno
-                            break
+                            found_tb_part = tb_part
+                            found_sub_tb = sub_tb
+
                     if DEBUG:
                         # The only traceback remaining should be
                         # the part that is relevant to the user
@@ -1227,9 +1309,18 @@ class DocTest:
                             file=sys.stderr,
                         )
                         print(
+                            'found_tb_part = {!r}'.format(found_tb_part),
+                            file=sys.stderr,
+                        )
+                        print(
                             ''.join(traceback.format_tb(sub_tb)),
                             file=sys.stderr,
                         )
+                        if found_sub_tb is not None:
+                            print(
+                                ''.join(traceback.format_tb(found_sub_tb)),
+                                file=sys.stderr,
+                            )
                         print('</DEBUG>', file=sys.stderr)
 
                     if found_lineno is None:
@@ -1239,12 +1330,17 @@ class DocTest:
                             )
                             sys.exit(1)
                         raise ValueError(
-                            'Could not clean traceback: ex = {!r}'.format(
-                                _ex_dbg
-                            )
+                            f'Could not clean traceback: ex = {_ex_dbg!r}'
                         )
                     else:
+                        # Store both the traceback-relative line number and the
+                        # part that owns that traceback frame.
+                        #
+                        # Storing only the line number is not enough; later
+                        # formatting code also needs to know which part's
+                        # `orig_lines` or `exec_lines` should be used.
                         self.failed_tb_lineno = found_lineno
+                        self.failed_tb_part = found_tb_part
 
                     self.exc_info = _exec_info
 
@@ -1311,7 +1407,7 @@ class DocTest:
     def _block_prefix(self):
         return 'ZERO-ARG' if self.block_type == 'zero-arg' else 'DOCTEST'
 
-    def _pre_run(self, verbose):
+    def _pre_run(self, verbose: bool | int) -> None:
         if verbose >= 1:
             if verbose >= 2:
                 barrier = self._color('====== <exec> ======', 'white')
@@ -1334,19 +1430,17 @@ class DocTest:
     def failed_line_offset(self) -> int | None:
         """
         Determine which line in the doctest failed.
-
-        Returns:
-            int | None
         """
         if self.exc_info is None:
             return None
         else:
             if self.failed_part == '<IMPORT>':
                 return 0
+
             ex_type, ex_value, tb = self.exc_info
             assert self.failed_part is not None
             assert not isinstance(self.failed_part, str)
-            offset = self.failed_part.line_offset
+
             if isinstance(
                 ex_value,
                 (
@@ -1354,14 +1448,25 @@ class DocTest:
                     exceptions.ExistingEventLoopError,
                 ),
             ):
-                # Return the line of the "got" expression
+                # These exceptions conceptually belong to the currently failed
+                # part, not some nested traceback frame in earlier code.
+                offset = self.failed_part.line_offset
                 offset += self.failed_part.n_exec_lines
+
             elif isinstance(ex_value, checker.GotWantException):
-                # Return the line of the want line
+                # Same idea here: got/want failures are about the currently
+                # failed part's want block.
+                offset = self.failed_part.line_offset
                 offset += self.failed_part.n_exec_lines + 1
+
             else:
+                # For ordinary execution exceptions, the relevant line may be
+                # inside code defined by an earlier doctest part.
                 assert self.failed_tb_lineno is not None
+                tb_part = self.failed_tb_part or self.failed_part
+                offset = tb_part.line_offset
                 offset += self.failed_tb_lineno
+
             offset -= 1
             return offset
 
@@ -1515,7 +1620,7 @@ class DocTest:
         # source_text = utils.indent(source_text)
         # lines += source_text.splitlines()
 
-        def r1_strip_nl(text):
+        def r1_strip_nl(text: str | None) -> str | None:
             if text is None:
                 return None
             return text[:-1] if text.endswith('\n') else text
@@ -1590,68 +1695,113 @@ class DocTest:
                 # where the error occurred in the doctest
                 tblines = traceback.format_exception(*self.exc_info)
 
-                def _alter_traceback_linenos(self, tblines):
-                    def overwrite_lineno(linepart):
-                        # Replace the trailing part which is the lineno
-                        old_linestr = linepart[-1]  # noqa
+                def _alter_traceback_linenos(
+                    self, tblines: list[str]
+                ) -> list[str]:
+                    def overwrite_lineno(
+                        linepart: list[str],
+                        tb_part: 'DoctestPart',
+                        tb_lineno: int,
+                    ) -> list[str]:
+                        """
+                        Rewrite the displayed traceback line number so it
+                        refers to the user's doctest line numbers instead of
+                        the synthetic per-part filename's local line numbers.
 
-                        # This is the lineno we will insert
-                        rel_lineno = self.failed_part.line_offset + tb_lineno
+                        `tb_lineno` is local to `tb_part`.
+                        We convert it to:
+                            - `rel_lineno`: line relative to the full doctest
+                            - `abs_lineno`: line relative to the original source file
+                        """
+                        rel_lineno = tb_part.line_offset + tb_lineno
                         abs_lineno = self.lineno + rel_lineno - 1
 
-                        new_linestr = 'rel: {rel}, abs: {abs}'.format(
-                            rel=rel_lineno,
-                            abs=abs_lineno,
-                        )
-
+                        new_linestr = f'rel: {rel_lineno}, abs: {abs_lineno}'
                         linepart = linepart[:-1] + [new_linestr]
                         return linepart
 
+                    def lookup_tb_part(
+                        line,
+                    ) -> tuple[None, None] | tuple[str, 'DoctestPart']:
+                        """
+                        Given a traceback text line, find which synthetic
+                        per-part filename it refers to and then recover the
+                        owning DoctestPart.
+
+                        We sort by descending filename length as a small
+                        robustness measure in case one synthetic filename could
+                        ever be a substring of another.
+                        """
+                        _fname_to_part: dict[str, 'DoctestPart'] = (
+                            self._partfilename_to_part
+                        )
+                        if not _fname_to_part:
+                            return None, None
+
+                        partfilename_list: list[str] = sorted(
+                            _fname_to_part.keys(), key=str.__len__, reverse=True
+                        )
+                        for partfilename in partfilename_list:
+                            if partfilename in line:
+                                part = self._partfilename_to_part[partfilename]
+                                return partfilename, part
+
+                        return None, None
+
+                    def lookup_ctx_line(tb_part, tb_lineno):
+                        """
+                        Recover the source context line to append after the
+                        traceback frame.
+
+                        `orig_lines` is formatter-oriented and may not always
+                        be present.  It is nice when available because it
+                        preserves the original doctest prompt formatting.
+
+                        `orig_lines`. Compared to previous versions this fixes
+                        ownership, and only then use a small, defensive
+                        fallback to `exec_lines` if needed.
+                        """
+                        ctx_lines = (
+                            tb_part.orig_lines or tb_part.exec_lines or []
+                        )
+                        if 1 <= tb_lineno <= len(ctx_lines):
+                            return ctx_lines[tb_lineno - 1]
+                        return ''
+
                     new_tblines = []
                     for i, line in enumerate(tblines):
-                        # if '<frozen importlib._bootstrap' in line:
-                        #     # not sure if this should be removed or not
-                        #     continue
+                        matched_filename, tb_part = lookup_tb_part(line)
 
-                        if 0:
-                            # Not a robust acheck
-                            if 'xdoctest/xdoctest/doctest_example' in line:
-                                # hack, remove ourselves from the tracback
-                                continue
-                                # new_tblines.append('!!!!!')
-                                # raise Exception('foo')
-                                # continue
-
-                        if (
-                            self._partfilename is not None
-                            and self._partfilename in line
-                        ):
-                            # Intercept the line corresponding to the doctest
+                        if matched_filename is not None and tb_part is not None:
+                            # Example input line shape:
+                            #   File "<doctest:...:part0>", line 2, in foo
+                            #
+                            # We parse the local traceback line number, then rewrite it to
+                            # doctest-relative / source-relative numbers.
                             tbparts = line.split(',')
                             tb_lineno = int(tbparts[-2].strip().split()[1])
-                            # modify the line number to match the doctest
+
                             linepart = tbparts[-2].split(' ')
-
-                            linepart = overwrite_lineno(linepart)
-
+                            linepart = overwrite_lineno(
+                                linepart, tb_part, tb_lineno
+                            )
                             tbparts[-2] = ' '.join(linepart)
                             new_line = ','.join(tbparts)
 
-                            # failed_ctx = '>>> ' + self.failed_part.exec_lines[tb_lineno - 1]
-                            failed_ctx = self.failed_part.orig_lines[
-                                tb_lineno - 1
-                            ]
-                            extra = '    ' + failed_ctx
+                            # We now fetch the context line from the part that actually owns the
+                            # traceback frame, not from `self.failed_part`.
+                            #
+                            # This is the direct fix for the IndexError class of bugs that occur
+                            # when the traceback points into an earlier definition part.
+                            failed_ctx = lookup_ctx_line(tb_part, tb_lineno)
+                            extra = ('    ' + failed_ctx) if failed_ctx else ''
                             line = new_line + extra + '\n'
 
-                        # m = '(t{})'.format(i)
-                        # line = m + line.replace('\n', '\n' + m)
                         new_tblines.append(line)
 
                     return new_tblines
 
                 new_tblines = _alter_traceback_linenos(self, tblines)
-                # new_tblines = tblines
 
                 if colored:
                     tbtext = '\n'.join(new_tblines)
@@ -1666,7 +1816,7 @@ class DocTest:
         lines += ['    ' + self.cmdline]
         return lines
 
-    def _print_captured(self):
+    def _print_captured(self) -> None:
         assert self.logged_stdout is not None
         out_text = ''.join([v for v in self.logged_stdout.values() if v])
         if out_text is not None:
@@ -1678,14 +1828,14 @@ class DocTest:
             print('type(out_text) = %r' % (type(out_text),))
             print('out_text = %r' % (out_text,))
 
-    def _color(self, text, color, enabled=None):
+    def _color(self, text: str, color: str, enabled: bool | None = None):
         """conditionally color text based on config and flags"""
         colored = self.config.getvalue('colored', enabled)
         if colored:
             text = utils.color_text(text, color)
         return text
 
-    def _post_run(self, verbose) -> dict[str, typing.Any]:
+    def _post_run(self, verbose: bool | int) -> dict[str, typing.Any]:
         """
         Returns:
             Dict : summary
