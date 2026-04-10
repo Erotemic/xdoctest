@@ -15,6 +15,7 @@ description = "A rewrite of the builtin doctest module"
 url = "https://github.com/Erotemic/xdoctest"
 license = "Apache 2"
 dev_status = "stable"
+ci_pypi_trusted_publishing = true
 typed = true
 skip_autogen = ["MANIFEST.in"]
 # CI extras configuration - adds tests-binary to full-loose variant

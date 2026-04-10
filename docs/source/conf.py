@@ -111,9 +111,10 @@ Notes:
 # sys.path.insert(0, os.path.abspath('.'))
 
 # -- Project information -----------------------------------------------------
-from os.path import dirname, exists, join
-
 import sphinx_rtd_theme
+from os.path import exists
+from os.path import dirname
+from os.path import join
 
 
 def parse_version(fpath):
@@ -432,7 +433,7 @@ class PatchedPythonDomain(PythonDomain):
     """
 
     def resolve_xref(
-        self, env, fromdocname, builder, typ, target, node, contnode
+        self, env, fromdocname, builder, type, target, node, contnode
     ):
         """
         Helps to resolves cross-references
@@ -442,7 +443,7 @@ class PatchedPythonDomain(PythonDomain):
         if target.startswith('xdoc.'):
             target = 'xdoctest.' + target[3]
         return_value = super(PatchedPythonDomain, self).resolve_xref(
-            env, fromdocname, builder, typ, target, node, contnode
+            env, fromdocname, builder, type, target, node, contnode
         )
         return return_value
 
@@ -839,6 +840,7 @@ def create_doctest_figure(app, obj, name, lines):
     import types
 
     import xdoctest
+    import xdoctest.core
 
     if isinstance(obj, types.ModuleType):
         module = obj
@@ -1061,6 +1063,7 @@ def fix_rst_todo_section(lines):
 
 def setup(app):
     import sphinx
+    import sphinx.application
 
     app: sphinx.application.Sphinx = app
     app.add_domain(PatchedPythonDomain, override=True)
