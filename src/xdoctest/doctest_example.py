@@ -24,7 +24,7 @@ importlib_metadata_compat: types.ModuleType
 try:
     from importlib import metadata as importlib_metadata
 except ImportError:  # nocover
-    import importlib_metadata as importlib_metadata_compat  # type: ignore[import-not-found]
+    import importlib_metadata as importlib_metadata_compat  # type: ignore
 else:
     importlib_metadata_compat = importlib_metadata
 
