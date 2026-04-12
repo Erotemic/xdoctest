@@ -27,7 +27,7 @@ except ImportError:  # nocover
 try:
     from packaging.requirements import Requirement
 except ImportError:  # nocover
-    Requirement = None  # type: ignore[assignment]
+    Requirement = None  # type: ignore
 
 from xdoctest import (
     checker,
