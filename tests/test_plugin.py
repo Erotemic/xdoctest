@@ -427,7 +427,9 @@ class TestXDoctest:
         reprec = testdir.inline_run(p, '--xdoctest-modules', *EXTRA_ARGS)
         reprec.assertoutcome(skipped=1, failed=0, passed=0)
 
-    def test_xdoctest_optional_want_addopts(self, testdir: pytest.Testdir) -> None:
+    def test_xdoctest_optional_want_addopts(
+        self, testdir: pytest.Testdir
+    ) -> None:
         """Test prefixed config knobs in pytest addopts.
 
         CommandLine:
@@ -1522,6 +1524,89 @@ class TestXDoctestSkips:
         makedoctest('')
         reprec = testdir.inline_run('--xdoctest-modules', *EXTRA_ARGS)
         reprec.assertoutcome(passed=0, skipped=0)
+
+
+class TestXDoctestModuleMetadata:
+    def test_doctestplus_skip_metadata(self, testdir: pytest.Testdir) -> None:
+        testdir.makepyfile(
+            meta=utils.codeblock(
+                """
+                def _skip_targets():
+                    return ['skip_me', 'SkipClass.*']
+
+                __doctest_skip__ = _skip_targets()
+
+                def skip_me():
+                    '''
+                    >>> 1
+                    2
+                    '''
+
+                def keep_me():
+                    '''
+                    >>> 1
+                    1
+                    '''
+
+                class SkipClass:
+                    def method(self):
+                        '''
+                        >>> 1
+                        2
+                        '''
+                """
+            )
+        )
+        reprec = testdir.inline_run('--xdoctest-modules', *EXTRA_ARGS)
+        reprec.assertoutcome(passed=1, skipped=2)
+
+    def test_doctestplus_requires_metadata(
+        self, testdir: pytest.Testdir
+    ) -> None:
+        testdir.makepyfile(
+            meta=utils.codeblock(
+                """
+                __doctest_requires__ = {
+                    'needs_*': ['sys'],
+                    'needs_version': ['pytest>=1'],
+                    'needs_missing': ['definitely_missing_package_123456'],
+                    'needs_unsatisfied': ['pytest>999999'],
+                }
+
+                def needs_sys():
+                    '''
+                    >>> 1
+                    1
+                    '''
+
+                def needs_version():
+                    '''
+                    >>> 1
+                    1
+                    '''
+
+                def needs_missing():
+                    '''
+                    >>> 1
+                    1
+                    '''
+
+                def needs_unsatisfied():
+                    '''
+                    >>> 1
+                    1
+                    '''
+
+                def keep_me():
+                    '''
+                    >>> 1
+                    1
+                    '''
+                """
+            )
+        )
+        reprec = testdir.inline_run('--xdoctest-modules', *EXTRA_ARGS)
+        reprec.assertoutcome(passed=3, skipped=2)
 
 
 class TestXDoctestAutoUseFixtures:
