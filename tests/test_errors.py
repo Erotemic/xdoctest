@@ -4,7 +4,7 @@ from typing import cast
 
 import pytest
 
-from xdoctest import core, exceptions, runner, utils
+from xdoctest import core, doctest_example, exceptions, runner, utils
 from xdoctest.utils.util_misc import _run_case
 
 
@@ -205,6 +205,34 @@ def test_extract_got_exception() -> None:
     text = _run_case(source, style='google')
     assert text is not None
     assert 'ExtractGotReprException' in text
+
+
+def test_optional_want_false_extracts_bad_repr() -> None:
+    """
+    A no-want eval output should still report bad reprs through the existing
+    got-repr failure machinery when optional_want is disabled.
+    """
+    class MyObj:
+        def __repr__(self) -> str:
+            raise Exception('this repr fails')
+
+    source = utils.codeblock(
+        '''
+        >>> obj
+        '''
+    )
+    self = doctest_example.DocTest(docsrc=source)
+    self._parse()
+    assert self._parts is not None
+    self._parts[0].compile_mode = 'eval'
+    self.global_namespace['obj'] = MyObj()
+    self.config['optional_want'] = False
+    result = self.run(on_error='return', verbose=0)
+    assert result['failed']
+
+    text = '\n'.join(self.repr_failure())
+    assert 'ExtractGotReprException' in text
+    assert 'this repr fails' in text
 
 
 def test_traceback_rewrite_handles_inner_frame_from_prior_part():

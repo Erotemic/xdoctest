@@ -1430,15 +1430,15 @@ class DocTest:
         runstate: directive.RuntimeState,
     ) -> None:
         """
-        Apply xdoctest's current output contract for one executed part.
+        Apply the configured output contract for one executed part.
 
-        Parts with a local want are checked immediately unless IGNORE_WANT is
-        active. After any want-bearing part, deferred stdout is cleared.
-
-        Parts without a local want normally defer stdout so a later part may
-        consume it via trailing matching. However, if IGNORE_WANT is active on
-        a no-want part, that part's output is discarded and must not contribute
-        to any later deferred match.
+        With the default configuration, parts without a local want may defer
+        stdout for later trailing matching, while parts with a local want are
+        checked immediately. The `deferred_output_matching` knob disables the
+        deferred-trailing behavior, and `optional_want` requires output
+        producing parts to have a local want unless `IGNORE_WANT` is active.
+        Any part with `IGNORE_WANT` active is treated as a boundary and does
+        not contribute output to later matching.
         """
         deferred_output_matching = bool(
             self.config.getvalue('deferred_output_matching')
@@ -1457,7 +1457,15 @@ class DocTest:
                     assert got_stdout is not None
                     got = got_stdout
                 else:
-                    got = repr(got_eval)
+                    try:
+                        got = repr(got_eval)
+                    except Exception as ex:
+                        raise checker.ExtractGotReprException(
+                            'Error calling repr for {}. Caused by: {!r}'.format(
+                                type(got_eval), ex
+                            ),
+                            ex,
+                        )
                 raise checker.GotWantException(
                     'got output with no local want',
                     got,
