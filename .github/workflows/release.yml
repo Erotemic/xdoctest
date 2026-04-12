@@ -86,7 +86,7 @@ jobs:
   test_deploy:
     name: Deploy Test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && ! startsWith(github.event.ref, 'refs/tags') && ! startsWith(github.event.ref, 'refs/heads/release')
+    if: github.event_name == 'push' && github.event.ref == 'refs/heads/main'
     needs:
     - build_purepy_wheels
     - build_sdist
