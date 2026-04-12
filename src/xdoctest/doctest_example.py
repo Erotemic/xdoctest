@@ -19,6 +19,8 @@ from collections import OrderedDict
 from inspect import CO_COROUTINE
 from typing import TYPE_CHECKING, Any, Union, cast
 
+importlib_metadata_compat: types.ModuleType
+
 try:
     from importlib import metadata as importlib_metadata
 except ImportError:  # nocover
@@ -26,14 +28,12 @@ except ImportError:  # nocover
 else:
     importlib_metadata_compat = importlib_metadata
 
-importlib_metadata_compat: types.ModuleType
-
 try:
     from packaging.requirements import Requirement
 except ImportError:  # nocover
     Requirement = None  # type: ignore
 
-from xdoctest import (
+from xdoctest import (  # NOQA
     checker,
     constants,
     directive,
@@ -45,7 +45,8 @@ from xdoctest import (
 
 if TYPE_CHECKING:
     from xdoctest.doctest_part import DoctestPart
-from xdoctest import static_analysis as static
+
+from xdoctest import static_analysis as static  # NOQA
 
 __devnotes__ = """
 TODO:
