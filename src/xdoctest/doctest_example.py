@@ -6,7 +6,6 @@ from __future__ import annotations
 import __future__
 
 import ast
-from fnmatch import fnmatch
 import math
 import os
 import re
@@ -16,6 +15,7 @@ import types
 import typing
 import warnings
 from collections import OrderedDict
+from fnmatch import fnmatch
 from inspect import CO_COROUTINE
 from typing import TYPE_CHECKING, Any, Union, cast
 
