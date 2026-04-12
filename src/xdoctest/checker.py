@@ -440,9 +440,51 @@ def _float_cmp_match_tokens(
     got_tokens: list[tuple[str, str]],
     want_tokens: list[tuple[str, str]],
 ) -> bool:
-    def token_equal(
-        got_token: tuple[str, str], want_token: tuple[str, str]
-    ) -> bool:
+    """
+    Match tokenized output for ``FLOAT_CMP``.
+
+    ``want_tokens`` may contain ``('ellipsis', '...')`` tokens, which act like
+    a wildcard over zero or more tokens in ``got_tokens``.
+
+    Example:
+        >>> from xdoctest.checker import _float_cmp_match_tokens
+        >>> got_tokens = [('text', 'best='), ('number', '0.3333333333')]
+        >>> want_tokens = [('text', 'best='), ('number', '0.333333')]
+        >>> _float_cmp_match_tokens(got_tokens, want_tokens)
+        True
+
+    Example:
+        >>> from xdoctest.checker import _float_cmp_match_tokens
+        >>> got_tokens = [('text', 'best='), ('number', '1.0')]
+        >>> want_tokens = [('text', 'best='), ('number', '1.1')]
+        >>> _float_cmp_match_tokens(got_tokens, want_tokens)
+        False
+
+    Example:
+        >>> from xdoctest.checker import _float_cmp_match_tokens
+        >>> got_tokens = [
+        ...     ('text', 'prefix '),
+        ...     ('number', '0.3333333333'),
+        ...     ('text', ' middle '),
+        ...     ('number', '2.0'),
+        ...     ('text', ' suffix'),
+        ... ]
+        >>> want_tokens = [
+        ...     ('text', 'prefix '),
+        ...     ('ellipsis', '...'),
+        ...     ('text', ' suffix'),
+        ... ]
+        >>> _float_cmp_match_tokens(got_tokens, want_tokens)
+        True
+
+    Example:
+        >>> from xdoctest.checker import _float_cmp_match_tokens
+        >>> got_tokens = [('text', 'prefix '), ('text', 'suffix')]
+        >>> want_tokens = [('text', 'prefix '), ('ellipsis', '...')]
+        >>> _float_cmp_match_tokens(got_tokens, want_tokens)
+        True
+    """
+    def token_equal(got_token: tuple[str, str], want_token: tuple[str, str]) -> bool:
         gkind, gvalue = got_token
         wkind, wvalue = want_token
         if gkind != wkind:
@@ -453,31 +495,42 @@ def _float_cmp_match_tokens(
             return True
         return _float_cmp_numeric_equal(gvalue, wvalue)
 
-    def rec(gi: int, wi: int) -> bool:
-        while wi < len(want_tokens):
-            wkind, _ = want_tokens[wi]
-            if wkind == 'ellipsis':
-                while (
-                    wi < len(want_tokens) and want_tokens[wi][0] == 'ellipsis'
-                ):
-                    wi += 1
-                if wi >= len(want_tokens):
-                    return True
-                while gi <= len(got_tokens):
-                    if rec(gi, wi):
-                        return True
-                    gi += 1
-                return False
+    # Collapse consecutive ellipses first.
+    compact_want: list[tuple[str, str]] = []
+    for tok in want_tokens:
+        if (
+            tok[0] == 'ellipsis'
+            and compact_want
+            and compact_want[-1][0] == 'ellipsis'
+        ):
+            continue
+        compact_want.append(tok)
+    want_tokens = compact_want
 
-            if gi >= len(got_tokens):
-                return False
-            if not token_equal(got_tokens[gi], want_tokens[wi]):
-                return False
+    gi = 0
+    wi = 0
+    last_ellipsis_wi = -1
+    retry_gi = -1
+
+    while gi < len(got_tokens):
+        if wi < len(want_tokens) and want_tokens[wi][0] == 'ellipsis':
+            last_ellipsis_wi = wi
+            wi += 1
+            retry_gi = gi
+        elif wi < len(want_tokens) and token_equal(got_tokens[gi], want_tokens[wi]):
             gi += 1
             wi += 1
-        return gi == len(got_tokens)
+        elif last_ellipsis_wi != -1:
+            retry_gi += 1
+            gi = retry_gi
+            wi = last_ellipsis_wi + 1
+        else:
+            return False
 
-    return rec(0, 0)
+    while wi < len(want_tokens) and want_tokens[wi][0] == 'ellipsis':
+        wi += 1
+
+    return wi == len(want_tokens)
 
 
 def _float_cmp_numeric_equal(got_text: str, want_text: str) -> bool:

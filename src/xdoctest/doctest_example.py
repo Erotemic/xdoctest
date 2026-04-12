@@ -332,6 +332,27 @@ class DoctestConfig(dict):
 def _doctest_requirement_satisfied(requirement_text: str) -> bool:
     """
     Return True when a doctestplus-style requirement is satisfied.
+
+    Example:
+        >>> from xdoctest.doctest_example import _doctest_requirement_satisfied
+        >>> _doctest_requirement_satisfied('os')
+        True
+        >>> _doctest_requirement_satisfied('definitely_missing_package_123456')
+        False
+
+    Example:
+        >>> from xdoctest.doctest_example import _doctest_requirement_satisfied
+        >>> _doctest_requirement_satisfied('packaging>=0')
+        True
+        >>> _doctest_requirement_satisfied('packaging>999999')
+        False
+
+    Example:
+        >>> from xdoctest.doctest_example import _doctest_requirement_satisfied
+        >>> _doctest_requirement_satisfied('bad requirement')
+        Traceback (most recent call last):
+        ...
+        ValueError: Invalid __doctest_requires__ requirement: 'bad requirement'
     """
     if Requirement is None:
         raise ImportError(
