@@ -624,8 +624,9 @@ class GotWantException(AssertionError):
                     got = utils.color_text(got, 'red')
                     want = utils.color_text(want, 'red')
                 text = 'Expected:\n{}\nGot nothing\n'.format(utils.indent(want))
-            elif got:  # nocover
-                raise AssertionError('impossible state')
+            elif got:
+                if colored:
+                    got = utils.color_text(got, 'red')
                 text = 'Expected nothing\nGot:\n{}'.format(utils.indent(got))
             else:  # nocover
                 raise AssertionError('impossible state')

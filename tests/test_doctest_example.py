@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import typing
 
 from xdoctest import checker, constants, doctest_example, exceptions, utils
@@ -249,6 +250,117 @@ def test_run_trailing_stdout_from_no_want_part() -> None:
     assert result['passed']
     assert self.logged_stdout is not None
     assert list(self.logged_stdout.values()) == ['prefix\n', 'suffix\n']
+
+
+def test_doctestconfig_cli_flags() -> None:
+    config = doctest_example.DoctestConfig()
+
+    parser = argparse.ArgumentParser()
+    config._update_argparse_cli(parser.add_argument)
+    ns = parser.parse_args(
+        ['--no-optional-want', '--deferred-output-matching']
+    )
+    assert ns.optional_want is False
+    assert ns.deferred_output_matching is True
+
+    prefixed = argparse.ArgumentParser()
+    config._update_argparse_cli(prefixed.add_argument, prefix=['xdoctest'])
+    ns2 = prefixed.parse_args(
+        ['--xdoctest-no-optional-want', '--xdoctest-no-deferred-output-matching']
+    )
+    assert ns2.xdoctest_optional_want is False
+    assert ns2.xdoctest_deferred_output_matching is False
+
+
+def test_optional_want_false_fails_on_stdout() -> None:
+    docsrc = utils.codeblock(
+        """
+        >>> print('foo')
+        """
+    )
+    self = doctest_example.DocTest(docsrc=docsrc)
+    self.config['optional_want'] = False
+
+    result = self.run(verbose=0, on_error='return')
+
+    assert result['failed']
+    fail_text = '\n'.join(self.repr_failure())
+    assert 'Expected nothing' in fail_text
+    assert 'foo' in fail_text
+
+
+def test_optional_want_false_fails_on_eval_output() -> None:
+    docsrc = utils.codeblock(
+        """
+        >>> 1 + 1
+        """
+    )
+    self = doctest_example.DocTest(docsrc=docsrc)
+    self._parse()
+    assert self._parts is not None
+    self._parts[0].compile_mode = 'eval'
+    self.config['optional_want'] = False
+
+    result = self.run(verbose=0, on_error='return')
+
+    assert result['failed']
+    fail_text = '\n'.join(self.repr_failure())
+    assert 'Expected nothing' in fail_text
+    assert '2' in fail_text
+
+
+def test_optional_want_false_ignored_no_want_part_passes() -> None:
+    docsrc = utils.codeblock(
+        """
+        >>> print('foo')  # xdoctest: +IGNORE_WANT
+        """
+    )
+    self = doctest_example.DocTest(docsrc=docsrc)
+    self.config['optional_want'] = False
+
+    result = self.run(verbose=0, on_error='return')
+
+    assert result['passed']
+
+
+def test_deferred_output_matching_false_disables_trailing_match() -> None:
+    docsrc = utils.codeblock(
+        """
+        >>> print('foo')
+        >>> print('bar')
+        foo
+        bar
+        """
+    )
+
+    default = doctest_example.DocTest(docsrc=docsrc)
+    default_result = default.run(verbose=0)
+    assert default_result['passed']
+
+    self = doctest_example.DocTest(docsrc=docsrc)
+    self.config['deferred_output_matching'] = False
+    result = self.run(verbose=0, on_error='return')
+    assert result['failed']
+    fail_text = '\n'.join(self.repr_failure())
+    assert 'foo' in fail_text
+    assert 'bar' in fail_text
+
+
+def test_output_toggle_knobs_are_orthogonal() -> None:
+    docsrc = utils.codeblock(
+        """
+        >>> print('foo')
+        """
+    )
+    self = doctest_example.DocTest(docsrc=docsrc)
+    self.config['deferred_output_matching'] = False
+    self.config['optional_want'] = False
+
+    result = self.run(verbose=0, on_error='return')
+
+    assert result['failed']
+    fail_text = '\n'.join(self.repr_failure())
+    assert 'Expected nothing' in fail_text
 
 
 def test_ignore_want_clears_unmatched_stdout() -> None:

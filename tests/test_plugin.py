@@ -427,6 +427,26 @@ class TestXDoctest:
         reprec = testdir.inline_run(p, '--xdoctest-modules', *EXTRA_ARGS)
         reprec.assertoutcome(skipped=1, failed=0, passed=0)
 
+    def test_xdoctest_optional_want_addopts(self, testdir: pytest.Testdir) -> None:
+        """Test prefixed config knobs in pytest addopts.
+
+        CommandLine:
+            pytest tests/test_plugin.py::TestXDoctest::test_xdoctest_optional_want_addopts
+        """
+        testdir.makeini("""
+            [pytest]
+            addopts= --xdoctest-no-optional-want
+        """)
+        p = testdir.makepyfile('''
+            def say_foo():
+                """
+                >>> print('foo')
+                """
+                return None
+        ''')
+        reprec = testdir.inline_run(p, '--xdoctest-modules', *EXTRA_ARGS)
+        reprec.assertoutcome(skipped=0, failed=1, passed=0)
+
     def test_doctest_unexpected_exception(
         self, testdir: pytest.Testdir
     ) -> None:
