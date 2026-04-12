@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import doctest
+import types
 import typing
 
 from xdoctest import checker, directive
@@ -22,6 +23,7 @@ def register_checker(
     _REGISTERED_CHECKERS[name] = checker_
 
 
+
 def resolve_checker(name: str) -> doctest.OutputChecker:
     if name not in _REGISTERED_CHECKERS:
         raise KeyError(
@@ -35,11 +37,14 @@ def resolve_checker(name: str) -> doctest.OutputChecker:
     return checker_()
 
 
+
 def resolve_current_checker(
     runstate: directive.RuntimeState | dict | None,
 ) -> doctest.OutputChecker:
     if isinstance(runstate, directive.RuntimeState):
         checker_name = runstate.get_output_checker()
+    elif isinstance(runstate, dict):
+        checker_name = str(runstate.get('_output_checker', 'xdoctest'))
     else:
         checker_name = 'xdoctest'
     return resolve_checker(checker_name)

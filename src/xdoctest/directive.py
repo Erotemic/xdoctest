@@ -318,6 +318,7 @@ class RuntimeState(utils.NiceRepr):
         self._inline_state: dict[str, typing.Any] = {}
         self._output_checker = 'xdoctest'
         self._output_checker_flags = 0
+        self._inline_output_checker_flags = 0
 
     def to_dict(self) -> OrderedDict[str, bool | set[str]]:
         """
@@ -373,13 +374,22 @@ class RuntimeState(utils.NiceRepr):
         self._output_checker = name
 
     def get_output_checker_flags(self) -> int:
-        return self._output_checker_flags
+        return self._output_checker_flags | self._inline_output_checker_flags
 
     def set_output_checker_flags(self, flags: int) -> None:
         self._output_checker_flags = int(flags)
 
-    def add_output_checker_flags(self, flags: int) -> None:
-        self._output_checker_flags |= int(flags)
+    def add_output_checker_flags(self, flags: int, inline: bool = False) -> None:
+        if inline:
+            self._inline_output_checker_flags |= int(flags)
+        else:
+            self._output_checker_flags |= int(flags)
+
+    def remove_output_checker_flags(self, flags: int, inline: bool = False) -> None:
+        if inline:
+            self._inline_output_checker_flags &= ~int(flags)
+        else:
+            self._output_checker_flags &= ~int(flags)
 
     def set_report_style(
         self,
@@ -420,6 +430,7 @@ class RuntimeState(utils.NiceRepr):
         """
         # Clear the previous inline state
         self._inline_state.clear()
+        self._inline_output_checker_flags = 0
         for directive in directives:
             for effect in directive.effects():
                 action, key, value = effect
@@ -427,6 +438,16 @@ class RuntimeState(utils.NiceRepr):
                     continue
 
                 if key not in self._global_state:
+                    from xdoctest import directive_facade
+
+                    if directive_facade.is_registered_optionflag(key):
+                        flag = directive_facade.get_optionflag(key)
+                        if action == 'assign':
+                            if value:
+                                self.add_output_checker_flags(flag, inline=bool(directive.inline))
+                            else:
+                                self.remove_output_checker_flags(flag, inline=bool(directive.inline))
+                            continue
                     warnings.warn('Unknown state: {}'.format(key))
 
                 # Determine if this impacts the local (inline) or global state.
@@ -1011,12 +1032,14 @@ def parse_directive_optstr(
 
     name = name.upper()
     if name not in COMMANDS:
-        msg = 'Unknown directive: {!r}'.format(optpart)
-        warnings.warn(msg)
-        return None
-    else:
-        directive = Directive(name, positive, args, inline)
-        return directive
+        from xdoctest import directive_facade
+
+        if not directive_facade.is_registered_optionflag(name):
+            msg = 'Unknown directive: {!r}'.format(optpart)
+            warnings.warn(msg)
+            return None
+    directive = Directive(name, positive, args, inline)
+    return directive
 
 
 if __name__ == '__main__':

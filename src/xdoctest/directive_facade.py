@@ -51,6 +51,15 @@ class RuntimeFlagFacade:
         flag = doctest.register_optionflag(name)
         return self.register_builtin_optionflag(name, flag, runtime_state_key)
 
+    def is_registered_optionflag(self, name: str) -> bool:
+        return name in self._optionflags_by_name
+
+    def get_optionflag(self, name: str) -> int:
+        return self._optionflags_by_name[name]
+
+    def get_registered_optionflags(self) -> Dict[str, int]:
+        return dict(self._optionflags_by_name)
+
     def runtime_state_to_optionflags(
         self,
         runstate: directive.RuntimeState | dict | None,
@@ -116,6 +125,18 @@ def optionflags_to_runtime_state(
     return _RUNTIME_FLAGS.optionflags_to_runtime_state(optionflags, default_state)
 
 
+def is_registered_optionflag(name: str) -> bool:
+    return _RUNTIME_FLAGS.is_registered_optionflag(name)
+
+
+def get_optionflag(name: str) -> int:
+    return _RUNTIME_FLAGS.get_optionflag(name)
+
+
+def get_registered_optionflags() -> Dict[str, int]:
+    return _RUNTIME_FLAGS.get_registered_optionflags()
+
+
 _RUNTIME_FLAGS.register_builtin_optionflag(
     'DONT_ACCEPT_BLANKLINE', DONT_ACCEPT_BLANKLINE, 'DONT_ACCEPT_BLANKLINE'
 )
@@ -156,4 +177,7 @@ __all__ = [
     'register_optionflag',
     'runtime_state_to_optionflags',
     'optionflags_to_runtime_state',
+    'is_registered_optionflag',
+    'get_optionflag',
+    'get_registered_optionflags',
 ]
