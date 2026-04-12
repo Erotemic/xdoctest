@@ -10,6 +10,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Fixed
 * Fixed issue #181 where comment indentation could cause parsing issues.
 * Fix traceback rewriting for exceptions raised in earlier doctest parts
+* Ignored output from a no-want part is discarded rather than deferred to a
+  later trailing match.
+
 
 ### Changed
 * Bump minimum pytest to 6.2.5

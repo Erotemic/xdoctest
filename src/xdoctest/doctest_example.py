@@ -1190,23 +1190,12 @@ class DocTest:
                                 doctest. Allow the rest of the code to run.  If
                                 multiple errors occur, show them both.
                             """
-                            if part.want:
-                                got_stdout = cap.text
-                                assert got_stdout is not None
-                                if not runstate['IGNORE_WANT']:
-                                    part.check(
-                                        got_stdout,
-                                        got_eval,
-                                        runstate,
-                                        unmatched=self._unmatched_stdout,
-                                    )
-                                # Clear unmatched output when a check passes
-                                self._unmatched_stdout = []
-                            else:
-                                # If a part doesnt have a want allow its output to
-                                # be matched by the next part.
-                                assert cap.text is not None
-                                self._unmatched_stdout.append(cap.text)
+                            self._check_or_defer_part_output(
+                                part,
+                                cap.text,
+                                got_eval,
+                                runstate,
+                            )
                     except BaseException:
                         # close the asyncio runner (base exception)
                         if asyncio_runner is not None:
@@ -1380,6 +1369,44 @@ class DocTest:
         self.global_namespace.clear()
 
         return summary
+
+    def _check_or_defer_part_output(
+        self,
+        part: 'DoctestPart',
+        got_stdout: str | None,
+        got_eval: Any,
+        runstate: directive.RuntimeState,
+    ) -> None:
+        """
+        Apply xdoctest's current output contract for one executed part.
+
+        Parts with a local want are checked immediately unless IGNORE_WANT is
+        active. After any want-bearing part, deferred stdout is cleared.
+
+        Parts without a local want normally defer stdout so a later part may
+        consume it via trailing matching. However, if IGNORE_WANT is active on
+        a no-want part, that part's output is discarded and must not contribute
+        to any later deferred match.
+        """
+        if part.want is None:
+            if runstate['IGNORE_WANT']:
+                self._unmatched_stdout = []
+            else:
+                assert got_stdout is not None
+                assert self._unmatched_stdout is not None
+                self._unmatched_stdout.append(got_stdout)
+        else:
+            assert got_stdout is not None
+            if not runstate['IGNORE_WANT']:
+                part.check(
+                    got_stdout,
+                    got_eval,
+                    runstate,
+                    unmatched=self._unmatched_stdout,
+                )
+            # Any want-bearing part is a boundary for deferred stdout, even when
+            # IGNORE_WANT skips local comparison.
+            self._unmatched_stdout = []
 
     @property
     def globs(self):

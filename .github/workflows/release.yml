@@ -86,7 +86,7 @@ jobs:
   test_deploy:
     name: Deploy Test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && ! startsWith(github.event.ref, 'refs/tags') && ! startsWith(github.event.ref, 'refs/heads/release')
+    if: github.event_name == 'push' && github.event.ref == 'refs/heads/main'
     needs:
     - build_purepy_wheels
     - build_sdist
@@ -109,26 +109,30 @@ jobs:
       run: ls -la wheelhouse
     - name: Sign distributions
       env:
-        CI_SECRET: ${{ secrets.CI_SECRET }}
+        GPG_SECRET_SIGNING_SUBKEY_B64: ${{ secrets.GPG_SECRET_SIGNING_SUBKEY_B64 }}
+        GPG_PUBLIC_KEY_B64: ${{ secrets.GPG_PUBLIC_KEY_B64 }}
+        GPG_OWNER_TRUST_B64: ${{ secrets.GPG_OWNER_TRUST_B64 }}
       run: |-
         GPG_EXECUTABLE=gpg
         $GPG_EXECUTABLE --version
         openssl version
         $GPG_EXECUTABLE --list-keys
-        echo "Decrypting Keys"
-        openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CI_SECRET -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import
-        openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CI_SECRET -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
-        openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CI_SECRET -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import
-        echo "Finish Decrypt Keys"
+        echo "Importing GPG keys from CI secrets"
+        printf '%s' "$GPG_PUBLIC_KEY_B64" | base64 -d | $GPG_EXECUTABLE --import
+        printf '%s' "$GPG_OWNER_TRUST_B64" | base64 -d | $GPG_EXECUTABLE --import-ownertrust
+        printf '%s' "$GPG_SECRET_SIGNING_SUBKEY_B64" | base64 -d | $GPG_EXECUTABLE --import
+        echo "Finish importing GPG keys"
         $GPG_EXECUTABLE --list-keys || true
-        $GPG_EXECUTABLE --list-keys  || echo "first invocation of gpg creates directories and returns 1"
         $GPG_EXECUTABLE --list-keys
+        GPG_KEYID=$(cat dev/public_gpg_key)
+        echo "GPG_KEYID = '$GPG_KEYID'"
+        IMPORTED_FPR=$($GPG_EXECUTABLE --list-keys --with-colons "$GPG_KEYID" | awk -F: '/^fpr/ { print $10; exit }')
+        if [[ "$IMPORTED_FPR" != "$GPG_KEYID" ]]; then echo "ERROR: imported GPG fingerprint $IMPORTED_FPR does not match pinned $GPG_KEYID"; exit 1; fi
+        echo "GPG fingerprint verified: $IMPORTED_FPR"
         VERSION=$(python -c "import setup; print(setup.VERSION)")
         python -m pip install pip uv -U
         python -m pip install packaging twine -U
         python -m pip install urllib3 requests[security]
-        GPG_KEYID=$(cat dev/public_gpg_key)
-        echo "GPG_KEYID = '$GPG_KEYID'"
         GPG_SIGN_CMD="$GPG_EXECUTABLE --batch --yes --detach-sign --armor --local-user $GPG_KEYID"
         WHEEL_PATHS=(wheelhouse/*.whl wheelhouse/*.tar.gz)
         WHEEL_PATHS_STR=$(printf '"%s" ' "${WHEEL_PATHS[@]}")
@@ -201,26 +205,30 @@ jobs:
       run: ls -la wheelhouse
     - name: Sign distributions
       env:
-        CI_SECRET: ${{ secrets.CI_SECRET }}
+        GPG_SECRET_SIGNING_SUBKEY_B64: ${{ secrets.GPG_SECRET_SIGNING_SUBKEY_B64 }}
+        GPG_PUBLIC_KEY_B64: ${{ secrets.GPG_PUBLIC_KEY_B64 }}
+        GPG_OWNER_TRUST_B64: ${{ secrets.GPG_OWNER_TRUST_B64 }}
       run: |-
         GPG_EXECUTABLE=gpg
         $GPG_EXECUTABLE --version
         openssl version
         $GPG_EXECUTABLE --list-keys
-        echo "Decrypting Keys"
-        openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CI_SECRET -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import
-        openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CI_SECRET -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
-        openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CI_SECRET -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import
-        echo "Finish Decrypt Keys"
+        echo "Importing GPG keys from CI secrets"
+        printf '%s' "$GPG_PUBLIC_KEY_B64" | base64 -d | $GPG_EXECUTABLE --import
+        printf '%s' "$GPG_OWNER_TRUST_B64" | base64 -d | $GPG_EXECUTABLE --import-ownertrust
+        printf '%s' "$GPG_SECRET_SIGNING_SUBKEY_B64" | base64 -d | $GPG_EXECUTABLE --import
+        echo "Finish importing GPG keys"
         $GPG_EXECUTABLE --list-keys || true
-        $GPG_EXECUTABLE --list-keys  || echo "first invocation of gpg creates directories and returns 1"
         $GPG_EXECUTABLE --list-keys
+        GPG_KEYID=$(cat dev/public_gpg_key)
+        echo "GPG_KEYID = '$GPG_KEYID'"
+        IMPORTED_FPR=$($GPG_EXECUTABLE --list-keys --with-colons "$GPG_KEYID" | awk -F: '/^fpr/ { print $10; exit }')
+        if [[ "$IMPORTED_FPR" != "$GPG_KEYID" ]]; then echo "ERROR: imported GPG fingerprint $IMPORTED_FPR does not match pinned $GPG_KEYID"; exit 1; fi
+        echo "GPG fingerprint verified: $IMPORTED_FPR"
         VERSION=$(python -c "import setup; print(setup.VERSION)")
         python -m pip install pip uv -U
         python -m pip install packaging twine -U
         python -m pip install urllib3 requests[security]
-        GPG_KEYID=$(cat dev/public_gpg_key)
-        echo "GPG_KEYID = '$GPG_KEYID'"
         GPG_SIGN_CMD="$GPG_EXECUTABLE --batch --yes --detach-sign --armor --local-user $GPG_KEYID"
         WHEEL_PATHS=(wheelhouse/*.whl wheelhouse/*.tar.gz)
         WHEEL_PATHS_STR=$(printf '"%s" ' "${WHEEL_PATHS[@]}")
@@ -359,8 +367,11 @@ jobs:
 #        - do not put TWINE_* secrets in these environments when using
 #          trusted publishing
 #
-#        - if enable_gpg=true, consider storing CI_SECRET as an environment
-#          secret instead of a repo-wide secret to reduce its scope
+#        - if enable_gpg=true and ci_gpg_secret_transport=encrypted_repo:
+#          store CI_SECRET as an environment secret (not repo-wide)
+#        - if enable_gpg=true and ci_gpg_secret_transport=direct_ci:
+#          store GPG_SECRET_SIGNING_SUBKEY_B64, GPG_PUBLIC_KEY_B64, and
+#          GPG_OWNER_TRUST_B64 as environment secrets; no CI_SECRET needed
 #
 #   2. In PyPI, add a trusted publisher for this project:
 #        owner: Erotemic
@@ -386,8 +397,12 @@ jobs:
 #   - Keep the workflow filename stable after registration.
 #   - The PyPI/TestPyPI project pages may not exist until the project
 #     exists there; use the account publishing pages for pending publishers.
-#   - Trusted publishing removes TWINE_* secrets, but does not replace
-#     CI_SECRET when enable_gpg=true.
+#   - Trusted publishing removes TWINE_* secrets.
+#   - When enable_gpg=true and ci_gpg_secret_transport="encrypted_repo":
+#     CI_SECRET is still required (environment-scoped to pypi/testpypi).
+#   - When enable_gpg=true and ci_gpg_secret_transport="direct_ci":
+#     GPG_SECRET_SIGNING_SUBKEY_B64, GPG_PUBLIC_KEY_B64, and GPG_OWNER_TRUST_B64
+#     are required (environment-scoped to pypi/testpypi). No CI_SECRET.
 #
 # Local act note:
 #   Trusted publishing cannot be fully emulated with local act secrets.
@@ -395,4 +410,6 @@ jobs:
 #   load_secrets
 #   unset GITHUB_TOKEN
 #   $HOME/.local/opt/act/act \
-#       --secret=EROTEMIC_CI_SECRET=$EROTEMIC_CI_SECRET
+#       --secret=GPG_SECRET_SIGNING_SUBKEY_B64=$GPG_SECRET_SIGNING_SUBKEY_B64 \
+#       --secret=GPG_PUBLIC_KEY_B64=$GPG_PUBLIC_KEY_B64 \
+#       --secret=GPG_OWNER_TRUST_B64=$GPG_OWNER_TRUST_B64

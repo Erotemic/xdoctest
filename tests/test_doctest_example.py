@@ -229,6 +229,116 @@ def test_run_multi_want() -> None:
     ]
 
 
+def test_run_trailing_stdout_from_no_want_part() -> None:
+    docsrc = utils.codeblock(
+        """
+        >>> print('prefix')
+
+        >>> print('suffix')
+        prefix
+        suffix
+        """
+    )
+    self = doctest_example.DocTest(docsrc=docsrc)
+    self._parse()
+    assert self._parts is not None
+    assert len(self._parts) == 2
+
+    result = self.run(verbose=0)
+
+    assert result['passed']
+    assert self.logged_stdout is not None
+    assert list(self.logged_stdout.values()) == ['prefix\n', 'suffix\n']
+
+
+def test_ignore_want_clears_unmatched_stdout() -> None:
+    docsrc = utils.codeblock(
+        """
+        >>> print('prefix')
+
+        >>> print('ignored')  # xdoctest: +IGNORE_WANT
+        junk
+
+        >>> print('suffix')
+        prefix
+        suffix
+        """
+    )
+    self = doctest_example.DocTest(docsrc=docsrc)
+    self._parse()
+    assert self._parts is not None
+    assert len(self._parts) == 3
+
+    result = self.run(verbose=0, on_error='return')
+
+    assert result['failed']
+    assert not result['passed']
+
+
+def test_doctest_fails_because_ignore_want_clears_unmatched_stdout_v1() -> None:
+    # The idea here is that we shouldn't be able to match things before an
+    # ignore, because it is cleared by the want.
+    import pytest
+    docsrc = utils.codeblock(
+        """
+        >>> print('prefix')
+
+        >>> print('ignored')  # xdoctest: +IGNORE_WANT
+        junk
+
+        >>> print('suffix')
+        prefix
+        suffix
+        """
+    )
+    self = doctest_example.DocTest(docsrc=docsrc)
+    self._parse()
+
+    with pytest.raises(checker.GotWantException):
+        self.run(verbose=0, on_error='raise')
+
+
+def test_doctest_fails_because_ignore_want_clears_unmatched_stdout_v2() -> None:
+    # Similar idea to the v1 test, but this one would pass if the ignore was
+    # removed.
+    import pytest
+    docsrc = utils.codeblock(
+        """
+        >>> print('prefix')
+        >>> print('ignored')  # xdoctest: +IGNORE_WANT
+        >>> print('suffix')
+        prefix
+        ignored
+        suffix
+        """
+    )
+    self = doctest_example.DocTest(docsrc=docsrc)
+    self._parse()
+
+    with pytest.raises(checker.GotWantException):
+        self.run(verbose=0, on_error='raise')
+
+
+def test_ignore_want_on_no_want_part_breaks_deferred_stdout_chain() -> None:
+    docsrc = utils.codeblock(
+        """
+        >>> print('prefix')
+        >>> print('ignored')  # xdoctest: +IGNORE_WANT
+        >>> print('suffix')
+        prefix
+        ignored
+        suffix
+        """
+    )
+    self = doctest_example.DocTest(docsrc=docsrc)
+    self._parse()
+
+    result = self.run(verbose=0, on_error='return')
+
+    assert result['failed']
+    assert not result['passed']
+
+
 def test_comment() -> None:
     docsrc = utils.codeblock(
         """

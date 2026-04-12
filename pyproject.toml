@@ -16,6 +16,7 @@ url = "https://github.com/Erotemic/xdoctest"
 license = "Apache 2"
 dev_status = "stable"
 ci_pypi_trusted_publishing = true
+ci_gpg_secret_transport = "direct_ci"
 typed = true
 skip_autogen = ["MANIFEST.in"]
 # CI extras configuration - adds tests-binary to full-loose variant
