@@ -488,6 +488,24 @@ If you would like a slightly more verbose output, try
 If you ran these commands, the myriad of characters that flew across your
 screen are lots more examples of what you can do with doctests.
 
+Related Work
+------------
+
+* `doctest <https://docs.python.org/3/library/doctest.html>`__:
+  the Python standard library implementation of doctest parsing and execution.
+
+* `pytest doctest support <https://docs.pytest.org/en/stable/how-to/doctest.html>`__:
+  built-in support for collecting and running standard doctests under pytest.
+
+* `pytest-doctestplus <https://github.com/scientific-python/pytest-doctestplus>`__:
+  extends pytest doctest support, with additional directives and parsing of rst, md, and tex files.
+
+* `Sybil <https://sybil.readthedocs.io/>`__:
+  focuses on parsing doctests and example code blocks from documentation files and running these in test suites.
+
+* `sphinx.ext.doctest <https://www.sphinx-doc.org/en/master/usage/extensions/doctest.html>`__:
+  runs doctests from Sphinx documentation using the stdlib doctest.
+
 
 .. |CircleCI| image:: https://circleci.com/gh/Erotemic/xdoctest.svg?style=svg
     :target: https://circleci.com/gh/Erotemic/xdoctest
