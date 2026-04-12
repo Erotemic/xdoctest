@@ -316,6 +316,8 @@ class RuntimeState(utils.NiceRepr):
         if default_state:
             self._global_state.update(default_state)
         self._inline_state: dict[str, typing.Any] = {}
+        self._output_checker = 'xdoctest'
+        self._output_checker_flags = 0
 
     def to_dict(self) -> OrderedDict[str, bool | set[str]]:
         """
@@ -363,6 +365,21 @@ class RuntimeState(utils.NiceRepr):
         if key not in self._global_state:
             raise KeyError('Unknown key: {}'.format(key))
         cast(Dict[str, Union[bool, Set[str]]], self._global_state)[key] = value
+
+    def get_output_checker(self) -> str:
+        return self._output_checker
+
+    def set_output_checker(self, name: str) -> None:
+        self._output_checker = name
+
+    def get_output_checker_flags(self) -> int:
+        return self._output_checker_flags
+
+    def set_output_checker_flags(self, flags: int) -> None:
+        self._output_checker_flags = int(flags)
+
+    def add_output_checker_flags(self, flags: int) -> None:
+        self._output_checker_flags |= int(flags)
 
     def set_report_style(
         self,

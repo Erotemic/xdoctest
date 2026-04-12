@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import difflib
 import math
+import types
 import re
 import typing
 from typing import Dict, Set
@@ -239,7 +240,7 @@ def check_exception(
     return flag
 
 
-def check_output(
+def _xdoctest_check_output(
     got: str,
     want: str,
     runstate: directive.RuntimeState | None = None,
@@ -269,6 +270,32 @@ def check_output(
         got, want = normalize(got, want, runstate)
         return _check_match(got, want, runstate)
     return False
+
+
+def check_output(
+    got: str,
+    want: str,
+    runstate: directive.RuntimeState | None = None,
+) -> bool:
+    """
+    Check output using the currently configured output checker backend.
+
+    Args:
+        got (str): text produced by the test
+        want (str): target to match against
+        runstate (xdoctest.directive.RuntimeState | None): current state
+
+    Returns:
+        bool: True if got matches want or if the check is disabled
+    """
+    if not want:  # nocover
+        return True
+    if runstate is None:
+        runstate = directive.RuntimeState()
+    from xdoctest import checker_facade
+    optionflags = checker_facade.runtime_state_to_optionflags(runstate)
+    output_checker = checker_facade.resolve_current_checker(runstate)
+    return bool(output_checker.check_output(want, got, optionflags))
 
 
 def _check_match(
@@ -720,7 +747,7 @@ class GotWantException(AssertionError):
 
         return False
 
-    def output_difference(
+    def _output_difference_xdoctest(
         self,
         runstate: directive.RuntimeState | None = None,
         colored: bool = True,
@@ -818,6 +845,29 @@ class GotWantException(AssertionError):
                 raise AssertionError('impossible state')
                 text = 'Expected nothing\nGot nothing\n'
         return text
+
+    def output_difference(
+        self,
+        runstate: directive.RuntimeState | None = None,
+        colored: bool = True,
+    ) -> str:
+        if runstate is None:
+            runstate = directive.RuntimeState()
+
+        from xdoctest import checker_facade
+        output_checker = checker_facade.resolve_current_checker(runstate)
+        if (
+            output_checker.__class__.output_difference
+            is not checker_facade.OutputChecker.output_difference
+        ):
+            example = types.SimpleNamespace(want=self.want)
+            optionflags = checker_facade.runtime_state_to_optionflags(runstate)
+            return output_checker.output_difference(example, self.got, optionflags)
+
+        return self._output_difference_xdoctest(
+            runstate=runstate,
+            colored=colored,
+        )
 
     def output_repr_difference(
         self, runstate: directive.RuntimeState | None = None

@@ -73,6 +73,8 @@ class DoctestConfig(dict):
                 and sys.stdout.isatty(),
                 'reportchoice': 'udiff',
                 'default_runtime_state': {},
+                'output_checker': 'xdoctest',
+                'output_checker_flags': 0,
                 'offset_linenos': False,
                 'deferred_output_matching': True,
                 'global_exec': None,
@@ -101,11 +103,13 @@ class DoctestConfig(dict):
         _examp_conf = {
             'default_runtime_state': default_runtime_state,
             'deferred_output_matching': ns['deferred_output_matching'],
+            'output_checker': ns['output_checker'],
             'offset_linenos': ns['offset_linenos'],
             'colored': ns['colored'],
             'reportchoice': ns['reportchoice'],
             'global_exec': ns['global_exec'],
             'optional_want': ns['optional_want'],
+            'output_checker_flags': self['output_checker_flags'],
             'supress_import_errors': ns['supress_import_errors'],
             'verbose': ns['verbose'],
         }
@@ -197,6 +201,15 @@ class DoctestConfig(dict):
                     help=(
                         'Choose another output format for diffs on xdoctest failure'
                     ),
+                ),
+            ),
+            (
+                ['--output-checker'],
+                dict(
+                    dest='output_checker',
+                    type=str,
+                    default=self['output_checker'],
+                    help='Named output checker backend to use for got/want matching',
                 ),
             ),
             # used to build default_runtime_state
@@ -1180,6 +1193,10 @@ class DocTest:
         # Initialize a new runtime state
         default_state = self.config['default_runtime_state']
         runstate = self._runstate = directive.RuntimeState(default_state)
+        runstate.set_output_checker(self.config.get('output_checker', 'xdoctest'))
+        runstate.set_output_checker_flags(
+            int(self.config.get('output_checker_flags', 0))
+        )
         # setup reporting choice
         runstate.set_report_style(self.config['reportchoice'].lower())
 
