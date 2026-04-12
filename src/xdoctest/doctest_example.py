@@ -22,7 +22,11 @@ from typing import TYPE_CHECKING, Any, Union, cast
 try:
     from importlib import metadata as importlib_metadata
 except ImportError:  # nocover
-    import importlib_metadata  # type: ignore[import-not-found]
+    import importlib_metadata as importlib_metadata_compat  # type: ignore[import-not-found]
+else:
+    importlib_metadata_compat = importlib_metadata
+
+importlib_metadata_compat: types.ModuleType
 
 try:
     from packaging.requirements import Requirement
@@ -345,7 +349,7 @@ def _doctest_requirement_satisfied(requirement_text: str) -> bool:
         ) from ex
 
     try:
-        installed_version = importlib_metadata.version(requirement.name)
+        installed_version = importlib_metadata_compat.version(requirement.name)
     except Exception:
         installed_version = None
 
@@ -1024,7 +1028,9 @@ class DocTest:
             ):
                 for key in ['__doctest_skip__', '__doctest_requires__']:
                     try:
-                        value = static.parse_static_value(key, fpath=modpath)
+                        value = static.parse_static_value(
+                            key, fpath=os.fspath(modpath)
+                        )
                     except NameError:
                         value = None
                     except Exception as ex:
