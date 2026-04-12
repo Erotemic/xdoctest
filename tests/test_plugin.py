@@ -1529,7 +1529,10 @@ class TestXDoctestModuleMetadata:
         testdir.makepyfile(
             meta=utils.codeblock(
                 """
-                __doctest_skip__ = ['skip_me', 'SkipClass.*']
+                def _skip_targets():
+                    return ['skip_me', 'SkipClass.*']
+
+                __doctest_skip__ = _skip_targets()
 
                 def skip_me():
                     '''

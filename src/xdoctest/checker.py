@@ -52,8 +52,7 @@ ELLIPSIS_MARKER = '...'
 
 TRAILING_WS = re.compile(r'[ \t]*$', re.UNICODE | re.MULTILINE)
 
-_FLOAT_CMP_TOKEN_RE = re.compile(
-    r'(?P<ellipsis>\.\.\.)|'
+_FLOAT_CMP_NUMBER_RE = re.compile(
     r'(?P<number>(?<![\d.])[+-]?(?:'
     r'(?:\d+(?:\.\d*)?|\.\d+)'
     r'(?:[eE][+-]?\d+)?'
@@ -290,7 +289,7 @@ def _check_match(
         return True
 
     if runstate['FLOAT_CMP']:
-        if _float_cmp_match(got, want):
+        if _float_cmp_match(got, want, runstate):
             return True
 
     if runstate['ELLIPSIS']:
@@ -385,7 +384,7 @@ def _ellipsis_match(got: typing.Any, want: typing.Any) -> bool:
 
 
 def _float_cmp_match(
-    got: str, want: str
+    got: str, want: str, runstate: directive.RuntimeState | dict
 ) -> bool:
     """
     Compare output strings with numeric substrings matched approximately.
@@ -393,26 +392,48 @@ def _float_cmp_match(
     Text outside of numeric substrings must still agree. Ellipsis is handled in
     the same token stream so that ``FLOAT_CMP`` composes with ``ELLIPSIS``.
     """
-    got_tokens = _tokenize_float_cmp_text(got)
-    want_tokens = _tokenize_float_cmp_text(want)
+    allow_ellipsis = bool(runstate['ELLIPSIS'])
+    got_tokens = _tokenize_float_cmp_text(got, allow_ellipsis=allow_ellipsis)
+    want_tokens = _tokenize_float_cmp_text(want, allow_ellipsis=allow_ellipsis)
     return _float_cmp_match_tokens(got_tokens, want_tokens)
 
 
-def _tokenize_float_cmp_text(text: str) -> list[tuple[str, str]]:
+def _tokenize_float_cmp_text(
+    text: str, allow_ellipsis: bool
+) -> list[tuple[str, str]]:
     tokens: list[tuple[str, str]] = []
     pos = 0
-    for match in _FLOAT_CMP_TOKEN_RE.finditer(text):
+    for match in _FLOAT_CMP_NUMBER_RE.finditer(text):
         start, stop = match.span()
         if start > pos:
-            tokens.append(('text', text[pos:start]))
-        if match.group('ellipsis') is not None:
-            tokens.append(('ellipsis', match.group('ellipsis')))
-        else:
-            tokens.append(('number', match.group('number')))
+            _append_float_cmp_text_tokens(
+                tokens, text[pos:start], allow_ellipsis=allow_ellipsis
+            )
+        tokens.append(('number', match.group('number')))
         pos = stop
     if pos < len(text):
-        tokens.append(('text', text[pos:]))
+        _append_float_cmp_text_tokens(
+            tokens, text[pos:], allow_ellipsis=allow_ellipsis
+        )
     return tokens
+
+
+def _append_float_cmp_text_tokens(
+    tokens: list[tuple[str, str]], text: str, allow_ellipsis: bool
+) -> None:
+    if not allow_ellipsis or ELLIPSIS_MARKER not in text:
+        if text:
+            tokens.append(('text', text))
+        return
+
+    parts = re.split(r'(\.\.\.)', text)
+    for part in parts:
+        if not part:
+            continue
+        if part == ELLIPSIS_MARKER:
+            tokens.append(('ellipsis', part))
+        else:
+            tokens.append(('text', part))
 
 
 def _float_cmp_match_tokens(

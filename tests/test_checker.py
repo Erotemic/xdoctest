@@ -80,6 +80,13 @@ def test_float_cmp_ellipsis_composes() -> None:
     assert checker.check_output(got, want, runstate)
 
 
+def test_float_cmp_does_not_enable_ellipsis_by_itself() -> None:
+    runstate = directive.RuntimeState({'FLOAT_CMP': True, 'ELLIPSIS': False})
+    got = 'prefix best=0.3333333333 suffix'
+    want = 'prefix best=... suffix'
+    assert not checker.check_output(got, want, runstate)
+
+
 def test_float_cmp_special_values_and_multiple_numbers() -> None:
     runstate = directive.RuntimeState({'FLOAT_CMP': True})
     got = 'value=NaN upper=INF lower=-Infinity pair=1.0,2.0000000001'

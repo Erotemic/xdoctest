@@ -1158,7 +1158,6 @@ class DocTest:
         runstate = self._runstate = directive.RuntimeState(default_state)
         # setup reporting choice
         runstate.set_report_style(self.config['reportchoice'].lower())
-        self._apply_module_doctest_metadata(runstate)
 
         # Defer the execution of the pre-import until we know at least one part
         # in the doctest will run.
@@ -1251,6 +1250,17 @@ class DocTest:
                         else:
                             summary = self._post_run(verbose)
                             return summary
+
+                    self._apply_module_doctest_metadata(runstate)
+
+                    if runstate['SKIP']:
+                        if DEBUG:
+                            print(
+                                f'part[{partx}] skipped by module metadata'
+                            )
+                        self._skipped_parts.append(part)
+                        did_pre_import = True
+                        continue
 
                     test_globals, compileflags = self._test_globals()
 
