@@ -58,7 +58,9 @@ class DoctestConfig(dict):
                 'reportchoice': 'udiff',
                 'default_runtime_state': {},
                 'offset_linenos': False,
+                'deferred_output_matching': True,
                 'global_exec': None,
+                'optional_want': True,
                 'supress_import_errors': False,
                 'on_error': 'raise',
                 'partnos': False,
@@ -82,10 +84,12 @@ class DoctestConfig(dict):
                 default_runtime_state[directive.name] = directive.positive
         _examp_conf = {
             'default_runtime_state': default_runtime_state,
+            'deferred_output_matching': ns['deferred_output_matching'],
             'offset_linenos': ns['offset_linenos'],
             'colored': ns['colored'],
             'reportchoice': ns['reportchoice'],
             'global_exec': ns['global_exec'],
+            'optional_want': ns['optional_want'],
             'supress_import_errors': ns['supress_import_errors'],
             'verbose': ns['verbose'],
         }
@@ -141,6 +145,29 @@ class DoctestConfig(dict):
                 ),
             ),
             (
+                ['--deferred-output-matching'],
+                dict(
+                    dest='deferred_output_matching',
+                    action='store_true',
+                    default=self['deferred_output_matching'],
+                    help=(
+                        'Allow stdout from no-want parts to be matched by a '
+                        'later want-bearing part'
+                    ),
+                ),
+            ),
+            (
+                ['--no-deferred-output-matching'],
+                dict(
+                    dest='deferred_output_matching',
+                    action='store_false',
+                    default=argparse.SUPPRESS,
+                    help=(
+                        'Disable deferred stdout matching between parts'
+                    ),
+                ),
+            ),
+            (
                 ['--report'],
                 dict(
                     dest='reportchoice',
@@ -175,6 +202,24 @@ class DoctestConfig(dict):
                     default=None,
                     dest='global_exec',
                     help='Custom Python code to execute before every test',
+                ),
+            ),
+            (
+                ['--optional-want'],
+                dict(
+                    dest='optional_want',
+                    action='store_true',
+                    default=self['optional_want'],
+                    help='Allow parts to omit local want output',
+                ),
+            ),
+            (
+                ['--no-optional-want'],
+                dict(
+                    dest='optional_want',
+                    action='store_false',
+                    default=argparse.SUPPRESS,
+                    help='Require each output-producing part to have a want',
                 ),
             ),
             # FIXME: this has a spelling error
@@ -230,7 +275,14 @@ class DoctestConfig(dict):
         # TODO: make environment variables as args more general
         import os
 
-        environ_aware = {'report', 'options', 'global-exec', 'verbose'}
+        environ_aware = {
+            'deferred-output-matching',
+            'optional-want',
+            'report',
+            'options',
+            'global-exec',
+            'verbose',
+        }
         for alias, kw in add_argument_kws:
             # Use environment variables for some defaults
             argname = alias[0].lstrip('-')
@@ -1388,10 +1440,31 @@ class DocTest:
         a no-want part, that part's output is discarded and must not contribute
         to any later deferred match.
         """
+        deferred_output_matching = bool(
+            self.config.getvalue('deferred_output_matching')
+        )
+        optional_want = bool(self.config.getvalue('optional_want'))
+
         if part.want is None:
             if runstate['IGNORE_WANT']:
                 self._unmatched_stdout = []
-            else:
+                return
+
+            has_stdout = bool(got_stdout)
+            has_eval = got_eval is not constants.NOT_EVALED
+            if not optional_want and (has_stdout or has_eval):
+                if has_stdout:
+                    assert got_stdout is not None
+                    got = got_stdout
+                else:
+                    got = repr(got_eval)
+                raise checker.GotWantException(
+                    'got output with no local want',
+                    got,
+                    '',
+                )
+
+            if deferred_output_matching and has_stdout:
                 assert got_stdout is not None
                 assert self._unmatched_stdout is not None
                 self._unmatched_stdout.append(got_stdout)
@@ -1484,7 +1557,9 @@ class DocTest:
                 # Same idea here: got/want failures are about the currently
                 # failed part's want block.
                 offset = self.failed_part.line_offset
-                offset += self.failed_part.n_exec_lines + 1
+                offset += self.failed_part.n_exec_lines
+                if self.failed_part.want is not None:
+                    offset += 1
 
             else:
                 # For ordinary execution exceptions, the relevant line may be

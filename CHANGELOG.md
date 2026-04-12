@@ -7,6 +7,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Version 1.3.3 - Unreleased
 
+### Added
+* Added `deferred_output_matching` and `optional_want` config knobs, plus CLI
+  flags, to opt into stdlib/doctest-like output semantics without changing the
+  default xdoctest behavior.
+
 ### Fixed
 * Fixed issue #181 where comment indentation could cause parsing issues.
 * Fix traceback rewriting for exceptions raised in earlier doctest parts
