@@ -319,6 +319,26 @@ def test_doctest_fails_because_ignore_want_clears_unmatched_stdout_v2() -> None:
         self.run(verbose=0, on_error='raise')
 
 
+def test_ignore_want_on_no_want_part_breaks_deferred_stdout_chain() -> None:
+    docsrc = utils.codeblock(
+        """
+        >>> print('prefix')
+        >>> print('ignored')  # xdoctest: +IGNORE_WANT
+        >>> print('suffix')
+        prefix
+        ignored
+        suffix
+        """
+    )
+    self = doctest_example.DocTest(docsrc=docsrc)
+    self._parse()
+
+    result = self.run(verbose=0, on_error='return')
+
+    assert result['failed']
+    assert not result['passed']
+
+
 def test_comment() -> None:
     docsrc = utils.codeblock(
         """

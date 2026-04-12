@@ -1390,11 +1390,10 @@ class DocTest:
         """
         if part.want is None:
             if runstate['IGNORE_WANT']:
-                # Bugfix in 1.3.3: ignored output from a no-want part is
-                # discarded rather than deferred to a later trailing match.
                 self._unmatched_stdout = []
             else:
                 assert got_stdout is not None
+                assert self._unmatched_stdout is not None
                 self._unmatched_stdout.append(got_stdout)
         else:
             assert got_stdout is not None
