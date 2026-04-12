@@ -178,9 +178,7 @@ class DoctestConfig(dict):
                     dest='deferred_output_matching',
                     action='store_false',
                     default=argparse.SUPPRESS,
-                    help=(
-                        'Disable deferred stdout matching between parts'
-                    ),
+                    help=('Disable deferred stdout matching between parts'),
                 ),
             ),
             (
@@ -363,9 +361,7 @@ def _doctest_requirement_satisfied(requirement_text: str) -> bool:
 
     if installed_version is None:
         return False
-    return requirement.specifier.contains(
-        installed_version, prereleases=True
-    )
+    return requirement.specifier.contains(installed_version, prereleases=True)
 
 
 class DocTest:
@@ -1262,9 +1258,7 @@ class DocTest:
 
                     if runstate['SKIP']:
                         if DEBUG:
-                            print(
-                                f'part[{partx}] skipped by module metadata'
-                            )
+                            print(f'part[{partx}] skipped by module metadata')
                         self._skipped_parts.append(part)
                         did_pre_import = True
                         continue

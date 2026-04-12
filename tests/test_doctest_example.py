@@ -260,16 +260,17 @@ def test_doctestconfig_cli_flags() -> None:
 
     parser = argparse.ArgumentParser()
     config._update_argparse_cli(parser.add_argument)
-    ns = parser.parse_args(
-        ['--no-optional-want', '--deferred-output-matching']
-    )
+    ns = parser.parse_args(['--no-optional-want', '--deferred-output-matching'])
     assert ns.optional_want is False
     assert ns.deferred_output_matching is True
 
     prefixed = argparse.ArgumentParser()
     config._update_argparse_cli(prefixed.add_argument, prefix=['xdoctest'])
     ns2 = prefixed.parse_args(
-        ['--xdoctest-no-optional-want', '--xdoctest-no-deferred-output-matching']
+        [
+            '--xdoctest-no-optional-want',
+            '--xdoctest-no-deferred-output-matching',
+        ]
     )
     assert ns2.xdoctest_optional_want is False
     assert ns2.xdoctest_deferred_output_matching is False
@@ -494,6 +495,7 @@ def test_doctest_fails_because_ignore_want_clears_unmatched_stdout_v1() -> None:
     # The idea here is that we shouldn't be able to match things before an
     # ignore, because it is cleared by the want.
     import pytest
+
     docsrc = utils.codeblock(
         """
         >>> print('prefix')
@@ -517,6 +519,7 @@ def test_doctest_fails_because_ignore_want_clears_unmatched_stdout_v2() -> None:
     # Similar idea to the v1 test, but this one would pass if the ignore was
     # removed.
     import pytest
+
     docsrc = utils.codeblock(
         """
         >>> print('prefix')

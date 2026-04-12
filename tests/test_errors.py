@@ -212,14 +212,15 @@ def test_optional_want_false_extracts_bad_repr() -> None:
     A no-want eval output should still report bad reprs through the existing
     got-repr failure machinery when optional_want is disabled.
     """
+
     class MyObj:
         def __repr__(self) -> str:
             raise Exception('this repr fails')
 
     source = utils.codeblock(
-        '''
+        """
         >>> obj
-        '''
+        """
     )
     self = doctest_example.DocTest(docsrc=source)
     self._parse()

@@ -440,7 +440,9 @@ def _float_cmp_match_tokens(
     got_tokens: list[tuple[str, str]],
     want_tokens: list[tuple[str, str]],
 ) -> bool:
-    def token_equal(got_token: tuple[str, str], want_token: tuple[str, str]) -> bool:
+    def token_equal(
+        got_token: tuple[str, str], want_token: tuple[str, str]
+    ) -> bool:
         gkind, gvalue = got_token
         wkind, wvalue = want_token
         if gkind != wkind:
@@ -455,7 +457,9 @@ def _float_cmp_match_tokens(
         while wi < len(want_tokens):
             wkind, _ = want_tokens[wi]
             if wkind == 'ellipsis':
-                while wi < len(want_tokens) and want_tokens[wi][0] == 'ellipsis':
+                while (
+                    wi < len(want_tokens) and want_tokens[wi][0] == 'ellipsis'
+                ):
                     wi += 1
                 if wi >= len(want_tokens):
                     return True

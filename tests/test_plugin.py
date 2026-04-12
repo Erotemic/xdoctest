@@ -427,7 +427,9 @@ class TestXDoctest:
         reprec = testdir.inline_run(p, '--xdoctest-modules', *EXTRA_ARGS)
         reprec.assertoutcome(skipped=1, failed=0, passed=0)
 
-    def test_xdoctest_optional_want_addopts(self, testdir: pytest.Testdir) -> None:
+    def test_xdoctest_optional_want_addopts(
+        self, testdir: pytest.Testdir
+    ) -> None:
         """Test prefixed config knobs in pytest addopts.
 
         CommandLine:
@@ -1558,7 +1560,9 @@ class TestXDoctestModuleMetadata:
         reprec = testdir.inline_run('--xdoctest-modules', *EXTRA_ARGS)
         reprec.assertoutcome(passed=1, skipped=2)
 
-    def test_doctestplus_requires_metadata(self, testdir: pytest.Testdir) -> None:
+    def test_doctestplus_requires_metadata(
+        self, testdir: pytest.Testdir
+    ) -> None:
         testdir.makepyfile(
             meta=utils.codeblock(
                 """
