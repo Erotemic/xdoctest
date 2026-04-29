@@ -78,20 +78,40 @@ def multiple_eval_for_loops_v2():
     """
 
 
-def compact_style_code():
+def top_level_async():
     """
-    This compact style is a bit ugly, but it should still be valid python
+    xdoctest supports top-level async examples.
 
-    Exception:
-        >>> try: raise Exception  # doctest: +ELLIPSIS
-        ... except Exception: raise
-        Traceback (most recent call last):
-        ...
-        Exception
-        ...
-
+    >>> async def func():
+    >>>     return 'awaited'
+    >>> await func()
+    'awaited'
     """
-    try:
-        raise Exception  # NOQA
-    except Exception:
-        pass  # NOQA
+
+
+def prefixed_triple_quotes():
+    """
+    >>> x = '''
+    >>> Prefixing every line with >>> is ok too
+    >>> even inside a string literal
+    >>> '''
+    >>> print(x.strip())
+    Prefixing every line with >>> is ok too
+    even inside a string literal
+    """
+    pass
+
+
+def assert_based_examples_can_ignore_stdout():
+    """
+    >>> print('debug output that is not part of the test')
+    >>> value = 1 + 1
+    >>> assert value == 2
+    """
+
+
+def block_directives():
+    """
+    >>> # xdoctest: +SKIP
+    >>> raise AssertionError('xdoctest skips this whole block')
+    """
