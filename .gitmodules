@@ -1,0 +1,3 @@
+[submodule "tpl/pytest-doctestplus"]
+	path = tpl/pytest-doctestplus
+	url = https://github.com/Erotemic/pytest-doctestplus.git
