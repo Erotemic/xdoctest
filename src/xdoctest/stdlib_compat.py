@@ -27,11 +27,94 @@ work needed.
 
 from __future__ import annotations
 
+import contextlib
 import doctest as _doctest
-from typing import Any, Iterable, Mapping, Optional
+import warnings
+from typing import Any, Callable, Iterable, Mapping, Optional
 
 from xdoctest import directive_facade
 from xdoctest.doctest_example import DocTest
+
+
+def _ignore_warnings_context():
+    cm = warnings.catch_warnings()
+    cm.__enter__()
+    warnings.simplefilter('ignore')
+
+    @contextlib.contextmanager
+    def _wrapper():
+        try:
+            yield
+        finally:
+            cm.__exit__(None, None, None)
+
+    return _wrapper()
+
+
+@contextlib.contextmanager
+def _show_warnings_context():
+    """
+    Capture warnings emitted while the body runs and print them after,
+    matching the surface of doctestplus' SHOW_WARNINGS context.
+    """
+    with warnings.catch_warnings(record=True) as captured:
+        warnings.simplefilter('always')
+        yield captured
+    for warn in captured:
+        category_name = getattr(
+            warn, '_category_name', warn.category.__name__
+        )
+        print(f'{category_name}: {warn.message}')
+
+
+class _WarningAwareDocTest(DocTest):
+    """
+    DocTest subclass that consults a per-part warning policy mapping at
+    execution time. The policy is keyed by example index (matching the
+    order of the inputs to :func:`from_examples`); it is *not* a property
+    of source rewriting, so line numbers and original source are preserved.
+    """
+
+    def __init__(self, *args, warning_policy_per_example=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._warning_policy_per_example = dict(
+            warning_policy_per_example or {}
+        )
+        # Built lazily on first call: maps part index -> policy string.
+        self._warning_policy_per_part: Optional[dict] = None
+
+    def _build_part_policy_map(self) -> dict:
+        """
+        Map xdoctest part index -> warning policy by re-using the docsrc
+        line_map produced at conversion time, which records which input
+        example each line of docsrc came from.
+        """
+        if not self._warning_policy_per_example:
+            return {}
+        # Force parse to populate _parts.
+        self._parse()
+        per_part: dict = {}
+        if self._parts is None:
+            return per_part
+        line_map = getattr(self, '_stdlib_compat_line_map', {}) or {}
+        for partx, part in enumerate(self._parts):
+            example_idx = line_map.get(part.line_offset)
+            if example_idx is None:
+                continue
+            policy = self._warning_policy_per_example.get(example_idx)
+            if policy is not None:
+                per_part[partx] = policy
+        return per_part
+
+    def _part_context(self, part, partx):
+        if self._warning_policy_per_part is None:
+            self._warning_policy_per_part = self._build_part_policy_map()
+        policy = self._warning_policy_per_part.get(partx)
+        if policy == 'ignore':
+            return _ignore_warnings_context()
+        if policy == 'show':
+            return _show_warnings_context()
+        return contextlib.nullcontext()
 
 
 def from_examples(
@@ -43,6 +126,7 @@ def from_examples(
     lineno: Optional[int] = None,
     optionflags: int = 0,
     config: Optional[Mapping[str, Any]] = None,
+    warning_policy: Optional[Callable[[int, Any], Optional[str]]] = None,
 ) -> DocTest:
     """
     Build a runnable xdoctest :class:`DocTest` from a sequence of stdlib-like
@@ -81,22 +165,51 @@ def from_examples(
     if globs is None:
         globs = {'__name__': '__main__'}
 
-    base, docsrc, _ = _build_docsrc(examples)
+    base, docsrc, line_map = _build_docsrc(examples)
     if lineno is None:
         lineno = base if base is not None else 0
+
+    # Compute per-example warning policies. The intake either accepts an
+    # explicit ``warning_policy`` callback or falls back to inspecting the
+    # standard doctestplus optionflag bits when present, so adopters that
+    # already encode warning semantics in ``Example.options`` get
+    # runner-level handling for free without rewriting source.
+    policy_per_example: dict = {}
+    for idx, ex in enumerate(examples):
+        policy = None
+        if warning_policy is not None:
+            policy = warning_policy(idx, ex)
+        if policy is None:
+            policy = _detect_warning_policy_from_options(ex)
+        if policy is not None:
+            policy_per_example[idx] = policy
 
     # Pass filename as ``fpath`` (display path) rather than ``modpath`` so we
     # don't force a stdlib-style modname lookup against the filesystem; the
     # input may be a ``.rst`` file or a synthetic name that doesn't resolve
     # to a Python module.
-    dtest = DocTest(
-        docsrc=docsrc,
-        modpath=None,
-        callname=name,
-        num=0,
-        lineno=lineno,
-        fpath=filename,
-    )
+    if policy_per_example:
+        dtest = _WarningAwareDocTest(
+            docsrc=docsrc,
+            modpath=None,
+            callname=name,
+            num=0,
+            lineno=lineno,
+            fpath=filename,
+            warning_policy_per_example=policy_per_example,
+        )
+    else:
+        dtest = DocTest(
+            docsrc=docsrc,
+            modpath=None,
+            callname=name,
+            num=0,
+            lineno=lineno,
+            fpath=filename,
+        )
+    # Stash the line_map on the DocTest so _WarningAwareDocTest can map
+    # docsrc-line -> input-example-index when building per-part policy.
+    dtest._stdlib_compat_line_map = line_map
     dtest.global_namespace = dict(globs)
 
     # Configure checker selection / persistent checker flags.
@@ -149,6 +262,29 @@ def from_stdlib_doctest(
         optionflags=optionflags,
         config=config,
     )
+
+
+def _detect_warning_policy_from_options(example) -> Optional[str]:
+    """
+    Inspect ``example.options`` for any optionflag whose name is one of the
+    well-known warning-policy names (``IGNORE_WARNINGS`` or ``SHOW_WARNINGS``).
+
+    Lookup is by name via ``doctest.OPTIONFLAGS_BY_NAME`` so we don't depend
+    on which third-party module first registered the flag — both stdlib
+    :func:`doctest.register_optionflag` and
+    :func:`xdoctest.register_optionflag` populate the same registry.
+    """
+    options = getattr(example, 'options', None) or {}
+    if not options:
+        return None
+    by_name = _doctest.OPTIONFLAGS_BY_NAME
+    ignore_flag = by_name.get('IGNORE_WARNINGS')
+    show_flag = by_name.get('SHOW_WARNINGS')
+    if ignore_flag is not None and options.get(ignore_flag):
+        return 'ignore'
+    if show_flag is not None and options.get(show_flag):
+        return 'show'
+    return None
 
 
 def _build_docsrc(examples):

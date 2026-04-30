@@ -904,6 +904,26 @@ class DocTest:
         for partno, part in enumerate(self._parts):
             part.partno = partno
 
+    def _part_context(self, part, partx):
+        """
+        Extension point: return a context manager that wraps the execution
+        of one doctest part.
+
+        Default returns a no-op. The :mod:`xdoctest.stdlib_compat` intake
+        seam overrides this to apply per-part warning policy without
+        rewriting the part's source — useful for tools (like
+        pytest_doctestplus) that want to honor doctestplus-style
+        ``IGNORE_WARNINGS`` / ``SHOW_WARNINGS`` semantics while keeping
+        line numbers pointing at the user's original code.
+
+        Args:
+            part: the :class:`xdoctest.doctest_part.DoctestPart` about to run.
+            partx (int): the part's index within ``self._parts``.
+        """
+        from contextlib import nullcontext
+
+        return nullcontext()
+
     def _import_module(self) -> None:
         """
         After this point we are in dynamic analysis mode, in most cases
@@ -1379,12 +1399,15 @@ class DocTest:
                                 asyncio_runner.close()
                             finally:
                                 asyncio_runner = None
-                        # Execute the doctest code
+                        # Execute the doctest code. ``_part_context`` is an
+                        # extension point used by the stdlib_compat intake
+                        # seam to apply per-part warning policy without
+                        # rewriting source. Default is a no-op.
                         try:
                             # NOTE: For code passed to eval or exec, there is no
                             # difference between locals and globals. Only pass in
                             # one dict, otherwise there is weird behavior
-                            with cap:
+                            with cap, self._part_context(part, partx):
                                 # We can execute each part using exec or eval.  If
                                 # a doctest part has `compile_mode=eval` we
                                 # expect it to return an object with a repr that
