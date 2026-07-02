@@ -230,6 +230,8 @@ IGNORE_OUTPUT = register_optionflag('IGNORE_OUTPUT', 'IGNORE_OUTPUT')
 IGNORE_WHITESPACE = register_optionflag('IGNORE_WHITESPACE', 'IGNORE_WHITESPACE')
 FLOAT_CMP = register_optionflag('FLOAT_CMP', 'FLOAT_CMP')
 NORMALIZE_REPR = register_optionflag('NORMALIZE_REPR', 'NORMALIZE_REPR')
+IGNORE_WARNINGS = register_optionflag('IGNORE_WARNINGS', 'IGNORE_WARNINGS')
+SHOW_WARNINGS = register_optionflag('SHOW_WARNINGS', 'SHOW_WARNINGS')
 
 
 __all__ = [
@@ -247,6 +249,8 @@ __all__ = [
     'IGNORE_WHITESPACE',
     'FLOAT_CMP',
     'NORMALIZE_REPR',
+    'IGNORE_WARNINGS',
+    'SHOW_WARNINGS',
     'register_optionflag',
     'runtime_state_to_optionflags',
     'optionflags_to_runtime_state',

@@ -33,38 +33,11 @@ import warnings
 from typing import Any, Callable, Iterable, Mapping, Optional
 
 from xdoctest import directive_facade
-from xdoctest.doctest_example import DocTest
-
-
-def _ignore_warnings_context():
-    cm = warnings.catch_warnings()
-    cm.__enter__()
-    warnings.simplefilter('ignore')
-
-    @contextlib.contextmanager
-    def _wrapper():
-        try:
-            yield
-        finally:
-            cm.__exit__(None, None, None)
-
-    return _wrapper()
-
-
-@contextlib.contextmanager
-def _show_warnings_context():
-    """
-    Capture warnings emitted while the body runs and print them after,
-    matching the surface of doctestplus' SHOW_WARNINGS context.
-    """
-    with warnings.catch_warnings(record=True) as captured:
-        warnings.simplefilter('always')
-        yield captured
-    for warn in captured:
-        category_name = getattr(
-            warn, '_category_name', warn.category.__name__
-        )
-        print(f'{category_name}: {warn.message}')
+from xdoctest.doctest_example import (
+    DocTest,
+    _ignore_warnings_context,
+    _show_warnings_context,
+)
 
 
 class _WarningAwareDocTest(DocTest):

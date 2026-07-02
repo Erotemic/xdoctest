@@ -33,6 +33,10 @@ The basic directives and their defaults are as follows:
 
     * ``FLOAT_CMP``: False,
 
+    * ``IGNORE_WARNINGS``: False,
+
+    * ``SHOW_WARNINGS``: False,
+
     * ``NORMALIZE_REPR``: True,
 
     * ``REPORT_CDIFF``: False,
@@ -205,6 +209,8 @@ class RuntimeStateDict(TypedDict, total=False):
     IGNORE_WANT: bool
     IGNORE_OUTPUT: bool
     FLOAT_CMP: bool
+    IGNORE_WARNINGS: bool
+    SHOW_WARNINGS: bool
     NORMALIZE_REPR: bool
     REPORT_CDIFF: bool
     REPORT_NDIFF: bool
@@ -227,6 +233,12 @@ DEFAULT_RUNTIME_STATE: RuntimeStateDict = {
     'IGNORE_WANT': False,
     'IGNORE_OUTPUT': False,
     'FLOAT_CMP': False,
+    # Runner-level warning policy. IGNORE_WARNINGS silences warnings emitted
+    # while a part executes; SHOW_WARNINGS captures them and prints
+    # "Category: message" lines into the part's output so they participate in
+    # got/want matching. IGNORE_WARNINGS takes precedence when both are set.
+    'IGNORE_WARNINGS': False,
+    'SHOW_WARNINGS': False,
     # 'IGNORE_MEASUREMENTS': False,
     # TODO: I want this flag to turn on normalization of numbers,
     # I.E: non-determenistic measurements do not cause doctest failure, but
@@ -293,6 +305,7 @@ class RuntimeState(utils.NiceRepr):
             IGNORE_EXCEPTION_DETAIL: False,
             IGNORE_OUTPUT: False,
             IGNORE_WANT: False,
+            IGNORE_WARNINGS: False,
             IGNORE_WHITESPACE: False,
             NORMALIZE_REPR: True,
             NORMALIZE_WHITESPACE: True,
@@ -300,6 +313,7 @@ class RuntimeState(utils.NiceRepr):
             REPORT_NDIFF: False,
             REPORT_UDIFF: True,
             REQUIRES: set(...),
+            SHOW_WARNINGS: False,
             SKIP: False
         })>
     """

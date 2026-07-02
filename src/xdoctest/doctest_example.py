@@ -6,6 +6,7 @@ from __future__ import annotations
 import __future__
 
 import ast
+import contextlib
 import math
 import os
 import re
@@ -340,6 +341,35 @@ class DoctestConfig(dict):
             return self[key]
         else:
             return given
+
+
+@contextlib.contextmanager
+def _ignore_warnings_context():
+    """
+    Silence warnings emitted while the body runs (the ``IGNORE_WARNINGS``
+    runtime directive).
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        yield
+
+
+@contextlib.contextmanager
+def _show_warnings_context():
+    """
+    Capture warnings emitted while the body runs and print them afterwards
+    as ``Category: message`` lines (the ``SHOW_WARNINGS`` runtime
+    directive). The prints land in the part's captured stdout, so shown
+    warnings participate in got/want matching.
+    """
+    with warnings.catch_warnings(record=True) as captured:
+        warnings.simplefilter('always')
+        yield
+    for warn in captured:
+        category_name = getattr(
+            warn, '_category_name', warn.category.__name__
+        )
+        print(f'{category_name}: {warn.message}')
 
 
 def _doctest_requirement_satisfied(requirement_text: str) -> bool:
@@ -906,23 +936,27 @@ class DocTest:
 
     def _part_context(self, part, partx):
         """
-        Extension point: return a context manager that wraps the execution
-        of one doctest part.
+        Return a context manager that wraps the execution of one doctest
+        part, applying the runtime warning policy.
 
-        Default returns a no-op. The :mod:`xdoctest.stdlib_compat` intake
-        seam overrides this to apply per-part warning policy without
-        rewriting the part's source — useful for tools (like
-        pytest_doctestplus) that want to honor doctestplus-style
-        ``IGNORE_WARNINGS`` / ``SHOW_WARNINGS`` semantics while keeping
-        line numbers pointing at the user's original code.
+        When ``IGNORE_WARNINGS`` is active for the part, warnings emitted
+        during execution are silenced. When ``SHOW_WARNINGS`` is active,
+        warnings are captured and printed as ``Category: message`` lines
+        into the part's output so they participate in got/want matching.
+        Both are applied at the runner level — the part's source is never
+        rewritten, so failure line numbers always point at user code.
 
         Args:
             part: the :class:`xdoctest.doctest_part.DoctestPart` about to run.
             partx (int): the part's index within ``self._parts``.
         """
-        from contextlib import nullcontext
-
-        return nullcontext()
+        runstate = self._runstate
+        if runstate is not None:
+            if runstate['IGNORE_WARNINGS']:
+                return _ignore_warnings_context()
+            if runstate['SHOW_WARNINGS']:
+                return _show_warnings_context()
+        return contextlib.nullcontext()
 
     def _import_module(self) -> None:
         """

@@ -10,6 +10,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 * doctestplus compatibility with `FLOAT_CMP`, `IGNORE_OUTPUT` directives and
   `__doctest_skip__`, `__doctest_requires__` module level special vars. 
+* New `IGNORE_WARNINGS` and `SHOW_WARNINGS` runtime directives. Warning policy
+  is applied at the runner level (no source rewriting), so failure line
+  numbers always point at user code.
 * Added `deferred_output_matching` and `optional_want` config knobs, plus CLI
   flags, to opt into stdlib/doctest-like output semantics without changing the
   default xdoctest behavior.
