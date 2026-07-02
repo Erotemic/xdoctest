@@ -12,82 +12,36 @@ not import or know about any specific tool. It accepts any sequence of
 example-like objects with the standard ``source``, ``want``, ``lineno``,
 ``options`` shape.
 
-Line numbers are preserved by reconstructing a ``>>>``-prefixed doctest source
-string with blank-line padding so that the first example's line in the
-synthesized source matches its original ``lineno`` offset, and the
-``DocTest.lineno`` is set to that base. xdoctest's parser then assigns each
-part a ``line_offset`` such that
-``dtest.lineno + part.line_offset == original_file_line``.
+Fidelity guarantees:
 
-Where additional precision is desired (e.g. multi-line PS1/PS2 statements
-that would otherwise collapse to start-of-Example), xdoctest's parser is
-already statement-aware once it parses the reconstructed source — no extra
-work needed.
+- **Line numbers**: the reconstructed docsrc pads with blank lines so that
+  each example's prompt line matches its original ``lineno`` offset, and
+  ``DocTest.lineno`` is set to the first example's base line. xdoctest's
+  parser then assigns each part a ``line_offset`` such that
+  ``dtest.lineno + part.line_offset == original_file_line``.
+- **Source content**: example source is carried verbatim (only the standard
+  ``>>> `` / ``... `` prompts are re-added). Per-example semantics from
+  ``Example.options`` are attached to the parsed parts as *structured*
+  :class:`~xdoctest.directive.Directive` objects — never by injecting
+  directive comments into the source text.
+
+Option semantics flow through one channel: each named stdlib optionflag in
+``Example.options`` becomes a per-part directive. Flags whose names match
+xdoctest runtime-state keys (``SKIP``, ``ELLIPSIS``, ``IGNORE_WARNINGS``,
+...) modify the structured runtime state; any other *named* flag is adopted
+as a checker-only optionflag and delivered to the active output checker via
+the standard ``flags`` argument. Since consecutive want-less examples merge
+into a single xdoctest part, per-example options apply at part granularity.
 """
 
 from __future__ import annotations
 
-import contextlib
+import bisect
 import doctest as _doctest
-import warnings
-from typing import Any, Callable, Iterable, Mapping, Optional
+from typing import Any, Iterable, Mapping, Optional
 
-from xdoctest import directive_facade
-from xdoctest.doctest_example import (
-    DocTest,
-    _ignore_warnings_context,
-    _show_warnings_context,
-)
-
-
-class _WarningAwareDocTest(DocTest):
-    """
-    DocTest subclass that consults a per-part warning policy mapping at
-    execution time. The policy is keyed by example index (matching the
-    order of the inputs to :func:`from_examples`); it is *not* a property
-    of source rewriting, so line numbers and original source are preserved.
-    """
-
-    def __init__(self, *args, warning_policy_per_example=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._warning_policy_per_example = dict(
-            warning_policy_per_example or {}
-        )
-        # Built lazily on first call: maps part index -> policy string.
-        self._warning_policy_per_part: Optional[dict] = None
-
-    def _build_part_policy_map(self) -> dict:
-        """
-        Map xdoctest part index -> warning policy by re-using the docsrc
-        line_map produced at conversion time, which records which input
-        example each line of docsrc came from.
-        """
-        if not self._warning_policy_per_example:
-            return {}
-        # Force parse to populate _parts.
-        self._parse()
-        per_part: dict = {}
-        if self._parts is None:
-            return per_part
-        line_map = getattr(self, '_stdlib_compat_line_map', {}) or {}
-        for partx, part in enumerate(self._parts):
-            example_idx = line_map.get(part.line_offset)
-            if example_idx is None:
-                continue
-            policy = self._warning_policy_per_example.get(example_idx)
-            if policy is not None:
-                per_part[partx] = policy
-        return per_part
-
-    def _part_context(self, part, partx):
-        if self._warning_policy_per_part is None:
-            self._warning_policy_per_part = self._build_part_policy_map()
-        policy = self._warning_policy_per_part.get(partx)
-        if policy == 'ignore':
-            return _ignore_warnings_context()
-        if policy == 'show':
-            return _show_warnings_context()
-        return contextlib.nullcontext()
+from xdoctest import directive, directive_facade
+from xdoctest.doctest_example import DocTest
 
 
 def from_examples(
@@ -99,7 +53,6 @@ def from_examples(
     lineno: Optional[int] = None,
     optionflags: int = 0,
     config: Optional[Mapping[str, Any]] = None,
-    warning_policy: Optional[Callable[[int, Any], Optional[str]]] = None,
 ) -> DocTest:
     """
     Build a runnable xdoctest :class:`DocTest` from a sequence of stdlib-like
@@ -117,72 +70,42 @@ def from_examples(
         lineno: explicit base line number. If ``None``, the first example's
             ``lineno`` is used so that ``dtest.lineno + part.line_offset``
             recovers absolute file line numbers.
-        optionflags: stdlib-doctest optionflags ``int``. Bits that map to
-            xdoctest builtin flags are translated into runtime state defaults;
-            the rest are kept as checker-only optionflag bits and delivered
-            to the active output checker.
-        config: optional mapping of doctestplus-style :class:`DoctestConfig`
-            keys to merge into the resulting ``DocTest.config``. Most useful
-            for setting ``output_checker`` to select a registered checker.
+        optionflags: stdlib-doctest optionflags ``int`` applying to the whole
+            test. Bits that map to xdoctest builtin flags are translated into
+            runtime state defaults; the rest are kept as checker-only
+            optionflag bits and delivered to the active output checker.
+        config: optional mapping of :class:`DoctestConfig` keys to merge into
+            the resulting ``DocTest.config``. Most useful for setting
+            ``output_checker`` to select a registered checker.
 
     Returns:
         DocTest: configured to run via :meth:`DocTest.run`.
 
     Notes:
-        Examples whose ``options[doctest.SKIP]`` is ``True`` are encoded as
-        an inline ``# xdoctest: +SKIP`` directive on the example's first
-        source line. Other registered checker-only flags work analogously
-        when explicitly passed via ``optionflags``.
+        Per-example ``options`` are attached as structured per-part
+        directives (see module docstring); the source text is never
+        rewritten.
     """
     examples = list(examples)
     if globs is None:
         globs = {'__name__': '__main__'}
 
-    base, docsrc, line_map = _build_docsrc(examples)
+    base, docsrc, example_starts = _build_docsrc(examples)
     if lineno is None:
         lineno = base if base is not None else 0
-
-    # Compute per-example warning policies. The intake either accepts an
-    # explicit ``warning_policy`` callback or falls back to inspecting the
-    # standard doctestplus optionflag bits when present, so adopters that
-    # already encode warning semantics in ``Example.options`` get
-    # runner-level handling for free without rewriting source.
-    policy_per_example: dict = {}
-    for idx, ex in enumerate(examples):
-        policy = None
-        if warning_policy is not None:
-            policy = warning_policy(idx, ex)
-        if policy is None:
-            policy = _detect_warning_policy_from_options(ex)
-        if policy is not None:
-            policy_per_example[idx] = policy
 
     # Pass filename as ``fpath`` (display path) rather than ``modpath`` so we
     # don't force a stdlib-style modname lookup against the filesystem; the
     # input may be a ``.rst`` file or a synthetic name that doesn't resolve
     # to a Python module.
-    if policy_per_example:
-        dtest = _WarningAwareDocTest(
-            docsrc=docsrc,
-            modpath=None,
-            callname=name,
-            num=0,
-            lineno=lineno,
-            fpath=filename,
-            warning_policy_per_example=policy_per_example,
-        )
-    else:
-        dtest = DocTest(
-            docsrc=docsrc,
-            modpath=None,
-            callname=name,
-            num=0,
-            lineno=lineno,
-            fpath=filename,
-        )
-    # Stash the line_map on the DocTest so _WarningAwareDocTest can map
-    # docsrc-line -> input-example-index when building per-part policy.
-    dtest._stdlib_compat_line_map = line_map
+    dtest = DocTest(
+        docsrc=docsrc,
+        modpath=None,
+        callname=name,
+        num=0,
+        lineno=lineno,
+        fpath=filename,
+    )
     dtest.global_namespace = dict(globs)
 
     # Configure checker selection / persistent checker flags.
@@ -202,6 +125,7 @@ def from_examples(
         dtest.config['default_runtime_state'] = defaults
         dtest.config['output_checker_flags'] = int(optionflags)
 
+    _attach_option_directives(dtest, examples, example_starts)
     return dtest
 
 
@@ -237,79 +161,120 @@ def from_stdlib_doctest(
     )
 
 
-def _detect_warning_policy_from_options(example) -> Optional[str]:
-    """
-    Inspect ``example.options`` for any optionflag whose name is one of the
-    well-known warning-policy names (``IGNORE_WARNINGS`` or ``SHOW_WARNINGS``).
-
-    Lookup is by name via ``doctest.OPTIONFLAGS_BY_NAME`` so we don't depend
-    on which third-party module first registered the flag — both stdlib
-    :func:`doctest.register_optionflag` and
-    :func:`xdoctest.register_optionflag` populate the same registry.
-    """
-    options = getattr(example, 'options', None) or {}
-    if not options:
-        return None
-    by_name = _doctest.OPTIONFLAGS_BY_NAME
-    ignore_flag = by_name.get('IGNORE_WARNINGS')
-    show_flag = by_name.get('SHOW_WARNINGS')
-    if ignore_flag is not None and options.get(ignore_flag):
-        return 'ignore'
-    if show_flag is not None and options.get(show_flag):
-        return 'show'
-    return None
-
-
 def _build_docsrc(examples):
     """
     Reconstruct a ``>>>``-prefixed doctest source string from stdlib-shaped
     examples, padding with blank lines so each example's prompt line in the
     reconstructed source mirrors its original ``Example.lineno`` offset.
 
-    Returns ``(base_lineno, docsrc, line_map)`` where:
+    Returns ``(base_lineno, docsrc, example_starts)`` where:
 
     - ``base_lineno`` is the lineno of the first example (the offset that
       should be passed to :class:`DocTest.lineno` so absolute file lines can
       be recovered), or ``None`` if no examples were provided.
     - ``docsrc`` is the reconstructed source.
-    - ``line_map`` maps each rebuilt-source line index to the original
-      example index it came from (for diagnostics).
+    - ``example_starts`` is a list of ``(docsrc_line, example_index)`` pairs
+      recording where each example's source begins in the rebuilt docsrc.
     """
     if not examples:
-        return None, '', {}
+        return None, '', []
 
     base = examples[0].lineno
     lines: list[str] = []
-    line_map: dict[int, Optional[int]] = {}
+    example_starts: list[tuple[int, int]] = []
     cursor = 0
 
     for idx, ex in enumerate(examples):
         target = (ex.lineno or 0) - base
         # Pad blank lines so the prompt aligns with the original lineno.
         while cursor < target:
-            line_map[cursor] = None
             lines.append('')
             cursor += 1
 
-        is_skip = bool((getattr(ex, 'options', None) or {}).get(_doctest.SKIP))
-
+        example_starts.append((cursor, idx))
         src_lines = (ex.source or '').splitlines() or ['']
         for i, line in enumerate(src_lines):
             prefix = '>>> ' if i == 0 else '... '
-            text = prefix + line
-            if i == 0 and is_skip:
-                text = text.rstrip() + '  # xdoctest: +SKIP'
-            line_map[cursor] = idx
-            lines.append(text)
+            lines.append(prefix + line)
             cursor += 1
 
         if ex.want:
             for w in ex.want.splitlines():
-                line_map[cursor] = idx
                 lines.append(w)
                 cursor += 1
 
-    return base, '\n'.join(lines), line_map
+    return base, '\n'.join(lines), example_starts
+
+
+def _attach_option_directives(dtest, examples, example_starts):
+    """
+    Translate per-example ``options`` dicts into structured per-part
+    directives on the parsed :class:`DocTest`.
+
+    xdoctest may merge consecutive want-less examples into one part, so each
+    part collects the options of every example whose source starts within
+    its line span (later examples win on conflicting flags).
+    """
+    if not example_starts:
+        return
+    if not any(getattr(examples[idx], 'options', None) for _, idx in example_starts):
+        return
+
+    dtest._parse()
+    parts = dtest._parts or []
+    if not parts:
+        return
+
+    part_offsets = [part.line_offset for part in parts]
+    examples_by_part: dict[int, list[int]] = {}
+    for start_line, ex_idx in example_starts:
+        partx = bisect.bisect_right(part_offsets, start_line) - 1
+        if partx < 0:
+            continue
+        examples_by_part.setdefault(partx, []).append(ex_idx)
+
+    for partx, ex_idxs in examples_by_part.items():
+        merged: dict = {}
+        for ex_idx in ex_idxs:
+            merged.update(getattr(examples[ex_idx], 'options', None) or {})
+        extra = _options_to_directives(merged)
+        if extra:
+            part = parts[partx]
+            # Preserve directives written inline in the original source;
+            # structured options come after so they win on conflict.
+            part._directives = list(part.directives) + extra
+
+
+def _options_to_directives(options):
+    """
+    Convert a stdlib-style ``{flag_bit: bool}`` options dict into a list of
+    per-part (inline) :class:`~xdoctest.directive.Directive` objects.
+
+    Unnamed bits are silently dropped (they cannot be expressed); named bits
+    unknown to xdoctest are adopted as checker-only optionflags.
+    """
+    if not options:
+        return []
+    names_by_bit = {
+        bit: name for name, bit in _doctest.OPTIONFLAGS_BY_NAME.items()
+    }
+    directives = []
+    for flag, value in options.items():
+        name = names_by_bit.get(flag)
+        if name is None:
+            continue
+        name = name.upper()
+        if (
+            name not in directive.COMMANDS
+            and not directive_facade.is_registered_optionflag(name)
+        ):
+            # Adopt any stdlib-registered flag so the directive system can
+            # carry it through to the output checker as a checker-only bit.
+            directive_facade.register_optionflag(name)
+        directives.append(
+            directive.Directive(name, positive=bool(value), inline=True)
+        )
+    return directives
 
 
 __all__ = [

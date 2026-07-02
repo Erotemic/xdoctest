@@ -110,46 +110,43 @@ def test_failure_inside_warning_context_points_at_user_code_line():
     assert dtest.failed_part.line_offset == 0
 
 
-def test_warning_policy_callback_overrides_options():
-    """
-    The explicit ``warning_policy`` callback wins over flag-bit detection,
-    so adopters can plug in semantic policy without depending on stdlib
-    optionflag conventions.
-    """
-    examples = [
-        doctest.Example(
-            source='import warnings; warnings.warn("xx")\n',
-            want='',
-            lineno=0,
-            options={},
-        )
-    ]
-    seen = []
-
-    def policy(idx, ex):
-        seen.append(idx)
-        return 'ignore'
-
-    dtest = stdlib_compat.from_examples(
-        examples, name='t', warning_policy=policy
-    )
-    import warnings as _warnings
-
-    with _warnings.catch_warnings(record=True) as record:
-        _warnings.simplefilter('always')
-        result = dtest.run(verbose=0, on_error='return')
-    assert seen == [0]
-    assert result['passed']
-    assert not [w for w in record if 'xx' in str(w.message)]
-
-
 def test_no_warning_policy_uses_default_no_op_context():
     examples = [
         doctest.Example(source='print(1)\n', want='1\n', lineno=0),
     ]
     dtest = stdlib_compat.from_examples(examples, name='t')
-    # Default DocTest's _part_context returns nullcontext — verify by type.
+    # Without an active runstate (or warning flags) _part_context is a no-op.
     from contextlib import nullcontext
 
     cm = dtest._part_context(None, 0)
     assert isinstance(cm, type(nullcontext()))
+
+
+def test_warning_policy_is_per_part():
+    """
+    Warning flags on one example must not leak into other examples: the
+    second part emits a warning without any flag, so it must escape to the
+    ambient recorder while the first part's warning is silenced.
+    """
+    ignore_flag, _ = _register_warning_flags()
+    examples = [
+        doctest.Example(
+            source='import warnings; warnings.warn("quiet")\n',
+            want='',
+            lineno=0,
+            options={ignore_flag: True},
+        ),
+        doctest.Example(
+            source='import warnings; warnings.warn("loud")\n',
+            want='',
+            lineno=2,
+            options={},
+        ),
+    ]
+    dtest = stdlib_compat.from_examples(examples, name='t')
+    result = dtest.run(verbose=0, on_error='return')
+    assert result['passed'], result
+    # The runner records warnings that escape the parts in dtest.warn_list.
+    messages = [str(w.message) for w in (dtest.warn_list or [])]
+    assert not any('quiet' in m for m in messages)
+    assert any('loud' in m for m in messages)

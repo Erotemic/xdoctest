@@ -64,6 +64,61 @@ def test_skip_option_is_honored():
     assert result['passed']
 
 
+def test_skip_option_does_not_rewrite_source():
+    """
+    SKIP is attached as a structured per-part directive; the reconstructed
+    source must stay byte-identical to what the user wrote.
+    """
+    examples = [
+        doctest.Example(
+            source='raise RuntimeError("should not run")\n',
+            want='',
+            lineno=0,
+            options={doctest.SKIP: True},
+        ),
+    ]
+    dtest = stdlib_compat.from_examples(examples, name='t')
+    assert 'xdoctest' not in dtest.docsrc
+    assert 'SKIP' not in dtest.docsrc
+
+
+def test_per_example_option_applies_to_matching_part_only():
+    """
+    A checker-only flag set on one example must reach the checker for that
+    part but not for other parts.
+    """
+    part_flag = xdoctest.register_optionflag('PART_LOCAL_INTAKE')
+
+    seen: list[int] = []
+
+    class Recorder(doctest.OutputChecker):
+        def check_output(self, want, got, flags):
+            seen.append(flags)
+            return xdoctest.OutputChecker().check_output(want, got, flags)
+
+    xdoctest.register_checker('part_local_recorder', Recorder)
+
+    examples = [
+        doctest.Example(
+            source='print(1)\n',
+            want='1\n',
+            lineno=0,
+            options={part_flag: True},
+        ),
+        doctest.Example(source='print(2)\n', want='2\n', lineno=2),
+    ]
+    dtest = stdlib_compat.from_examples(
+        examples,
+        name='t',
+        config={'output_checker': 'part_local_recorder'},
+    )
+    result = dtest.run(verbose=0, on_error='return')
+    assert result['passed']
+    assert len(seen) >= 2
+    assert seen[0] & part_flag
+    assert not (seen[-1] & part_flag)
+
+
 def test_registered_checker_only_flag_flows_through():
     fix_flag = xdoctest.register_optionflag('FIX_INTAKE')
 
