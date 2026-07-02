@@ -832,3 +832,40 @@ if __name__ == '__main__':
     import xdoctest
 
     xdoctest.doctest_module(__file__)
+
+
+def test_requirement_check_without_packaging(monkeypatch):
+    """
+    Without the optional ``packaging`` dependency, bare-name requirements
+    still work; constrained requirements warn and count as unsatisfied
+    (skip) instead of raising.
+    """
+    import warnings
+    from xdoctest import doctest_example as mod
+
+    monkeypatch.setattr(mod, 'Requirement', None)
+    assert mod._doctest_requirement_satisfied('os')
+    assert not mod._doctest_requirement_satisfied(
+        'definitely_missing_package_123456'
+    )
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter('always')
+        assert not mod._doctest_requirement_satisfied('pytest>=1')
+    assert any('packaging is required' in str(w.message) for w in record)
+
+
+def test_static_module_metadata_is_cached(tmp_path):
+    from xdoctest import doctest_example as mod
+
+    fpath = tmp_path / 'mymod.py'
+    fpath.write_text(
+        '__doctest_skip__ = ["skip_me"]\n'
+        '__doctest_requires__ = {"needs_os": ["os"]}\n'
+    )
+    mod._static_module_doctest_metadata.cache_clear()
+    first = mod._static_module_doctest_metadata(str(fpath))
+    second = mod._static_module_doctest_metadata(str(fpath))
+    assert first == (['skip_me'], {'needs_os': ['os']})
+    assert second is first
+    info = mod._static_module_doctest_metadata.cache_info()
+    assert info.hits == 1

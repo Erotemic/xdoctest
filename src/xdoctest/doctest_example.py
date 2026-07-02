@@ -7,6 +7,7 @@ import __future__
 
 import ast
 import contextlib
+import functools
 import math
 import os
 import re
@@ -372,9 +373,34 @@ def _show_warnings_context():
         print(f'{category_name}: {warn.message}')
 
 
+# Matches a bare distribution/module name (no version specifier), which can
+# be evaluated without the optional ``packaging`` dependency.
+_BARE_REQUIREMENT_RE = re.compile(r'^[A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?$')
+
+
+def _distribution_or_module_exists(name: str) -> bool:
+    try:
+        importlib_metadata_compat.version(name)
+    except Exception:
+        pass
+    else:
+        return True
+    from importlib.util import find_spec
+
+    try:
+        return find_spec(name) is not None
+    except (ImportError, ValueError):
+        return False
+
+
 def _doctest_requirement_satisfied(requirement_text: str) -> bool:
     """
     Return True when a doctestplus-style requirement is satisfied.
+
+    Bare names are checked against installed distributions and importable
+    modules and do not need ``packaging``. Requirements with version
+    specifiers need the optional ``packaging`` dependency; without it they
+    are treated as unsatisfied (skip) with a warning rather than erroring.
 
     Example:
         >>> from xdoctest.doctest_example import _doctest_requirement_satisfied
@@ -398,9 +424,15 @@ def _doctest_requirement_satisfied(requirement_text: str) -> bool:
         ValueError: Invalid __doctest_requires__ requirement: 'bad requirement'
     """
     if Requirement is None:
-        raise ImportError(
-            'packaging is required to evaluate __doctest_requires__'
+        text = requirement_text.strip()
+        if _BARE_REQUIREMENT_RE.match(text):
+            return _distribution_or_module_exists(text)
+        warnings.warn(
+            'packaging is required to evaluate the constrained '
+            '__doctest_requires__ requirement {!r}; treating it as '
+            'unsatisfied'.format(requirement_text)
         )
+        return False
 
     try:
         requirement = Requirement(requirement_text)
@@ -419,13 +451,35 @@ def _doctest_requirement_satisfied(requirement_text: str) -> bool:
     if not requirement.specifier:
         if installed_version is not None:
             return True
-        from importlib.util import find_spec
-
-        return find_spec(requirement.name) is not None
+        return _distribution_or_module_exists(requirement.name)
 
     if installed_version is None:
         return False
     return requirement.specifier.contains(installed_version, prereleases=True)
+
+
+@functools.lru_cache(maxsize=None)
+def _static_module_doctest_metadata(modpath: str):
+    """
+    Statically parse ``__doctest_skip__`` and ``__doctest_requires__`` from a
+    module file. Cached per path because a module commonly holds many
+    doctests and static parsing is comparatively expensive.
+
+    Returns:
+        Tuple[Any, Any]: ``(skip_spec, requires_spec)``
+    """
+    values = []
+    for key in ['__doctest_skip__', '__doctest_requires__']:
+        try:
+            value = static.parse_static_value(key, fpath=modpath)
+        except NameError:
+            value = None
+        except Exception as ex:
+            raise ValueError(
+                'Failed to read {!r} from {!r}: {}'.format(key, modpath, ex)
+            )
+        values.append(value)
+    return tuple(values)
 
 
 class DocTest:
@@ -634,6 +688,10 @@ class DocTest:
         self.logged_stdout = OrderedDict()
         self._unmatched_stdout = []
         self._skipped_parts = []
+
+        # Human-readable reason when module-level doctest metadata
+        # (__doctest_skip__ / __doctest_requires__) caused a skip.
+        self._metadata_skip_reason = None
 
         self._runstate = None
 
@@ -1111,32 +1169,24 @@ class DocTest:
             if isinstance(modpath, (str, os.PathLike)) and os.path.exists(
                 modpath
             ):
-                for key in ['__doctest_skip__', '__doctest_requires__']:
-                    try:
-                        value = static.parse_static_value(
-                            key, fpath=os.fspath(modpath)
-                        )
-                    except NameError:
-                        value = None
-                    except Exception as ex:
-                        raise ValueError(
-                            'Failed to read {!r} from {!r}: {}'.format(
-                                key, modpath, ex
-                            )
-                        )
-                    if key == '__doctest_skip__':
-                        skip_spec = value
-                    else:
-                        requires_spec = value
+                skip_spec, requires_spec = _static_module_doctest_metadata(
+                    os.fspath(modpath)
+                )
 
         if skip_spec is not None and self._matches_doctest_skip(skip_spec):
             runstate['SKIP'] = True
+            self._metadata_skip_reason = 'listed in `__doctest_skip__`'
             return
 
-        if requires_spec is not None and not self._module_requires_satisfied(
-            requires_spec
-        ):
-            runstate['SKIP'] = True
+        if requires_spec is not None:
+            unmet = self._unmet_module_requirement(requires_spec)
+            if unmet is not None:
+                runstate['SKIP'] = True
+                self._metadata_skip_reason = (
+                    'unmet `__doctest_requires__` requirement: {!r}'.format(
+                        unmet
+                    )
+                )
 
     def _matches_doctest_skip(self, skip_spec: Any) -> bool:
         if isinstance(skip_spec, str):
@@ -1161,7 +1211,11 @@ class DocTest:
                 return True
         return False
 
-    def _module_requires_satisfied(self, requires_spec: Any) -> bool:
+    def _unmet_module_requirement(self, requires_spec: Any) -> str | None:
+        """
+        Return the first unmet ``__doctest_requires__`` requirement that
+        applies to this doctest, or ``None`` when everything is satisfied.
+        """
         if not isinstance(requires_spec, dict):
             raise ValueError(
                 '__doctest_requires__ must be a dictionary of patterns to requirements'
@@ -1197,9 +1251,9 @@ class DocTest:
                         '__doctest_requires__ requirements must be strings'
                     )
                 if not _doctest_requirement_satisfied(req_text):
-                    return False
+                    return req_text
 
-        return True
+        return None
 
     def run(
         self, verbose: int | None | bool = None, on_error: str | None = None
@@ -1234,6 +1288,7 @@ class DocTest:
 
         self._skipped_parts = []
         self.exc_info = None
+        self._metadata_skip_reason = None
         self._suppressed_stdout = verbose <= 1
 
         # Reset traceback bookkeeping from any prior run.
@@ -1676,7 +1731,10 @@ class DocTest:
             if self.mode == 'pytest':
                 import pytest
 
-                pytest.skip()
+                if self._metadata_skip_reason is not None:
+                    pytest.skip(self._metadata_skip_reason)
+                else:
+                    pytest.skip()
 
         summary = self._post_run(verbose)
 
