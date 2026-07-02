@@ -3,69 +3,66 @@
 This demo proves that `pytest --doctest-plus --doctest-plus-backend=xdoctest`:
 
 1. Keeps doctestplus collection: RST directives, `__doctest_skip__`,
-   `__doctest_requires__`, the doctestplus output checker (FIX, FLOAT_CMP,
-   IGNORE_OUTPUT, ALLOW_BYTES, ...).
-2. Delegates execution to xdoctest's runner so failure reporting, async,
-   and `# xdoctest: +DIRECTIVES` work natively.
+   `__doctest_requires__`, and the doctestplus output checker (FIX,
+   FLOAT_CMP, IGNORE_OUTPUT, ALLOW_BYTES, ...).
+2. Delegates execution to xdoctest's runner so failure reporting, async, and
+   `# xdoctest: +DIRECTIVES` work natively — without rewriting example
+   source or monkeypatching `doctest.OutputChecker`.
 
 ## Run
 
 From the xdoctest repo root:
 
-```
-# Default stdlib backend (unchanged behavior)
-pytest --doctest-plus dev/examples/doctestplus_backend_demo/sample_pkg/
+```bash
+# Default stdlib backend (historical doctestplus behavior)
+pytest dev/examples/doctestplus_backend_demo/sample_pkg/ -rs
 
 # Opt in to the xdoctest backend
-pytest --doctest-plus --doctest-plus-backend=xdoctest dev/examples/doctestplus_backend_demo/sample_pkg/
+pytest dev/examples/doctestplus_backend_demo/sample_pkg/ \
+    --doctest-plus-backend=xdoctest -rs
 ```
 
-Both invocations should pass the same collected tests. The xdoctest path
-exercises:
-
-- A doctestplus checker flag (`# doctest: +FIX`) on a `.py` doctest, which
-  proves the doctestplus checker is wired into xdoctest's runner.
-- An RST narrative file with a `.. doctest-skip::` directive, which proves
-  doctestplus' RST parsing still drives skip semantics under the xdoctest
-  backend.
-- A module-level `__doctest_skip__` to confirm doctestplus' module-level
-  filters still apply.
+Both invocations collect and run the same tests with the same outcomes. The
+directory contains a local `pytest.ini` (`--doctest-plus --doctest-glob=*.rst`)
+so the parent xdoctest project's `--xdoctest` default doesn't apply.
 
 ## What you should see
 
 ```
-$ cd dev/examples/doctestplus_backend_demo && pytest sample_pkg/
-collected 4 items
+$ pytest sample_pkg/ -rs
+collected 5 items
 sample_pkg/mod.py::sample_pkg.mod.fix_me PASSED
 sample_pkg/mod.py::sample_pkg.mod.float_cmp PASSED
+sample_pkg/mod.py::sample_pkg.mod.ignore_warnings PASSED
 sample_pkg/mod.py::sample_pkg.mod.skip_me SKIPPED (listed in `__doctest_skip__`)
 sample_pkg/narrative.rst::narrative.rst PASSED
 
-$ cd dev/examples/doctestplus_backend_demo && pytest sample_pkg/ --doctest-plus-backend=xdoctest
-collected 4 items
+$ pytest sample_pkg/ --doctest-plus-backend=xdoctest -rs
+collected 5 items
 sample_pkg/mod.py::sample_pkg.mod.fix_me PASSED
 sample_pkg/mod.py::sample_pkg.mod.float_cmp PASSED
-sample_pkg/mod.py::sample_pkg.mod.skip_me PASSED   # see note below
+sample_pkg/mod.py::sample_pkg.mod.ignore_warnings PASSED
+sample_pkg/mod.py::sample_pkg.mod.skip_me SKIPPED (listed in `__doctest_skip__`)
 sample_pkg/narrative.rst::narrative.rst PASSED
 ```
 
-The directory contains a local `pytest.ini` so the parent xdoctest project's
-`--xdoctest` default doesn't apply.
+The two runs are outcome-identical. Under the xdoctest backend:
 
-**Note on skip reporting:** Under the xdoctest backend, doctestplus' module-
-level `__doctest_skip__` still prevents the body from executing — but
-xdoctest's runner reports the synthetic `pytest.skip()` example as a graceful
-test exit ("PASSED") rather than as a pytest skip outcome. The user's
-intent is honored (the failing body never runs); only the reporting label
-differs. Translating xdoctest's exit-test outcome to a pytest skip is a
-follow-up.
+- `fix_me` proves the doctestplus output checker (`+FIX`) is wired into
+  xdoctest's runner via `pytest_doctestplus.xdoctest_compat`.
+- `float_cmp` proves `+FLOAT_CMP` matching works.
+- `ignore_warnings` proves warning policy is honored — by xdoctest's runner,
+  without rewriting the example source.
+- `skip_me` proves module-level `__doctest_skip__` is honored *and reported
+  as a proper pytest skip with a reason* (not silently passed).
+- `narrative.rst` proves doctestplus' RST directive language
+  (`.. doctest-skip::`) still drives skip semantics while xdoctest executes.
 
-**Important:** Always run pytest with the directory as the argument, not a
-single `.rst` file. When an `.rst` file is the init path, xdoctest's textfile
-collector grabs it before doctestplus does, bypassing the RST directive
-language.
+## Notes
 
-The `skip_me` skip comes from `__doctest_skip__`; the rst test passes because
-its inner skip directive is honored by doctestplus' parser; the FIX checker
-flag is provided by the doctestplus output checker now plugged into xdoctest's
-matcher via the `register_with_xdoctest()` helper.
+- The RST file works whether you point pytest at the directory or at the
+  `.rst` file directly: when doctestplus is active, xdoctest's textfile
+  collector defers so doctestplus' RST parser owns `.rst`/`.txt` files.
+- `--doctest-plus-generate-diff` is stdlib-backend only; see
+  `tpl/pytest-doctestplus/DIVERGENCES.md` for the full backend divergence
+  ledger.
