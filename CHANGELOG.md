@@ -13,6 +13,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * New `IGNORE_WARNINGS` and `SHOW_WARNINGS` runtime directives. Warning policy
   is applied at the runner level (no source rewriting), so failure line
   numbers always point at user code.
+* New `xdoctest.interop` module: the documented, stable integration contract
+  for third-party doctest tooling (`register_optionflag`, `register_checker`,
+  `from_examples`, `from_stdlib_doctest`). The top-level package re-exports
+  only `register_optionflag`, `register_checker`, and `OutputChecker`.
 * Added `deferred_output_matching` and `optional_want` config knobs, plus CLI
   flags, to opt into stdlib/doctest-like output semantics without changing the
   default xdoctest behavior.
