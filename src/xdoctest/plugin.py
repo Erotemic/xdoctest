@@ -315,7 +315,11 @@ class XDoctestItem(pytest.Item):
         # verbose = self.dtest.config['verbose']
         self.dtest.run(on_error='raise')
         if not self.dtest.anything_ran():
-            pytest.skip('doctest is empty or all parts were skipped')
+            reason = (
+                getattr(self.dtest, '_metadata_skip_reason', None)
+                or 'doctest is empty or all parts were skipped'
+            )
+            pytest.skip(reason)
 
     def repr_failure(self, excinfo):  # type: ignore
         """
