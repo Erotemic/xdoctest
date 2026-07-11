@@ -2230,3 +2230,52 @@ class Disabled:
         items, reprec = testdir.inline_genitems(p, '--xdoctest-modules')
         reportinfo = items[0].reportinfo()
         assert reportinfo[1] == 1
+
+
+class TestDoctestPlusCoexistence:
+    def test_namespace_fixture_fallback(self) -> None:
+        """
+        When an XDoctestItem is embedded without xdoctest's plugin, the
+        xdoctest_namespace fixture is absent and the namespace is empty.
+        """
+        from xdoctest.plugin import (
+            _FixtureLookupError,
+            _lookup_namespace_fixture,
+        )
+
+        err = _FixtureLookupError.__new__(_FixtureLookupError)
+
+        def missing(name):
+            raise err
+
+        assert _lookup_namespace_fixture(missing) == {}
+        assert _lookup_namespace_fixture(lambda name: {'a': 1}) == {'a': 1}
+
+    def test_textfile_collection_defers_to_doctestplus(
+        self, testdir: pytest.Testdir
+    ) -> None:
+        """
+        With pytest-doctestplus enabled, xdoctest must not collect
+        .rst/.txt files: doctestplus' parser owns the RST directive
+        language.
+        """
+        pytest.importorskip('pytest_doctestplus')
+        testdir.maketxtfile(
+            narrative="""
+            A doctestplus-style directive that xdoctest cannot parse:
+
+            .. doctest-skip::
+
+                >>> raise RuntimeError('never runs')
+            """
+        )
+        result = testdir.runpytest(
+            'narrative.txt',
+            '--doctest-plus',
+            '--collect-only',
+            '-q',
+            '-p', 'pytest_doctestplus',
+            '-p', 'no:doctest',
+            '--xdoctest-nocolor',
+        )
+        result.stdout.no_fnmatch_line('*XDoctestTextfile*')
