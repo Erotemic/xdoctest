@@ -24,6 +24,23 @@ def test_runtime_state_optionflag_roundtrip_for_builtin_flags() -> None:
     assert flags & directive_facade.ELLIPSIS
 
 
+def test_runtime_bound_flags_follow_current_runtime_state() -> None:
+    from xdoctest import directive, interop
+
+    checker_only = xdoctest.register_optionflag('CHECKER_ONLY_PARTITION')
+    runstate = interop.optionflags_to_runtime_state(
+        checker_only | directive_facade.ELLIPSIS
+    )
+
+    assert runstate['ELLIPSIS']
+    assert runstate.get_output_checker_flags() == checker_only
+
+    runstate.update([directive.Directive('ELLIPSIS', positive=False, inline=True)])
+    flags = interop.runtime_state_to_optionflags(runstate)
+    assert flags & checker_only
+    assert not (flags & directive_facade.ELLIPSIS)
+
+
 FIX = doctest.register_optionflag('FIX')
 
 
