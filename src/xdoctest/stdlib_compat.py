@@ -30,17 +30,16 @@ Option semantics flow through one channel: each named stdlib optionflag in
 xdoctest runtime-state keys (``SKIP``, ``ELLIPSIS``, ``IGNORE_WARNINGS``,
 ...) modify the structured runtime state; any other *named* flag is adopted
 as a checker-only optionflag and delivered to the active output checker via
-the standard ``flags`` argument. Since consecutive want-less examples merge
-into a single xdoctest part, per-example options apply at part granularity.
+the standard ``flags`` argument. Each incoming stdlib example is parsed as
+its own execution boundary, so its options never leak to adjacent examples.
 """
 
 from __future__ import annotations
 
-import bisect
 import doctest as _doctest
 from typing import Any, Iterable, Mapping, Optional
 
-from xdoctest import directive, directive_facade
+from xdoctest import directive, directive_facade, parser
 from xdoctest.doctest_example import DocTest
 
 
@@ -90,7 +89,7 @@ def from_examples(
     if globs is None:
         globs = {'__name__': '__main__'}
 
-    base, docsrc, example_starts = _build_docsrc(examples)
+    base, docsrc = _build_docsrc(examples)
     if lineno is None:
         lineno = base if base is not None else 0
 
@@ -125,7 +124,7 @@ def from_examples(
         dtest.config['default_runtime_state'] = defaults
         dtest.config['output_checker_flags'] = int(optionflags)
 
-    _attach_option_directives(dtest, examples, example_starts)
+    _parse_examples_as_parts(dtest, examples, base)
     return dtest
 
 
@@ -167,82 +166,79 @@ def _build_docsrc(examples):
     examples, padding with blank lines so each example's prompt line in the
     reconstructed source mirrors its original ``Example.lineno`` offset.
 
-    Returns ``(base_lineno, docsrc, example_starts)`` where:
-
-    - ``base_lineno`` is the lineno of the first example (the offset that
-      should be passed to :class:`DocTest.lineno` so absolute file lines can
-      be recovered), or ``None`` if no examples were provided.
-    - ``docsrc`` is the reconstructed source.
-    - ``example_starts`` is a list of ``(docsrc_line, example_index)`` pairs
-      recording where each example's source begins in the rebuilt docsrc.
+    Returns ``(base_lineno, docsrc)`` where ``base_lineno`` is the lineno
+    of the first example (or ``None`` for an empty input), and ``docsrc``
+    is the reconstructed source.
     """
     if not examples:
-        return None, '', []
+        return None, ''
 
     base = examples[0].lineno
     lines: list[str] = []
-    example_starts: list[tuple[int, int]] = []
     cursor = 0
 
-    for idx, ex in enumerate(examples):
+    for ex in examples:
         target = (ex.lineno or 0) - base
         # Pad blank lines so the prompt aligns with the original lineno.
         while cursor < target:
             lines.append('')
             cursor += 1
 
-        example_starts.append((cursor, idx))
-        src_lines = (ex.source or '').splitlines() or ['']
-        for i, line in enumerate(src_lines):
-            prefix = '>>> ' if i == 0 else '... '
-            lines.append(prefix + line)
-            cursor += 1
+        example_lines = _example_docsrc_lines(ex)
+        lines.extend(example_lines)
+        cursor += len(example_lines)
 
-        if ex.want:
-            for w in ex.want.splitlines():
-                lines.append(w)
-                cursor += 1
-
-    return base, '\n'.join(lines), example_starts
+    return base, '\n'.join(lines)
 
 
-def _attach_option_directives(dtest, examples, example_starts):
+def _parse_examples_as_parts(dtest, examples, base):
+    """Parse each stdlib example independently and concatenate its parts.
+
+    A stdlib :class:`doctest.Example` is an execution and option-scope
+    boundary. Parsing the reconstructed full docsrc in one pass can merge
+    adjacent want-less examples into one xdoctest part, which broadens options
+    such as ``SKIP`` to statements that belong to a different example. Parse
+    each incoming example independently so its options apply only to the code
+    it owns, while retaining the reconstructed full docsrc for display.
     """
-    Translate per-example ``options`` dicts into structured per-part
-    directives on the parsed :class:`DocTest`.
-
-    xdoctest may merge consecutive want-less examples into one part, so each
-    part collects the options of every example whose source starts within
-    its line span (later examples win on conflicting flags).
-    """
-    if not example_starts:
-        return
-    if not any(getattr(examples[idx], 'options', None) for _, idx in example_starts):
+    if not examples:
         return
 
-    dtest._parse()
-    parts = dtest._parts or []
-    if not parts:
-        return
+    base = 0 if base is None else base
+    parts = []
+    for ex in examples:
+        local_docsrc = '\n'.join(_example_docsrc_lines(ex))
+        info = {
+            'callname': dtest.callname,
+            'modpath': dtest.modpath,
+            'lineno': dtest.lineno,
+            'fpath': dtest.fpath,
+        }
+        raw_parts = parser.DoctestParser().parse(local_docsrc, info)
+        local_parts = [part for part in raw_parts if not isinstance(part, str)]
+        line_offset = (ex.lineno or 0) - base
+        for part in local_parts:
+            part.line_offset += line_offset
+            extra = _options_to_directives(getattr(ex, 'options', None) or {})
+            if extra:
+                # Preserve directives written inline in the original source;
+                # structured stdlib options come after so they win on conflict.
+                part._directives = list(part.directives) + extra
+            parts.append(part)
+    dtest._parts = parts
 
-    part_offsets = [part.line_offset for part in parts]
-    examples_by_part: dict[int, list[int]] = {}
-    for start_line, ex_idx in example_starts:
-        partx = bisect.bisect_right(part_offsets, start_line) - 1
-        if partx < 0:
-            continue
-        examples_by_part.setdefault(partx, []).append(ex_idx)
 
-    for partx, ex_idxs in examples_by_part.items():
-        merged: dict = {}
-        for ex_idx in ex_idxs:
-            merged.update(getattr(examples[ex_idx], 'options', None) or {})
-        extra = _options_to_directives(merged)
-        if extra:
-            part = parts[partx]
-            # Preserve directives written inline in the original source;
-            # structured options come after so they win on conflict.
-            part._directives = list(part.directives) + extra
+def _example_docsrc_lines(ex):
+    """Reconstruct the prompted source and want lines for one example."""
+    lines = []
+    src_lines = (ex.source or '').splitlines() or ['']
+    for idx, line in enumerate(src_lines):
+        prefix = '>>> ' if idx == 0 else '... '
+        lines.append(prefix + line)
+    if ex.want:
+        lines.extend(ex.want.splitlines())
+    return lines
+
 
 
 def _options_to_directives(options):

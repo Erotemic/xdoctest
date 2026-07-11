@@ -65,6 +65,30 @@ def test_skip_option_is_honored():
     assert result['passed']
 
 
+def test_per_example_skip_preserves_execution_boundary():
+    """A skipped want-less example must not skip adjacent setup code."""
+    examples = [
+        doctest.Example(source='x = 1\n', want='', lineno=0),
+        doctest.Example(
+            source='raise RuntimeError("should not run")\n',
+            want='',
+            lineno=1,
+            options={doctest.SKIP: True},
+        ),
+        doctest.Example(source='print(x)\n', want='1\n', lineno=2),
+    ]
+    dtest = stdlib_compat.from_examples(examples, name='t')
+    result = dtest.run(verbose=0, on_error='return')
+    assert result['passed'], result
+    assert not result['failed']
+    assert dtest._parts is not None
+    assert [part.source for part in dtest._parts] == [
+        'x = 1',
+        'raise RuntimeError("should not run")',
+        'print(x)',
+    ]
+
+
 def test_skip_option_does_not_rewrite_source():
     """
     SKIP is attached as a structured per-part directive; the reconstructed
