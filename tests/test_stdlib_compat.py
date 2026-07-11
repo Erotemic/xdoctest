@@ -30,6 +30,7 @@ def test_synthetic_example_with_failure_reports_correct_line():
     # absolute file line is recovered as dtest.lineno + part.line_offset.
     assert dtest.lineno == 4
     assert dtest.failed_part is not None
+    assert not isinstance(dtest.failed_part, str)
     assert dtest.failed_part.line_offset == 0
 
 
@@ -78,6 +79,7 @@ def test_skip_option_does_not_rewrite_source():
         ),
     ]
     dtest = stdlib_compat.from_examples(examples, name='t')
+    assert dtest.docsrc is not None
     assert 'xdoctest' not in dtest.docsrc
     assert 'SKIP' not in dtest.docsrc
 
@@ -92,9 +94,9 @@ def test_per_example_option_applies_to_matching_part_only():
     seen: list[int] = []
 
     class Recorder(doctest.OutputChecker):
-        def check_output(self, want, got, flags):
-            seen.append(flags)
-            return xdoctest.OutputChecker().check_output(want, got, flags)
+        def check_output(self, want, got, optionflags):
+            seen.append(optionflags)
+            return xdoctest.OutputChecker().check_output(want, got, optionflags)
 
     xdoctest.register_checker('part_local_recorder', Recorder)
 
@@ -125,9 +127,9 @@ def test_registered_checker_only_flag_flows_through():
     seen: list[int] = []
 
     class Recorder(doctest.OutputChecker):
-        def check_output(self, want, got, flags):
-            seen.append(flags)
-            return xdoctest.OutputChecker().check_output(want, got, flags)
+        def check_output(self, want, got, optionflags):
+            seen.append(optionflags)
+            return xdoctest.OutputChecker().check_output(want, got, optionflags)
 
     xdoctest.register_checker('intake_recorder', Recorder)
 

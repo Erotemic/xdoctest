@@ -36,8 +36,8 @@ representation of expression-based "got-strings".
 from __future__ import annotations
 
 import difflib
+import doctest
 import math
-import types
 import re
 import typing
 from typing import Dict, Set
@@ -887,7 +887,7 @@ class GotWantException(AssertionError):
                 output_checker.__class__.output_difference
                 is not checker_facade.OutputChecker.output_difference
             ):
-                example = types.SimpleNamespace(want=self.want)
+                example = doctest.Example(source='', want=self.want)
                 optionflags = checker_facade.runtime_state_to_optionflags(
                     runstate
                 )

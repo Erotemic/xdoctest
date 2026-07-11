@@ -11,8 +11,8 @@ Adopters typically:
 1. Register their optionflags through :func:`xdoctest.register_optionflag`
    (re-exported here from :mod:`xdoctest.directive_facade`).
 2. Define an :class:`OutputChecker` subclass with the standard
-   ``check_output(want, got, flags)`` and (optionally)
-   ``output_difference(example, got, flags)`` signatures.
+   ``check_output(want, got, optionflags)`` and (optionally)
+   ``output_difference(example, got, optionflags)`` signatures.
 3. Register the checker by name with :func:`register_checker`.
 4. Select the checker for a given doctest by setting
    ``DoctestConfig['output_checker']`` to that name.
@@ -106,26 +106,28 @@ class OutputChecker(doctest.OutputChecker):
     Default xdoctest checker exposed through a stdlib-doctest interface.
 
     Subclasses can wrap or extend xdoctest's matching by calling
-    ``super().check_output(want, got, flags)`` to delegate the base comparison
-    while adding their own pre-/post-processing.
+    ``super().check_output(want, got, optionflags)`` to delegate the base
+    comparison while adding their own pre-/post-processing.
 
     Note:
-        This class intentionally accepts the same ``(want, got, flags)``
+        This class intentionally accepts the same ``(want, got, optionflags)``
         signature as :class:`doctest.OutputChecker` so that it is a drop-in
         replacement for stdlib-shaped consumers.
     """
 
-    def check_output(self, want: str, got: str, flags: int) -> bool:
-        runstate = optionflags_to_runtime_state(flags)
+    def check_output(
+        self, want: str, got: str, optionflags: int
+    ) -> bool:
+        runstate = optionflags_to_runtime_state(optionflags)
         return checker._xdoctest_check_output(got, want, runstate)
 
     def output_difference(
         self,
         example: Any,
         got: str,
-        flags: int,
+        optionflags: int,
     ) -> str:
-        runstate = optionflags_to_runtime_state(flags)
+        runstate = optionflags_to_runtime_state(optionflags)
         want = getattr(example, 'want', example)
         ex = checker.GotWantException('got differs with doctest want', got, want)
         return ex._output_difference_xdoctest(runstate=runstate, colored=False)

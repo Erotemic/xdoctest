@@ -4,7 +4,7 @@ import doctest
 
 import xdoctest
 from xdoctest import checker, doctest_example, utils
-from xdoctest import directive_facade
+from xdoctest import checker_facade, directive_facade
 
 
 def test_register_optionflag_is_stable() -> None:
@@ -28,15 +28,15 @@ FIX = doctest.register_optionflag('FIX')
 
 
 class DoctestPlusLikeChecker(doctest.OutputChecker):
-    def check_output(self, want: str, got: str, flags: int) -> bool:
-        if flags & FIX:
+    def check_output(self, want: str, got: str, optionflags: int) -> bool:
+        if optionflags & FIX:
             want = want.replace('L', '')
             got = got.replace('L', '')
-        return xdoctest.OutputChecker().check_output(want, got, flags)
+        return xdoctest.OutputChecker().check_output(want, got, optionflags)
 
-    def output_difference(self, example, got: str, flags: int) -> str:
+    def output_difference(self, example, got: str, optionflags: int) -> str:
         return 'compat-diff: ' + xdoctest.OutputChecker().output_difference(
-            example, got, flags
+            example, got, optionflags
         )
 
 
@@ -61,9 +61,9 @@ def test_registered_checker_receives_runtime_state_flags() -> None:
     seen: list[int] = []
 
     class FlagRecorder(doctest.OutputChecker):
-        def check_output(self, want: str, got: str, flags: int) -> bool:
-            seen.append(flags)
-            return xdoctest.OutputChecker().check_output(want, got, flags)
+        def check_output(self, want: str, got: str, optionflags: int) -> bool:
+            seen.append(optionflags)
+            return xdoctest.OutputChecker().check_output(want, got, optionflags)
 
     xdoctest.register_checker('flag_recorder', FlagRecorder)
 
@@ -103,9 +103,9 @@ def test_registered_optionflag_can_be_set_via_directive() -> None:
     allow_bytes = xdoctest.register_optionflag('ALLOW_BYTES')
 
     class BytesFlagRecorder(doctest.OutputChecker):
-        def check_output(self, want: str, got: str, flags: int) -> bool:
-            seen.append(flags)
-            return xdoctest.OutputChecker().check_output(want, got, flags)
+        def check_output(self, want: str, got: str, optionflags: int) -> bool:
+            seen.append(optionflags)
+            return xdoctest.OutputChecker().check_output(want, got, optionflags)
 
     xdoctest.register_checker('bytes_flag_recorder', BytesFlagRecorder)
 
@@ -131,7 +131,7 @@ def test_resolve_current_checker_honors_mapping_state() -> None:
         pass
 
     xdoctest.register_checker('mapping_checker', MappingChecker)
-    resolved = xdoctest.checker_facade.resolve_current_checker(
+    resolved = checker_facade.resolve_current_checker(
         {'_output_checker': 'mapping_checker'}
     )
     assert isinstance(resolved, MappingChecker)
@@ -142,9 +142,9 @@ def test_registered_optionflag_inline_reaches_checker() -> None:
     fix_inline = xdoctest.register_optionflag('FIX_INLINE')
 
     class InlineRecorder(doctest.OutputChecker):
-        def check_output(self, want: str, got: str, flags: int) -> bool:
-            seen.append(flags)
-            return xdoctest.OutputChecker().check_output(want, got, flags)
+        def check_output(self, want: str, got: str, optionflags: int) -> bool:
+            seen.append(optionflags)
+            return xdoctest.OutputChecker().check_output(want, got, optionflags)
 
     xdoctest.register_checker('inline_flag_recorder', InlineRecorder)
 
@@ -168,9 +168,9 @@ def test_registered_optionflag_inline_clears_after_part() -> None:
     fix_inline_once = xdoctest.register_optionflag('FIX_INLINE_ONCE')
 
     class InlineOnceRecorder(doctest.OutputChecker):
-        def check_output(self, want: str, got: str, flags: int) -> bool:
-            seen.append(flags)
-            return xdoctest.OutputChecker().check_output(want, got, flags)
+        def check_output(self, want: str, got: str, optionflags: int) -> bool:
+            seen.append(optionflags)
+            return xdoctest.OutputChecker().check_output(want, got, optionflags)
 
     xdoctest.register_checker('inline_once_recorder', InlineOnceRecorder)
 
@@ -197,9 +197,9 @@ def test_registered_optionflag_block_persists_until_disabled() -> None:
     fix_block = xdoctest.register_optionflag('FIX_BLOCK')
 
     class BlockRecorder(doctest.OutputChecker):
-        def check_output(self, want: str, got: str, flags: int) -> bool:
-            seen.append(flags)
-            return xdoctest.OutputChecker().check_output(want, got, flags)
+        def check_output(self, want: str, got: str, optionflags: int) -> bool:
+            seen.append(optionflags)
+            return xdoctest.OutputChecker().check_output(want, got, optionflags)
 
     xdoctest.register_checker('block_flag_recorder', BlockRecorder)
 
@@ -231,9 +231,9 @@ def test_registered_optionflag_negative_block_clears_correctly() -> None:
     fix_toggle = xdoctest.register_optionflag('FIX_TOGGLE')
 
     class ToggleRecorder(doctest.OutputChecker):
-        def check_output(self, want: str, got: str, flags: int) -> bool:
-            seen.append(flags)
-            return xdoctest.OutputChecker().check_output(want, got, flags)
+        def check_output(self, want: str, got: str, optionflags: int) -> bool:
+            seen.append(optionflags)
+            return xdoctest.OutputChecker().check_output(want, got, optionflags)
 
     xdoctest.register_checker('toggle_flag_recorder', ToggleRecorder)
 
@@ -266,9 +266,9 @@ def test_custom_checker_selected_by_name_receives_registered_directive_flags() -
     fix_named = xdoctest.register_optionflag('FIX_SELECTED_BY_NAME')
 
     class NamedRecorder(doctest.OutputChecker):
-        def check_output(self, want: str, got: str, flags: int) -> bool:
-            seen.append(flags)
-            return xdoctest.OutputChecker().check_output(want, got, flags)
+        def check_output(self, want: str, got: str, optionflags: int) -> bool:
+            seen.append(optionflags)
+            return xdoctest.OutputChecker().check_output(want, got, optionflags)
 
     xdoctest.register_checker('named_flag_recorder', NamedRecorder)
 
@@ -291,11 +291,11 @@ def test_end_to_end_registered_checker_flag_works_via_directive() -> None:
     fix_end_to_end = xdoctest.register_optionflag('FIX_END_TO_END')
 
     class FixDirectiveChecker(doctest.OutputChecker):
-        def check_output(self, want: str, got: str, flags: int) -> bool:
-            if flags & fix_end_to_end:
+        def check_output(self, want: str, got: str, optionflags: int) -> bool:
+            if optionflags & fix_end_to_end:
                 want = want.replace('L', '')
                 got = got.replace('L', '')
-            return xdoctest.OutputChecker().check_output(want, got, flags)
+            return xdoctest.OutputChecker().check_output(want, got, optionflags)
 
     xdoctest.register_checker('fix_directive_checker', FixDirectiveChecker)
 
