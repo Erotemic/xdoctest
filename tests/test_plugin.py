@@ -427,15 +427,15 @@ class TestXDoctest:
         reprec = testdir.inline_run(p, '--xdoctest-modules', *EXTRA_ARGS)
         reprec.assertoutcome(skipped=1, failed=0, passed=0)
 
-    def test_xdoctest_optional_want_addopts(self, testdir: pytest.Testdir) -> None:
-        """Test prefixed config knobs in pytest addopts.
+    def test_xdoctest_require_want_addopts(self, testdir: pytest.Testdir) -> None:
+        """Test enabling REQUIRE_WANT through generic pytest options.
 
         CommandLine:
-            pytest tests/test_plugin.py::TestXDoctest::test_xdoctest_optional_want_addopts
+            pytest tests/test_plugin.py::TestXDoctest::test_xdoctest_require_want_addopts
         """
         testdir.makeini("""
             [pytest]
-            addopts= --xdoctest-no-optional-want
+            addopts= --xdoctest-options=REQUIRE_WANT
         """)
         p = testdir.makepyfile('''
             def say_foo():
@@ -446,6 +446,24 @@ class TestXDoctest:
         ''')
         reprec = testdir.inline_run(p, '--xdoctest-modules', *EXTRA_ARGS)
         reprec.assertoutcome(skipped=0, failed=1, passed=0)
+
+    def test_xdoctest_require_want_local_override(
+        self, testdir: pytest.Testdir
+    ) -> None:
+        """A local directive can relax a run-wide REQUIRE_WANT default."""
+        testdir.makeini("""
+            [pytest]
+            addopts= --xdoctest-options=REQUIRE_WANT
+        """)
+        p = testdir.makepyfile('''
+            def say_foo():
+                """
+                >>> print('foo')  # xdoctest: -REQUIRE_WANT
+                """
+                return None
+        ''')
+        reprec = testdir.inline_run(p, '--xdoctest-modules', *EXTRA_ARGS)
+        reprec.assertoutcome(skipped=0, failed=0, passed=1)
 
     def test_doctest_unexpected_exception(
         self, testdir: pytest.Testdir

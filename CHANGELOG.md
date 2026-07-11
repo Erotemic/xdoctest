@@ -8,9 +8,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## Version 1.3.3 - Unreleased
 
 ### Added
-* Added `deferred_output_matching` and `optional_want` config knobs, plus CLI
-  flags, to opt into stdlib/doctest-like output semantics without changing the
-  default xdoctest behavior.
+* Added the `REQUIRE_WANT` runtime directive. When enabled, a doctest part that
+  produces stdout or an evaluated value must provide an explicit local want.
+  It can be enabled for a whole run through the existing generic directive
+  options, or scoped to a block or individual part.
+* Added the `deferred_output_matching` config knob and CLI flags to opt into
+  stdlib/doctest-like output grouping without changing the default xdoctest
+  behavior.
 
 ### Fixed
 * Fixed issue #181 where comment indentation could cause parsing issues.
