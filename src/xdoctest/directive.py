@@ -924,7 +924,7 @@ def _is_requires_satisfied(
     return flag
 
 
-_MODNAME_EXISTS_CACHE = {}
+_MODNAME_EXISTS_CACHE: typing.Dict[typing.Any, bool] = {}
 
 
 def _module_exists(modname: typing.Any) -> bool:
