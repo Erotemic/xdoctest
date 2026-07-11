@@ -332,29 +332,12 @@ from xdoctest.runner import (
     doctest_callable,
     doctest_module,
 )
-from xdoctest.directive_facade import (
-    BLANKLINE_MARKER,
-    DONT_ACCEPT_BLANKLINE,
-    ELLIPSIS,
-    ELLIPSIS_MARKER,
-    FLOAT_CMP,
-    IGNORE_EXCEPTION_DETAIL,
-    IGNORE_OUTPUT,
-    IGNORE_WHITESPACE,
-    IGNORE_WANT,
-    NORMALIZE_REPR,
-    NORMALIZE_WHITESPACE,
-    REPORT_CDIFF,
-    REPORT_NDIFF,
-    REPORT_UDIFF,
-    optionflags_to_runtime_state,
-    register_optionflag,
-    runtime_state_to_optionflags,
-)
-from xdoctest.checker_facade import (
+# The full third-party integration contract lives in xdoctest.interop; the
+# two registration entry points are convenient enough to expose here.
+from xdoctest.interop import (
     OutputChecker,
     register_checker,
-    resolve_checker,
+    register_optionflag,
 )
 
 __all__ = [
@@ -367,24 +350,7 @@ __all__ = [
     'utils',
     'docstr',
     '__version__',
-    'BLANKLINE_MARKER',
-    'ELLIPSIS_MARKER',
-    'DONT_ACCEPT_BLANKLINE',
-    'NORMALIZE_WHITESPACE',
-    'ELLIPSIS',
-    'IGNORE_EXCEPTION_DETAIL',
-    'REPORT_UDIFF',
-    'REPORT_CDIFF',
-    'REPORT_NDIFF',
-    'IGNORE_WANT',
-    'IGNORE_OUTPUT',
-    'IGNORE_WHITESPACE',
-    'FLOAT_CMP',
-    'NORMALIZE_REPR',
     'register_optionflag',
-    'runtime_state_to_optionflags',
-    'optionflags_to_runtime_state',
     'register_checker',
-    'resolve_checker',
     'OutputChecker',
 ]
