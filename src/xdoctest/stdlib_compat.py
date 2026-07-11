@@ -122,7 +122,9 @@ def from_examples(
             if isinstance(value, bool):
                 defaults[key] = value
         dtest.config['default_runtime_state'] = defaults
-        dtest.config['output_checker_flags'] = int(optionflags)
+        dtest.config['output_checker_flags'] = (
+            runstate.get_output_checker_flags()
+        )
 
     _parse_examples_as_parts(dtest, examples, base)
     return dtest

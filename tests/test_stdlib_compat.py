@@ -203,3 +203,33 @@ def test_builtin_optionflag_translates_to_runtime_state():
     )
     result = dtest.run(verbose=0, on_error='return')
     assert result['passed'], result
+
+
+def test_local_builtin_option_overrides_global_for_foreign_checker():
+    """A local negative builtin option must clear the foreign-checker bit."""
+    seen: list[int] = []
+
+    class StdlibRecorder(doctest.OutputChecker):
+        def check_output(self, want, got, optionflags):
+            seen.append(optionflags)
+            return super().check_output(want, got, optionflags)
+
+    xdoctest.register_checker('stdlib_override_recorder', StdlibRecorder)
+    examples = [
+        doctest.Example(
+            source='print("prefix suffix")\n',
+            want='prefix ...\n',
+            lineno=0,
+            options={doctest.ELLIPSIS: False},
+        )
+    ]
+    dtest = stdlib_compat.from_examples(
+        examples,
+        name='t',
+        optionflags=doctest.ELLIPSIS,
+        config={'output_checker': 'stdlib_override_recorder'},
+    )
+    result = dtest.run(verbose=0, on_error='return')
+    assert result['failed']
+    assert seen
+    assert not (seen[-1] & doctest.ELLIPSIS)
