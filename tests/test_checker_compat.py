@@ -309,3 +309,43 @@ def test_end_to_end_registered_checker_flag_works_via_directive() -> None:
     self.config['output_checker'] = 'fix_directive_checker'
     result = self.run(verbose=0, on_error='raise')
     assert result['passed']
+
+
+def test_resolve_checker_caches_class_instances() -> None:
+    from xdoctest import checker_facade
+
+    class Counting(doctest.OutputChecker):
+        instances = 0
+
+        def __init__(self):
+            Counting.instances += 1
+
+    checker_facade.register_checker('counting_checker', Counting)
+    first = checker_facade.resolve_checker('counting_checker')
+    second = checker_facade.resolve_checker('counting_checker')
+    assert first is second
+    assert Counting.instances == 1
+
+    # Re-registering invalidates the cached instance.
+    checker_facade.register_checker('counting_checker', Counting)
+    third = checker_facade.resolve_checker('counting_checker')
+    assert third is not first
+    assert Counting.instances == 2
+
+
+def test_native_check_does_not_construct_registered_checkers() -> None:
+    """
+    The default 'xdoctest' path must not pay the facade round-trip: a
+    registered (but unselected) checker class must never be constructed.
+    """
+    from xdoctest import checker_facade
+    from xdoctest import directive
+
+    class Exploding(doctest.OutputChecker):
+        def __init__(self):
+            raise AssertionError('native path must not construct this')
+
+    checker_facade.register_checker('exploding_checker', Exploding)
+    runstate = directive.RuntimeState()
+    assert checker.check_output('1\n', '1\n', runstate)
+    assert not checker.check_output('1\n', '2\n', runstate)
