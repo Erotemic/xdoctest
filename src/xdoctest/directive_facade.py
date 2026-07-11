@@ -25,7 +25,7 @@ checker-only optionflag bits.
 from __future__ import annotations
 
 import doctest
-from typing import Dict
+from typing import Dict, cast
 
 from xdoctest import directive
 
@@ -165,7 +165,9 @@ class RuntimeFlagFacade:
             if runtime_key == 'REQUIRES':
                 continue
             base_state.setdefault(runtime_key, False)
-        runstate = directive.RuntimeState(base_state)
+        runstate = directive.RuntimeState(
+            cast(directive.RuntimeStateDict, base_state)
+        )
         runstate.set_output_checker_flags(optionflags)
         for flag, runtime_key in self._optionflag_to_runtime_key.items():
             value = runstate[runtime_key]

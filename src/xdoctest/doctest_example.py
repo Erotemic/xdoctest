@@ -670,7 +670,7 @@ class DocTest:
 
         # Human-readable reason when module-level doctest metadata
         # (__doctest_skip__ / __doctest_requires__) caused a skip.
-        self._metadata_skip_reason = None
+        self._metadata_skip_reason: str | None = None
 
         self._runstate = None
 

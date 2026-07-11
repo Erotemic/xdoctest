@@ -41,6 +41,7 @@ def test_warning_policy_does_not_rewrite_source():
         )
     ]
     dtest = stdlib_compat.from_examples(examples, name='t')
+    assert dtest.docsrc is not None
     assert user_source.strip() in dtest.docsrc
     # Source should not contain the doctestplus wrapper class.
     assert '_doctestplus_ignore_all_warnings' not in dtest.docsrc
@@ -106,6 +107,7 @@ def test_failure_inside_warning_context_points_at_user_code_line():
     assert result['failed']
     assert dtest.lineno == 7
     assert dtest.failed_part is not None
+    assert not isinstance(dtest.failed_part, str)
     # Ensure the failed part begins at offset 0 of docsrc -> absolute line 7.
     assert dtest.failed_part.line_offset == 0
 
