@@ -127,6 +127,24 @@ Example:
     >>> # xdoctest: -SKIP("a reason can be given as an argument")
     >>> print('This line will print: (F)')
 
+The ``REQUIRE_WANT`` directive opts into strict local output declarations.
+When enabled, a part that writes to stdout or produces a displayed value must
+have an explicit want block. Silent setup statements do not need a want. Like
+other runtime directives, it can be applied to one part or left enabled for a
+region::
+
+    >>> print('checked')  # xdoctest: +REQUIRE_WANT
+    checked
+    >>> value = 1
+    >>> # xdoctest: +REQUIRE_WANT
+    >>> print(value)
+    1
+    >>> # xdoctest: -REQUIRE_WANT
+
+For a whole run, use the existing generic directive option, for example
+``--options=REQUIRE_WANT`` or pytest's prefixed
+``--xdoctest-options=REQUIRE_WANT``.
+
 This next examples illustrates how to use the advanced ``+REQUIRES()``
 directive. Note, the REQUIRES and SKIP states are independent.
 
@@ -211,6 +229,7 @@ class RuntimeStateDict(TypedDict, total=False):
     FLOAT_CMP: bool
     IGNORE_WARNINGS: bool
     SHOW_WARNINGS: bool
+    REQUIRE_WANT: bool
     NORMALIZE_REPR: bool
     REPORT_CDIFF: bool
     REPORT_NDIFF: bool
@@ -239,6 +258,9 @@ DEFAULT_RUNTIME_STATE: RuntimeStateDict = {
     # got/want matching. IGNORE_WARNINGS takes precedence when both are set.
     'IGNORE_WARNINGS': False,
     'SHOW_WARNINGS': False,
+    # When enabled, output-producing parts must have an explicit local want.
+    # Silent setup parts remain valid without a want.
+    'REQUIRE_WANT': False,
     # 'IGNORE_MEASUREMENTS': False,
     # TODO: I want this flag to turn on normalization of numbers,
     # I.E: non-determenistic measurements do not cause doctest failure, but
@@ -313,6 +335,7 @@ class RuntimeState(utils.NiceRepr):
             REPORT_NDIFF: False,
             REPORT_UDIFF: True,
             REQUIRES: set(...),
+            REQUIRE_WANT: False,
             SHOW_WARNINGS: False,
             SKIP: False
         })>
@@ -963,7 +986,7 @@ def _is_requires_satisfied(
     return flag
 
 
-_MODNAME_EXISTS_CACHE = {}
+_MODNAME_EXISTS_CACHE: typing.Dict[typing.Any, bool] = {}
 
 
 def _module_exists(modname: typing.Any) -> bool:

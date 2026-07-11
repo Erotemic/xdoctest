@@ -9,7 +9,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 * doctestplus compatibility with `FLOAT_CMP`, `IGNORE_OUTPUT` directives and
-  `__doctest_skip__`, `__doctest_requires__` module level special vars. 
+  `__doctest_skip__`, `__doctest_requires__` module level special vars.
 * New `IGNORE_WARNINGS` and `SHOW_WARNINGS` runtime directives. Warning policy
   is applied at the runner level (no source rewriting), so failure line
   numbers always point at user code.
@@ -17,9 +17,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   for third-party doctest tooling (`register_optionflag`, `register_checker`,
   `from_examples`, `from_stdlib_doctest`). The top-level package re-exports
   only `register_optionflag`, `register_checker`, and `OutputChecker`.
-* Added `deferred_output_matching` and `optional_want` config knobs, plus CLI
-  flags, to opt into stdlib/doctest-like output semantics without changing the
-  default xdoctest behavior.
+* Added the `REQUIRE_WANT` runtime directive. When enabled, a doctest part that
+  produces stdout or an evaluated value must provide an explicit local want.
+  It can be enabled for a whole run through the existing generic directive
+  options, or scoped to a block or individual part.
+* Added the `deferred_output_matching` config knob and CLI flags to opt into
+  stdlib/doctest-like output grouping without changing the default xdoctest
+  behavior.
 
 ### Fixed
 * Fixed issue #181 where comment indentation could cause parsing issues.

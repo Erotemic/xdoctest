@@ -260,30 +260,54 @@ def test_doctestconfig_cli_flags() -> None:
 
     parser = argparse.ArgumentParser()
     config._update_argparse_cli(parser.add_argument)
-    ns = parser.parse_args(['--no-optional-want', '--deferred-output-matching'])
-    assert ns.optional_want is False
+    ns = parser.parse_args(['--deferred-output-matching'])
     assert ns.deferred_output_matching is True
+    assert not hasattr(ns, 'optional_want')
 
     prefixed = argparse.ArgumentParser()
     config._update_argparse_cli(prefixed.add_argument, prefix=['xdoctest'])
     ns2 = prefixed.parse_args(
-        [
-            '--xdoctest-no-optional-want',
-            '--xdoctest-no-deferred-output-matching',
-        ]
+        ['--xdoctest-no-deferred-output-matching']
     )
-    assert ns2.xdoctest_optional_want is False
     assert ns2.xdoctest_deferred_output_matching is False
+    assert not hasattr(ns2, 'xdoctest_optional_want')
 
 
-def test_optional_want_false_fails_on_stdout() -> None:
+def test_require_want_defaults_to_permissive() -> None:
     docsrc = utils.codeblock(
         """
         >>> print('foo')
         """
     )
     self = doctest_example.DocTest(docsrc=docsrc)
-    self.config['optional_want'] = False
+
+    result = self.run(verbose=0, on_error='return')
+
+    assert result['passed']
+
+
+def test_require_want_inline_silence_check_passes() -> None:
+    docsrc = utils.codeblock(
+        """
+        >>> maybe_print = lambda *a, do=True, **k: print(*a, **k) if do else None
+        >>> maybe_print(1, 2, 3, do=False)  # xdoctest: +REQUIRE_WANT
+        >>> maybe_print(1, 2, 3)
+        """
+    )
+    self = doctest_example.DocTest(docsrc=docsrc)
+
+    result = self.run(verbose=0, on_error='return')
+
+    assert result['passed']
+
+
+def test_require_want_inline_rejects_stdout() -> None:
+    docsrc = utils.codeblock(
+        """
+        >>> print('foo')  # xdoctest: +REQUIRE_WANT
+        """
+    )
+    self = doctest_example.DocTest(docsrc=docsrc)
 
     result = self.run(verbose=0, on_error='return')
 
@@ -293,17 +317,51 @@ def test_optional_want_false_fails_on_stdout() -> None:
     assert 'foo' in fail_text
 
 
-def test_optional_want_false_fails_on_eval_output() -> None:
+def test_require_want_persistent_region() -> None:
     docsrc = utils.codeblock(
         """
-        >>> 1 + 1
+        >>> # xdoctest: +REQUIRE_WANT
+        >>> value = 1
+        >>> print(value)
+        1
+        >>> print('unexpected')
+        """
+    )
+    self = doctest_example.DocTest(docsrc=docsrc)
+
+    result = self.run(verbose=0, on_error='return')
+
+    assert result['failed']
+    fail_text = '\n'.join(self.repr_failure())
+    assert 'unexpected' in fail_text
+
+
+def test_require_want_default_state_can_be_disabled_inline() -> None:
+    docsrc = utils.codeblock(
+        """
+        >>> print('strict')
+        strict
+        >>> print('permitted')  # xdoctest: -REQUIRE_WANT
+        """
+    )
+    self = doctest_example.DocTest(docsrc=docsrc)
+    self.config['default_runtime_state'] = {'REQUIRE_WANT': True}
+
+    result = self.run(verbose=0, on_error='return')
+
+    assert result['passed']
+
+
+def test_require_want_fails_on_eval_output() -> None:
+    docsrc = utils.codeblock(
+        """
+        >>> 1 + 1  # xdoctest: +REQUIRE_WANT
         """
     )
     self = doctest_example.DocTest(docsrc=docsrc)
     self._parse()
     assert self._parts is not None
     self._parts[0].compile_mode = 'eval'
-    self.config['optional_want'] = False
 
     result = self.run(verbose=0, on_error='return')
 
@@ -313,14 +371,14 @@ def test_optional_want_false_fails_on_eval_output() -> None:
     assert '2' in fail_text
 
 
-def test_optional_want_false_ignored_no_want_part_passes() -> None:
+def test_require_want_ignored_no_want_part_passes() -> None:
     docsrc = utils.codeblock(
         """
+        >>> # xdoctest: +REQUIRE_WANT
         >>> print('foo')  # xdoctest: +IGNORE_WANT
         """
     )
     self = doctest_example.DocTest(docsrc=docsrc)
-    self.config['optional_want'] = False
 
     result = self.run(verbose=0, on_error='return')
 
@@ -340,21 +398,21 @@ def test_ignore_output_wrong_want_passes() -> None:
     assert result['passed']
 
 
-def test_ignore_output_suppresses_optional_want_stdout_failure() -> None:
+def test_ignore_output_suppresses_require_want_stdout_failure() -> None:
     docsrc = utils.codeblock(
         """
         >>> print('foo')  # xdoctest: +IGNORE_OUTPUT
         """
     )
     self = doctest_example.DocTest(docsrc=docsrc)
-    self.config['optional_want'] = False
+    self.config['default_runtime_state'] = {'REQUIRE_WANT': True}
 
     result = self.run(verbose=0, on_error='return')
 
     assert result['passed']
 
 
-def test_ignore_output_suppresses_optional_want_eval_failure() -> None:
+def test_ignore_output_suppresses_require_want_eval_failure() -> None:
     docsrc = utils.codeblock(
         """
         >>> 1 + 1  # xdoctest: +IGNORE_OUTPUT
@@ -364,7 +422,7 @@ def test_ignore_output_suppresses_optional_want_eval_failure() -> None:
     self._parse()
     assert self._parts is not None
     self._parts[0].compile_mode = 'eval'
-    self.config['optional_want'] = False
+    self.config['default_runtime_state'] = {'REQUIRE_WANT': True}
 
     result = self.run(verbose=0, on_error='return')
 
@@ -450,7 +508,7 @@ def test_deferred_output_matching_false_disables_trailing_match() -> None:
     assert 'bar' in fail_text
 
 
-def test_output_toggle_knobs_are_orthogonal() -> None:
+def test_require_want_and_deferred_output_matching_are_orthogonal() -> None:
     docsrc = utils.codeblock(
         """
         >>> print('foo')
@@ -458,7 +516,7 @@ def test_output_toggle_knobs_are_orthogonal() -> None:
     )
     self = doctest_example.DocTest(docsrc=docsrc)
     self.config['deferred_output_matching'] = False
-    self.config['optional_want'] = False
+    self.config['default_runtime_state'] = {'REQUIRE_WANT': True}
 
     result = self.run(verbose=0, on_error='return')
 

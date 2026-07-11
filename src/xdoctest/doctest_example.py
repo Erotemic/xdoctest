@@ -80,7 +80,6 @@ class DoctestConfig(dict):
                 'offset_linenos': False,
                 'deferred_output_matching': True,
                 'global_exec': None,
-                'optional_want': True,
                 'supress_import_errors': False,
                 'on_error': 'raise',
                 'partnos': False,
@@ -110,7 +109,6 @@ class DoctestConfig(dict):
             'colored': ns['colored'],
             'reportchoice': ns['reportchoice'],
             'global_exec': ns['global_exec'],
-            'optional_want': ns['optional_want'],
             'output_checker_flags': self['output_checker_flags'],
             'supress_import_errors': ns['supress_import_errors'],
             'verbose': ns['verbose'],
@@ -233,24 +231,6 @@ class DoctestConfig(dict):
                     help='Custom Python code to execute before every test',
                 ),
             ),
-            (
-                ['--optional-want'],
-                dict(
-                    dest='optional_want',
-                    action='store_true',
-                    default=self['optional_want'],
-                    help='Allow parts to omit local want output',
-                ),
-            ),
-            (
-                ['--no-optional-want'],
-                dict(
-                    dest='optional_want',
-                    action='store_false',
-                    default=argparse.SUPPRESS,
-                    help='Require each output-producing part to have a want',
-                ),
-            ),
             # FIXME: this has a spelling error
             (
                 ['--supress-import-errors'],
@@ -306,7 +286,6 @@ class DoctestConfig(dict):
 
         environ_aware = {
             'deferred-output-matching',
-            'optional-want',
             'report',
             'options',
             'global-exec',
@@ -1756,16 +1735,15 @@ class DocTest:
         With the default configuration, parts without a local want may defer
         stdout for later trailing matching, while parts with a local want are
         checked immediately. The `deferred_output_matching` knob disables the
-        deferred-trailing behavior, and `optional_want` requires output
-        producing parts to have a local want unless `IGNORE_WANT` or
-        `IGNORE_OUTPUT` is active. Any part with either directive active is
-        treated as a boundary and does not contribute output to later
-        matching.
+        deferred-trailing behavior. The `REQUIRE_WANT` runtime directive makes
+        output-producing parts require an explicit local want unless
+        `IGNORE_WANT` or `IGNORE_OUTPUT` is active. Either ignore directive is
+        treated as a boundary and does not contribute output to later matching.
         """
         deferred_output_matching = bool(
             self.config.getvalue('deferred_output_matching')
         )
-        optional_want = bool(self.config.getvalue('optional_want'))
+        require_want = bool(runstate['REQUIRE_WANT'])
         ignore_want = bool(runstate['IGNORE_WANT'])
         ignore_output = bool(runstate['IGNORE_OUTPUT'])
 
@@ -1780,7 +1758,7 @@ class DocTest:
 
             has_stdout = bool(got_stdout)
             has_eval = got_eval is not constants.NOT_EVALED
-            if not optional_want and (has_stdout or has_eval):
+            if require_want and (has_stdout or has_eval):
                 if has_stdout:
                     assert got_stdout is not None
                     got = got_stdout
