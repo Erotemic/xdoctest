@@ -15,10 +15,25 @@ import types
 import typing
 import warnings
 from collections import OrderedDict
+from fnmatch import fnmatch
 from inspect import CO_COROUTINE
 from typing import TYPE_CHECKING, Any, Union, cast
 
-from xdoctest import (
+importlib_metadata_compat: types.ModuleType
+
+try:
+    from importlib import metadata as importlib_metadata
+except ImportError:  # nocover
+    import importlib_metadata as importlib_metadata_compat  # type: ignore
+else:
+    importlib_metadata_compat = importlib_metadata
+
+try:
+    from packaging.requirements import Requirement
+except ImportError:  # nocover
+    Requirement = None  # type: ignore
+
+from xdoctest import (  # NOQA
     checker,
     constants,
     directive,
@@ -30,7 +45,8 @@ from xdoctest import (
 
 if TYPE_CHECKING:
     from xdoctest.doctest_part import DoctestPart
-from xdoctest import static_analysis as static
+
+from xdoctest import static_analysis as static  # NOQA
 
 __devnotes__ = """
 TODO:
@@ -57,6 +73,8 @@ class DoctestConfig(dict):
                 and sys.stdout.isatty(),
                 'reportchoice': 'udiff',
                 'default_runtime_state': {},
+                'output_checker': 'xdoctest',
+                'output_checker_flags': 0,
                 'offset_linenos': False,
                 'deferred_output_matching': True,
                 'global_exec': None,
@@ -84,10 +102,12 @@ class DoctestConfig(dict):
         _examp_conf = {
             'default_runtime_state': default_runtime_state,
             'deferred_output_matching': ns['deferred_output_matching'],
+            'output_checker': ns['output_checker'],
             'offset_linenos': ns['offset_linenos'],
             'colored': ns['colored'],
             'reportchoice': ns['reportchoice'],
             'global_exec': ns['global_exec'],
+            'output_checker_flags': self['output_checker_flags'],
             'supress_import_errors': ns['supress_import_errors'],
             'verbose': ns['verbose'],
         }
@@ -160,9 +180,7 @@ class DoctestConfig(dict):
                     dest='deferred_output_matching',
                     action='store_false',
                     default=argparse.SUPPRESS,
-                    help=(
-                        'Disable deferred stdout matching between parts'
-                    ),
+                    help=('Disable deferred stdout matching between parts'),
                 ),
             ),
             (
@@ -181,6 +199,15 @@ class DoctestConfig(dict):
                     help=(
                         'Choose another output format for diffs on xdoctest failure'
                     ),
+                ),
+            ),
+            (
+                ['--output-checker'],
+                dict(
+                    dest='output_checker',
+                    type=str,
+                    default=self['output_checker'],
+                    help='Named output checker backend to use for got/want matching',
                 ),
             ),
             # used to build default_runtime_state
@@ -292,6 +319,62 @@ class DoctestConfig(dict):
             return self[key]
         else:
             return given
+
+
+def _doctest_requirement_satisfied(requirement_text: str) -> bool:
+    """
+    Return True when a doctestplus-style requirement is satisfied.
+
+    Example:
+        >>> from xdoctest.doctest_example import _doctest_requirement_satisfied
+        >>> _doctest_requirement_satisfied('os')
+        True
+        >>> _doctest_requirement_satisfied('definitely_missing_package_123456')
+        False
+
+    Example:
+        >>> from xdoctest.doctest_example import _doctest_requirement_satisfied
+        >>> _doctest_requirement_satisfied('packaging>=0')
+        True
+        >>> _doctest_requirement_satisfied('packaging>999999')
+        False
+
+    Example:
+        >>> from xdoctest.doctest_example import _doctest_requirement_satisfied
+        >>> _doctest_requirement_satisfied('bad requirement')
+        Traceback (most recent call last):
+        ...
+        ValueError: Invalid __doctest_requires__ requirement: 'bad requirement'
+    """
+    if Requirement is None:
+        raise ImportError(
+            'packaging is required to evaluate __doctest_requires__'
+        )
+
+    try:
+        requirement = Requirement(requirement_text)
+    except Exception as ex:
+        raise ValueError(
+            'Invalid __doctest_requires__ requirement: {!r}'.format(
+                requirement_text
+            )
+        ) from ex
+
+    try:
+        installed_version = importlib_metadata_compat.version(requirement.name)
+    except Exception:
+        installed_version = None
+
+    if not requirement.specifier:
+        if installed_version is not None:
+            return True
+        from importlib.util import find_spec
+
+        return find_spec(requirement.name) is not None
+
+    if installed_version is None:
+        return False
+    return requirement.specifier.contains(installed_version, prereleases=True)
 
 
 class DocTest:
@@ -933,6 +1016,116 @@ class DocTest:
         assert self.logged_stdout is not None
         return len(self.logged_stdout) > 0
 
+    def _apply_module_doctest_metadata(
+        self, runstate: directive.RuntimeState
+    ) -> None:
+        """
+        Apply module-level doctestplus metadata to the current example.
+
+        This is intentionally evaluated after the :class:`DocTest` already
+        exists and has a callname, so the parser output shape stays unchanged.
+        """
+        skip_spec = None
+        requires_spec = None
+
+        if self.module is not None:
+            skip_spec = getattr(self.module, '__doctest_skip__', None)
+            requires_spec = getattr(self.module, '__doctest_requires__', None)
+        else:
+            modpath = self.modpath
+            if isinstance(modpath, (str, os.PathLike)) and os.path.exists(
+                modpath
+            ):
+                for key in ['__doctest_skip__', '__doctest_requires__']:
+                    try:
+                        value = static.parse_static_value(
+                            key, fpath=os.fspath(modpath)
+                        )
+                    except NameError:
+                        value = None
+                    except Exception as ex:
+                        raise ValueError(
+                            'Failed to read {!r} from {!r}: {}'.format(
+                                key, modpath, ex
+                            )
+                        )
+                    if key == '__doctest_skip__':
+                        skip_spec = value
+                    else:
+                        requires_spec = value
+
+        if skip_spec is not None and self._matches_doctest_skip(skip_spec):
+            runstate['SKIP'] = True
+            return
+
+        if requires_spec is not None and not self._module_requires_satisfied(
+            requires_spec
+        ):
+            runstate['SKIP'] = True
+
+    def _matches_doctest_skip(self, skip_spec: Any) -> bool:
+        if isinstance(skip_spec, str):
+            patterns = [skip_spec]
+        elif isinstance(skip_spec, (list, tuple, set)):
+            patterns = list(skip_spec)
+        else:
+            raise ValueError(
+                '__doctest_skip__ must be a string or sequence of strings'
+            )
+
+        for pattern in patterns:
+            if not isinstance(pattern, str):
+                raise ValueError(
+                    '__doctest_skip__ patterns must be strings, got {!r}'.format(
+                        pattern
+                    )
+                )
+            if pattern == '.':
+                pattern = '__doc__'
+            if fnmatch(self.callname, pattern):
+                return True
+        return False
+
+    def _module_requires_satisfied(self, requires_spec: Any) -> bool:
+        if not isinstance(requires_spec, dict):
+            raise ValueError(
+                '__doctest_requires__ must be a dictionary of patterns to requirements'
+            )
+
+        for key, reqs in requires_spec.items():
+            if isinstance(key, str):
+                patterns = [key]
+            elif isinstance(key, (list, tuple, set)):
+                patterns = list(key)
+            else:
+                raise ValueError(
+                    '__doctest_requires__ keys must be strings or sequences of strings'
+                )
+
+            if not any(
+                fnmatch(self.callname, pattern if pattern != '.' else '__doc__')
+                for pattern in patterns
+            ):
+                continue
+            if isinstance(reqs, str):
+                req_list = [reqs]
+            elif isinstance(reqs, (list, tuple, set)):
+                req_list = list(reqs)
+            else:
+                raise ValueError(
+                    '__doctest_requires__ values must be strings or sequences of strings'
+                )
+
+            for req_text in req_list:
+                if not isinstance(req_text, str):
+                    raise ValueError(
+                        '__doctest_requires__ requirements must be strings'
+                    )
+                if not _doctest_requirement_satisfied(req_text):
+                    return False
+
+        return True
+
     def run(
         self, verbose: int | None | bool = None, on_error: str | None = None
     ) -> dict[str, typing.Any]:
@@ -979,6 +1172,10 @@ class DocTest:
         # Initialize a new runtime state
         default_state = self.config['default_runtime_state']
         runstate = self._runstate = directive.RuntimeState(default_state)
+        runstate.set_output_checker(self.config.get('output_checker', 'xdoctest'))
+        runstate.set_output_checker_flags(
+            int(self.config.get('output_checker_flags', 0))
+        )
         # setup reporting choice
         runstate.set_report_style(self.config['reportchoice'].lower())
 
@@ -1073,6 +1270,15 @@ class DocTest:
                         else:
                             summary = self._post_run(verbose)
                             return summary
+
+                    self._apply_module_doctest_metadata(runstate)
+
+                    if runstate['SKIP']:
+                        if DEBUG:
+                            print(f'part[{partx}] skipped by module metadata')
+                        self._skipped_parts.append(part)
+                        did_pre_import = True
+                        continue
 
                     test_globals, compileflags = self._test_globals()
 
@@ -1416,16 +1622,22 @@ class DocTest:
         checked immediately. The `deferred_output_matching` knob disables the
         deferred-trailing behavior. The `REQUIRE_WANT` runtime directive makes
         output-producing parts require an explicit local want unless
-        `IGNORE_WANT` is active. Any part with `IGNORE_WANT` active is treated
-        as a boundary and does not contribute output to later matching.
+        `IGNORE_WANT` or `IGNORE_OUTPUT` is active. Either ignore directive is
+        treated as a boundary and does not contribute output to later matching.
         """
         deferred_output_matching = bool(
             self.config.getvalue('deferred_output_matching')
         )
         require_want = bool(runstate['REQUIRE_WANT'])
+        ignore_want = bool(runstate['IGNORE_WANT'])
+        ignore_output = bool(runstate['IGNORE_OUTPUT'])
 
         if part.want is None:
-            if runstate['IGNORE_WANT']:
+            if ignore_output:
+                self._unmatched_stdout = []
+                return
+
+            if ignore_want:
                 self._unmatched_stdout = []
                 return
 
@@ -1457,7 +1669,7 @@ class DocTest:
                 self._unmatched_stdout.append(got_stdout)
         else:
             assert got_stdout is not None
-            if not runstate['IGNORE_WANT']:
+            if not ignore_want and not ignore_output:
                 part.check(
                     got_stdout,
                     got_eval,
@@ -1465,7 +1677,7 @@ class DocTest:
                     unmatched=self._unmatched_stdout,
                 )
             # Any want-bearing part is a boundary for deferred stdout, even when
-            # IGNORE_WANT skips local comparison.
+            # IGNORE_WANT / IGNORE_OUTPUT skip local comparison.
             self._unmatched_stdout = []
 
     @property

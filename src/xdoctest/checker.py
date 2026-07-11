@@ -36,6 +36,8 @@ representation of expression-based "got-strings".
 from __future__ import annotations
 
 import difflib
+import doctest
+import math
 import re
 import typing
 from typing import Dict, Set
@@ -50,6 +52,15 @@ BLANKLINE_MARKER = '<BLANKLINE>'
 ELLIPSIS_MARKER = '...'
 
 TRAILING_WS = re.compile(r'[ \t]*$', re.UNICODE | re.MULTILINE)
+
+_FLOAT_CMP_NUMBER_RE = re.compile(
+    r'(?P<number>(?<![\d.])[+-]?(?:'
+    r'(?:\d+(?:\.\d*)?|\.\d+)'
+    r'(?:[eE][+-]?\d+)?'
+    r'|inf(?:inity)?|nan'
+    r')(?![\d.]))',
+    re.IGNORECASE,
+)
 
 
 _EXCEPTION_RE = re.compile(
@@ -229,7 +240,7 @@ def check_exception(
     return flag
 
 
-def check_output(
+def _xdoctest_check_output(
     got: str,
     want: str,
     runstate: directive.RuntimeState | None = None,
@@ -261,6 +272,32 @@ def check_output(
     return False
 
 
+def check_output(
+    got: str,
+    want: str,
+    runstate: directive.RuntimeState | None = None,
+) -> bool:
+    """
+    Check output using the currently configured output checker backend.
+
+    Args:
+        got (str): text produced by the test
+        want (str): target to match against
+        runstate (xdoctest.directive.RuntimeState | None): current state
+
+    Returns:
+        bool: True if got matches want or if the check is disabled
+    """
+    if not want:  # nocover
+        return True
+    if runstate is None:
+        runstate = directive.RuntimeState()
+    from xdoctest import checker_facade
+    optionflags = checker_facade.runtime_state_to_optionflags(runstate)
+    output_checker = checker_facade.resolve_current_checker(runstate)
+    return bool(output_checker.check_output(want, got, optionflags))
+
+
 def _check_match(
     got: str, want: str, runstate: directive.RuntimeState | dict
 ) -> bool:
@@ -277,6 +314,10 @@ def _check_match(
     """
     if got == want:
         return True
+
+    if runstate['FLOAT_CMP']:
+        if _float_cmp_match(got, want, runstate):
+            return True
 
     if runstate['ELLIPSIS']:
         if _ellipsis_match(got, want):
@@ -367,6 +408,178 @@ def _ellipsis_match(got: typing.Any, want: typing.Any) -> bool:
         startpos += len(w)
 
     return True
+
+
+def _float_cmp_match(
+    got: str, want: str, runstate: directive.RuntimeState | dict
+) -> bool:
+    """
+    Compare output strings with numeric substrings matched approximately.
+
+    Text outside of numeric substrings must still agree. Ellipsis is handled in
+    the same token stream so that ``FLOAT_CMP`` composes with ``ELLIPSIS``.
+    """
+    allow_ellipsis = bool(runstate['ELLIPSIS'])
+    got_tokens = _tokenize_float_cmp_text(got, allow_ellipsis=allow_ellipsis)
+    want_tokens = _tokenize_float_cmp_text(want, allow_ellipsis=allow_ellipsis)
+    return _float_cmp_match_tokens(got_tokens, want_tokens)
+
+
+def _tokenize_float_cmp_text(
+    text: str, allow_ellipsis: bool
+) -> list[tuple[str, str]]:
+    tokens: list[tuple[str, str]] = []
+    pos = 0
+    for match in _FLOAT_CMP_NUMBER_RE.finditer(text):
+        start, stop = match.span()
+        if start > pos:
+            _append_float_cmp_text_tokens(
+                tokens, text[pos:start], allow_ellipsis=allow_ellipsis
+            )
+        tokens.append(('number', match.group('number')))
+        pos = stop
+    if pos < len(text):
+        _append_float_cmp_text_tokens(
+            tokens, text[pos:], allow_ellipsis=allow_ellipsis
+        )
+    return tokens
+
+
+def _append_float_cmp_text_tokens(
+    tokens: list[tuple[str, str]], text: str, allow_ellipsis: bool
+) -> None:
+    if not allow_ellipsis or ELLIPSIS_MARKER not in text:
+        if text:
+            tokens.append(('text', text))
+        return
+
+    parts = re.split(r'(\.\.\.)', text)
+    for part in parts:
+        if not part:
+            continue
+        if part == ELLIPSIS_MARKER:
+            tokens.append(('ellipsis', part))
+        else:
+            tokens.append(('text', part))
+
+
+def _float_cmp_match_tokens(
+    got_tokens: list[tuple[str, str]],
+    want_tokens: list[tuple[str, str]],
+) -> bool:
+    """
+    Match tokenized output for ``FLOAT_CMP``.
+
+    ``want_tokens`` may contain ``('ellipsis', '...')`` tokens, which act like
+    a wildcard over zero or more tokens in ``got_tokens``.
+
+    Example:
+        >>> from xdoctest.checker import _float_cmp_match_tokens
+        >>> got_tokens = [('text', 'best='), ('number', '0.3333333333')]
+        >>> want_tokens = [('text', 'best='), ('number', '0.333333')]
+        >>> _float_cmp_match_tokens(got_tokens, want_tokens)
+        True
+
+    Example:
+        >>> from xdoctest.checker import _float_cmp_match_tokens
+        >>> got_tokens = [('text', 'best='), ('number', '1.0')]
+        >>> want_tokens = [('text', 'best='), ('number', '1.1')]
+        >>> _float_cmp_match_tokens(got_tokens, want_tokens)
+        False
+
+    Example:
+        >>> from xdoctest.checker import _float_cmp_match_tokens
+        >>> got_tokens = [
+        ...     ('text', 'prefix '),
+        ...     ('number', '0.3333333333'),
+        ...     ('text', ' middle '),
+        ...     ('number', '2.0'),
+        ...     ('text', ' suffix'),
+        ... ]
+        >>> want_tokens = [
+        ...     ('text', 'prefix '),
+        ...     ('ellipsis', '...'),
+        ...     ('text', ' suffix'),
+        ... ]
+        >>> _float_cmp_match_tokens(got_tokens, want_tokens)
+        True
+
+    Example:
+        >>> from xdoctest.checker import _float_cmp_match_tokens
+        >>> got_tokens = [('text', 'prefix '), ('text', 'suffix')]
+        >>> want_tokens = [('text', 'prefix '), ('ellipsis', '...')]
+        >>> _float_cmp_match_tokens(got_tokens, want_tokens)
+        True
+    """
+    def token_equal(got_token: tuple[str, str], want_token: tuple[str, str]) -> bool:
+        gkind, gvalue = got_token
+        wkind, wvalue = want_token
+        if gkind != wkind:
+            return False
+        if gkind == 'text':
+            return gvalue == wvalue
+        if gkind == 'ellipsis':
+            return True
+        return _float_cmp_numeric_equal(gvalue, wvalue)
+
+    # Collapse consecutive ellipses first.
+    compact_want: list[tuple[str, str]] = []
+    for tok in want_tokens:
+        if (
+            tok[0] == 'ellipsis'
+            and compact_want
+            and compact_want[-1][0] == 'ellipsis'
+        ):
+            continue
+        compact_want.append(tok)
+    want_tokens = compact_want
+
+    gi = 0
+    wi = 0
+    last_ellipsis_wi = -1
+    retry_gi = -1
+
+    while gi < len(got_tokens):
+        if wi < len(want_tokens) and want_tokens[wi][0] == 'ellipsis':
+            last_ellipsis_wi = wi
+            wi += 1
+            retry_gi = gi
+        elif wi < len(want_tokens) and token_equal(got_tokens[gi], want_tokens[wi]):
+            gi += 1
+            wi += 1
+        elif last_ellipsis_wi != -1:
+            retry_gi += 1
+            gi = retry_gi
+            wi = last_ellipsis_wi + 1
+        else:
+            return False
+
+    while wi < len(want_tokens) and want_tokens[wi][0] == 'ellipsis':
+        wi += 1
+
+    return wi == len(want_tokens)
+
+
+def _float_cmp_numeric_equal(got_text: str, want_text: str) -> bool:
+    got_value = _parse_float_cmp_number(got_text)
+    want_value = _parse_float_cmp_number(want_text)
+
+    if math.isnan(got_value) or math.isnan(want_value):
+        return math.isnan(got_value) and math.isnan(want_value)
+    if math.isinf(got_value) or math.isinf(want_value):
+        return got_value == want_value
+    return math.isclose(got_value, want_value, rel_tol=1e-5, abs_tol=1e-8)
+
+
+def _parse_float_cmp_number(text: str) -> float:
+    lowered = text.lower()
+    if lowered in {'nan', '+nan', '-nan'}:
+        return float('nan')
+    if lowered in {'inf', '+inf', 'infinity', '+infinity'}:
+        return float('inf')
+    if lowered in {'-inf', '-infinity'}:
+        return float('-inf')
+    return float(text)
 
 
 def normalize(
@@ -534,7 +747,7 @@ class GotWantException(AssertionError):
 
         return False
 
-    def output_difference(
+    def _output_difference_xdoctest(
         self,
         runstate: directive.RuntimeState | None = None,
         colored: bool = True,
@@ -632,6 +845,29 @@ class GotWantException(AssertionError):
                 raise AssertionError('impossible state')
                 text = 'Expected nothing\nGot nothing\n'
         return text
+
+    def output_difference(
+        self,
+        runstate: directive.RuntimeState | None = None,
+        colored: bool = True,
+    ) -> str:
+        if runstate is None:
+            runstate = directive.RuntimeState()
+
+        from xdoctest import checker_facade
+        output_checker = checker_facade.resolve_current_checker(runstate)
+        if (
+            output_checker.__class__.output_difference
+            is not checker_facade.OutputChecker.output_difference
+        ):
+            example = doctest.Example(source='', want=self.want)
+            optionflags = checker_facade.runtime_state_to_optionflags(runstate)
+            return output_checker.output_difference(example, self.got, optionflags)
+
+        return self._output_difference_xdoctest(
+            runstate=runstate,
+            colored=colored,
+        )
 
     def output_repr_difference(
         self, runstate: directive.RuntimeState | None = None

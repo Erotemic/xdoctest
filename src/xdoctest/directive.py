@@ -29,6 +29,10 @@ The basic directives and their defaults are as follows:
 
     * ``IGNORE_WANT``: False,
 
+    * ``IGNORE_OUTPUT``: False,
+
+    * ``FLOAT_CMP``: False,
+
     * ``NORMALIZE_REPR``: True,
 
     * ``REPORT_CDIFF``: False,
@@ -217,6 +221,8 @@ class RuntimeStateDict(TypedDict, total=False):
     IGNORE_EXCEPTION_DETAIL: bool
     NORMALIZE_WHITESPACE: bool
     IGNORE_WANT: bool
+    IGNORE_OUTPUT: bool
+    FLOAT_CMP: bool
     REQUIRE_WANT: bool
     NORMALIZE_REPR: bool
     REPORT_CDIFF: bool
@@ -238,6 +244,8 @@ DEFAULT_RUNTIME_STATE: RuntimeStateDict = {
     'IGNORE_EXCEPTION_DETAIL': False,
     'NORMALIZE_WHITESPACE': True,
     'IGNORE_WANT': False,
+    'IGNORE_OUTPUT': False,
+    'FLOAT_CMP': False,
     # When enabled, output-producing parts must have an explicit local want.
     # Silent setup parts remain valid without a want.
     'REQUIRE_WANT': False,
@@ -303,7 +311,9 @@ class RuntimeState(utils.NiceRepr):
             ASYNC: False,
             DONT_ACCEPT_BLANKLINE: False,
             ELLIPSIS: True,
+            FLOAT_CMP: False,
             IGNORE_EXCEPTION_DETAIL: False,
+            IGNORE_OUTPUT: False,
             IGNORE_WANT: False,
             IGNORE_WHITESPACE: False,
             NORMALIZE_REPR: True,
@@ -329,6 +339,9 @@ class RuntimeState(utils.NiceRepr):
         if default_state:
             self._global_state.update(default_state)
         self._inline_state: dict[str, typing.Any] = {}
+        self._output_checker = 'xdoctest'
+        self._output_checker_flags = 0
+        self._inline_output_checker_flags = 0
 
     def to_dict(self) -> OrderedDict[str, bool | set[str]]:
         """
@@ -377,6 +390,30 @@ class RuntimeState(utils.NiceRepr):
             raise KeyError('Unknown key: {}'.format(key))
         cast(Dict[str, Union[bool, Set[str]]], self._global_state)[key] = value
 
+    def get_output_checker(self) -> str:
+        return self._output_checker
+
+    def set_output_checker(self, name: str) -> None:
+        self._output_checker = name
+
+    def get_output_checker_flags(self) -> int:
+        return self._output_checker_flags | self._inline_output_checker_flags
+
+    def set_output_checker_flags(self, flags: int) -> None:
+        self._output_checker_flags = int(flags)
+
+    def add_output_checker_flags(self, flags: int, inline: bool = False) -> None:
+        if inline:
+            self._inline_output_checker_flags |= int(flags)
+        else:
+            self._output_checker_flags |= int(flags)
+
+    def remove_output_checker_flags(self, flags: int, inline: bool = False) -> None:
+        if inline:
+            self._inline_output_checker_flags &= ~int(flags)
+        else:
+            self._output_checker_flags &= ~int(flags)
+
     def set_report_style(
         self,
         reportchoice: ReportStyle,
@@ -416,6 +453,7 @@ class RuntimeState(utils.NiceRepr):
         """
         # Clear the previous inline state
         self._inline_state.clear()
+        self._inline_output_checker_flags = 0
         for directive in directives:
             for effect in directive.effects():
                 action, key, value = effect
@@ -423,6 +461,16 @@ class RuntimeState(utils.NiceRepr):
                     continue
 
                 if key not in self._global_state:
+                    from xdoctest import directive_facade
+
+                    if directive_facade.is_registered_optionflag(key):
+                        flag = directive_facade.get_optionflag(key)
+                        if action == 'assign':
+                            if value:
+                                self.add_output_checker_flags(flag, inline=bool(directive.inline))
+                            else:
+                                self.remove_output_checker_flags(flag, inline=bool(directive.inline))
+                            continue
                     warnings.warn('Unknown state: {}'.format(key))
 
                 # Determine if this impacts the local (inline) or global state.
@@ -924,7 +972,7 @@ def _is_requires_satisfied(
     return flag
 
 
-_MODNAME_EXISTS_CACHE: typing.Dict[typing.Any, bool] = {}
+_MODNAME_EXISTS_CACHE: dict[typing.Any, bool] = {}
 
 
 def _module_exists(modname: typing.Any) -> bool:
@@ -1007,12 +1055,14 @@ def parse_directive_optstr(
 
     name = name.upper()
     if name not in COMMANDS:
-        msg = 'Unknown directive: {!r}'.format(optpart)
-        warnings.warn(msg)
-        return None
-    else:
-        directive = Directive(name, positive, args, inline)
-        return directive
+        from xdoctest import directive_facade
+
+        if not directive_facade.is_registered_optionflag(name):
+            msg = 'Unknown directive: {!r}'.format(optpart)
+            warnings.warn(msg)
+            return None
+    directive = Directive(name, positive, args, inline)
+    return directive
 
 
 if __name__ == '__main__':
