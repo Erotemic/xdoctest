@@ -4,7 +4,7 @@ import doctest
 
 import xdoctest
 from xdoctest import checker, doctest_example, utils
-from xdoctest import directive_facade
+from xdoctest import checker_facade, directive_facade
 
 
 def test_register_optionflag_is_stable() -> None:
@@ -14,12 +14,14 @@ def test_register_optionflag_is_stable() -> None:
 
 
 def test_runtime_state_optionflag_roundtrip_for_builtin_flags() -> None:
-    runstate = xdoctest.optionflags_to_runtime_state(
-        xdoctest.FLOAT_CMP | xdoctest.ELLIPSIS
+    from xdoctest import interop
+
+    runstate = interop.optionflags_to_runtime_state(
+        directive_facade.FLOAT_CMP | directive_facade.ELLIPSIS
     )
-    flags = xdoctest.runtime_state_to_optionflags(runstate)
-    assert flags & xdoctest.FLOAT_CMP
-    assert flags & xdoctest.ELLIPSIS
+    flags = interop.runtime_state_to_optionflags(runstate)
+    assert flags & directive_facade.FLOAT_CMP
+    assert flags & directive_facade.ELLIPSIS
 
 
 FIX = doctest.register_optionflag('FIX')
@@ -129,7 +131,7 @@ def test_resolve_current_checker_honors_mapping_state() -> None:
         pass
 
     xdoctest.register_checker('mapping_checker', MappingChecker)
-    resolved = xdoctest.checker_facade.resolve_current_checker(
+    resolved = checker_facade.resolve_current_checker(
         {'_output_checker': 'mapping_checker'}
     )
     assert isinstance(resolved, MappingChecker)
