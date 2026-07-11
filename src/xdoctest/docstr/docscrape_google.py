@@ -182,7 +182,7 @@ def split_google_docblocks(docstr: str) -> list[tuple[str, DocBlock]]:
     # We will group lines by their indentation.
     # Rectify empty lines by giving them their parent's indentation.
     true_indent = []
-    prev_indent = None
+    prev_indent = base_indent
     for indent_, len_ in zip(line_indent, line_len):
         if len_ == 0:
             # Empty lines take on their parents indentation

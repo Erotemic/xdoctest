@@ -207,10 +207,10 @@ def test_extract_got_exception() -> None:
     assert 'ExtractGotReprException' in text
 
 
-def test_optional_want_false_extracts_bad_repr() -> None:
+def test_require_want_extracts_bad_repr() -> None:
     """
     A no-want eval output should still report bad reprs through the existing
-    got-repr failure machinery when optional_want is disabled.
+    got-repr failure machinery when REQUIRE_WANT is enabled.
     """
     class MyObj:
         def __repr__(self) -> str:
@@ -226,7 +226,7 @@ def test_optional_want_false_extracts_bad_repr() -> None:
     assert self._parts is not None
     self._parts[0].compile_mode = 'eval'
     self.global_namespace['obj'] = MyObj()
-    self.config['optional_want'] = False
+    self.config['default_runtime_state'] = {'REQUIRE_WANT': True}
     result = self.run(on_error='return', verbose=0)
     assert result['failed']
 
