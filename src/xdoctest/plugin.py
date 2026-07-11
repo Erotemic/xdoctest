@@ -201,8 +201,53 @@ def _pytest_collect_file(file_path, parent, **path_args):
             return XDoctestTextfile(file_path, parent)
 
 
+try:
+    from _pytest.fixtures import FixtureLookupError as _FixtureLookupError
+except ImportError:  # nocover
+    _FixtureLookupError = Exception  # type: ignore
+
+
+def _lookup_namespace_fixture(getfixturevalue) -> dict:
+    """
+    Resolve the ``xdoctest_namespace`` fixture defensively.
+
+    The fixture is defined by xdoctest's own pytest plugin. When an
+    :class:`XDoctestItem` is embedded by another plugin (e.g. the
+    pytest-doctestplus xdoctest backend) xdoctest's plugin may not be
+    registered, in which case the namespace is simply empty.
+    """
+    try:
+        return dict(getfixturevalue('xdoctest_namespace'))
+    except _FixtureLookupError:
+        return {}
+
+
+def _doctestplus_owns_textfiles(config) -> bool:
+    """
+    When pytest-doctestplus is enabled it owns ``.rst``/``.txt`` collection:
+    its parser implements the doctestplus RST directive language
+    (``.. doctest-skip::`` and friends), which xdoctest's plain textfile
+    collector does not understand. Collecting the same file from both
+    plugins would double-run or misparse it, so xdoctest defers.
+    """
+    if not config.pluginmanager.hasplugin('pytest_doctestplus'):
+        return False
+    try:
+        if config.getoption('doctest_plus', default=False):
+            return True
+    except Exception:
+        pass
+    try:
+        return bool(config.getini('doctest_plus'))
+    except Exception:
+        return False
+
+
 def _is_xdoctest(config, path, parent):
     matched = False
+    if _suffix(path) in ('.txt', '.rst'):
+        if _doctestplus_owns_textfiles(config):
+            return False
     if _suffix(path) in ('.txt', '.rst') and parent.session.isinitpath(path):
         matched = True
     else:
@@ -292,9 +337,10 @@ class XDoctestItem(pytest.Item):
         if _PYTEST_IS_GE_800:
             self._request._fillfixtures()
             globs = dict(getfixture=self._request.getfixturevalue)
-            for name, value in self._request.getfixturevalue(
-                'xdoctest_namespace'
-            ).items():
+            namespace = _lookup_namespace_fixture(
+                self._request.getfixturevalue
+            )
+            for name, value in namespace.items():
                 globs[name] = value
             self.dtest.globs.update(globs)
         else:
@@ -303,9 +349,10 @@ class XDoctestItem(pytest.Item):
                 global_namespace = dict(
                     getfixture=self.fixture_request.getfixturevalue  # type: ignore
                 )
-                for name, value in self.fixture_request.getfixturevalue(  # type: ignore
-                    'xdoctest_namespace'
-                ).items():
+                namespace = _lookup_namespace_fixture(
+                    self.fixture_request.getfixturevalue  # type: ignore
+                )
+                for name, value in namespace.items():
                     global_namespace[name] = value
                 self.dtest.global_namespace.update(global_namespace)
 
