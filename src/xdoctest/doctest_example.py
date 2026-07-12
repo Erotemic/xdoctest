@@ -6,7 +6,7 @@ from __future__ import annotations
 import __future__
 
 import ast
-import contextlib
+from contextlib import nullcontext
 import math
 import os
 import re
@@ -343,34 +343,6 @@ def _distribution_or_module_exists(name: str) -> bool:
     except (ImportError, ValueError):
         return False
 
-
-@contextlib.contextmanager
-def _ignore_warnings_context():
-    """
-    Silence warnings emitted while the body runs (the ``IGNORE_WARNINGS``
-    runtime directive).
-    """
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore')
-        yield
-
-
-@contextlib.contextmanager
-def _show_warnings_context():
-    """
-    Capture warnings emitted while the body runs and print them afterwards
-    as ``Category: message`` lines (the ``SHOW_WARNINGS`` runtime
-    directive). The prints land in the part's captured stdout, so shown
-    warnings participate in got/want matching.
-    """
-    with warnings.catch_warnings(record=True) as captured:
-        warnings.simplefilter('always')
-        yield
-    for warn in captured:
-        category_name = getattr(
-            warn, '_category_name', warn.category.__name__
-        )
-        print(f'{category_name}: {warn.message}')
 
 
 def _doctest_requirement_satisfied(requirement_text: str) -> bool:
@@ -965,10 +937,10 @@ class DocTest:
         runstate = self._runstate
         if runstate is not None:
             if runstate['IGNORE_WARNINGS']:
-                return _ignore_warnings_context()
+                return utils.IgnoreWarnings()
             if runstate['SHOW_WARNINGS']:
-                return _show_warnings_context()
-        return contextlib.nullcontext()
+                return utils.ShowWarnings()
+        return nullcontext()
 
     def _import_module(self) -> None:
         """

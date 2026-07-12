@@ -16,6 +16,7 @@ from xdoctest.utils import (
     util_path,
     util_str,
     util_stream,
+    util_warning,
 )
 from xdoctest.utils.util_import import (
     PythonPathContext,
@@ -51,12 +52,18 @@ from xdoctest.utils.util_stream import (
     CaptureStream,
     TeeStringIO,
 )
+from xdoctest.utils.util_warning import (
+    IgnoreWarnings,
+    ShowWarnings,
+)
 
 __all__ = [
     'CaptureStdout',
     'CaptureStream',
+    'IgnoreWarnings',
     'NiceRepr',
     'PythonPathContext',
+    'ShowWarnings',
     'TeeStringIO',
     'TempDir',
     'TempDoctest',
@@ -81,5 +88,6 @@ __all__ = [
     'util_path',
     'util_str',
     'util_stream',
+    'util_warning',
     'util_asyncio',
 ]
