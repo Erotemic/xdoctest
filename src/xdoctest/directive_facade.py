@@ -60,22 +60,30 @@ class RuntimeFlagFacade:
     def get_registered_optionflags(self) -> Dict[str, int]:
         return dict(self._optionflags_by_name)
 
+    def _runtime_bound_optionflag_mask(self) -> int:
+        """Return the mask represented by structured runtime-state keys."""
+        mask = 0
+        for flag in self._optionflag_to_runtime_key:
+            mask |= flag
+        return mask
+
     def runtime_state_to_optionflags(
         self,
         runstate: directive.RuntimeState | dict | None,
     ) -> int:
+        runtime_bound_mask = self._runtime_bound_optionflag_mask()
         flags = 0
         if isinstance(runstate, directive.RuntimeState):
-            flags |= runstate.get_output_checker_flags()
+            flags |= runstate.get_output_checker_flags() & ~runtime_bound_mask
             lookup = runstate.__getitem__
         elif runstate is None:
             runstate = directive.RuntimeState()
-            flags |= runstate.get_output_checker_flags()
+            flags |= runstate.get_output_checker_flags() & ~runtime_bound_mask
             lookup = runstate.__getitem__
         else:
             lookup = runstate.__getitem__
             if isinstance(runstate, dict):
-                flags |= int(runstate.get('_optionflags', 0))
+                flags |= int(runstate.get('_optionflags', 0)) & ~runtime_bound_mask
 
         for runtime_key, flag in self._runtime_key_to_optionflag.items():
             try:
@@ -99,7 +107,9 @@ class RuntimeFlagFacade:
         runstate = directive.RuntimeState(
             cast(directive.RuntimeStateDict, base_state)
         )
-        runstate.set_output_checker_flags(optionflags)
+        runtime_bound_mask = self._runtime_bound_optionflag_mask()
+        checker_only_flags = optionflags & ~runtime_bound_mask
+        runstate.set_output_checker_flags(checker_only_flags)
         for flag, runtime_key in self._optionflag_to_runtime_key.items():
             value = runstate[runtime_key]
             if isinstance(value, bool) and (optionflags & flag):

@@ -260,12 +260,14 @@ def _xdoctest_check_output(
     if not want:  # nocover
         return True
     if want:
+        if runstate is None:
+            runstate = directive.RuntimeState()
+        if runstate['IGNORE_OUTPUT']:
+            return True
+
         # Try default
         if got == want:
             return True
-
-        if runstate is None:
-            runstate = directive.RuntimeState()
 
         got, want = normalize(got, want, runstate)
         return _check_match(got, want, runstate)

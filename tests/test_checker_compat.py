@@ -343,3 +343,80 @@ def test_end_to_end_registered_checker_flag_works_via_directive() -> None:
     self.config['output_checker'] = 'fix_directive_checker'
     result = self.run(verbose=0, on_error='raise')
     assert result['passed']
+
+
+def test_runtime_bound_flag_can_be_cleared_after_conversion() -> None:
+    runstate = xdoctest.optionflags_to_runtime_state(xdoctest.FLOAT_CMP)
+    assert runstate['FLOAT_CMP']
+
+    runstate['FLOAT_CMP'] = False
+    flags = xdoctest.runtime_state_to_optionflags(runstate)
+    assert not (flags & xdoctest.FLOAT_CMP)
+
+
+def test_configured_builtin_flag_can_be_disabled_locally() -> None:
+    seen: list[int] = []
+
+    class FlagRecorder(doctest.OutputChecker):
+        def check_output(self, want: str, got: str, optionflags: int) -> bool:
+            seen.append(optionflags)
+            return super().check_output(want, got, optionflags)
+
+    xdoctest.register_checker('builtin_override_recorder', FlagRecorder)
+    docsrc = utils.codeblock(
+        """
+        >>> print('1.0000001')  # xdoctest: -FLOAT_CMP
+        1
+        """
+    )
+    dtest = doctest_example.DocTest(docsrc=docsrc)
+    dtest.config['output_checker'] = 'builtin_override_recorder'
+    dtest.config['output_checker_flags'] = xdoctest.FLOAT_CMP
+
+    result = dtest.run(verbose=0, on_error='return')
+
+    assert result['failed']
+    assert seen
+    assert not (seen[-1] & xdoctest.FLOAT_CMP)
+
+
+def test_inline_negative_custom_flag_masks_global_flag_for_one_part() -> None:
+    seen: list[int] = []
+    custom_flag = xdoctest.register_optionflag('CUSTOM_INLINE_MASK')
+
+    class FlagRecorder(doctest.OutputChecker):
+        def check_output(self, want: str, got: str, optionflags: int) -> bool:
+            seen.append(optionflags)
+            return xdoctest.OutputChecker().check_output(want, got, optionflags)
+
+    xdoctest.register_checker('custom_mask_recorder', FlagRecorder)
+    docsrc = utils.codeblock(
+        """
+        >>> # xdoctest: +CUSTOM_INLINE_MASK
+        >>> print('first')
+        first
+        >>> print('second')  # xdoctest: -CUSTOM_INLINE_MASK
+        second
+        >>> print('third')
+        third
+        """
+    )
+    dtest = doctest_example.DocTest(docsrc=docsrc)
+    dtest.config['output_checker'] = 'custom_mask_recorder'
+
+    result = dtest.run(verbose=0, on_error='raise')
+
+    assert result['passed']
+    assert len(seen) == 3
+    assert seen[0] & custom_flag
+    assert not (seen[1] & custom_flag)
+    assert seen[2] & custom_flag
+
+
+def test_output_checker_honors_ignore_output() -> None:
+    output_checker = xdoctest.OutputChecker()
+    assert output_checker.check_output(
+        'expected',
+        'actual',
+        xdoctest.IGNORE_OUTPUT,
+    )

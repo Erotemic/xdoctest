@@ -1169,13 +1169,18 @@ class DocTest:
         self._partfilename = None
         self._partfilename_to_part = {}
 
-        # Initialize a new runtime state
+        # Initialize a new runtime state. Mapped option flags become structured
+        # state so local negative directives can override configured defaults;
+        # only checker-specific flags remain in the raw bitmask.
         default_state = self.config['default_runtime_state']
-        runstate = self._runstate = directive.RuntimeState(default_state)
-        runstate.set_output_checker(self.config.get('output_checker', 'xdoctest'))
-        runstate.set_output_checker_flags(
-            int(self.config.get('output_checker_flags', 0))
+        from xdoctest import directive_facade
+
+        native_defaults = directive.RuntimeState(default_state).to_dict()
+        runstate = self._runstate = directive_facade.optionflags_to_runtime_state(
+            int(self.config.get('output_checker_flags', 0)),
+            cast(directive.RuntimeStateDict, native_defaults),
         )
+        runstate.set_output_checker(self.config.get('output_checker', 'xdoctest'))
         # setup reporting choice
         runstate.set_report_style(self.config['reportchoice'].lower())
 

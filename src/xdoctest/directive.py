@@ -341,7 +341,8 @@ class RuntimeState(utils.NiceRepr):
         self._inline_state: dict[str, typing.Any] = {}
         self._output_checker = 'xdoctest'
         self._output_checker_flags = 0
-        self._inline_output_checker_flags = 0
+        self._inline_output_checker_flags_add = 0
+        self._inline_output_checker_flags_remove = 0
 
     def to_dict(self) -> OrderedDict[str, bool | set[str]]:
         """
@@ -397,22 +398,27 @@ class RuntimeState(utils.NiceRepr):
         self._output_checker = name
 
     def get_output_checker_flags(self) -> int:
-        return self._output_checker_flags | self._inline_output_checker_flags
+        flags = self._output_checker_flags | self._inline_output_checker_flags_add
+        return flags & ~self._inline_output_checker_flags_remove
 
     def set_output_checker_flags(self, flags: int) -> None:
         self._output_checker_flags = int(flags)
 
     def add_output_checker_flags(self, flags: int, inline: bool = False) -> None:
+        flags = int(flags)
         if inline:
-            self._inline_output_checker_flags |= int(flags)
+            self._inline_output_checker_flags_add |= flags
+            self._inline_output_checker_flags_remove &= ~flags
         else:
-            self._output_checker_flags |= int(flags)
+            self._output_checker_flags |= flags
 
     def remove_output_checker_flags(self, flags: int, inline: bool = False) -> None:
+        flags = int(flags)
         if inline:
-            self._inline_output_checker_flags &= ~int(flags)
+            self._inline_output_checker_flags_remove |= flags
+            self._inline_output_checker_flags_add &= ~flags
         else:
-            self._output_checker_flags &= ~int(flags)
+            self._output_checker_flags &= ~flags
 
     def set_report_style(
         self,
@@ -453,7 +459,8 @@ class RuntimeState(utils.NiceRepr):
         """
         # Clear the previous inline state
         self._inline_state.clear()
-        self._inline_output_checker_flags = 0
+        self._inline_output_checker_flags_add = 0
+        self._inline_output_checker_flags_remove = 0
         for directive in directives:
             for effect in directive.effects():
                 action, key, value = effect
