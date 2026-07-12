@@ -15,6 +15,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Added the `deferred_output_matching` config knob and CLI flags to opt into
   stdlib/doctest-like output grouping without changing the default xdoctest
   behavior.
+* Added native doctest interoperability primitives, including stdlib-shaped
+  output-checker and optionflag registration APIs and the `FLOAT_CMP` and
+  `IGNORE_OUTPUT` directives.
+* Added support for module-level `__doctest_skip__` and
+  `__doctest_requires__` metadata.
 
 ### Fixed
 * Fixed issue #181 where comment indentation could cause parsing issues.
