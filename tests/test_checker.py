@@ -92,3 +92,17 @@ def test_float_cmp_special_values_and_multiple_numbers() -> None:
     got = 'value=NaN upper=INF lower=-Infinity pair=1.0,2.0000000001'
     want = 'value=nan upper=inf lower=-inf pair=1,2'
     assert checker.check_output(got, want, runstate)
+
+
+def test_float_cmp_multiple_ellipsis_chunks() -> None:
+    runstate = directive.RuntimeState({'FLOAT_CMP': True, 'ELLIPSIS': True})
+    got = 'prefix x=1.000000 middle y=2.000000 suffix'
+    want = 'prefix...x=1...y=2...suffix'
+    assert checker.check_output(got, want, runstate)
+
+
+def test_float_cmp_consecutive_ellipses() -> None:
+    runstate = directive.RuntimeState({'FLOAT_CMP': True, 'ELLIPSIS': True})
+    got = 'prefix x=1.000000 suffix'
+    want = 'prefix......suffix'
+    assert checker.check_output(got, want, runstate)

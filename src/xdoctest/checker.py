@@ -463,6 +463,42 @@ def _append_float_cmp_text_tokens(
             tokens.append(('text', part))
 
 
+def _float_cmp_token_equal(
+    got_token: tuple[str, str], want_token: tuple[str, str]
+) -> bool:
+    got_kind, got_value = got_token
+    want_kind, want_value = want_token
+    if got_kind != want_kind:
+        return False
+    if got_kind == 'number':
+        return _float_cmp_numeric_equal(got_value, want_value)
+    return got_value == want_value
+
+
+def _float_cmp_tokens_equal_at(
+    got_tokens: list[tuple[str, str]],
+    want_tokens: list[tuple[str, str]],
+    start: int,
+) -> bool:
+    candidate = got_tokens[start : start + len(want_tokens)]
+    return len(candidate) == len(want_tokens) and all(
+        map(_float_cmp_token_equal, candidate, want_tokens)
+    )
+
+
+def _find_float_cmp_token_chunk(
+    got_tokens: list[tuple[str, str]],
+    want_tokens: list[tuple[str, str]],
+    start: int,
+    stop: int,
+) -> int | None:
+    last_start = stop - len(want_tokens)
+    for candidate in range(start, last_start + 1):
+        if _float_cmp_tokens_equal_at(got_tokens, want_tokens, candidate):
+            return candidate
+    return None
+
+
 def _float_cmp_match_tokens(
     got_tokens: list[tuple[str, str]],
     want_tokens: list[tuple[str, str]],
@@ -470,8 +506,9 @@ def _float_cmp_match_tokens(
     """
     Match tokenized output for ``FLOAT_CMP``.
 
-    ``want_tokens`` may contain ``('ellipsis', '...')`` tokens, which act like
-    a wildcard over zero or more tokens in ``got_tokens``.
+    Ellipses divide the expected tokens into literal chunks. The first and last
+    chunks are anchored when the pattern does not start or end with an
+    ellipsis; interior chunks are found left-to-right without backtracking.
 
     Example:
         >>> from xdoctest.checker import _float_cmp_match_tokens
@@ -511,53 +548,56 @@ def _float_cmp_match_tokens(
         >>> _float_cmp_match_tokens(got_tokens, want_tokens)
         True
     """
-    def token_equal(got_token: tuple[str, str], want_token: tuple[str, str]) -> bool:
-        gkind, gvalue = got_token
-        wkind, wvalue = want_token
-        if gkind != wkind:
-            return False
-        if gkind == 'text':
-            return gvalue == wvalue
-        if gkind == 'ellipsis':
-            return True
-        return _float_cmp_numeric_equal(gvalue, wvalue)
+    if not any(kind == 'ellipsis' for kind, _ in want_tokens):
+        return len(got_tokens) == len(want_tokens) and all(
+            _float_cmp_token_equal(got_token, want_token)
+            for got_token, want_token in zip(got_tokens, want_tokens)
+        )
 
-    # Collapse consecutive ellipses first.
-    compact_want: list[tuple[str, str]] = []
-    for tok in want_tokens:
-        if (
-            tok[0] == 'ellipsis'
-            and compact_want
-            and compact_want[-1][0] == 'ellipsis'
-        ):
-            continue
-        compact_want.append(tok)
-    want_tokens = compact_want
-
-    gi = 0
-    wi = 0
-    last_ellipsis_wi = -1
-    retry_gi = -1
-
-    while gi < len(got_tokens):
-        if wi < len(want_tokens) and want_tokens[wi][0] == 'ellipsis':
-            last_ellipsis_wi = wi
-            wi += 1
-            retry_gi = gi
-        elif wi < len(want_tokens) and token_equal(got_tokens[gi], want_tokens[wi]):
-            gi += 1
-            wi += 1
-        elif last_ellipsis_wi != -1:
-            retry_gi += 1
-            gi = retry_gi
-            wi = last_ellipsis_wi + 1
+    chunks: list[list[tuple[str, str]]] = []
+    chunk: list[tuple[str, str]] = []
+    for token in want_tokens:
+        if token[0] == 'ellipsis':
+            if chunk:
+                chunks.append(chunk)
+                chunk = []
         else:
+            chunk.append(token)
+    if chunk:
+        chunks.append(chunk)
+
+    if not chunks:
+        return True
+
+    start = 0
+    first_middle_chunk = 0
+    if want_tokens[0][0] != 'ellipsis':
+        first_chunk = chunks[0]
+        if not _float_cmp_tokens_equal_at(got_tokens, first_chunk, 0):
             return False
+        start = len(first_chunk)
+        first_middle_chunk = 1
 
-    while wi < len(want_tokens) and want_tokens[wi][0] == 'ellipsis':
-        wi += 1
+    stop = len(got_tokens)
+    last_middle_chunk = len(chunks)
+    if want_tokens[-1][0] != 'ellipsis':
+        last_chunk = chunks[-1]
+        stop -= len(last_chunk)
+        if stop < start or not _float_cmp_tokens_equal_at(
+            got_tokens, last_chunk, stop
+        ):
+            return False
+        last_middle_chunk -= 1
 
-    return wi == len(want_tokens)
+    for middle_chunk in chunks[first_middle_chunk:last_middle_chunk]:
+        found = _find_float_cmp_token_chunk(
+            got_tokens, middle_chunk, start, stop
+        )
+        if found is None:
+            return False
+        start = found + len(middle_chunk)
+
+    return start <= stop
 
 
 def _float_cmp_numeric_equal(got_text: str, want_text: str) -> bool:
