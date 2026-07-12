@@ -93,6 +93,36 @@ def test_directive_syntax_error() -> None:
     assert stdout.count('not-skipped') == 1
 
 
+def test_inline_report_style_is_local() -> None:
+    from xdoctest.directive import Directive, RuntimeState
+
+    runstate = RuntimeState()
+    assert runstate['REPORT_UDIFF']
+    assert not runstate['REPORT_NDIFF']
+
+    runstate.update([Directive('REPORT_NDIFF', positive=True, inline=True)])
+    assert not runstate['REPORT_UDIFF']
+    assert runstate['REPORT_NDIFF']
+
+    runstate.update([])
+    assert runstate['REPORT_UDIFF']
+    assert not runstate['REPORT_NDIFF']
+
+
+def test_inline_negative_report_style_is_local() -> None:
+    from xdoctest.directive import Directive, RuntimeState
+
+    runstate = RuntimeState()
+    runstate.set_report_style('ndiff')
+    assert runstate['REPORT_NDIFF']
+
+    runstate.update([Directive('REPORT_NDIFF', positive=False, inline=True)])
+    assert not runstate['REPORT_NDIFF']
+
+    runstate.update([])
+    assert runstate['REPORT_NDIFF']
+
+
 if __name__ == '__main__':
     """
     CommandLine:

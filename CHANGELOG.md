@@ -15,6 +15,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Added the `deferred_output_matching` config knob and CLI flags to opt into
   stdlib/doctest-like output grouping without changing the default xdoctest
   behavior.
+* Added structured intake helpers for stdlib-shaped `doctest.Example` and
+  `doctest.DocTest` objects, preserving one-based source locations, complete
+  stdlib option masks (including `SKIP`), and per-example output, report-style,
+  and option boundaries without rewriting user source.
+* Added `IGNORE_WARNINGS` and `SHOW_WARNINGS` runtime directives for
+  per-example warning policy.
 * Added native doctest interoperability primitives, including stdlib-shaped
   output-checker and optionflag registration APIs and the `FLOAT_CMP` and
   `IGNORE_OUTPUT` directives.

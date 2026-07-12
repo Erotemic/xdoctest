@@ -1,8 +1,27 @@
+"""
+Stdlib-doctest-shaped façade over xdoctest's checker.
+
+This module exposes a small public surface that lets tooling built around the
+stdlib :mod:`doctest` module (most notably :mod:`pytest_doctestplus`) plug
+into xdoctest's runner without having to know about xdoctest's internal
+:class:`~xdoctest.directive.RuntimeState`.
+
+Adopters typically:
+
+1. Register their optionflags through :func:`xdoctest.register_optionflag`
+   (re-exported here from :mod:`xdoctest.directive_facade`).
+2. Define an :class:`OutputChecker` subclass with the standard
+   ``check_output(want, got, optionflags)`` and (optionally)
+   ``output_difference(example, got, optionflags)`` signatures.
+3. Register the checker by name with :func:`register_checker`.
+4. Select the checker for a given doctest by setting
+   ``DoctestConfig['output_checker']`` to that name.
+"""
+
 from __future__ import annotations
 
 import doctest
-import types
-import typing
+from collections.abc import Mapping
 
 from xdoctest import checker, directive
 from xdoctest.directive_facade import (
@@ -11,6 +30,9 @@ from xdoctest.directive_facade import (
     runtime_state_to_optionflags,
 )
 
+# Keep this union inside postponed annotations. A module-level assignment such
+# as ``CheckerLike = OutputChecker | type[OutputChecker]`` would evaluate the
+# PEP 604 expression during import and break supported Python 3.8 / 3.9.
 _REGISTERED_CHECKERS: dict[
     str, doctest.OutputChecker | type[doctest.OutputChecker]
 ] = {}
@@ -20,11 +42,41 @@ def register_checker(
     name: str,
     checker_: doctest.OutputChecker | type[doctest.OutputChecker],
 ) -> None:
+    """
+    Register an output checker under a name so it can be selected by setting
+    ``DoctestConfig['output_checker']`` to that name.
+
+    Args:
+        name (str): selection key used in configs and runtime state.
+        checker_: either an :class:`doctest.OutputChecker` instance or a class
+            with a no-argument constructor that returns one.
+
+    Example:
+        >>> import doctest
+        >>> name = '_xdoctest_example_checker'
+        >>> instance = doctest.OutputChecker()
+        >>> register_checker(name, instance)
+        >>> resolve_checker(name) is instance
+        True
+        >>> del _REGISTERED_CHECKERS[name]
+    """
     _REGISTERED_CHECKERS[name] = checker_
 
 
-
 def resolve_checker(name: str) -> doctest.OutputChecker:
+    """
+    Return an :class:`doctest.OutputChecker` instance for a registered name.
+
+    Classes are instantiated each time. Instances are returned as-is.
+
+    Raises:
+        KeyError: if the name has not been registered.
+
+    Example:
+        >>> checker = resolve_checker('xdoctest')
+        >>> isinstance(checker, OutputChecker)
+        True
+    """
     if name not in _REGISTERED_CHECKERS:
         raise KeyError(
             'Unknown output checker {!r}. Known checkers are {}'.format(
@@ -37,13 +89,24 @@ def resolve_checker(name: str) -> doctest.OutputChecker:
     return checker_()
 
 
-
 def resolve_current_checker(
-    runstate: directive.RuntimeState | dict | None,
+    runstate: directive.RuntimeState | Mapping[str, object] | None,
 ) -> doctest.OutputChecker:
+    """
+    Return the checker selected by the given runtime state.
+
+    Accepts a :class:`~xdoctest.directive.RuntimeState`, a plain mapping
+    (the ``_output_checker`` key is consulted), or ``None``. In all cases a
+    valid checker is returned, defaulting to ``'xdoctest'``.
+
+    Example:
+        >>> checker = resolve_current_checker({'_output_checker': 'xdoctest'})
+        >>> isinstance(checker, OutputChecker)
+        True
+    """
     if isinstance(runstate, directive.RuntimeState):
         checker_name = runstate.get_output_checker()
-    elif isinstance(runstate, dict):
+    elif isinstance(runstate, Mapping):
         checker_name = str(runstate.get('_output_checker', 'xdoctest'))
     else:
         checker_name = 'xdoctest'
@@ -51,6 +114,29 @@ def resolve_current_checker(
 
 
 class OutputChecker(doctest.OutputChecker):
+    r"""
+    Default xdoctest checker exposed through a stdlib-doctest interface.
+
+    Subclasses can wrap or extend xdoctest's matching by calling
+    ``super().check_output(want, got, optionflags)`` to delegate the base
+    comparison while adding their own pre-/post-processing.
+
+    Note:
+        This class intentionally accepts the same ``(want, got, optionflags)``
+        signature as :class:`doctest.OutputChecker` so that it is a drop-in
+        replacement for stdlib-shaped consumers.
+
+    Example:
+        >>> from xdoctest.directive_facade import ELLIPSIS, FLOAT_CMP
+        >>> output_checker = OutputChecker()
+        >>> output_checker.check_output(
+        >>>     'prefix ... value=1\n',
+        >>>     'prefix middle value=1.0000001\n',
+        >>>     ELLIPSIS | FLOAT_CMP,
+        >>> )
+        True
+    """
+
     def check_output(
         self, want: str, got: str, optionflags: int
     ) -> bool:
@@ -59,12 +145,12 @@ class OutputChecker(doctest.OutputChecker):
 
     def output_difference(
         self,
-        example: typing.Any,
+        example: doctest.Example,
         got: str,
         optionflags: int,
     ) -> str:
         runstate = optionflags_to_runtime_state(optionflags)
-        want = getattr(example, 'want', example)
+        want = example.want
         ex = checker.GotWantException('got differs with doctest want', got, want)
         return ex._output_difference_xdoctest(runstate=runstate, colored=False)
 
