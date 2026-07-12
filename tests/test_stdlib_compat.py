@@ -2,12 +2,42 @@
 
 from __future__ import annotations
 
+import copy
 import doctest
+from collections.abc import Iterator
 
 import pytest
 
 import xdoctest
-from xdoctest import stdlib_compat
+from xdoctest import checker_facade, directive_facade, stdlib_compat
+
+
+@pytest.fixture(autouse=True)
+def isolate_interop_registries() -> Iterator[None]:
+    """Restore checker and optionflag registries after each test."""
+    checker_registry = checker_facade._REGISTERED_CHECKERS
+    checker_snapshot = checker_registry.copy()
+
+    runtime_flags = directive_facade._RUNTIME_FLAGS
+    runtime_flags_snapshot = copy.deepcopy(runtime_flags.__dict__)
+
+    doctest_flags = doctest.OPTIONFLAGS_BY_NAME
+    doctest_flags_snapshot = doctest_flags.copy()
+    doctest_counter = getattr(doctest, '_OPTION_COUNTER', None)
+
+    try:
+        yield
+    finally:
+        checker_registry.clear()
+        checker_registry.update(checker_snapshot)
+
+        runtime_flags.__dict__.clear()
+        runtime_flags.__dict__.update(runtime_flags_snapshot)
+
+        doctest_flags.clear()
+        doctest_flags.update(doctest_flags_snapshot)
+        if doctest_counter is not None:
+            doctest._OPTION_COUNTER = doctest_counter
 
 
 def test_synthetic_example_runs_successfully():
@@ -203,3 +233,65 @@ def test_builtin_optionflag_translates_to_runtime_state():
     )
     result = dtest.run(verbose=0, on_error='return')
     assert result['passed'], result
+
+
+
+def test_local_builtin_option_overrides_global_for_foreign_checker():
+    """A per-example negative builtin flag clears the configured global bit."""
+    seen: list[int] = []
+
+    class StdlibRecorder(doctest.OutputChecker):
+        def check_output(self, want, got, optionflags):
+            seen.append(optionflags)
+            return super().check_output(want, got, optionflags)
+
+    xdoctest.register_checker('stdlib_override_recorder', StdlibRecorder)
+    examples = [
+        doctest.Example(
+            source='print("prefix suffix")\n',
+            want='prefix ...\n',
+            lineno=0,
+            options={doctest.ELLIPSIS: False},
+        )
+    ]
+    dtest = stdlib_compat.from_examples(
+        examples,
+        name='t',
+        optionflags=doctest.ELLIPSIS,
+        config={'output_checker': 'stdlib_override_recorder'},
+    )
+    result = dtest.run(verbose=0, on_error='return')
+    assert result['failed']
+    assert seen
+    assert not (seen[-1] & doctest.ELLIPSIS)
+
+
+def test_local_custom_option_can_mask_global_checker_flag():
+    """A per-example negative custom flag masks a configured checker bit."""
+    custom = xdoctest.register_optionflag('CUSTOM_INTAKE_OVERRIDE')
+    seen: list[int] = []
+
+    class Recorder(doctest.OutputChecker):
+        def check_output(self, want, got, optionflags):
+            seen.append(optionflags)
+            return xdoctest.OutputChecker().check_output(want, got, optionflags)
+
+    xdoctest.register_checker('custom_override_recorder', Recorder)
+    examples = [
+        doctest.Example(
+            source='print("ok")\n',
+            want='ok\n',
+            lineno=0,
+            options={custom: False},
+        )
+    ]
+    dtest = stdlib_compat.from_examples(
+        examples,
+        name='t',
+        optionflags=custom,
+        config={'output_checker': 'custom_override_recorder'},
+    )
+    result = dtest.run(verbose=0, on_error='return')
+    assert result['passed']
+    assert seen
+    assert not (seen[-1] & custom)
