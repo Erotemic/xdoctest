@@ -19,7 +19,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   output-checker and optionflag registration APIs and the `FLOAT_CMP` and
   `IGNORE_OUTPUT` directives.
 * Added support for module-level `__doctest_skip__` and
-  `__doctest_requires__` metadata.
+  `__doctest_requires__` metadata. Bare module or distribution requirements
+  remain zero-dependency; version-constrained requirements use the optional
+  `packaging` dependency.
 
 ### Fixed
 * Fixed issue #181 where comment indentation could cause parsing issues.

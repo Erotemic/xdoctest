@@ -890,3 +890,14 @@ if __name__ == '__main__':
     import xdoctest
 
     xdoctest.doctest_module(__file__)
+
+
+def test_requirement_check_without_packaging(monkeypatch) -> None:
+    monkeypatch.setattr(doctest_example, 'Requirement', None)
+
+    assert doctest_example._doctest_requirement_satisfied('os')
+    assert not doctest_example._doctest_requirement_satisfied(
+        'definitely_missing_package_123456'
+    )
+    with pytest.warns(RuntimeWarning, match='packaging is required'):
+        assert not doctest_example._doctest_requirement_satisfied('pytest>=1')

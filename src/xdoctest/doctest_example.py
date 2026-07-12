@@ -321,9 +321,36 @@ class DoctestConfig(dict):
             return given
 
 
+_BARE_REQUIREMENT_RE = re.compile(
+    r'^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$'
+)
+
+
+def _distribution_or_module_exists(name: str) -> bool:
+    """Check either installed distribution metadata or importability."""
+    try:
+        importlib_metadata_compat.version(name)
+    except Exception:
+        pass
+    else:
+        return True
+
+    from importlib.util import find_spec
+
+    try:
+        return find_spec(name) is not None
+    except (ImportError, ValueError):
+        return False
+
+
 def _doctest_requirement_satisfied(requirement_text: str) -> bool:
     """
     Return True when a doctestplus-style requirement is satisfied.
+
+    Bare distribution or module names do not require ``packaging``. Versioned
+    or otherwise constrained PEP 508 expressions require the optional
+    ``packaging`` dependency; without it they are treated as unsatisfied and a
+    warning is emitted instead of aborting doctest collection.
 
     Example:
         >>> from xdoctest.doctest_example import _doctest_requirement_satisfied
@@ -346,10 +373,18 @@ def _doctest_requirement_satisfied(requirement_text: str) -> bool:
         ...
         ValueError: Invalid __doctest_requires__ requirement: 'bad requirement'
     """
+    requirement_text = requirement_text.strip()
     if Requirement is None:
-        raise ImportError(
-            'packaging is required to evaluate __doctest_requires__'
+        if _BARE_REQUIREMENT_RE.fullmatch(requirement_text):
+            return _distribution_or_module_exists(requirement_text)
+        warnings.warn(
+            'packaging is required to evaluate the constrained '
+            '__doctest_requires__ requirement {!r}; treating it as '
+            'unsatisfied'.format(requirement_text),
+            RuntimeWarning,
+            stacklevel=2,
         )
+        return False
 
     try:
         requirement = Requirement(requirement_text)
@@ -368,9 +403,7 @@ def _doctest_requirement_satisfied(requirement_text: str) -> bool:
     if not requirement.specifier:
         if installed_version is not None:
             return True
-        from importlib.util import find_spec
-
-        return find_spec(requirement.name) is not None
+        return _distribution_or_module_exists(requirement.name)
 
     if installed_version is None:
         return False
