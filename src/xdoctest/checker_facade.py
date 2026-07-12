@@ -16,12 +16,16 @@ Adopters typically:
 3. Register the checker by name with :func:`register_checker`.
 4. Select the checker for a given doctest by setting
    ``DoctestConfig['output_checker']`` to that name.
+
+The name ``'xdoctest'`` is reserved for the native checker. Foreign checker
+registrations use every other name.
 """
 
 from __future__ import annotations
 
 import doctest
 from collections.abc import Mapping
+from dataclasses import dataclass
 
 from xdoctest import checker, directive
 from xdoctest.directive_facade import (
@@ -30,12 +34,20 @@ from xdoctest.directive_facade import (
     runtime_state_to_optionflags,
 )
 
+_NATIVE_CHECKER_NAME = 'xdoctest'
+
+
+@dataclass(frozen=True)
+class _CheckerRegistration:
+    """One immutable registry generation for a foreign checker name."""
+
+    checker: doctest.OutputChecker | type[doctest.OutputChecker]
+
+
 # Keep this union inside postponed annotations. A module-level assignment such
 # as ``CheckerLike = OutputChecker | type[OutputChecker]`` would evaluate the
 # PEP 604 expression during import and break supported Python 3.8 / 3.9.
-_REGISTERED_CHECKERS: dict[
-    str, doctest.OutputChecker | type[doctest.OutputChecker]
-] = {}
+_REGISTERED_CHECKERS: dict[str, _CheckerRegistration] = {}
 
 
 def register_checker(
@@ -43,13 +55,15 @@ def register_checker(
     checker_: doctest.OutputChecker | type[doctest.OutputChecker],
 ) -> None:
     """
-    Register an output checker under a name so it can be selected by setting
-    ``DoctestConfig['output_checker']`` to that name.
+    Register a foreign output checker under a configuration name.
 
     Args:
-        name (str): selection key used in configs and runtime state.
+        name: selection key used in configs and runtime state. ``'xdoctest'``
+            is reserved for the native checker and cannot be replaced.
         checker_: either an :class:`doctest.OutputChecker` instance or a class
-            with a no-argument constructor that returns one.
+            with a no-argument constructor that returns one. Instances are
+            explicitly process-shared. Classes retain factory semantics and
+            are materialized at most once for each :class:`RuntimeState` run.
 
     Example:
         >>> import doctest
@@ -60,33 +74,67 @@ def register_checker(
         True
         >>> del _REGISTERED_CHECKERS[name]
     """
-    _REGISTERED_CHECKERS[name] = checker_
+    if name == _NATIVE_CHECKER_NAME:
+        raise ValueError(
+            "'xdoctest' is reserved for the native output checker"
+        )
+    _REGISTERED_CHECKERS[name] = _CheckerRegistration(checker_)
 
 
-def resolve_checker(name: str) -> doctest.OutputChecker:
+def resolve_checker(
+    name: str,
+    runstate: directive.RuntimeState | None = None,
+) -> doctest.OutputChecker:
     """
-    Return an :class:`doctest.OutputChecker` instance for a registered name.
+    Resolve an output checker using the documented registration lifecycle.
 
-    Classes are instantiated each time. Instances are returned as-is.
+    The reserved native checker is constructed directly and is never stored in
+    the mutable foreign registry. Registered instances are returned as-is.
+    Registered classes are factories when no runtime state is supplied. With a
+    runtime state, one instance is cached for that run and reused by matching
+    and failure rendering. A fresh registration record invalidates an existing
+    per-run cache even when the same class is registered again.
 
     Raises:
-        KeyError: if the name has not been registered.
+        KeyError: if a foreign name has not been registered.
 
     Example:
-        >>> checker = resolve_checker('xdoctest')
-        >>> isinstance(checker, OutputChecker)
+        >>> isinstance(resolve_checker('xdoctest'), OutputChecker)
         True
+
+    Example:
+        >>> class ExampleChecker(doctest.OutputChecker):
+        >>>     pass
+        >>> name = '_xdoctest_per_run_checker_example'
+        >>> register_checker(name, ExampleChecker)
+        >>> resolve_checker(name) is resolve_checker(name)
+        False
+        >>> state = directive.RuntimeState()
+        >>> state.set_output_checker(name)
+        >>> resolve_checker(name, state) is resolve_checker(name, state)
+        True
+        >>> del _REGISTERED_CHECKERS[name]
     """
+    if name == _NATIVE_CHECKER_NAME:
+        return OutputChecker()
     if name not in _REGISTERED_CHECKERS:
+        known = sorted([_NATIVE_CHECKER_NAME, *_REGISTERED_CHECKERS])
         raise KeyError(
             'Unknown output checker {!r}. Known checkers are {}'.format(
-                name, sorted(_REGISTERED_CHECKERS)
+                name, known
             )
         )
-    checker_ = _REGISTERED_CHECKERS[name]
+    registration = _REGISTERED_CHECKERS[name]
+    checker_ = registration.checker
     if isinstance(checker_, doctest.OutputChecker):
         return checker_
-    return checker_()
+    if runstate is None:
+        return checker_()
+    instance = runstate.get_cached_output_checker(registration)
+    if instance is None:
+        instance = checker_()
+        runstate.cache_output_checker(registration, instance)
+    return instance
 
 
 def resolve_current_checker(
@@ -95,9 +143,9 @@ def resolve_current_checker(
     """
     Return the checker selected by the given runtime state.
 
-    Accepts a :class:`~xdoctest.directive.RuntimeState`, a plain mapping
-    (the ``_output_checker`` key is consulted), or ``None``. In all cases a
-    valid checker is returned, defaulting to ``'xdoctest'``.
+    A real :class:`RuntimeState` supplies the bounded execution lifetime used
+    for class registrations. Plain mappings have no run lifetime, so class
+    registrations retain direct factory semantics for those calls.
 
     Example:
         >>> checker = resolve_current_checker({'_output_checker': 'xdoctest'})
@@ -106,10 +154,11 @@ def resolve_current_checker(
     """
     if isinstance(runstate, directive.RuntimeState):
         checker_name = runstate.get_output_checker()
-    elif isinstance(runstate, Mapping):
-        checker_name = str(runstate.get('_output_checker', 'xdoctest'))
+        return resolve_checker(checker_name, runstate)
+    if isinstance(runstate, Mapping):
+        checker_name = str(runstate.get('_output_checker', _NATIVE_CHECKER_NAME))
     else:
-        checker_name = 'xdoctest'
+        checker_name = _NATIVE_CHECKER_NAME
     return resolve_checker(checker_name)
 
 
@@ -153,9 +202,6 @@ class OutputChecker(doctest.OutputChecker):
         want = example.want
         ex = checker.GotWantException('got differs with doctest want', got, want)
         return ex._output_difference_xdoctest(runstate=runstate, colored=False)
-
-
-register_checker('xdoctest', OutputChecker)
 
 
 __all__ = [

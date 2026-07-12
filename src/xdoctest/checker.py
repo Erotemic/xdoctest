@@ -40,6 +40,7 @@ import doctest
 import math
 import re
 import typing
+from collections.abc import Mapping
 from typing import Dict, Set
 from typing import OrderedDict as OrderedDictType
 
@@ -277,13 +278,49 @@ def _xdoctest_check_output(
     return False
 
 
+def _coerce_runstate(
+    runstate: directive.RuntimeState | Mapping[str, object] | None,
+) -> directive.RuntimeState:
+    """Normalize compatibility mappings without taxing native state.
+
+    Real :class:`RuntimeState` objects are returned unchanged. Sparse mappings
+    take the pre-fast-path compatibility route through stdlib option bits,
+    yielding a complete runtime state before native matching accesses flags.
+
+    Example:
+        >>> state = _coerce_runstate({'_output_checker': 'xdoctest'})
+        >>> isinstance(state, directive.RuntimeState)
+        True
+        >>> state.get_output_checker()
+        'xdoctest'
+    """
+    if isinstance(runstate, directive.RuntimeState):
+        return runstate
+    if runstate is None:
+        return directive.RuntimeState()
+    from xdoctest import checker_facade
+
+    optionflags = checker_facade.runtime_state_to_optionflags(runstate)
+    normalized = checker_facade.optionflags_to_runtime_state(optionflags)
+    normalized.set_output_checker(
+        str(runstate.get('_output_checker', 'xdoctest'))
+    )
+    return normalized
+
+
 def check_output(
     got: str,
     want: str,
-    runstate: directive.RuntimeState | None = None,
+    runstate: directive.RuntimeState | Mapping[str, object] | None = None,
 ) -> bool:
     """
     Check output using the currently configured output checker backend.
+
+    The default ``'xdoctest'`` checker consumes the structured runtime state
+    directly. Only when a foreign (registered) checker is selected are the
+    runtime state and checker-only bits packed into a stdlib-shaped
+    optionflags ``int`` — conversion happens at the boundary, not on the
+    native path.
 
     Args:
         got (str): text produced by the test
@@ -295,11 +332,13 @@ def check_output(
     """
     if not want:  # nocover
         return True
-    if runstate is None:
-        runstate = directive.RuntimeState()
+    runstate = _coerce_runstate(runstate)
+    checker_name = runstate.get_output_checker()
+    if checker_name == 'xdoctest':
+        return _xdoctest_check_output(got, want, runstate)
     from xdoctest import checker_facade
     optionflags = checker_facade.runtime_state_to_optionflags(runstate)
-    output_checker = checker_facade.resolve_current_checker(runstate)
+    output_checker = checker_facade.resolve_checker(checker_name, runstate)
     return bool(output_checker.check_output(want, got, optionflags))
 
 
@@ -794,21 +833,31 @@ class GotWantException(AssertionError):
 
     def output_difference(
         self,
-        runstate: directive.RuntimeState | None = None,
+        runstate: directive.RuntimeState | Mapping[str, object] | None = None,
         colored: bool = True,
     ) -> str:
-        if runstate is None:
-            runstate = directive.RuntimeState()
+        runstate = _coerce_runstate(runstate)
 
-        from xdoctest import checker_facade
-        output_checker = checker_facade.resolve_current_checker(runstate)
-        if (
-            output_checker.__class__.output_difference
-            is not checker_facade.OutputChecker.output_difference
-        ):
-            example = doctest.Example(source='', want=self.want)
-            optionflags = checker_facade.runtime_state_to_optionflags(runstate)
-            return output_checker.output_difference(example, self.got, optionflags)
+        checker_name = runstate.get_output_checker()
+        if checker_name != 'xdoctest':
+            # A foreign checker may provide its own difference rendering
+            # (e.g. to display fixed-up wants); fall back to the native
+            # renderer when it inherits the facade default.
+            from xdoctest import checker_facade
+            output_checker = checker_facade.resolve_checker(
+                checker_name, runstate
+            )
+            if (
+                output_checker.__class__.output_difference
+                is not checker_facade.OutputChecker.output_difference
+            ):
+                example = doctest.Example(source='', want=self.want)
+                optionflags = checker_facade.runtime_state_to_optionflags(
+                    runstate
+                )
+                return output_checker.output_difference(
+                    example, self.got, optionflags
+                )
 
         return self._output_difference_xdoctest(
             runstate=runstate,
