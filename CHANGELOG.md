@@ -37,6 +37,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 
 ### Changed
+* Native xdoctest output checks now keep structured runtime state on the fast
+  path. Stdlib optionflag conversion and lazy checker construction occur only
+  when a foreign registered checker is selected.
 * Bump minimum pytest to 6.2.5
 * Much more static typing
 

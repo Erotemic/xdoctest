@@ -67,7 +67,9 @@ def resolve_checker(name: str) -> doctest.OutputChecker:
     """
     Return an :class:`doctest.OutputChecker` instance for a registered name.
 
-    Classes are instantiated each time. Instances are returned as-is.
+    Registered instances are returned as-is. Registered classes are lazily
+    instantiated once and replaced in the private registry by that instance.
+    Re-registering the name naturally replaces the resolved instance.
 
     Raises:
         KeyError: if the name has not been registered.
@@ -76,6 +78,15 @@ def resolve_checker(name: str) -> doctest.OutputChecker:
         >>> checker = resolve_checker('xdoctest')
         >>> isinstance(checker, OutputChecker)
         True
+
+    Example:
+        >>> class ExampleChecker(doctest.OutputChecker):
+        >>>     pass
+        >>> name = '_xdoctest_cached_checker_example'
+        >>> register_checker(name, ExampleChecker)
+        >>> resolve_checker(name) is resolve_checker(name)
+        True
+        >>> del _REGISTERED_CHECKERS[name]
     """
     if name not in _REGISTERED_CHECKERS:
         raise KeyError(
@@ -86,7 +97,9 @@ def resolve_checker(name: str) -> doctest.OutputChecker:
     checker_ = _REGISTERED_CHECKERS[name]
     if isinstance(checker_, doctest.OutputChecker):
         return checker_
-    return checker_()
+    instance = checker_()
+    _REGISTERED_CHECKERS[name] = instance
+    return instance
 
 
 def resolve_current_checker(

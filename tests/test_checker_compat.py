@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import doctest
 from collections.abc import Iterator
+from typing import NoReturn
 
 import pytest
 
@@ -420,3 +421,47 @@ def test_output_checker_honors_ignore_output() -> None:
         'actual',
         xdoctest.IGNORE_OUTPUT,
     )
+
+
+def test_resolve_checker_caches_class_instances() -> None:
+    from xdoctest import checker_facade
+
+    class Counting(doctest.OutputChecker):
+        instances = 0
+
+        def __init__(self) -> None:
+            Counting.instances += 1
+
+    checker_facade.register_checker('counting_checker', Counting)
+    first = checker_facade.resolve_checker('counting_checker')
+    second = checker_facade.resolve_checker('counting_checker')
+    assert first is second
+    assert Counting.instances == 1
+
+    # Re-registering replaces the materialized instance.
+    checker_facade.register_checker('counting_checker', Counting)
+    third = checker_facade.resolve_checker('counting_checker')
+    assert third is not first
+    assert Counting.instances == 2
+
+    replacement = doctest.OutputChecker()
+    checker_facade.register_checker('counting_checker', replacement)
+    assert checker_facade.resolve_checker('counting_checker') is replacement
+
+
+def test_native_check_bypasses_the_interop_facade(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The native path must not pack flags or resolve a facade checker."""
+
+    def forbidden(*args: object, **kwargs: object) -> NoReturn:
+        raise AssertionError('native path crossed the interop boundary')
+
+    monkeypatch.setattr(
+        checker_facade, 'runtime_state_to_optionflags', forbidden
+    )
+    monkeypatch.setattr(checker_facade, 'resolve_checker', forbidden)
+
+    runstate = xdoctest.directive.RuntimeState()
+    assert checker.check_output('1\n', '1\n', runstate)
+    assert not checker.check_output('1\n', '2\n', runstate)
