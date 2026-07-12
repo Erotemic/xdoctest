@@ -21,8 +21,7 @@ Adopters typically:
 from __future__ import annotations
 
 import doctest
-import types
-from typing import Any, Mapping, Union
+from collections.abc import Mapping
 
 from xdoctest import checker, directive
 from xdoctest.directive_facade import (
@@ -31,7 +30,7 @@ from xdoctest.directive_facade import (
     runtime_state_to_optionflags,
 )
 
-CheckerLike = Union[doctest.OutputChecker, type]
+CheckerLike = doctest.OutputChecker | type[doctest.OutputChecker]
 """
 A registered checker may be either an instance or a class. Classes are
 instantiated lazily by :func:`resolve_checker`.
@@ -49,6 +48,15 @@ def register_checker(name: str, checker_: CheckerLike) -> None:
         name (str): selection key used in configs and runtime state.
         checker_: either an :class:`doctest.OutputChecker` instance or a class
             with a no-argument constructor that returns one.
+
+    Example:
+        >>> import doctest
+        >>> name = '_xdoctest_example_checker'
+        >>> instance = doctest.OutputChecker()
+        >>> register_checker(name, instance)
+        >>> resolve_checker(name) is instance
+        True
+        >>> del _REGISTERED_CHECKERS[name]
     """
     _REGISTERED_CHECKERS[name] = checker_
 
@@ -61,6 +69,11 @@ def resolve_checker(name: str) -> doctest.OutputChecker:
 
     Raises:
         KeyError: if the name has not been registered.
+
+    Example:
+        >>> checker = resolve_checker('xdoctest')
+        >>> isinstance(checker, OutputChecker)
+        True
     """
     if name not in _REGISTERED_CHECKERS:
         raise KeyError(
@@ -75,7 +88,7 @@ def resolve_checker(name: str) -> doctest.OutputChecker:
 
 
 def resolve_current_checker(
-    runstate: directive.RuntimeState | Mapping[str, Any] | None,
+    runstate: directive.RuntimeState | Mapping[str, object] | None,
 ) -> doctest.OutputChecker:
     """
     Return the checker selected by the given runtime state.
@@ -83,6 +96,11 @@ def resolve_current_checker(
     Accepts a :class:`~xdoctest.directive.RuntimeState`, a plain mapping
     (the ``_output_checker`` key is consulted), or ``None``. In all cases a
     valid checker is returned, defaulting to ``'xdoctest'``.
+
+    Example:
+        >>> checker = resolve_current_checker({'_output_checker': 'xdoctest'})
+        >>> isinstance(checker, OutputChecker)
+        True
     """
     if isinstance(runstate, directive.RuntimeState):
         checker_name = runstate.get_output_checker()
@@ -105,6 +123,16 @@ class OutputChecker(doctest.OutputChecker):
         This class intentionally accepts the same ``(want, got, optionflags)``
         signature as :class:`doctest.OutputChecker` so that it is a drop-in
         replacement for stdlib-shaped consumers.
+
+    Example:
+        >>> from xdoctest.directive_facade import ELLIPSIS, FLOAT_CMP
+        >>> output_checker = OutputChecker()
+        >>> output_checker.check_output(
+        >>>     'prefix ... value=1\\n',
+        >>>     'prefix middle value=1.0000001\\n',
+        >>>     ELLIPSIS | FLOAT_CMP,
+        >>> )
+        True
     """
 
     def check_output(
@@ -115,12 +143,12 @@ class OutputChecker(doctest.OutputChecker):
 
     def output_difference(
         self,
-        example: Any,
+        example: doctest.Example,
         got: str,
         optionflags: int,
     ) -> str:
         runstate = optionflags_to_runtime_state(optionflags)
-        want = getattr(example, 'want', example)
+        want = example.want
         ex = checker.GotWantException('got differs with doctest want', got, want)
         return ex._output_difference_xdoctest(runstate=runstate, colored=False)
 

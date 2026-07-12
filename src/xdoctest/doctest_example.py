@@ -6,7 +6,7 @@ from __future__ import annotations
 import __future__
 
 import ast
-from contextlib import nullcontext
+from contextlib import AbstractContextManager, nullcontext
 import math
 import os
 import re
@@ -918,7 +918,9 @@ class DocTest:
         for partno, part in enumerate(self._parts):
             part.partno = partno
 
-    def _part_context(self, part, partx):
+    def _part_context(
+        self, part: DoctestPart, partx: int
+    ) -> AbstractContextManager[object]:
         """
         Return a context manager that wraps the execution of one doctest
         part, applying the runtime warning policy.

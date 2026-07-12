@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import warnings
 from types import TracebackType
-from typing import Type
 
 
 class IgnoreWarnings:
@@ -35,7 +34,7 @@ class IgnoreWarnings:
 
     def __exit__(
         self,
-        exc_type: Type[BaseException] | None,
+        exc_type: type[BaseException] | None,
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> None:
@@ -74,7 +73,7 @@ class ShowWarnings:
 
     def __exit__(
         self,
-        exc_type: Type[BaseException] | None,
+        exc_type: type[BaseException] | None,
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> None:

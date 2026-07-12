@@ -39,21 +39,42 @@ can leak to adjacent examples.
 from __future__ import annotations
 
 import doctest as _doctest
-from typing import Any, Iterable, Mapping, Optional
+import os
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Protocol, cast
 
 from xdoctest import directive, directive_facade, parser
 from xdoctest.doctest_example import DocTest
+from xdoctest.doctest_part import DoctestPart
+
+
+class StdlibExampleLike(Protocol):
+    """Structural type accepted by :func:`from_examples`.
+
+    The adapter does not require an actual :class:`doctest.Example`; a small
+    object with the same core attributes is sufficient.
+
+    Example:
+        >>> from types import SimpleNamespace
+        >>> example = SimpleNamespace(source='2 + 3\\n', want='5\\n', lineno=0)
+        >>> from_examples([example]).run(verbose=0, on_error='return')['passed']
+        True
+    """
+
+    source: str
+    want: str
+    lineno: int
 
 
 def from_examples(
-    examples: Iterable[Any],
+    examples: Iterable[StdlibExampleLike],
     *,
-    globs: Optional[Mapping[str, Any]] = None,
+    globs: Mapping[str, Any] | None = None,
     name: str = '<doctest>',
-    filename: Optional[str] = None,
-    lineno: Optional[int] = None,
-    optionflags: Optional[int] = 0,
-    config: Optional[Mapping[str, Any]] = None,
+    filename: str | os.PathLike[str] | None = None,
+    lineno: int | None = None,
+    optionflags: int | None = 0,
+    config: Mapping[str, object] | None = None,
 ) -> DocTest:
     """
     Build a runnable xdoctest :class:`DocTest` from a sequence of stdlib-like
@@ -86,6 +107,17 @@ def from_examples(
         Per-example ``options`` are attached as structured per-part
         directives (see module docstring); the source text is never
         rewritten.
+
+    Example:
+        >>> import doctest
+        >>> examples = [
+        >>>     doctest.Example('value = 3\\n', '', lineno=0),
+        >>>     doctest.Example('value * 2\\n', '6\\n', lineno=1),
+        >>> ]
+        >>> dtest = from_examples(examples, name='double')
+        >>> result = dtest.run(verbose=0, on_error='return')
+        >>> result['passed']
+        True
     """
     examples = list(examples)
     if globs is None:
@@ -133,13 +165,25 @@ def from_examples(
 def from_stdlib_doctest(
     stdlib_test: _doctest.DocTest,
     *,
-    optionflags: Optional[int] = 0,
-    config: Optional[Mapping[str, Any]] = None,
+    optionflags: int | None = 0,
+    config: Mapping[str, object] | None = None,
 ) -> DocTest:
     """
     Convenience: convert a stdlib :class:`doctest.DocTest` directly. The
     metadata (``name``, ``filename``, ``lineno``, ``globs``) is taken from
     the input.
+
+    Example:
+        >>> import doctest
+        >>> example = doctest.Example('answer\\n', '42\\n', lineno=2)
+        >>> stdlib_test = doctest.DocTest(
+        >>>     [example], {'answer': 42}, 'demo', 'demo.py', 10, '',
+        >>> )
+        >>> dtest = from_stdlib_doctest(stdlib_test)
+        >>> dtest.lineno
+        13
+        >>> dtest.run(verbose=0, on_error='return')['passed']
+        True
     """
     # In stdlib, ``DocTest.lineno`` is the line of the docstring in the file
     # and each ``Example.lineno`` is an offset within that docstring. So the
@@ -165,7 +209,9 @@ def from_stdlib_doctest(
     )
 
 
-def _build_docsrc(examples):
+def _build_docsrc(
+    examples: Sequence[StdlibExampleLike],
+) -> tuple[int | None, str]:
     """
     Reconstruct a ``>>>``-prefixed doctest source string from stdlib-shaped
     examples, padding with blank lines so each example's prompt line in the
@@ -174,6 +220,18 @@ def _build_docsrc(examples):
     Returns ``(base_lineno, docsrc)`` where ``base_lineno`` is the lineno
     of the first example (or ``None`` for an empty input), and ``docsrc``
     is the reconstructed source.
+
+    Example:
+        >>> import doctest
+        >>> examples = [
+        >>>     doctest.Example('x = 1\\n', '', lineno=3),
+        >>>     doctest.Example('x\\n', '1\\n', lineno=5),
+        >>> ]
+        >>> base, docsrc = _build_docsrc(examples)
+        >>> base
+        3
+        >>> docsrc.splitlines()
+        ['>>> x = 1', '', '>>> x', '1']
     """
     if not examples:
         return None, ''
@@ -196,7 +254,11 @@ def _build_docsrc(examples):
     return base, '\n'.join(lines)
 
 
-def _parse_examples_as_parts(dtest, examples, base):
+def _parse_examples_as_parts(
+    dtest: DocTest,
+    examples: Sequence[StdlibExampleLike],
+    base: int | None,
+) -> None:
     """Parse each stdlib example independently and concatenate its parts.
 
     A stdlib :class:`doctest.Example` is an execution and option-scope
@@ -210,7 +272,7 @@ def _parse_examples_as_parts(dtest, examples, base):
         return
 
     base = 0 if base is None else base
-    parts = []
+    parts: list[DoctestPart] = []
     for ex in examples:
         local_docsrc = '\n'.join(_example_docsrc_lines(ex))
         info = {
@@ -229,7 +291,7 @@ def _parse_examples_as_parts(dtest, examples, base):
             # while ``None`` remains silent.
             part.compile_mode = 'single'
             part.line_offset += line_offset
-            extra = _options_to_directives(getattr(ex, 'options', None) or {})
+            extra = _options_to_directives(_example_options(ex))
             if extra:
                 # Preserve directives written inline in the original source;
                 # structured stdlib options come after so they win on conflict.
@@ -268,9 +330,16 @@ def _apply_stdlib_optionflags(dtest: DocTest, optionflags: int) -> None:
             break
 
 
-def _example_docsrc_lines(ex):
-    """Reconstruct the prompted source and want lines for one example."""
-    lines = []
+def _example_docsrc_lines(ex: StdlibExampleLike) -> list[str]:
+    """Reconstruct prompted source and want lines for one example.
+
+    Example:
+        >>> import doctest
+        >>> example = doctest.Example('x = 1\\nx\\n', '1\\n', lineno=0)
+        >>> _example_docsrc_lines(example)
+        ['>>> x = 1', '... x', '1']
+    """
+    lines: list[str] = []
     src_lines = (ex.source or '').splitlines() or ['']
     for idx, line in enumerate(src_lines):
         prefix = '>>> ' if idx == 0 else '... '
@@ -280,21 +349,37 @@ def _example_docsrc_lines(ex):
     return lines
 
 
+def _example_options(ex: StdlibExampleLike) -> Mapping[int, bool]:
+    """Return a validated stdlib-style options mapping when present."""
+    options = getattr(ex, 'options', None)
+    if options is None:
+        return {}
+    if not isinstance(options, Mapping):
+        raise TypeError('example options must be a mapping')
+    return cast(Mapping[int, bool], options)
 
-def _options_to_directives(options):
+
+def _options_to_directives(
+    options: Mapping[int, bool] | None,
+) -> list[directive.Directive]:
     """
     Convert a stdlib-style ``{flag_bit: bool}`` options dict into a list of
     per-part (inline) :class:`~xdoctest.directive.Directive` objects.
 
     Unnamed bits are silently dropped (they cannot be expressed); named bits
     unknown to xdoctest are adopted as checker-only optionflags.
+
+    Example:
+        >>> directives = _options_to_directives({_doctest.SKIP: True})
+        >>> [str(item) for item in directives]
+        ['<Directive(+SKIP)>']
     """
     if not options:
         return []
     names_by_bit = {
         bit: name for name, bit in _doctest.OPTIONFLAGS_BY_NAME.items()
     }
-    directives = []
+    directives: list[directive.Directive] = []
     for flag, value in options.items():
         name = names_by_bit.get(flag)
         if name is None:
@@ -314,6 +399,7 @@ def _options_to_directives(options):
 
 
 __all__ = [
+    'StdlibExampleLike',
     'from_examples',
     'from_stdlib_doctest',
 ]

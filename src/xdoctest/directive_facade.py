@@ -25,7 +25,8 @@ checker-only optionflag bits.
 from __future__ import annotations
 
 import doctest
-from typing import Dict, cast
+from collections.abc import Callable, Mapping
+from typing import cast
 
 from xdoctest import directive
 
@@ -54,15 +55,29 @@ class RuntimeFlagFacade:
     - Plain registered flags (``FIX``, ``FLOAT_CMP``, ...): these have no
       structured runtime state representation and are carried as
       checker-only bits inside the runtime state.
+
+    Example:
+        >>> facade = RuntimeFlagFacade()
+        >>> facade.register_builtin_optionflag('ELLIPSIS', 1, 'ELLIPSIS')
+        1
+        >>> facade.register_builtin_optionflag('CUSTOM', 2)
+        2
+        >>> state = facade.optionflags_to_runtime_state(3)
+        >>> state['ELLIPSIS']
+        True
+        >>> state.get_output_checker_flags()
+        2
+        >>> facade.runtime_state_to_optionflags(state)
+        3
     """
 
     def __init__(self) -> None:
-        self._optionflags_by_name: Dict[str, int] = {}
-        self._optionflag_names_by_value: Dict[int, str] = {}
-        self._runtime_key_to_optionflag: Dict[str, int] = {}
-        self._optionflag_to_runtime_key: Dict[int, str] = {}
+        self._optionflags_by_name: dict[str, int] = {}
+        self._optionflag_names_by_value: dict[int, str] = {}
+        self._runtime_key_to_optionflag: dict[str, int] = {}
+        self._optionflag_to_runtime_key: dict[int, str] = {}
 
-    def _bind_runtime_key(self, name: str, flag: int, runtime_state_key: str) -> None:
+    def _bind_runtime_key(self, flag: int, runtime_state_key: str) -> None:
         self._runtime_key_to_optionflag[runtime_state_key] = flag
         self._optionflag_to_runtime_key[flag] = runtime_state_key
 
@@ -78,7 +93,7 @@ class RuntimeFlagFacade:
         self._optionflags_by_name[name] = flag
         self._optionflag_names_by_value[flag] = name
         if runtime_state_key is not None:
-            self._bind_runtime_key(name, flag, runtime_state_key)
+            self._bind_runtime_key(flag, runtime_state_key)
         return flag
 
     def register_optionflag(
@@ -97,7 +112,7 @@ class RuntimeFlagFacade:
         if name in self._optionflags_by_name:
             flag = self._optionflags_by_name[name]
             if runtime_state_key is not None:
-                self._bind_runtime_key(name, flag, runtime_state_key)
+                self._bind_runtime_key(flag, runtime_state_key)
             return flag
         flag = doctest.register_optionflag(name)
         return self.register_builtin_optionflag(name, flag, runtime_state_key)
@@ -108,7 +123,7 @@ class RuntimeFlagFacade:
     def get_optionflag(self, name: str) -> int:
         return self._optionflags_by_name[name]
 
-    def get_registered_optionflags(self) -> Dict[str, int]:
+    def get_registered_optionflags(self) -> dict[str, int]:
         return dict(self._optionflags_by_name)
 
     def _runtime_bound_optionflag_mask(self) -> int:
@@ -120,7 +135,7 @@ class RuntimeFlagFacade:
 
     def runtime_state_to_optionflags(
         self,
-        runstate: directive.RuntimeState | dict | None,
+        runstate: directive.RuntimeState | Mapping[str, object] | None,
     ) -> int:
         """
         Pack a :class:`~xdoctest.directive.RuntimeState` (or a plain mapping)
@@ -134,17 +149,22 @@ class RuntimeFlagFacade:
         """
         runtime_bound_mask = self._runtime_bound_optionflag_mask()
         flags = 0
+        lookup: Callable[[str], object]
         if isinstance(runstate, directive.RuntimeState):
             flags |= runstate.get_output_checker_flags() & ~runtime_bound_mask
             lookup = runstate.__getitem__
         elif runstate is None:
-            runstate = directive.RuntimeState()
-            flags |= runstate.get_output_checker_flags() & ~runtime_bound_mask
-            lookup = runstate.__getitem__
+            default_runstate = directive.RuntimeState()
+            flags |= (
+                default_runstate.get_output_checker_flags() & ~runtime_bound_mask
+            )
+            lookup = default_runstate.__getitem__
         else:
+            raw_flags = runstate.get('_optionflags', 0)
+            if not isinstance(raw_flags, int):
+                raise TypeError('_optionflags must be an integer')
+            flags |= raw_flags & ~runtime_bound_mask
             lookup = runstate.__getitem__
-            if isinstance(runstate, dict):
-                flags |= int(runstate.get('_optionflags', 0)) & ~runtime_bound_mask
 
         for runtime_key, flag in self._runtime_key_to_optionflag.items():
             try:
@@ -193,13 +213,26 @@ def register_optionflag(name: str, runtime_state_key: str | None = None) -> int:
     """
     Register an optionflag with xdoctest. See
     :meth:`RuntimeFlagFacade.register_optionflag`.
+
+    Calling this with an existing name is idempotent.
+
+    Example:
+        >>> register_optionflag('FLOAT_CMP') == FLOAT_CMP
+        True
     """
     return _RUNTIME_FLAGS.register_optionflag(name, runtime_state_key)
 
 
 def runtime_state_to_optionflags(
-    runstate: directive.RuntimeState | dict | None,
+    runstate: directive.RuntimeState | Mapping[str, object] | None,
 ) -> int:
+    """Pack structured runtime state into a stdlib optionflag mask.
+
+    Example:
+        >>> state = directive.RuntimeState({'ELLIPSIS': True})
+        >>> bool(runtime_state_to_optionflags(state) & ELLIPSIS)
+        True
+    """
     return _RUNTIME_FLAGS.runtime_state_to_optionflags(runstate)
 
 
@@ -207,18 +240,44 @@ def optionflags_to_runtime_state(
     optionflags: int,
     default_state: directive.RuntimeStateDict | None = None,
 ) -> directive.RuntimeState:
+    """Unpack a complete stdlib optionflag mask into runtime state.
+
+    Example:
+        >>> state = optionflags_to_runtime_state(0)
+        >>> state['ELLIPSIS'], state['NORMALIZE_WHITESPACE']
+        (False, False)
+    """
     return _RUNTIME_FLAGS.optionflags_to_runtime_state(optionflags, default_state)
 
 
 def is_registered_optionflag(name: str) -> bool:
+    """Check whether an optionflag name is known to the facade.
+
+    Example:
+        >>> is_registered_optionflag('ELLIPSIS')
+        True
+    """
     return _RUNTIME_FLAGS.is_registered_optionflag(name)
 
 
 def get_optionflag(name: str) -> int:
+    """Look up the integer bit assigned to a registered optionflag.
+
+    Example:
+        >>> get_optionflag('ELLIPSIS') == ELLIPSIS
+        True
+    """
     return _RUNTIME_FLAGS.get_optionflag(name)
 
 
-def get_registered_optionflags() -> Dict[str, int]:
+def get_registered_optionflags() -> dict[str, int]:
+    """Return a copy of the optionflag registry.
+
+    Example:
+        >>> flags = get_registered_optionflags()
+        >>> flags['FLOAT_CMP'] == FLOAT_CMP
+        True
+    """
     return _RUNTIME_FLAGS.get_registered_optionflags()
 
 
