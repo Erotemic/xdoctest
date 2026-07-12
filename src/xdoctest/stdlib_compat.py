@@ -357,7 +357,11 @@ def _example_options(ex: StdlibExampleLike) -> Mapping[int, bool]:
         return {}
     if not isinstance(options, Mapping):
         raise TypeError('example options must be a mapping')
-    return cast(Mapping[int, bool], options)
+    # The first argument to ``typing.cast`` is evaluated at runtime.
+    # ``collections.abc.Mapping`` did not become subscriptable until
+    # Python 3.9, so keep the type expression as a forward-reference
+    # string for supported Python 3.8 imports and execution.
+    return cast('Mapping[int, bool]', options)
 
 
 def _options_to_directives(
