@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - diagnostic/pr211-py38
+  pull_request:
 
 jobs:
   diagnose:
