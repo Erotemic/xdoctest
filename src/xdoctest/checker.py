@@ -36,6 +36,8 @@ representation of expression-based "got-strings".
 from __future__ import annotations
 
 import difflib
+import doctest
+import math
 import re
 import typing
 from typing import Dict, Set
@@ -50,6 +52,18 @@ BLANKLINE_MARKER = '<BLANKLINE>'
 ELLIPSIS_MARKER = '...'
 
 TRAILING_WS = re.compile(r'[ \t]*$', re.UNICODE | re.MULTILINE)
+
+_FLOAT_CMP_NUMBER_RE = re.compile(
+    r'(?<![^\s=,:;*+\-/%<>&|^~\(\[\{])'
+    r'(?P<number>[+-]?(?:'
+    r'(?:\d+(?:\.\d*)?|\.\d+)'
+    r'(?:[eE][+-]?\d+)?'
+    r'|inf(?:inity)?|nan'
+    r'))'
+    r'(?![^\s=,:;*+\-/%<>&|^~\)\]\}jJ])',
+    re.IGNORECASE,
+)
+_FLOAT_CMP_PLACEHOLDER = '\x00'
 
 
 _EXCEPTION_RE = re.compile(
@@ -229,7 +243,7 @@ def check_exception(
     return flag
 
 
-def check_output(
+def _xdoctest_check_output(
     got: str,
     want: str,
     runstate: directive.RuntimeState | None = None,
@@ -249,16 +263,44 @@ def check_output(
     if not want:  # nocover
         return True
     if want:
+        if runstate is None:
+            runstate = directive.RuntimeState()
+        if runstate['IGNORE_OUTPUT']:
+            return True
+
         # Try default
         if got == want:
             return True
 
-        if runstate is None:
-            runstate = directive.RuntimeState()
-
         got, want = normalize(got, want, runstate)
         return _check_match(got, want, runstate)
     return False
+
+
+def check_output(
+    got: str,
+    want: str,
+    runstate: directive.RuntimeState | None = None,
+) -> bool:
+    """
+    Check output using the currently configured output checker backend.
+
+    Args:
+        got (str): text produced by the test
+        want (str): target to match against
+        runstate (xdoctest.directive.RuntimeState | None): current state
+
+    Returns:
+        bool: True if got matches want or if the check is disabled
+    """
+    if not want:  # nocover
+        return True
+    if runstate is None:
+        runstate = directive.RuntimeState()
+    from xdoctest import checker_facade
+    optionflags = checker_facade.runtime_state_to_optionflags(runstate)
+    output_checker = checker_facade.resolve_current_checker(runstate)
+    return bool(output_checker.check_output(want, got, optionflags))
 
 
 def _check_match(
@@ -277,6 +319,10 @@ def _check_match(
     """
     if got == want:
         return True
+
+    if runstate['FLOAT_CMP']:
+        if _float_cmp_match(got, want, runstate):
+            return True
 
     if runstate['ELLIPSIS']:
         if _ellipsis_match(got, want):
@@ -367,6 +413,119 @@ def _ellipsis_match(got: typing.Any, want: typing.Any) -> bool:
         startpos += len(w)
 
     return True
+
+
+def _float_cmp_match(
+    got: str, want: str, runstate: directive.RuntimeState | dict
+) -> bool:
+    """Compare numeric substrings approximately while preserving text rules.
+
+    Numeric fields are replaced with a neutral placeholder before ordinary
+    text or ellipsis matching. Numeric values are then compared separately,
+    with ellipses allowed to consume zero or more numeric fields as well as
+    arbitrary text.
+    """
+    allow_ellipsis = bool(runstate['ELLIPSIS'])
+    want_chunks = (
+        want.split(ELLIPSIS_MARKER) if allow_ellipsis else [want]
+    )
+
+    got_structure = _replace_float_cmp_numbers(got)
+    want_structure = ELLIPSIS_MARKER.join(
+        _replace_float_cmp_numbers(chunk) for chunk in want_chunks
+    )
+    if allow_ellipsis:
+        if not _ellipsis_match(got_structure, want_structure):
+            return False
+    elif got_structure != want_structure:
+        return False
+
+    got_numbers = _find_float_cmp_numbers(got)
+    want_number_chunks = [
+        _find_float_cmp_numbers(chunk) for chunk in want_chunks
+    ]
+    return _float_cmp_number_chunks_match(got_numbers, want_number_chunks)
+
+
+def _find_float_cmp_numbers(text: str) -> list[str]:
+    """Return independently formatted numeric fields from ``text``."""
+    return [
+        match.group('number') for match in _FLOAT_CMP_NUMBER_RE.finditer(text)
+    ]
+
+
+def _replace_float_cmp_numbers(text: str) -> str:
+    """Replace recognized numeric fields without disturbing surrounding text."""
+    return _FLOAT_CMP_NUMBER_RE.sub(_FLOAT_CMP_PLACEHOLDER, text)
+
+
+def _float_cmp_number_lists_equal(got: list[str], want: list[str]) -> bool:
+    return len(got) == len(want) and all(
+        _float_cmp_numeric_equal(got_value, want_value)
+        for got_value, want_value in zip(got, want)
+    )
+
+
+def _float_cmp_number_chunks_match(
+    got_numbers: list[str], want_chunks: list[list[str]]
+) -> bool:
+    """Match numeric chunks separated by expected ellipses."""
+    if len(want_chunks) == 1:
+        return _float_cmp_number_lists_equal(got_numbers, want_chunks[0])
+
+    first = want_chunks[0]
+    if not _float_cmp_number_lists_equal(got_numbers[: len(first)], first):
+        return False
+    start = len(first)
+
+    last = want_chunks[-1]
+    stop = len(got_numbers) - len(last)
+    if stop < start or not _float_cmp_number_lists_equal(
+        got_numbers[stop:], last
+    ):
+        return False
+
+    for chunk in want_chunks[1:-1]:
+        if not chunk:
+            continue
+        width = len(chunk)
+        found = next(
+            (
+                candidate
+                for candidate in range(start, stop - width + 1)
+                if _float_cmp_number_lists_equal(
+                    got_numbers[candidate : candidate + width], chunk
+                )
+            ),
+            None,
+        )
+        if found is None:
+            return False
+        start = found + width
+
+    return start <= stop
+
+
+def _float_cmp_numeric_equal(got_text: str, want_text: str) -> bool:
+    got_value = _parse_float_cmp_number(got_text)
+    want_value = _parse_float_cmp_number(want_text)
+
+    if math.isnan(got_value) or math.isnan(want_value):
+        return math.isnan(got_value) and math.isnan(want_value)
+    if math.isinf(got_value) or math.isinf(want_value):
+        return got_value == want_value
+    return math.isclose(got_value, want_value, rel_tol=1e-5, abs_tol=1e-8)
+
+
+def _parse_float_cmp_number(text: str) -> float:
+    lowered = text.lower()
+    if lowered in {'nan', '+nan', '-nan'}:
+        return float('nan')
+    if lowered in {'inf', '+inf', 'infinity', '+infinity'}:
+        return float('inf')
+    if lowered in {'-inf', '-infinity'}:
+        return float('-inf')
+    return float(text)
 
 
 def normalize(
@@ -534,7 +693,7 @@ class GotWantException(AssertionError):
 
         return False
 
-    def output_difference(
+    def _output_difference_xdoctest(
         self,
         runstate: directive.RuntimeState | None = None,
         colored: bool = True,
@@ -632,6 +791,29 @@ class GotWantException(AssertionError):
                 raise AssertionError('impossible state')
                 text = 'Expected nothing\nGot nothing\n'
         return text
+
+    def output_difference(
+        self,
+        runstate: directive.RuntimeState | None = None,
+        colored: bool = True,
+    ) -> str:
+        if runstate is None:
+            runstate = directive.RuntimeState()
+
+        from xdoctest import checker_facade
+        output_checker = checker_facade.resolve_current_checker(runstate)
+        if (
+            output_checker.__class__.output_difference
+            is not checker_facade.OutputChecker.output_difference
+        ):
+            example = doctest.Example(source='', want=self.want)
+            optionflags = checker_facade.runtime_state_to_optionflags(runstate)
+            return output_checker.output_difference(example, self.got, optionflags)
+
+        return self._output_difference_xdoctest(
+            runstate=runstate,
+            colored=colored,
+        )
 
     def output_repr_difference(
         self, runstate: directive.RuntimeState | None = None
