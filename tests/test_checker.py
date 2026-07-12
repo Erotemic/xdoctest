@@ -106,3 +106,43 @@ def test_float_cmp_consecutive_ellipses() -> None:
     got = 'prefix x=1.000000 suffix'
     want = 'prefix......suffix'
     assert checker.check_output(got, want, runstate)
+
+
+def test_float_cmp_ellipsis_spans_arbitrary_text_and_numbers() -> None:
+    runstate = directive.RuntimeState({'FLOAT_CMP': True, 'ELLIPSIS': True})
+    got = 'prefix noise=2 middle value=1.0000001 suffix'
+    want = 'prefix...value=1 suffix'
+    assert checker.check_output(got, want, runstate)
+
+
+def test_float_cmp_ellipsis_keeps_numeric_suffix_anchored() -> None:
+    runstate = directive.RuntimeState({'FLOAT_CMP': True, 'ELLIPSIS': True})
+    got = 'prefix noise=1 middle value=2 suffix'
+    want = 'prefix...value=1 suffix'
+    assert not checker.check_output(got, want, runstate)
+
+
+def test_float_cmp_does_not_parse_numbers_inside_labels() -> None:
+    runstate = directive.RuntimeState({'FLOAT_CMP': True})
+    mismatches = [
+        ('version1.000000001', 'version1'),
+        ('file1.000000001.txt', 'file1.txt'),
+        ('item1.000000001', 'item1'),
+        ('host=127.0.0.1', 'host=127.0.0.2'),
+    ]
+    for got, want in mismatches:
+        assert not checker.check_output(got, want, runstate)
+
+
+def test_float_cmp_recognizes_delimited_numbers() -> None:
+    runstate = directive.RuntimeState({'FLOAT_CMP': True})
+    got = 'x=1.0000001, y:[2.0000001], z=-3.0000001'
+    want = 'x=1, y:[2], z=-3'
+    assert checker.check_output(got, want, runstate)
+
+
+def test_float_cmp_number_immediately_before_ellipsis() -> None:
+    runstate = directive.RuntimeState({'FLOAT_CMP': True, 'ELLIPSIS': True})
+    got = 'value=1.0000001 and more text'
+    want = 'value=1...'
+    assert checker.check_output(got, want, runstate)
