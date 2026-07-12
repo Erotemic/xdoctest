@@ -36,7 +36,7 @@ def test_show_warnings_prints_category_and_message(capsys):
 
     captured = capsys.readouterr()
     assert captured.out == 'CustomWarning: first\nUserWarning: second\n'
-    assert [item.message.args[0] for item in context.captured] == [
+    assert [str(item.message) for item in context.captured] == [
         'first',
         'second',
     ]

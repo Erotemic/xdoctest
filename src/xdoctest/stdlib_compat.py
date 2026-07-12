@@ -304,8 +304,9 @@ def _apply_stdlib_optionflags(dtest: DocTest, optionflags: int) -> None:
     """Apply a complete stdlib mask without clobbering unrelated config.
 
     Runtime keys bound to registered option bits are replaced from the mask.
-    Runtime keys with no option-bit representation (for example ``SKIP``,
-    ``ASYNC`` and ``REQUIRE_WANT``) retain their configured values. Unmapped
+    Runtime keys with no option-bit representation (for example ``ASYNC``
+    and ``REQUIRE_WANT``) retain their configured values. Stdlib flags such
+    as ``SKIP`` are authoritative even when the complete mask is zero. Unmapped
     bits replace the persistent checker-only mask.
     """
     defaults = dict(dtest.config.get('default_runtime_state') or {})

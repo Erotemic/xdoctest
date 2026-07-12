@@ -240,7 +240,7 @@ class RuntimeStateDict(TypedDict, total=False):
 
 
 # Report style choices for set_report_style method
-ReportStyle = Literal['udiff', 'ndiff', 'cdiff']
+ReportStyle = Literal['udiff', 'ndiff', 'cdiff', 'none']
 
 
 DEFAULT_RUNTIME_STATE: RuntimeStateDict = {
@@ -442,7 +442,7 @@ class RuntimeState(utils.NiceRepr):
         """
         Args:
             reportchoice (ReportStyle): name of report style. Must be one of
-                'udiff', 'ndiff', or 'cdiff'.
+                'udiff', 'ndiff', 'cdiff', or 'none'.
             state (None | RuntimeStateDict): if unspecified defaults to the global state
 
         Example:
@@ -452,15 +452,23 @@ class RuntimeState(utils.NiceRepr):
             >>> runstate.set_report_style('ndiff')
             >>> assert not runstate['REPORT_UDIFF']
             >>> assert runstate['REPORT_NDIFF']
+            >>> runstate.set_report_style('none')
+            >>> assert not any(
+            >>>     runstate[key]
+            >>>     for key in ['REPORT_UDIFF', 'REPORT_NDIFF', 'REPORT_CDIFF']
+            >>> )
         """
         # When enabling a report flag, toggle all others off
         if state is None:
             state = self._global_state
         state_dict = cast(Dict[str, Union[bool, Set[str]]], state)
-        for k in state_dict.keys():
+        # Inline state is intentionally sparse, so enumerate report keys from
+        # the complete global schema and write explicit local masks for each.
+        for k in self._global_state:
             if k.startswith('REPORT_'):
                 state_dict[k] = False
-        state_dict['REPORT_' + reportchoice.upper()] = True
+        if reportchoice != 'none':
+            state_dict['REPORT_' + reportchoice.upper()] = True
 
     def update(self, directives: list[Directive]) -> None:
         """
@@ -501,8 +509,16 @@ class RuntimeState(utils.NiceRepr):
                     state = cast(Dict[str, typing.Any], self._global_state)
 
                 if action == 'set_report_style':
-                    # Special handling of report style
-                    self.set_report_style(key.replace('REPORT_', ''))
+                    # Report-style directives obey the same inline/global
+                    # lifetime as ordinary directives. Inline styles must not
+                    # mutate the persistent state used by later parts.
+                    reportchoice = cast(
+                        ReportStyle, key.replace('REPORT_', '').lower()
+                    )
+                    self.set_report_style(
+                        reportchoice,
+                        state=cast(RuntimeStateDict, state),
+                    )
                 elif action == 'assign':
                     state[key] = value
                 elif action == 'set.add':
@@ -736,6 +752,10 @@ class Directive(utils.NiceRepr):
             Effect(action='set.add', key='REQUIRES', value='-s')
             >>> Directive('ELLIPSIS', args=['-s']).effects(argv=[])[0]
             Effect(action='assign', key='ELLIPSIS', value=True)
+            >>> Directive('REPORT_NDIFF', positive=True).effects()[0]
+            Effect(action='set_report_style', key='REPORT_NDIFF', value=True)
+            >>> Directive('REPORT_NDIFF', positive=False).effects()[0]
+            Effect(action='assign', key='REPORT_NDIFF', value=False)
 
         Doctest:
             >>> # requirement directive with module
@@ -793,11 +813,15 @@ class Directive(utils.NiceRepr):
                         action = 'set.remove'
                 effects.append(Effect(action, key, value))
         elif key.startswith('REPORT_'):
-            # Special handling of report style
+            # Enabling one report style selects it exclusively. Disabling a
+            # report flag clears only that flag. RuntimeState.update decides
+            # whether the effect belongs to inline or persistent state.
             if self.positive:
-                action = 'noop'
-            else:
                 action = 'set_report_style'
+                value = True
+            else:
+                action = 'assign'
+                value = False
             effects.append(Effect(action, key, value))
         else:
             # The action overwrites state[key] using value

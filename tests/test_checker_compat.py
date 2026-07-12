@@ -36,7 +36,7 @@ def isolate_interop_registries() -> Iterator[None]:
         doctest_flags.clear()
         doctest_flags.update(doctest_flags_snapshot)
         if doctest_counter is not None:
-            doctest._OPTION_COUNTER = doctest_counter
+            setattr(doctest, '_OPTION_COUNTER', doctest_counter)
 
 
 def test_register_optionflag_is_stable() -> None:

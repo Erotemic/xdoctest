@@ -120,7 +120,9 @@ def test_no_warning_policy_uses_default_no_op_context():
     # Without an active runstate (or warning flags) _part_context is a no-op.
     from contextlib import nullcontext
 
-    cm = dtest._part_context(None, 0)
+    dtest._parse()
+    assert dtest._parts
+    cm = dtest._part_context(dtest._parts[0], 0)
     assert isinstance(cm, type(nullcontext()))
 
 

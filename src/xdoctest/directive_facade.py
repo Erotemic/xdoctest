@@ -36,6 +36,7 @@ ELLIPSIS_MARKER = doctest.ELLIPSIS_MARKER
 DONT_ACCEPT_BLANKLINE = doctest.DONT_ACCEPT_BLANKLINE
 NORMALIZE_WHITESPACE = doctest.NORMALIZE_WHITESPACE
 ELLIPSIS = doctest.ELLIPSIS
+SKIP = doctest.SKIP
 IGNORE_EXCEPTION_DETAIL = doctest.IGNORE_EXCEPTION_DETAIL
 REPORT_UDIFF = doctest.REPORT_UDIFF
 REPORT_CDIFF = doctest.REPORT_CDIFF
@@ -246,6 +247,8 @@ def optionflags_to_runtime_state(
         >>> state = optionflags_to_runtime_state(0)
         >>> state['ELLIPSIS'], state['NORMALIZE_WHITESPACE']
         (False, False)
+        >>> optionflags_to_runtime_state(SKIP)['SKIP']
+        True
     """
     return _RUNTIME_FLAGS.optionflags_to_runtime_state(optionflags, default_state)
 
@@ -288,6 +291,7 @@ _RUNTIME_FLAGS.register_builtin_optionflag(
     'NORMALIZE_WHITESPACE', NORMALIZE_WHITESPACE, 'NORMALIZE_WHITESPACE'
 )
 _RUNTIME_FLAGS.register_builtin_optionflag('ELLIPSIS', ELLIPSIS, 'ELLIPSIS')
+_RUNTIME_FLAGS.register_builtin_optionflag('SKIP', SKIP, 'SKIP')
 _RUNTIME_FLAGS.register_builtin_optionflag(
     'IGNORE_EXCEPTION_DETAIL',
     IGNORE_EXCEPTION_DETAIL,
@@ -311,6 +315,7 @@ __all__ = [
     'DONT_ACCEPT_BLANKLINE',
     'NORMALIZE_WHITESPACE',
     'ELLIPSIS',
+    'SKIP',
     'IGNORE_EXCEPTION_DETAIL',
     'REPORT_UDIFF',
     'REPORT_CDIFF',

@@ -30,16 +30,18 @@ from xdoctest.directive_facade import (
     runtime_state_to_optionflags,
 )
 
-CheckerLike = doctest.OutputChecker | type[doctest.OutputChecker]
-"""
-A registered checker may be either an instance or a class. Classes are
-instantiated lazily by :func:`resolve_checker`.
-"""
+# Keep this union inside postponed annotations. A module-level assignment such
+# as ``CheckerLike = OutputChecker | type[OutputChecker]`` would evaluate the
+# PEP 604 expression during import and break supported Python 3.8 / 3.9.
+_REGISTERED_CHECKERS: dict[
+    str, doctest.OutputChecker | type[doctest.OutputChecker]
+] = {}
 
-_REGISTERED_CHECKERS: dict[str, CheckerLike] = {}
 
-
-def register_checker(name: str, checker_: CheckerLike) -> None:
+def register_checker(
+    name: str,
+    checker_: doctest.OutputChecker | type[doctest.OutputChecker],
+) -> None:
     """
     Register an output checker under a name so it can be selected by setting
     ``DoctestConfig['output_checker']`` to that name.

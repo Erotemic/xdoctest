@@ -17,8 +17,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   behavior.
 * Added structured intake helpers for stdlib-shaped `doctest.Example` and
   `doctest.DocTest` objects, preserving one-based source locations, complete
-  stdlib option masks, and per-example output and option boundaries without
-  rewriting user source.
+  stdlib option masks (including `SKIP`), and per-example output, report-style,
+  and option boundaries without rewriting user source.
 * Added `IGNORE_WARNINGS` and `SHOW_WARNINGS` runtime directives for
   per-example warning policy.
 * Added native doctest interoperability primitives, including stdlib-shaped

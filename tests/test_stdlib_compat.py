@@ -37,7 +37,7 @@ def isolate_interop_registries() -> Iterator[None]:
         doctest_flags.clear()
         doctest_flags.update(doctest_flags_snapshot)
         if doctest_counter is not None:
-            doctest._OPTION_COUNTER = doctest_counter
+            setattr(doctest, '_OPTION_COUNTER', doctest_counter)
 
 
 def test_synthetic_example_runs_successfully():
@@ -185,7 +185,9 @@ def test_per_example_option_applies_to_matching_part_only():
     seen: list[int] = []
 
     class Recorder(doctest.OutputChecker):
-        def check_output(self, want, got, optionflags):
+        def check_output(
+            self, want: str, got: str, optionflags: int
+        ) -> bool:
             seen.append(optionflags)
             return xdoctest.OutputChecker().check_output(want, got, optionflags)
 
@@ -218,7 +220,9 @@ def test_registered_checker_only_flag_flows_through():
     seen: list[int] = []
 
     class Recorder(doctest.OutputChecker):
-        def check_output(self, want, got, optionflags):
+        def check_output(
+            self, want: str, got: str, optionflags: int
+        ) -> bool:
             seen.append(optionflags)
             return xdoctest.OutputChecker().check_output(want, got, optionflags)
 
@@ -278,6 +282,7 @@ def test_stdlib_doctest_finder_preserves_physical_failure_line(tmp_path):
     assert len(found) == 1
     stdlib_test = found[0]
     stdlib_example = stdlib_test.examples[0]
+    assert stdlib_test.lineno is not None
     physical_line = stdlib_test.lineno + stdlib_example.lineno + 1
     assert modpath.read_text().splitlines()[physical_line - 1].lstrip().startswith(
         '>>>'
@@ -347,10 +352,110 @@ def test_optionflags_preserve_unrelated_runtime_config():
         },
     )
     defaults = dtest.config['default_runtime_state']
-    assert defaults['SKIP'] is True
+    assert defaults['SKIP'] is False
     assert defaults['ASYNC'] is True
     assert defaults['ELLIPSIS'] is True
     assert defaults['NORMALIZE_WHITESPACE'] is False
+
+
+def test_whole_test_skip_optionflag_prevents_execution():
+    examples = [
+        doctest.Example(
+            source='raise RuntimeError("must not run")\n',
+            want='',
+            lineno=0,
+        )
+    ]
+    dtest = stdlib_compat.from_examples(examples, optionflags=doctest.SKIP)
+    result = dtest.run(verbose=0, on_error='return')
+    assert result['skipped']
+    assert not result['failed']
+
+
+def test_zero_optionflags_clear_configured_skip():
+    examples = [
+        doctest.Example(source='print("ran")\n', want='ran\n', lineno=0)
+    ]
+    dtest = stdlib_compat.from_examples(
+        examples,
+        optionflags=0,
+        config={'default_runtime_state': {'SKIP': True}},
+    )
+    assert dtest.config['default_runtime_state']['SKIP'] is False
+    result = dtest.run(verbose=0, on_error='return')
+    assert result['passed']
+
+
+def test_per_example_report_flags_are_local():
+    seen: list[int] = []
+
+    class Recorder(doctest.OutputChecker):
+        def check_output(
+            self, want: str, got: str, optionflags: int
+        ) -> bool:
+            seen.append(optionflags)
+            return True
+
+    xdoctest.register_checker('report_scope_recorder', Recorder)
+    examples = [
+        doctest.Example(
+            source='print("first")\n',
+            want='first\n',
+            lineno=0,
+            options={doctest.REPORT_NDIFF: True},
+        ),
+        doctest.Example(
+            source='print("second")\n',
+            want='second\n',
+            lineno=1,
+        ),
+    ]
+    dtest = stdlib_compat.from_examples(
+        examples,
+        optionflags=doctest.REPORT_UDIFF,
+        config={'output_checker': 'report_scope_recorder'},
+    )
+    assert dtest.run(verbose=0, on_error='return')['passed']
+    assert len(seen) == 2
+    assert seen[0] & doctest.REPORT_NDIFF
+    assert not (seen[0] & doctest.REPORT_UDIFF)
+    assert seen[1] & doctest.REPORT_UDIFF
+    assert not (seen[1] & doctest.REPORT_NDIFF)
+
+
+def test_per_example_negative_report_flag_is_local():
+    seen: list[int] = []
+
+    class Recorder(doctest.OutputChecker):
+        def check_output(
+            self, want: str, got: str, optionflags: int
+        ) -> bool:
+            seen.append(optionflags)
+            return True
+
+    xdoctest.register_checker('negative_report_scope_recorder', Recorder)
+    examples = [
+        doctest.Example(
+            source='print("first")\n',
+            want='first\n',
+            lineno=0,
+            options={doctest.REPORT_NDIFF: False},
+        ),
+        doctest.Example(
+            source='print("second")\n',
+            want='second\n',
+            lineno=1,
+        ),
+    ]
+    dtest = stdlib_compat.from_examples(
+        examples,
+        optionflags=doctest.REPORT_NDIFF,
+        config={'output_checker': 'negative_report_scope_recorder'},
+    )
+    assert dtest.run(verbose=0, on_error='return')['passed']
+    assert len(seen) == 2
+    assert not (seen[0] & doctest.REPORT_NDIFF)
+    assert seen[1] & doctest.REPORT_NDIFF
 
 
 def test_none_optionflags_preserve_configured_checker_flags():
@@ -375,7 +480,9 @@ def test_local_builtin_option_overrides_global_for_foreign_checker():
     seen: list[int] = []
 
     class StdlibRecorder(doctest.OutputChecker):
-        def check_output(self, want, got, optionflags):
+        def check_output(
+            self, want: str, got: str, optionflags: int
+        ) -> bool:
             seen.append(optionflags)
             return super().check_output(want, got, optionflags)
 
@@ -406,7 +513,9 @@ def test_local_custom_option_can_mask_global_checker_flag():
     seen: list[int] = []
 
     class Recorder(doctest.OutputChecker):
-        def check_output(self, want, got, optionflags):
+        def check_output(
+            self, want: str, got: str, optionflags: int
+        ) -> bool:
             seen.append(optionflags)
             return xdoctest.OutputChecker().check_output(want, got, optionflags)
 
