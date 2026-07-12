@@ -1,10 +1,42 @@
 from __future__ import annotations
 
+import copy
 import doctest
+from collections.abc import Iterator
+
+import pytest
 
 import xdoctest
-from xdoctest import checker, doctest_example, utils
+from xdoctest import checker, checker_facade, doctest_example, utils
 from xdoctest import directive_facade
+
+
+@pytest.fixture(autouse=True)
+def isolate_interop_registries() -> Iterator[None]:
+    """Restore every process-global interop registry after each test."""
+    checker_registry = checker_facade._REGISTERED_CHECKERS
+    checker_snapshot = checker_registry.copy()
+
+    runtime_flags = directive_facade._RUNTIME_FLAGS
+    runtime_flags_snapshot = copy.deepcopy(runtime_flags.__dict__)
+
+    doctest_flags = doctest.OPTIONFLAGS_BY_NAME
+    doctest_flags_snapshot = doctest_flags.copy()
+    doctest_counter = getattr(doctest, '_OPTION_COUNTER', None)
+
+    try:
+        yield
+    finally:
+        checker_registry.clear()
+        checker_registry.update(checker_snapshot)
+
+        runtime_flags.__dict__.clear()
+        runtime_flags.__dict__.update(runtime_flags_snapshot)
+
+        doctest_flags.clear()
+        doctest_flags.update(doctest_flags_snapshot)
+        if doctest_counter is not None:
+            doctest._OPTION_COUNTER = doctest_counter
 
 
 def test_register_optionflag_is_stable() -> None:
@@ -22,26 +54,27 @@ def test_runtime_state_optionflag_roundtrip_for_builtin_flags() -> None:
     assert flags & xdoctest.ELLIPSIS
 
 
-FIX = doctest.register_optionflag('FIX')
+def register_doctestplus_like_checker() -> int:
+    fix = xdoctest.register_optionflag('FIX')
 
+    class DoctestPlusLikeChecker(doctest.OutputChecker):
+        def check_output(self, want: str, got: str, optionflags: int) -> bool:
+            if optionflags & fix:
+                want = want.replace('L', '')
+                got = got.replace('L', '')
+            return xdoctest.OutputChecker().check_output(want, got, optionflags)
 
-class DoctestPlusLikeChecker(doctest.OutputChecker):
-    def check_output(self, want: str, got: str, optionflags: int) -> bool:
-        if optionflags & FIX:
-            want = want.replace('L', '')
-            got = got.replace('L', '')
-        return xdoctest.OutputChecker().check_output(want, got, optionflags)
+        def output_difference(self, example, got: str, optionflags: int) -> str:
+            return 'compat-diff: ' + xdoctest.OutputChecker().output_difference(
+                example, got, optionflags
+            )
 
-    def output_difference(self, example, got: str, optionflags: int) -> str:
-        return 'compat-diff: ' + xdoctest.OutputChecker().output_difference(
-            example, got, optionflags
-        )
-
-
-xdoctest.register_checker('doctestplus_like', DoctestPlusLikeChecker)
+    xdoctest.register_checker('doctestplus_like', DoctestPlusLikeChecker)
+    return fix
 
 
 def test_registered_checker_can_use_doctest_style_optionflags() -> None:
+    fix = register_doctestplus_like_checker()
     docsrc = utils.codeblock(
         '''
         >>> print('10')
@@ -50,7 +83,7 @@ def test_registered_checker_can_use_doctest_style_optionflags() -> None:
     )
     self = doctest_example.DocTest(docsrc=docsrc)
     self.config['output_checker'] = 'doctestplus_like'
-    self.config['output_checker_flags'] = FIX
+    self.config['output_checker_flags'] = fix
     result = self.run(verbose=0, on_error='raise')
     assert result['passed']
 
@@ -80,6 +113,7 @@ def test_registered_checker_receives_runtime_state_flags() -> None:
 
 
 def test_registered_checker_output_difference_is_used() -> None:
+    fix = register_doctestplus_like_checker()
     docsrc = utils.codeblock(
         '''
         >>> print('alpha')
@@ -88,7 +122,7 @@ def test_registered_checker_output_difference_is_used() -> None:
     )
     self = doctest_example.DocTest(docsrc=docsrc)
     self.config['output_checker'] = 'doctestplus_like'
-    self.config['output_checker_flags'] = FIX
+    self.config['output_checker_flags'] = fix
     result = self.run(verbose=0, on_error='return')
     assert result['failed']
     text = '\n'.join(self.repr_failure())
