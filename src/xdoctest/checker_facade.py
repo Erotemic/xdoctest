@@ -112,7 +112,7 @@ def resolve_current_checker(
 
 
 class OutputChecker(doctest.OutputChecker):
-    """
+    r"""
     Default xdoctest checker exposed through a stdlib-doctest interface.
 
     Subclasses can wrap or extend xdoctest's matching by calling
@@ -128,8 +128,8 @@ class OutputChecker(doctest.OutputChecker):
         >>> from xdoctest.directive_facade import ELLIPSIS, FLOAT_CMP
         >>> output_checker = OutputChecker()
         >>> output_checker.check_output(
-        >>>     'prefix ... value=1\\n',
-        >>>     'prefix middle value=1.0000001\\n',
+        >>>     'prefix ... value=1\n',
+        >>>     'prefix middle value=1.0000001\n',
         >>>     ELLIPSIS | FLOAT_CMP,
         >>> )
         True

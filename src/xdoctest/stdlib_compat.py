@@ -49,14 +49,14 @@ from xdoctest.doctest_part import DoctestPart
 
 
 class StdlibExampleLike(Protocol):
-    """Structural type accepted by :func:`from_examples`.
+    r"""Structural type accepted by :func:`from_examples`.
 
     The adapter does not require an actual :class:`doctest.Example`; a small
     object with the same core attributes is sufficient.
 
     Example:
         >>> from types import SimpleNamespace
-        >>> example = SimpleNamespace(source='2 + 3\\n', want='5\\n', lineno=0)
+        >>> example = SimpleNamespace(source='2 + 3\n', want='5\n', lineno=0)
         >>> from_examples([example]).run(verbose=0, on_error='return')['passed']
         True
     """
@@ -76,7 +76,7 @@ def from_examples(
     optionflags: int | None = 0,
     config: Mapping[str, object] | None = None,
 ) -> DocTest:
-    """
+    r"""
     Build a runnable xdoctest :class:`DocTest` from a sequence of stdlib-like
     example objects.
 
@@ -111,8 +111,8 @@ def from_examples(
     Example:
         >>> import doctest
         >>> examples = [
-        >>>     doctest.Example('value = 3\\n', '', lineno=0),
-        >>>     doctest.Example('value * 2\\n', '6\\n', lineno=1),
+        >>>     doctest.Example('value = 3\n', '', lineno=0),
+        >>>     doctest.Example('value * 2\n', '6\n', lineno=1),
         >>> ]
         >>> dtest = from_examples(examples, name='double')
         >>> result = dtest.run(verbose=0, on_error='return')
@@ -168,14 +168,14 @@ def from_stdlib_doctest(
     optionflags: int | None = 0,
     config: Mapping[str, object] | None = None,
 ) -> DocTest:
-    """
+    r"""
     Convenience: convert a stdlib :class:`doctest.DocTest` directly. The
     metadata (``name``, ``filename``, ``lineno``, ``globs``) is taken from
     the input.
 
     Example:
         >>> import doctest
-        >>> example = doctest.Example('answer\\n', '42\\n', lineno=2)
+        >>> example = doctest.Example('answer\n', '42\n', lineno=2)
         >>> stdlib_test = doctest.DocTest(
         >>>     [example], {'answer': 42}, 'demo', 'demo.py', 10, '',
         >>> )
@@ -212,7 +212,7 @@ def from_stdlib_doctest(
 def _build_docsrc(
     examples: Sequence[StdlibExampleLike],
 ) -> tuple[int | None, str]:
-    """
+    r"""
     Reconstruct a ``>>>``-prefixed doctest source string from stdlib-shaped
     examples, padding with blank lines so each example's prompt line in the
     reconstructed source mirrors its original ``Example.lineno`` offset.
@@ -224,8 +224,8 @@ def _build_docsrc(
     Example:
         >>> import doctest
         >>> examples = [
-        >>>     doctest.Example('x = 1\\n', '', lineno=3),
-        >>>     doctest.Example('x\\n', '1\\n', lineno=5),
+        >>>     doctest.Example('x = 1\n', '', lineno=3),
+        >>>     doctest.Example('x\n', '1\n', lineno=5),
         >>> ]
         >>> base, docsrc = _build_docsrc(examples)
         >>> base
@@ -331,11 +331,11 @@ def _apply_stdlib_optionflags(dtest: DocTest, optionflags: int) -> None:
 
 
 def _example_docsrc_lines(ex: StdlibExampleLike) -> list[str]:
-    """Reconstruct prompted source and want lines for one example.
+    r"""Reconstruct prompted source and want lines for one example.
 
     Example:
         >>> import doctest
-        >>> example = doctest.Example('x = 1\\nx\\n', '1\\n', lineno=0)
+        >>> example = doctest.Example('x = 1\nx\n', '1\n', lineno=0)
         >>> _example_docsrc_lines(example)
         ['>>> x = 1', '... x', '1']
     """
