@@ -1,0 +1,47 @@
+name: Diagnose PR 211 Python 3.8
+
+on:
+  push:
+    branches:
+      - diagnostic/pr211-py38
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: actions/setup-python@v5.6.0
+        with:
+          python-version: '3.8'
+      - name: Install test environment
+        shell: bash
+        run: |
+          python -m pip install pip uv -U
+          python -m pip install '.[tests-strict,runtime-strict]'
+      - name: Run exact wheel-style test command
+        id: pytest
+        shell: bash
+        run: |
+          set +e
+          mkdir -p py38-sandbox
+          cd py38-sandbox
+          MOD_DPATH=$(python -c "import xdoctest, os; print(os.path.dirname(xdoctest.__file__))")
+          python -m pytest \
+            -q \
+            -p pytester \
+            -p no:doctest \
+            --xdoctest \
+            --tb=short \
+            --maxfail=20 \
+            "$MOD_DPATH" \
+            ../tests > ../py38-diagnostic.log 2>&1
+          status=$?
+          cd ..
+          tail -n 240 py38-diagnostic.log
+          exit "$status"
+      - name: Upload diagnostic log
+        if: always()
+        uses: actions/upload-artifact@v6.0.0
+        with:
+          name: py38-diagnostic-log
+          path: py38-diagnostic.log
