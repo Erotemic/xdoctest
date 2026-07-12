@@ -93,7 +93,7 @@ def test_failure_inside_warning_context_points_at_user_code_line():
     code must report the original file line — not a wrapper line.
     """
     ignore_flag, _ = _register_warning_flags()
-    # Example originally at file line 7; expected output mismatch.
+    # Stdlib Example.lineno is zero-based, so lineno=7 is physical line 8.
     examples = [
         doctest.Example(
             source='import warnings; print(2)\n',
@@ -105,7 +105,7 @@ def test_failure_inside_warning_context_points_at_user_code_line():
     dtest = stdlib_compat.from_examples(examples, name='t')
     result = dtest.run(verbose=0, on_error='return')
     assert result['failed']
-    assert dtest.lineno == 7
+    assert dtest.lineno == 8
     assert dtest.failed_part is not None
     assert not isinstance(dtest.failed_part, str)
     # Ensure the failed part begins at offset 0 of docsrc -> absolute line 7.

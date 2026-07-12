@@ -49,7 +49,7 @@ def test_synthetic_example_runs_successfully():
 
 
 def test_synthetic_example_with_failure_reports_correct_line():
-    # Example at line 4 in the source file. Expecting 1, returns 2.
+    # Stdlib Example.lineno is zero-based, so lineno=4 is physical line 5.
     examples = [doctest.Example(source='print(2)\n', want='1\n', lineno=4)]
     dtest = stdlib_compat.from_examples(
         examples, name='t', filename='/tmp/fake.py'
@@ -58,7 +58,7 @@ def test_synthetic_example_with_failure_reports_correct_line():
     assert result['failed']
     # dtest.lineno should align with the first example's lineno so that
     # absolute file line is recovered as dtest.lineno + part.line_offset.
-    assert dtest.lineno == 4
+    assert dtest.lineno == 5
     assert dtest.failed_part is not None
     assert not isinstance(dtest.failed_part, str)
     assert dtest.failed_part.line_offset == 0
@@ -70,14 +70,51 @@ def test_multiple_examples_preserve_lineno_spacing():
         doctest.Example(source='print(x)\n', want='1\n', lineno=20),
     ]
     dtest = stdlib_compat.from_examples(examples, name='t')
-    assert dtest.lineno == 10
+    assert dtest.lineno == 11
     # Force a parse to populate _parts so we can inspect line offsets.
     dtest._parse()
     parts = dtest._parts
     assert parts is not None and len(parts) >= 2
     # Second example should be at offset 10 from the start of the docsrc,
-    # so its absolute line resolves to dtest.lineno + 10 == 20.
+    # so its physical line resolves to dtest.lineno + 10 == 21.
     assert parts[-1].line_offset == 10
+
+
+def test_empty_want_rejects_unexpected_stdout():
+    examples = [
+        doctest.Example(
+            source='print("unexpected")\n',
+            want='',
+            lineno=0,
+        )
+    ]
+    dtest = stdlib_compat.from_examples(examples, name='t')
+    result = dtest.run(verbose=0, on_error='return')
+    assert result['failed']
+
+
+def test_empty_want_uses_stdlib_displayhook_semantics():
+    silent = stdlib_compat.from_examples(
+        [doctest.Example(source='None\n', want='', lineno=0)],
+        name='silent',
+    )
+    assert silent.run(verbose=0, on_error='return')['passed']
+
+    displayed = stdlib_compat.from_examples(
+        [doctest.Example(source='1\n', want='', lineno=0)],
+        name='displayed',
+    )
+    assert displayed.run(verbose=0, on_error='return')['failed']
+
+
+def test_empty_want_output_cannot_satisfy_later_example():
+    examples = [
+        doctest.Example(source='print("a")\n', want='', lineno=0),
+        doctest.Example(source='pass\n', want='a\n', lineno=1),
+    ]
+    dtest = stdlib_compat.from_examples(examples, name='t')
+    result = dtest.run(verbose=0, on_error='return')
+    assert result['failed']
 
 
 def test_skip_option_is_honored():
@@ -213,10 +250,43 @@ def test_stdlib_doctest_roundtrip_runs():
     dtest = stdlib_compat.from_stdlib_doctest(stdlib_test)
     result = dtest.run(verbose=0, on_error='return')
     assert result['passed']
-    # Stdlib's docstring lineno (10) plus first-example offset (2) gives
-    # the absolute file line. The converter sets dtest.lineno to that sum
-    # so xdoctest's "dtest.lineno + part.line_offset" recovers it.
-    assert dtest.lineno == 12
+    # Both stdlib values are zero-based; xdoctest stores one-based locations.
+    assert dtest.lineno == 13
+
+
+def test_stdlib_doctest_finder_preserves_physical_failure_line(tmp_path):
+    import importlib.util
+
+    modpath = tmp_path / 'sample_doctest_module.py'
+    modpath.write_text(
+        'def demo():\n'
+        '    """\n'
+        '    >>> print("actual")\n'
+        '    expected\n'
+        '    """\n'
+    )
+    spec = importlib.util.spec_from_file_location('sample_doctest_module', modpath)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    found = [
+        test
+        for test in doctest.DocTestFinder().find(module)
+        if test.name.endswith('.demo')
+    ]
+    assert len(found) == 1
+    stdlib_test = found[0]
+    stdlib_example = stdlib_test.examples[0]
+    physical_line = stdlib_test.lineno + stdlib_example.lineno + 1
+    assert modpath.read_text().splitlines()[physical_line - 1].lstrip().startswith(
+        '>>>'
+    )
+
+    dtest = stdlib_compat.from_stdlib_doctest(stdlib_test)
+    result = dtest.run(verbose=0, on_error='return')
+    assert result['failed']
+    assert dtest.lineno == physical_line
 
 
 def test_builtin_optionflag_translates_to_runtime_state():
@@ -233,6 +303,70 @@ def test_builtin_optionflag_translates_to_runtime_state():
     )
     result = dtest.run(verbose=0, on_error='return')
     assert result['passed'], result
+
+
+def test_zero_optionflags_disable_stdlib_comparison_flags():
+    ellipsis = stdlib_compat.from_examples(
+        [
+            doctest.Example(
+                source='print("abc")\n',
+                want='a...\n',
+                lineno=0,
+            )
+        ],
+        name='ellipsis',
+        optionflags=0,
+    )
+    assert ellipsis.config['reportchoice'] == 'none'
+    assert ellipsis.run(verbose=0, on_error='return')['failed']
+
+    whitespace = stdlib_compat.from_examples(
+        [
+            doctest.Example(
+                source='print("a  b")\n',
+                want='a b\n',
+                lineno=0,
+            )
+        ],
+        name='whitespace',
+        optionflags=0,
+    )
+    assert whitespace.run(verbose=0, on_error='return')['failed']
+
+
+def test_optionflags_preserve_unrelated_runtime_config():
+    examples = [doctest.Example(source='print("ok")\n', want='ok\n', lineno=0)]
+    dtest = stdlib_compat.from_examples(
+        examples,
+        optionflags=doctest.ELLIPSIS,
+        config={
+            'default_runtime_state': {
+                'SKIP': True,
+                'ASYNC': True,
+            }
+        },
+    )
+    defaults = dtest.config['default_runtime_state']
+    assert defaults['SKIP'] is True
+    assert defaults['ASYNC'] is True
+    assert defaults['ELLIPSIS'] is True
+    assert defaults['NORMALIZE_WHITESPACE'] is False
+
+
+def test_none_optionflags_preserve_configured_checker_flags():
+    custom = xdoctest.register_optionflag('CONFIGURED_INTAKE_FLAG')
+    examples = [doctest.Example(source='print("ok")\n', want='ok\n', lineno=0)]
+    dtest = stdlib_compat.from_examples(
+        examples,
+        optionflags=None,
+        config={'output_checker_flags': custom},
+    )
+    assert dtest.config['output_checker_flags'] == custom
+
+
+def test_warning_flags_are_top_level_exports():
+    assert xdoctest.IGNORE_WARNINGS is directive_facade.IGNORE_WARNINGS
+    assert xdoctest.SHOW_WARNINGS is directive_facade.SHOW_WARNINGS
 
 
 

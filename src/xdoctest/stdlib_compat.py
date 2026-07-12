@@ -15,8 +15,9 @@ example-like objects with the standard ``source``, ``want``, ``lineno``,
 Fidelity guarantees:
 
 - **Line numbers**: the reconstructed docsrc pads with blank lines so that
-  each example's prompt line matches its original ``lineno`` offset, and
-  ``DocTest.lineno`` is set to the first example's base line. xdoctest's
+  each example's prompt line matches its original zero-based ``lineno``
+  offset, and ``DocTest.lineno`` is set to the corresponding one-based source
+  line. xdoctest's
   parser then assigns each part a ``line_offset`` such that
   ``dtest.lineno + part.line_offset == original_file_line``.
 - **Source content**: example source is carried verbatim (only the standard
@@ -30,8 +31,9 @@ Option semantics flow through one channel: each named stdlib optionflag in
 xdoctest runtime-state keys (``SKIP``, ``ELLIPSIS``, ``IGNORE_WARNINGS``,
 ...) modify the structured runtime state; any other *named* flag is adopted
 as a checker-only optionflag and delivered to the active output checker via
-the standard ``flags`` argument. Each incoming stdlib example is parsed as
-its own execution boundary, so its options never leak to adjacent examples.
+the standard ``flags`` argument. Each incoming stdlib example is parsed and
+checked as its own execution boundary, so neither its options nor its output
+can leak to adjacent examples.
 """
 
 from __future__ import annotations
@@ -50,7 +52,7 @@ def from_examples(
     name: str = '<doctest>',
     filename: Optional[str] = None,
     lineno: Optional[int] = None,
-    optionflags: int = 0,
+    optionflags: Optional[int] = 0,
     config: Optional[Mapping[str, Any]] = None,
 ) -> DocTest:
     """
@@ -66,13 +68,13 @@ def from_examples(
         name: human-readable test name; mirrors stdlib ``DocTest.name``.
         filename: source file path; mirrors stdlib ``DocTest.filename``.
             Used by xdoctest for failure reporting.
-        lineno: explicit base line number. If ``None``, the first example's
-            ``lineno`` is used so that ``dtest.lineno + part.line_offset``
-            recovers absolute file line numbers.
-        optionflags: stdlib-doctest optionflags ``int`` applying to the whole
-            test. Bits that map to xdoctest builtin flags are translated into
-            runtime state defaults; the rest are kept as checker-only
-            optionflag bits and delivered to the active output checker.
+        lineno: explicit one-based source line for the first example. If
+            ``None``, the first example's zero-based ``lineno`` is converted
+            to one-based form.
+        optionflags: complete stdlib-doctest optionflags mask applying to the
+            whole test. Every integer, including ``0``, replaces mapped
+            runtime flags and checker-only bits. Pass ``None`` to retain the
+            corresponding values supplied through ``config``.
         config: optional mapping of :class:`DoctestConfig` keys to merge into
             the resulting ``DocTest.config``. Most useful for setting
             ``output_checker`` to select a registered checker.
@@ -91,7 +93,7 @@ def from_examples(
 
     base, docsrc = _build_docsrc(examples)
     if lineno is None:
-        lineno = base if base is not None else 0
+        lineno = (base if base is not None else 0) + 1
 
     # Pass filename as ``fpath`` (display path) rather than ``modpath`` so we
     # don't force a stdlib-style modname lookup against the filesystem; the
@@ -111,20 +113,18 @@ def from_examples(
     if config:
         for key, value in config.items():
             dtest.config[key] = value
-    if optionflags:
-        # Persistent checker-only optionflag bits flow through
-        # output_checker_flags. Builtin xdoctest flags (ELLIPSIS,
-        # NORMALIZE_WHITESPACE, etc.) are converted into the structured
-        # default_runtime_state via optionflags_to_runtime_state.
-        runstate = directive_facade.optionflags_to_runtime_state(optionflags)
-        defaults: dict = dict(dtest.config.get('default_runtime_state') or {})
-        for key, value in runstate.to_dict().items():
-            if isinstance(value, bool):
-                defaults[key] = value
-        dtest.config['default_runtime_state'] = defaults
-        dtest.config['output_checker_flags'] = (
-            runstate.get_output_checker_flags()
-        )
+    if optionflags is not None:
+        _apply_stdlib_optionflags(dtest, optionflags)
+
+    # A stdlib Example always owns an explicit expected-output boundary, even
+    # when ``want == ''``. Execute in interactive ``single`` mode below so
+    # expression display follows CPython's displayhook semantics (notably,
+    # ``None`` is silent), require output-producing examples to have a local
+    # want, and never carry stdout across Example boundaries.
+    defaults = dict(dtest.config.get('default_runtime_state') or {})
+    defaults['REQUIRE_WANT'] = True
+    dtest.config['default_runtime_state'] = defaults
+    dtest.config['deferred_output_matching'] = False
 
     _parse_examples_as_parts(dtest, examples, base)
     return dtest
@@ -133,7 +133,7 @@ def from_examples(
 def from_stdlib_doctest(
     stdlib_test: _doctest.DocTest,
     *,
-    optionflags: int = 0,
+    optionflags: Optional[int] = 0,
     config: Optional[Mapping[str, Any]] = None,
 ) -> DocTest:
     """
@@ -143,14 +143,17 @@ def from_stdlib_doctest(
     """
     # In stdlib, ``DocTest.lineno`` is the line of the docstring in the file
     # and each ``Example.lineno`` is an offset within that docstring. So the
-    # absolute file line of the first example is ``stdlib_test.lineno +
-    # examples[0].lineno``. We pass that sum as the converter base so xdoctest
-    # reports ``dtest.lineno + part.line_offset`` as absolute file line.
+    # one-based absolute file line of the first example is
+    # ``stdlib_test.lineno + examples[0].lineno + 1``. We pass that sum as the
+    # converter base so xdoctest reports ``dtest.lineno + part.line_offset``
+    # as the physical source line.
     examples = list(stdlib_test.examples)
     if examples:
-        absolute_base = (stdlib_test.lineno or 0) + (examples[0].lineno or 0)
+        absolute_base = (
+            (stdlib_test.lineno or 0) + (examples[0].lineno or 0) + 1
+        )
     else:
-        absolute_base = stdlib_test.lineno or 0
+        absolute_base = (stdlib_test.lineno or 0) + 1
     return from_examples(
         examples,
         globs=stdlib_test.globs,
@@ -220,6 +223,11 @@ def _parse_examples_as_parts(dtest, examples, base):
         local_parts = [part for part in raw_parts if not isinstance(part, str)]
         line_offset = (ex.lineno or 0) - base
         for part in local_parts:
+            # stdlib compiles each Example in ``single`` mode. Besides matching
+            # the accepted grammar for one interactive statement, this invokes
+            # ``sys.displayhook`` for expression statements: values are shown,
+            # while ``None`` remains silent.
+            part.compile_mode = 'single'
             part.line_offset += line_offset
             extra = _options_to_directives(getattr(ex, 'options', None) or {})
             if extra:
@@ -228,6 +236,36 @@ def _parse_examples_as_parts(dtest, examples, base):
                 part._directives = list(part.directives) + extra
             parts.append(part)
     dtest._parts = parts
+
+
+def _apply_stdlib_optionflags(dtest: DocTest, optionflags: int) -> None:
+    """Apply a complete stdlib mask without clobbering unrelated config.
+
+    Runtime keys bound to registered option bits are replaced from the mask.
+    Runtime keys with no option-bit representation (for example ``SKIP``,
+    ``ASYNC`` and ``REQUIRE_WANT``) retain their configured values. Unmapped
+    bits replace the persistent checker-only mask.
+    """
+    defaults = dict(dtest.config.get('default_runtime_state') or {})
+    runtime_bound_mask = 0
+    for key in directive.DEFAULT_RUNTIME_STATE:
+        if directive_facade.is_registered_optionflag(key):
+            flag = directive_facade.get_optionflag(key)
+            runtime_bound_mask |= flag
+            defaults[key] = bool(optionflags & flag)
+    dtest.config['default_runtime_state'] = defaults
+    dtest.config['output_checker_flags'] = optionflags & ~runtime_bound_mask
+
+    dtest.config['reportchoice'] = 'none'
+    report_flags = [
+        (directive_facade.REPORT_UDIFF, 'udiff'),
+        (directive_facade.REPORT_CDIFF, 'cdiff'),
+        (directive_facade.REPORT_NDIFF, 'ndiff'),
+    ]
+    for flag, reportchoice in report_flags:
+        if optionflags & flag:
+            dtest.config['reportchoice'] = reportchoice
+            break
 
 
 def _example_docsrc_lines(ex):
