@@ -181,6 +181,7 @@ Example:
 from __future__ import annotations
 
 import copy
+import doctest
 import operator
 import os
 import re
@@ -357,6 +358,8 @@ class RuntimeState(utils.NiceRepr):
         self._output_checker_flags = 0
         self._inline_output_checker_flags_add = 0
         self._inline_output_checker_flags_remove = 0
+        self._output_checker_cache_token: object | None = None
+        self._output_checker_instance: doctest.OutputChecker | None = None
 
     def to_dict(self) -> OrderedDict[str, bool | set[str]]:
         """
@@ -409,7 +412,31 @@ class RuntimeState(utils.NiceRepr):
         return self._output_checker
 
     def set_output_checker(self, name: str) -> None:
+        if name != self._output_checker:
+            self.clear_cached_output_checker()
         self._output_checker = name
+
+    def get_cached_output_checker(
+        self, registration_token: object
+    ) -> doctest.OutputChecker | None:
+        """Return this run's checker when it matches the registration."""
+        if self._output_checker_cache_token is registration_token:
+            return self._output_checker_instance
+        return None
+
+    def cache_output_checker(
+        self,
+        registration_token: object,
+        instance: doctest.OutputChecker,
+    ) -> None:
+        """Bind a class registration to one instance for this run."""
+        self._output_checker_cache_token = registration_token
+        self._output_checker_instance = instance
+
+    def clear_cached_output_checker(self) -> None:
+        """Discard the checker instance bound to this run, if any."""
+        self._output_checker_cache_token = None
+        self._output_checker_instance = None
 
     def get_output_checker_flags(self) -> int:
         flags = self._output_checker_flags | self._inline_output_checker_flags_add

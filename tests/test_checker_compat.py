@@ -8,7 +8,7 @@ from typing import NoReturn
 import pytest
 
 import xdoctest
-from xdoctest import checker, checker_facade, doctest_example, utils
+from xdoctest import checker, checker_facade, directive, doctest_example, utils
 from xdoctest import directive_facade
 
 
@@ -423,36 +423,102 @@ def test_output_checker_honors_ignore_output() -> None:
     )
 
 
-def test_resolve_checker_caches_class_instances() -> None:
-    from xdoctest import checker_facade
 
+def test_native_checker_name_is_reserved() -> None:
+    with pytest.raises(ValueError, match='reserved'):
+        checker_facade.register_checker('xdoctest', doctest.OutputChecker)
+
+    assert isinstance(
+        checker_facade.resolve_checker('xdoctest'),
+        checker_facade.OutputChecker,
+    )
+    assert 'xdoctest' not in checker_facade._REGISTERED_CHECKERS
+
+
+def test_registered_class_retains_factory_semantics() -> None:
     class Counting(doctest.OutputChecker):
         instances = 0
 
         def __init__(self) -> None:
             Counting.instances += 1
 
-    checker_facade.register_checker('counting_checker', Counting)
-    first = checker_facade.resolve_checker('counting_checker')
-    second = checker_facade.resolve_checker('counting_checker')
-    assert first is second
-    assert Counting.instances == 1
-
-    # Re-registering replaces the materialized instance.
-    checker_facade.register_checker('counting_checker', Counting)
-    third = checker_facade.resolve_checker('counting_checker')
-    assert third is not first
+    checker_facade.register_checker('counting_factory', Counting)
+    first = checker_facade.resolve_checker('counting_factory')
+    second = checker_facade.resolve_checker('counting_factory')
+    assert first is not second
     assert Counting.instances == 2
 
     replacement = doctest.OutputChecker()
-    checker_facade.register_checker('counting_checker', replacement)
-    assert checker_facade.resolve_checker('counting_checker') is replacement
+    checker_facade.register_checker('counting_factory', replacement)
+    assert checker_facade.resolve_checker('counting_factory') is replacement
+
+
+def test_registered_class_is_cached_per_runtime_state() -> None:
+    class Counting(doctest.OutputChecker):
+        instances = 0
+
+        def __init__(self) -> None:
+            Counting.instances += 1
+
+    checker_facade.register_checker('counting_per_run', Counting)
+
+    first_run = directive.RuntimeState()
+    first_run.set_output_checker('counting_per_run')
+    first = checker_facade.resolve_current_checker(first_run)
+    assert checker_facade.resolve_current_checker(first_run) is first
+    assert Counting.instances == 1
+
+    second_run = directive.RuntimeState()
+    second_run.set_output_checker('counting_per_run')
+    second = checker_facade.resolve_current_checker(second_run)
+    assert second is not first
+    assert Counting.instances == 2
+
+    # Even re-registering the same class creates a new registry generation and
+    # invalidates a previously cached checker within the bounded run state.
+    checker_facade.register_checker('counting_per_run', Counting)
+    third = checker_facade.resolve_current_checker(first_run)
+    assert third is not first
+    assert Counting.instances == 3
+
+
+def test_matching_and_difference_share_one_per_run_checker() -> None:
+    class Stateful(doctest.OutputChecker):
+        instances = 0
+
+        def __init__(self) -> None:
+            Stateful.instances += 1
+            self.checked = False
+
+        def check_output(self, want: str, got: str, optionflags: int) -> bool:
+            self.checked = True
+            return False
+
+        def output_difference(
+            self,
+            example: doctest.Example,
+            got: str,
+            optionflags: int,
+        ) -> str:
+            assert self.checked
+            return 'same per-run checker'
+
+    checker_facade.register_checker('stateful_per_run', Stateful)
+    runstate = directive.RuntimeState()
+    runstate.set_output_checker('stateful_per_run')
+
+    assert not checker.check_output('actual', 'expected', runstate)
+    difference = checker.GotWantException(
+        'different', 'actual', 'expected'
+    ).output_difference(runstate, colored=False)
+    assert difference == 'same per-run checker'
+    assert Stateful.instances == 1
 
 
 def test_native_check_bypasses_the_interop_facade(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """The native path must not pack flags or resolve a facade checker."""
+    """The native RuntimeState path must not pack or resolve facade state."""
 
     def forbidden(*args: object, **kwargs: object) -> NoReturn:
         raise AssertionError('native path crossed the interop boundary')
@@ -462,6 +528,17 @@ def test_native_check_bypasses_the_interop_facade(
     )
     monkeypatch.setattr(checker_facade, 'resolve_checker', forbidden)
 
-    runstate = xdoctest.directive.RuntimeState()
+    runstate = directive.RuntimeState()
     assert checker.check_output('1\n', '1\n', runstate)
     assert not checker.check_output('1\n', '2\n', runstate)
+
+
+def test_sparse_mapping_is_normalized_before_native_matching() -> None:
+    sparse = {'_output_checker': 'xdoctest'}
+    assert not checker.check_output('actual', 'expected', sparse)
+
+    difference = checker.GotWantException(
+        'different', 'actual', 'expected'
+    ).output_difference(sparse, colored=False)
+    assert 'Expected:' in difference
+    assert 'Got:' in difference

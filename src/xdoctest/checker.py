@@ -278,28 +278,40 @@ def _xdoctest_check_output(
     return False
 
 
-def _selected_checker_name(
+def _coerce_runstate(
     runstate: directive.RuntimeState | Mapping[str, object] | None,
-) -> str:
-    """Return the checker name selected by structured or mapping state.
+) -> directive.RuntimeState:
+    """Normalize compatibility mappings without taxing native state.
+
+    Real :class:`RuntimeState` objects are returned unchanged. Sparse mappings
+    take the pre-fast-path compatibility route through stdlib option bits,
+    yielding a complete runtime state before native matching accesses flags.
 
     Example:
-        >>> _selected_checker_name(None)
+        >>> state = _coerce_runstate({'_output_checker': 'xdoctest'})
+        >>> isinstance(state, directive.RuntimeState)
+        True
+        >>> state.get_output_checker()
         'xdoctest'
-        >>> _selected_checker_name({'_output_checker': 'custom'})
-        'custom'
     """
     if isinstance(runstate, directive.RuntimeState):
-        return runstate.get_output_checker()
-    if isinstance(runstate, Mapping):
-        return str(runstate.get('_output_checker', 'xdoctest'))
-    return 'xdoctest'
+        return runstate
+    if runstate is None:
+        return directive.RuntimeState()
+    from xdoctest import checker_facade
+
+    optionflags = checker_facade.runtime_state_to_optionflags(runstate)
+    normalized = checker_facade.optionflags_to_runtime_state(optionflags)
+    normalized.set_output_checker(
+        str(runstate.get('_output_checker', 'xdoctest'))
+    )
+    return normalized
 
 
 def check_output(
     got: str,
     want: str,
-    runstate: directive.RuntimeState | None = None,
+    runstate: directive.RuntimeState | Mapping[str, object] | None = None,
 ) -> bool:
     """
     Check output using the currently configured output checker backend.
@@ -320,14 +332,13 @@ def check_output(
     """
     if not want:  # nocover
         return True
-    if runstate is None:
-        runstate = directive.RuntimeState()
-    checker_name = _selected_checker_name(runstate)
+    runstate = _coerce_runstate(runstate)
+    checker_name = runstate.get_output_checker()
     if checker_name == 'xdoctest':
         return _xdoctest_check_output(got, want, runstate)
     from xdoctest import checker_facade
     optionflags = checker_facade.runtime_state_to_optionflags(runstate)
-    output_checker = checker_facade.resolve_checker(checker_name)
+    output_checker = checker_facade.resolve_checker(checker_name, runstate)
     return bool(output_checker.check_output(want, got, optionflags))
 
 
@@ -822,19 +833,20 @@ class GotWantException(AssertionError):
 
     def output_difference(
         self,
-        runstate: directive.RuntimeState | None = None,
+        runstate: directive.RuntimeState | Mapping[str, object] | None = None,
         colored: bool = True,
     ) -> str:
-        if runstate is None:
-            runstate = directive.RuntimeState()
+        runstate = _coerce_runstate(runstate)
 
-        checker_name = _selected_checker_name(runstate)
+        checker_name = runstate.get_output_checker()
         if checker_name != 'xdoctest':
             # A foreign checker may provide its own difference rendering
             # (e.g. to display fixed-up wants); fall back to the native
             # renderer when it inherits the facade default.
             from xdoctest import checker_facade
-            output_checker = checker_facade.resolve_checker(checker_name)
+            output_checker = checker_facade.resolve_checker(
+                checker_name, runstate
+            )
             if (
                 output_checker.__class__.output_difference
                 is not checker_facade.OutputChecker.output_difference

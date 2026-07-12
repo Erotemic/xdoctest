@@ -38,8 +38,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 * Native xdoctest output checks now keep structured runtime state on the fast
-  path. Stdlib optionflag conversion and lazy checker construction occur only
-  when a foreign registered checker is selected.
+  path. Stdlib optionflag conversion occurs only for foreign checkers or sparse
+  compatibility mappings. The native checker name is reserved; foreign checker
+  classes retain factory semantics and are materialized once per doctest run.
 * Bump minimum pytest to 6.2.5
 * Much more static typing
 
