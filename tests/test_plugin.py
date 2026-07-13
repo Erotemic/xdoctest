@@ -2231,3 +2231,181 @@ class Disabled:
         items, reprec = testdir.inline_genitems(p, '--xdoctest-modules')
         reportinfo = items[0].reportinfo()
         assert reportinfo[1] == 1
+
+
+class TestPytestEmbedding:
+    @pytest.fixture(autouse=True)
+    def _disable_plugin_autoload(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv('PYTEST_DISABLE_PLUGIN_AUTOLOAD', '1')
+
+    def test_namespace_fixture_with_normal_plugin(
+        self, testdir: pytest.Testdir
+    ) -> None:
+        testdir.makeconftest(
+            """
+            import pytest
+
+            @pytest.fixture
+            def xdoctest_namespace():
+                return {'embedded_value': 42}
+            """
+        )
+        testdir.makepyfile(
+            sample="""
+            def check_namespace():
+                '''
+                >>> embedded_value
+                42
+                '''
+            """
+        )
+        result = testdir.inline_run(
+            '--xdoctest-modules', '-p', 'xdoctest.plugin', *EXTRA_ARGS
+        )
+        result.assertoutcome(passed=1)
+
+    def test_namespace_fixture_dependency_error_is_not_hidden(
+        self, testdir: pytest.Testdir
+    ) -> None:
+        testdir.makeconftest(
+            """
+            import pytest
+
+            @pytest.fixture
+            def xdoctest_namespace(missing_namespace_dependency):
+                return {}
+            """
+        )
+        testdir.makepyfile(
+            sample="""
+            def check_namespace():
+                '''
+                >>> 1 + 1
+                2
+                '''
+            """
+        )
+        result = testdir.runpytest(
+            '--xdoctest-modules',
+            '-q',
+            '-p',
+            'xdoctest.plugin',
+            *EXTRA_ARGS,
+        )
+        result.assert_outcomes(errors=1)
+        result.stdout.fnmatch_lines(
+            ["*fixture 'missing_namespace_dependency' not found*"]
+        )
+
+    def test_embedded_item_without_namespace_fixture(
+        self, testdir: pytest.Testdir, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        testdir.makeconftest(
+            """
+            from pathlib import Path
+
+            import pytest
+
+            from xdoctest.doctest_example import DocTest
+            from xdoctest.plugin import XDoctestItem
+
+
+            class EmbeddedFile(pytest.File):
+                def collect(self):
+                    node_path = getattr(self, 'path', None)
+                    if node_path is None:
+                        node_path = self.fspath
+                    dtest = DocTest(
+                        docsrc='>>> 1 + 1\\n2',
+                        callname='embedded',
+                        lineno=1,
+                        fpath=str(node_path),
+                        mode='pytest',
+                    )
+                    yield XDoctestItem.from_parent(
+                        self, name='embedded', dtest=dtest
+                    )
+
+
+            if pytest.__version__ < '7.':
+                def pytest_collect_file(path, parent):
+                    if path.ext == '.embed':
+                        return EmbeddedFile.from_parent(parent, fspath=path)
+            else:
+                def pytest_collect_file(file_path, parent):
+                    if file_path.suffix == '.embed':
+                        return EmbeddedFile.from_parent(
+                            parent, path=Path(file_path)
+                        )
+            """
+        )
+        testdir.makefile('.embed', embedded='placeholder')
+        source_root = Path(__file__).resolve().parents[1] / 'src'
+        monkeypatch.setenv('PYTHONPATH', str(source_root))
+        result = testdir.runpytest_subprocess('-q')
+        result.assert_outcomes(passed=1)
+
+    def test_installed_doctestplus_owns_rst_textfile(
+        self, testdir: pytest.Testdir, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        pytest.importorskip('pytest_doctestplus')
+        path = testdir.makefile(
+            '.rst',
+            narrative="""
+            .. doctest-skip::
+
+                >>> raise RuntimeError('doctestplus should skip this')
+            """,
+        )
+        source_root = Path(__file__).resolve().parents[1] / 'src'
+        monkeypatch.setenv('PYTHONPATH', str(source_root))
+        result = testdir.runpytest_subprocess(
+            path,
+            '-p',
+            'xdoctest.plugin',
+            '-p',
+            'pytest_doctestplus.plugin',
+            '--doctest-plus',
+            '--doctest-glob=*.rst',
+            '--xdoctest-glob=*.rst',
+            '-q',
+            '-rs',
+        )
+        result.assert_outcomes(skipped=1)
+
+    def test_doctestplus_textfile_ownership_detection(
+        self, testdir: pytest.Testdir
+    ) -> None:
+        from types import SimpleNamespace
+        from typing import Any, List, Set
+
+        from xdoctest.plugin import _doctestplus_owns_textfile
+
+        class FakePluginManager:
+            def __init__(self, plugin_names: Set[str]) -> None:
+                self.plugin_names = plugin_names
+
+            def hasplugin(self, name: str) -> bool:
+                return name in self.plugin_names
+
+        def make_config(
+            plugin_names: Set[str], doctest_globs: List[str]
+        ) -> Any:
+            return SimpleNamespace(
+                pluginmanager=FakePluginManager(plugin_names),
+                option=SimpleNamespace(doctestglob=doctest_globs),
+            )
+
+        if pytest.__version__ < '7.':
+            path = testdir.tmpdir.join(Path('narrative.txt'))
+        else:
+            path = Path('narrative.txt')
+        loader_only = make_config({'pytest_doctestplus'}, ['*.txt'])
+        active_match = make_config({'doctestplus'}, ['*.txt'])
+        active_mismatch = make_config({'doctestplus'}, ['*.rst'])
+
+        assert not _doctestplus_owns_textfile(loader_only, path)
+        assert _doctestplus_owns_textfile(active_match, path)
+        assert not _doctestplus_owns_textfile(active_mismatch, path)
