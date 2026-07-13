@@ -1576,6 +1576,40 @@ class TestXDoctestModuleMetadata:
         reprec = testdir.inline_run('--xdoctest-modules', *EXTRA_ARGS)
         reprec.assertoutcome(passed=1, skipped=2)
 
+
+    def test_metadata_skip_reason_is_reported(
+        self, testdir: pytest.Testdir
+    ) -> None:
+        testdir.makepyfile(
+            meta=utils.codeblock(
+                """
+                __doctest_skip__ = ['skip_me']
+                __doctest_requires__ = {
+                    'needs_missing': ['definitely_missing_package_123456'],
+                }
+
+                def skip_me():
+                    '''
+                    >>> 1
+                    2
+                    '''
+
+                def needs_missing():
+                    '''
+                    >>> 1
+                    1
+                    '''
+                """
+            )
+        )
+        result = testdir.runpytest(
+            '--xdoctest-modules', '-rs', *EXTRA_ARGS
+        )
+        result.stdout.fnmatch_lines(['*listed in `__doctest_skip__`*'])
+        result.stdout.fnmatch_lines(
+            ['*unmet `__doctest_requires__` requirement*']
+        )
+
     def test_doctestplus_requires_metadata(
         self, testdir: pytest.Testdir
     ) -> None:

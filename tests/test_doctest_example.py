@@ -901,3 +901,93 @@ def test_requirement_check_without_packaging(monkeypatch) -> None:
     )
     with pytest.warns(RuntimeWarning, match='packaging is required'):
         assert not doctest_example._doctest_requirement_satisfied('pytest>=1')
+
+
+def test_static_module_metadata_cache_reuses_and_invalidates(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from xdoctest import doctest_example as mod
+
+    fpath = tmp_path / 'cached_metadata.py'
+    fpath.write_text("__doctest_skip__ = ['first']\n")
+
+    calls: list[str] = []
+    original = mod.static.parse_static_value
+
+    def counting_parse(key: str, *, fpath: str) -> typing.Any:
+        calls.append(key)
+        return original(key, fpath=fpath)
+
+    monkeypatch.setattr(mod.static, 'parse_static_value', counting_parse)
+    mod._read_static_module_doctest_metadata_cached.cache_clear()
+    try:
+        first = mod._static_module_doctest_metadata(fpath)
+        second = mod._static_module_doctest_metadata(fpath)
+        assert second is first
+        assert calls == ['__doctest_skip__', '__doctest_requires__']
+
+        fpath.write_text("__doctest_skip__ = ['second', 'changed']\n")
+        changed = mod._static_module_doctest_metadata(fpath)
+        assert changed[0] == ['second', 'changed']
+        assert calls == [
+            '__doctest_skip__',
+            '__doctest_requires__',
+            '__doctest_skip__',
+            '__doctest_requires__',
+        ]
+    finally:
+        mod._read_static_module_doctest_metadata_cached.cache_clear()
+
+
+def test_module_metadata_returns_specific_skip_reasons() -> None:
+    import types
+
+    from xdoctest import directive, doctest_example
+
+    module = types.ModuleType('metadata_reason_demo')
+    setattr(module, '__doctest_skip__', ['skip_me'])
+    setattr(
+        module,
+        '__doctest_requires__',
+        {'needs_missing': ['definitely_missing_package_123456']},
+    )
+
+    skipped = doctest_example.DocTest(
+        docsrc='>>> 1\n2\n',
+        modpath=module,
+        callname='skip_me',
+    )
+    skip_state = directive.RuntimeState()
+    reason = skipped._apply_module_doctest_metadata(skip_state)
+    assert reason == 'listed in `__doctest_skip__`'
+    assert skip_state['SKIP']
+
+    required = doctest_example.DocTest(
+        docsrc='>>> 1\n1\n',
+        modpath=module,
+        callname='needs_missing',
+    )
+    require_state = directive.RuntimeState()
+    reason = required._apply_module_doctest_metadata(require_state)
+    assert reason == (
+        "unmet `__doctest_requires__` requirement: "
+        "'definitely_missing_package_123456'"
+    )
+    assert require_state['SKIP']
+
+
+def test_module_requirement_patterns_validate_sequence_items() -> None:
+    import types
+
+    import pytest
+
+    from xdoctest import doctest_example
+
+    module = types.ModuleType('metadata_validation_demo')
+    dtest = doctest_example.DocTest(
+        docsrc='>>> 1\n1\n',
+        modpath=module,
+        callname='target',
+    )
+    with pytest.raises(ValueError, match='patterns must be strings'):
+        dtest._unmet_module_requirement({('target', 3): ['os']})

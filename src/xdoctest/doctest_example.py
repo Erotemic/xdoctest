@@ -6,6 +6,7 @@ from __future__ import annotations
 import __future__
 
 import ast
+import functools
 from contextlib import AbstractContextManager, nullcontext
 import math
 import os
@@ -412,6 +413,66 @@ def _doctest_requirement_satisfied(requirement_text: str) -> bool:
     return requirement.specifier.contains(installed_version, prereleases=True)
 
 
+@functools.lru_cache(maxsize=256)
+def _read_static_module_doctest_metadata_cached(
+    modpath: str,
+    mtime_ns: int,
+    ctime_ns: int,
+    size: int,
+) -> tuple[Any, Any]:
+    """Read static metadata for one immutable file identity."""
+    # The stat fields participate in the cache key. Parsing only needs the path.
+    del mtime_ns, ctime_ns, size
+    values: list[Any] = []
+    for key in ['__doctest_skip__', '__doctest_requires__']:
+        try:
+            value = static.parse_static_value(key, fpath=modpath)
+        except NameError:
+            value = None
+        except Exception as ex:
+            raise ValueError(
+                'Failed to read {!r} from {!r}: {}'.format(key, modpath, ex)
+            ) from ex
+        values.append(value)
+    return values[0], values[1]
+
+
+def _static_module_doctest_metadata(
+    modpath: str | os.PathLike[str],
+) -> tuple[Any, Any]:
+    r"""
+    Read ``__doctest_skip__`` and ``__doctest_requires__`` statically.
+
+    Results are shared by doctests from the same unchanged module. The file's
+    modification time, change time, and size are part of the cache key, so an
+    edited module is reparsed rather than returning stale metadata.
+
+    Example:
+        >>> import tempfile
+        >>> from pathlib import Path
+        >>> dpath = Path(tempfile.mkdtemp())
+        >>> modpath = dpath / 'demo_metadata.py'
+        >>> _ = modpath.write_text("__doctest_skip__ = ['first']\n")
+        >>> _read_static_module_doctest_metadata_cached.cache_clear()
+        >>> first = _static_module_doctest_metadata(modpath)
+        >>> again = _static_module_doctest_metadata(modpath)
+        >>> again is first
+        True
+        >>> _ = modpath.write_text("__doctest_skip__ = ['second', 'changed']\n")
+        >>> changed = _static_module_doctest_metadata(modpath)
+        >>> changed[0]
+        ['second', 'changed']
+    """
+    path = os.path.realpath(os.fspath(modpath))
+    stat = os.stat(path)
+    return _read_static_module_doctest_metadata_cached(
+        path,
+        stat.st_mtime_ns,
+        stat.st_ctime_ns,
+        stat.st_size,
+    )
+
+
 class DocTest:
     """
     Holds information necessary to execute and verify a doctest
@@ -421,7 +482,7 @@ class DocTest:
         docsrc (str):
             doctest source code
 
-        modpath (str | PathLike | None):
+        modpath (str | PathLike | ModuleType | None):
             module the source was read from
 
         callname (str):
@@ -508,7 +569,8 @@ class DocTest:
     # Attribute annotations derived from docstring
     module: types.ModuleType | None
     modname: str | None
-    fpath: str | os.PathLike | None
+    modpath: str | os.PathLike[str]
+    fpath: str | os.PathLike[str] | None
     docsrc: str | None
     lineno: int | None
     num: int | None
@@ -542,18 +604,18 @@ class DocTest:
     def __init__(
         self,
         docsrc: str,
-        modpath: str | os.PathLike | None = None,
+        modpath: str | os.PathLike[str] | types.ModuleType | None = None,
         callname: str | None = None,
         num: int = 0,
         lineno: int = 1,
-        fpath: str | os.PathLike | None = None,
+        fpath: str | os.PathLike[str] | None = None,
         block_type: str | None = None,
         mode: str = 'pytest',
     ) -> None:
         """
         Args:
             docsrc (str): the text of the doctest
-            modpath (str | PathLike | None):
+            modpath (str | PathLike | ModuleType | None):
             callname (str | None):
             num (int):
             lineno (int):
@@ -567,25 +629,25 @@ class DocTest:
         self.config = DoctestConfig()
 
         self.module = None
-        self.modpath = modpath
-
         self.fpath = fpath
         if modpath is None:
             self.modname = self.UNKNOWN_MODNAME
             self.modpath = self.UNKNOWN_MODPATH
         elif isinstance(modpath, types.ModuleType):
-            self.fpath = modpath
             self.module = modpath
             self.modname = modpath.__name__
-            self.modpath = getattr(
-                self.module, '__file__', self.UNKNOWN_MODPATH
-            )
+            module_fpath = getattr(modpath, '__file__', None)
+            if isinstance(module_fpath, str):
+                self.modpath = module_fpath
+            else:
+                self.modpath = self.UNKNOWN_MODPATH
+            self.fpath = self.modpath
         else:
-            if fpath is not None:
-                if fpath != modpath:
-                    raise AssertionError(
-                        'only specify fpath for non-python files'
-                    )
+            self.modpath = modpath
+            if fpath is not None and fpath != modpath:
+                raise AssertionError(
+                    'only specify fpath for non-python files'
+                )
             self.fpath = modpath
             self.modname = static.modpath_to_modname(modpath)
         if callname is None:
@@ -618,6 +680,7 @@ class DocTest:
         self.logged_stdout = OrderedDict()
         self._unmatched_stdout = []
         self._skipped_parts = []
+        self._metadata_skip_reason: str | None = None
 
         self._runstate = None
 
@@ -1079,50 +1142,42 @@ class DocTest:
 
     def _apply_module_doctest_metadata(
         self, runstate: directive.RuntimeState
-    ) -> None:
+    ) -> str | None:
         """
-        Apply module-level doctestplus metadata to the current example.
+        Apply module-level doctest metadata and return a concrete skip reason.
 
-        This is intentionally evaluated after the :class:`DocTest` already
-        exists and has a callname, so the parser output shape stays unchanged.
+        Loaded modules are authoritative because their metadata may be computed
+        dynamically. Otherwise the source file is read through the stat-aware
+        static metadata cache. This method is called once for each run, while
+        unchanged file parsing is shared across doctests from the same module.
         """
-        skip_spec = None
-        requires_spec = None
+        skip_spec: Any = None
+        requires_spec: Any = None
 
         if self.module is not None:
             skip_spec = getattr(self.module, '__doctest_skip__', None)
             requires_spec = getattr(self.module, '__doctest_requires__', None)
         else:
             modpath = self.modpath
-            if isinstance(modpath, (str, os.PathLike)) and os.path.exists(
-                modpath
-            ):
-                for key in ['__doctest_skip__', '__doctest_requires__']:
-                    try:
-                        value = static.parse_static_value(
-                            key, fpath=os.fspath(modpath)
-                        )
-                    except NameError:
-                        value = None
-                    except Exception as ex:
-                        raise ValueError(
-                            'Failed to read {!r} from {!r}: {}'.format(
-                                key, modpath, ex
-                            )
-                        )
-                    if key == '__doctest_skip__':
-                        skip_spec = value
-                    else:
-                        requires_spec = value
+            if os.path.exists(modpath):
+                skip_spec, requires_spec = _static_module_doctest_metadata(
+                    modpath
+                )
 
         if skip_spec is not None and self._matches_doctest_skip(skip_spec):
             runstate['SKIP'] = True
-            return
+            return 'listed in `__doctest_skip__`'
 
-        if requires_spec is not None and not self._module_requires_satisfied(
-            requires_spec
-        ):
-            runstate['SKIP'] = True
+        if requires_spec is not None:
+            unmet = self._unmet_module_requirement(requires_spec)
+            if unmet is not None:
+                runstate['SKIP'] = True
+                return (
+                    'unmet `__doctest_requires__` requirement: {!r}'.format(
+                        unmet
+                    )
+                )
+        return None
 
     def _matches_doctest_skip(self, skip_spec: Any) -> bool:
         if isinstance(skip_spec, str):
@@ -1147,7 +1202,8 @@ class DocTest:
                 return True
         return False
 
-    def _module_requires_satisfied(self, requires_spec: Any) -> bool:
+    def _unmet_module_requirement(self, requires_spec: Any) -> str | None:
+        """Return the first applicable unmet module requirement, if any."""
         if not isinstance(requires_spec, dict):
             raise ValueError(
                 '__doctest_requires__ must be a dictionary of patterns to requirements'
@@ -1158,20 +1214,33 @@ class DocTest:
                 patterns = [key]
             elif isinstance(key, (list, tuple, set)):
                 patterns = list(key)
+                if isinstance(key, set):
+                    patterns.sort(key=repr)
             else:
                 raise ValueError(
                     '__doctest_requires__ keys must be strings or sequences of strings'
                 )
+
+            for pattern in patterns:
+                if not isinstance(pattern, str):
+                    raise ValueError(
+                        '__doctest_requires__ patterns must be strings, got {!r}'.format(
+                            pattern
+                        )
+                    )
 
             if not any(
                 fnmatch(self.callname, pattern if pattern != '.' else '__doc__')
                 for pattern in patterns
             ):
                 continue
+
             if isinstance(reqs, str):
                 req_list = [reqs]
             elif isinstance(reqs, (list, tuple, set)):
                 req_list = list(reqs)
+                if isinstance(reqs, set):
+                    req_list.sort(key=repr)
             else:
                 raise ValueError(
                     '__doctest_requires__ values must be strings or sequences of strings'
@@ -1183,9 +1252,16 @@ class DocTest:
                         '__doctest_requires__ requirements must be strings'
                     )
                 if not _doctest_requirement_satisfied(req_text):
-                    return False
+                    return req_text
 
-        return True
+        return None
+
+    def _skip_reason(self) -> str:
+        """Return the most specific available reason for a full skip."""
+        return (
+            self._metadata_skip_reason
+            or 'doctest is empty or all parts were skipped'
+        )
 
     def run(
         self, verbose: int | None | bool = None, on_error: str | None = None
@@ -1220,6 +1296,7 @@ class DocTest:
 
         self._skipped_parts = []
         self.exc_info = None
+        self._metadata_skip_reason = None
         self._suppressed_stdout = verbose <= 1
 
         # Reset traceback bookkeeping from any prior run.
@@ -1337,7 +1414,9 @@ class DocTest:
                             summary = self._post_run(verbose)
                             return summary
 
-                    self._apply_module_doctest_metadata(runstate)
+                    self._metadata_skip_reason = (
+                        self._apply_module_doctest_metadata(runstate)
+                    )
 
                     if runstate['SKIP']:
                         if DEBUG:
@@ -1667,7 +1746,7 @@ class DocTest:
             if self.mode == 'pytest':
                 import pytest
 
-                pytest.skip()
+                pytest.skip(self._skip_reason())
 
         summary = self._post_run(verbose)
 
