@@ -254,7 +254,7 @@ def optionflags_to_runtime_state(
 
 
 def is_registered_optionflag(name: str) -> bool:
-    """Check whether an optionflag name is known to the facade.
+    """Check whether an optionflag name is known to the stdlib-doctest adapter.
 
     Example:
         >>> is_registered_optionflag('ELLIPSIS')

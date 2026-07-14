@@ -517,10 +517,10 @@ class RuntimeState(utils.NiceRepr):
                     continue
 
                 if key not in self._global_state:
-                    from xdoctest import directive_facade
+                    from xdoctest.stdlib_doctest import _optionflags
 
-                    if directive_facade.is_registered_optionflag(key):
-                        flag = directive_facade.get_optionflag(key)
+                    if _optionflags.is_registered_optionflag(key):
+                        flag = _optionflags.get_optionflag(key)
                         if action == 'assign':
                             if value:
                                 self.add_output_checker_flags(flag, inline=bool(directive.inline))
@@ -1127,9 +1127,9 @@ def parse_directive_optstr(
 
     name = name.upper()
     if name not in COMMANDS:
-        from xdoctest import directive_facade
+        from xdoctest.stdlib_doctest import _optionflags
 
-        if not directive_facade.is_registered_optionflag(name):
+        if not _optionflags.is_registered_optionflag(name):
             msg = 'Unknown directive: {!r}'.format(optpart)
             warnings.warn(msg)
             return None

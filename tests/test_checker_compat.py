@@ -8,17 +8,17 @@ from typing import NoReturn
 import pytest
 
 import xdoctest
-from xdoctest import checker, checker_facade, directive, doctest_example, utils
-from xdoctest import directive_facade
+from xdoctest import checker, directive, doctest_example, stdlib_doctest, utils
+from xdoctest.stdlib_doctest import _checker, _optionflags
 
 
 @pytest.fixture(autouse=True)
-def isolate_interop_registries() -> Iterator[None]:
-    """Restore every process-global interop registry after each test."""
-    checker_registry = checker_facade._REGISTERED_CHECKERS
+def isolate_stdlib_doctest_registries() -> Iterator[None]:
+    """Restore every process-global stdlib-doctest registry after each test."""
+    checker_registry = _checker._REGISTERED_CHECKERS
     checker_snapshot = checker_registry.copy()
 
-    runtime_flags = directive_facade._RUNTIME_FLAGS
+    runtime_flags = _optionflags._RUNTIME_FLAGS
     runtime_flags_snapshot = copy.deepcopy(runtime_flags.__dict__)
 
     doctest_flags = doctest.OPTIONFLAGS_BY_NAME
@@ -110,7 +110,7 @@ def test_registered_checker_receives_runtime_state_flags() -> None:
     result = self.run(verbose=0, on_error='raise')
     assert result['passed']
     assert seen
-    assert seen[-1] & directive_facade.FLOAT_CMP
+    assert seen[-1] & _optionflags.FLOAT_CMP
 
 
 def test_registered_checker_output_difference_is_used() -> None:
@@ -164,7 +164,7 @@ def test_resolve_current_checker_honors_mapping_state() -> None:
         pass
 
     xdoctest.register_checker('mapping_checker', MappingChecker)
-    resolved = xdoctest.checker_facade.resolve_current_checker(
+    resolved = _checker.resolve_current_checker(
         {'_output_checker': 'mapping_checker'}
     )
     assert isinstance(resolved, MappingChecker)
@@ -426,13 +426,13 @@ def test_output_checker_honors_ignore_output() -> None:
 
 def test_native_checker_name_is_reserved() -> None:
     with pytest.raises(ValueError, match='reserved'):
-        checker_facade.register_checker('xdoctest', doctest.OutputChecker)
+        _checker.register_checker('xdoctest', doctest.OutputChecker)
 
     assert isinstance(
-        checker_facade.resolve_checker('xdoctest'),
-        checker_facade.OutputChecker,
+        _checker.resolve_checker('xdoctest'),
+        _checker.OutputChecker,
     )
-    assert 'xdoctest' not in checker_facade._REGISTERED_CHECKERS
+    assert 'xdoctest' not in _checker._REGISTERED_CHECKERS
 
 
 def test_registered_class_retains_factory_semantics() -> None:
@@ -442,15 +442,15 @@ def test_registered_class_retains_factory_semantics() -> None:
         def __init__(self) -> None:
             Counting.instances += 1
 
-    checker_facade.register_checker('counting_factory', Counting)
-    first = checker_facade.resolve_checker('counting_factory')
-    second = checker_facade.resolve_checker('counting_factory')
+    _checker.register_checker('counting_factory', Counting)
+    first = _checker.resolve_checker('counting_factory')
+    second = _checker.resolve_checker('counting_factory')
     assert first is not second
     assert Counting.instances == 2
 
     replacement = doctest.OutputChecker()
-    checker_facade.register_checker('counting_factory', replacement)
-    assert checker_facade.resolve_checker('counting_factory') is replacement
+    _checker.register_checker('counting_factory', replacement)
+    assert _checker.resolve_checker('counting_factory') is replacement
 
 
 def test_registered_class_is_cached_per_runtime_state() -> None:
@@ -460,24 +460,24 @@ def test_registered_class_is_cached_per_runtime_state() -> None:
         def __init__(self) -> None:
             Counting.instances += 1
 
-    checker_facade.register_checker('counting_per_run', Counting)
+    _checker.register_checker('counting_per_run', Counting)
 
     first_run = directive.RuntimeState()
     first_run.set_output_checker('counting_per_run')
-    first = checker_facade.resolve_current_checker(first_run)
-    assert checker_facade.resolve_current_checker(first_run) is first
+    first = _checker.resolve_current_checker(first_run)
+    assert _checker.resolve_current_checker(first_run) is first
     assert Counting.instances == 1
 
     second_run = directive.RuntimeState()
     second_run.set_output_checker('counting_per_run')
-    second = checker_facade.resolve_current_checker(second_run)
+    second = _checker.resolve_current_checker(second_run)
     assert second is not first
     assert Counting.instances == 2
 
     # Even re-registering the same class creates a new registry generation and
     # invalidates a previously cached checker within the bounded run state.
-    checker_facade.register_checker('counting_per_run', Counting)
-    third = checker_facade.resolve_current_checker(first_run)
+    _checker.register_checker('counting_per_run', Counting)
+    third = _checker.resolve_current_checker(first_run)
     assert third is not first
     assert Counting.instances == 3
 
@@ -503,7 +503,7 @@ def test_matching_and_difference_share_one_per_run_checker() -> None:
             assert self.checked
             return 'same per-run checker'
 
-    checker_facade.register_checker('stateful_per_run', Stateful)
+    _checker.register_checker('stateful_per_run', Stateful)
     runstate = directive.RuntimeState()
     runstate.set_output_checker('stateful_per_run')
 
@@ -515,18 +515,18 @@ def test_matching_and_difference_share_one_per_run_checker() -> None:
     assert Stateful.instances == 1
 
 
-def test_native_check_bypasses_the_interop_facade(
+def test_native_check_bypasses_stdlib_doctest_adapter(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """The native RuntimeState path must not pack or resolve facade state."""
+    """The native RuntimeState path must not pack or resolve adapter state."""
 
     def forbidden(*args: object, **kwargs: object) -> NoReturn:
-        raise AssertionError('native path crossed the interop boundary')
+        raise AssertionError('native path crossed the stdlib-doctest boundary')
 
     monkeypatch.setattr(
-        checker_facade, 'runtime_state_to_optionflags', forbidden
+        _optionflags, 'runtime_state_to_optionflags', forbidden
     )
-    monkeypatch.setattr(checker_facade, 'resolve_checker', forbidden)
+    monkeypatch.setattr(_checker, 'resolve_checker', forbidden)
 
     runstate = directive.RuntimeState()
     assert checker.check_output('1\n', '1\n', runstate)
@@ -542,3 +542,145 @@ def test_sparse_mapping_is_normalized_before_native_matching() -> None:
     ).output_difference(sparse, colored=False)
     assert 'Expected:' in difference
     assert 'Got:' in difference
+
+
+def test_public_stdlib_doctest_namespace_contract() -> None:
+    from xdoctest import doctest_example, stdlib_doctest
+    from xdoctest.stdlib_doctest import _convert
+
+    expected = [
+        'BLANKLINE_MARKER',
+        'DONT_ACCEPT_BLANKLINE',
+        'DocTest',
+        'ELLIPSIS',
+        'ELLIPSIS_MARKER',
+        'FLOAT_CMP',
+        'IGNORE_EXCEPTION_DETAIL',
+        'IGNORE_OUTPUT',
+        'IGNORE_WARNINGS',
+        'IGNORE_WHITESPACE',
+        'IGNORE_WANT',
+        'NORMALIZE_REPR',
+        'NORMALIZE_WHITESPACE',
+        'OutputChecker',
+        'REPORT_CDIFF',
+        'REPORT_NDIFF',
+        'REPORT_UDIFF',
+        'RuntimeState',
+        'SHOW_WARNINGS',
+        'SKIP',
+        'StdlibExampleLike',
+        'from_examples',
+        'from_stdlib_doctest',
+        'optionflags_to_runtime_state',
+        'register_checker',
+        'register_optionflag',
+        'resolve_checker',
+        'runtime_state_to_optionflags',
+    ]
+    assert stdlib_doctest.__all__ == expected
+
+    # The package preserves every overlapping API currently re-exported
+    # from the top-level xdoctest namespace.
+    assert stdlib_doctest.OutputChecker is xdoctest.OutputChecker
+    assert stdlib_doctest.register_checker is xdoctest.register_checker
+    assert stdlib_doctest.resolve_checker is xdoctest.resolve_checker
+    assert stdlib_doctest.register_optionflag is xdoctest.register_optionflag
+    assert (
+        stdlib_doctest.optionflags_to_runtime_state
+        is xdoctest.optionflags_to_runtime_state
+    )
+    assert (
+        stdlib_doctest.runtime_state_to_optionflags
+        is xdoctest.runtime_state_to_optionflags
+    )
+
+    # Type-aware users can stay entirely within the public package.
+    assert stdlib_doctest.RuntimeState is directive.RuntimeState
+    assert stdlib_doctest.DocTest is doctest_example.DocTest
+    assert stdlib_doctest.StdlibExampleLike is _convert.StdlibExampleLike
+    assert stdlib_doctest.from_examples is _convert.from_examples
+    assert (
+        stdlib_doctest.from_stdlib_doctest
+        is _convert.from_stdlib_doctest
+    )
+
+
+def test_public_stdlib_doctest_preserves_stdlib_behavior() -> None:
+    """The public package accepts and executes real stdlib objects."""
+    from xdoctest import stdlib_doctest
+
+    example = doctest.Example(
+        source='print("prefix suffix")\n',
+        want='prefix ...\n',
+        lineno=3,
+        options={doctest.ELLIPSIS: True},
+    )
+    stdlib_test = doctest.DocTest(
+        examples=[example],
+        globs={'__name__': '__main__'},
+        name='package.demo',
+        filename='demo.py',
+        lineno=10,
+        docstring='',
+    )
+
+    stdlib_result = doctest.DocTestRunner().run(
+        stdlib_test,
+        out=lambda text: None,
+        clear_globs=False,
+    )
+    assert stdlib_result.failed == 0
+    assert stdlib_result.attempted == 1
+
+    stdlib_doctest.register_checker(
+        'public_stdlib_output_checker', doctest.OutputChecker
+    )
+    converted = stdlib_doctest.from_stdlib_doctest(
+        stdlib_test,
+        config={'output_checker': 'public_stdlib_output_checker'},
+    )
+    assert isinstance(converted, stdlib_doctest.DocTest)
+    assert converted.callname == stdlib_test.name
+    assert converted.lineno == 14
+    assert converted.run(verbose=0, on_error='return')['passed']
+
+
+def test_public_stdlib_doctest_checker_protocol_end_to_end() -> None:
+    """Package registration and intake obey the stdlib checker protocol."""
+    from xdoctest import stdlib_doctest
+
+    fix_flag = stdlib_doctest.register_optionflag('PUBLIC_STDLIB_DOCTEST_FIX')
+    seen: list[int] = []
+
+    class PublicStdlibDoctestChecker(stdlib_doctest.OutputChecker):
+        def check_output(
+            self, want: str, got: str, optionflags: int
+        ) -> bool:
+            seen.append(optionflags)
+            if optionflags & fix_flag:
+                want = want.replace('L', '')
+                got = got.replace('L', '')
+            return super().check_output(want, got, optionflags)
+
+    stdlib_doctest.register_checker(
+        'public_stdlib_doctest_checker', PublicStdlibDoctestChecker
+    )
+    examples = [
+        doctest.Example(
+            source='print("10")\n',
+            want='10L\n',
+            lineno=0,
+            options={fix_flag: True},
+        )
+    ]
+    converted = stdlib_doctest.from_examples(
+        examples,
+        name='public-stdlib-doctest',
+        config={'output_checker': 'public_stdlib_doctest_checker'},
+    )
+
+    assert isinstance(converted, stdlib_doctest.DocTest)
+    assert converted.run(verbose=0, on_error='return')['passed']
+    assert seen
+    assert seen[-1] & fix_flag
