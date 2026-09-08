@@ -549,10 +549,16 @@ class RuntimeState(utils.NiceRepr):
                 elif action == 'assign':
                     state[key] = value
                 elif action == 'set.add':
-                    cast(Set[str], state[key]).add(value)
+                    if directive.inline and key not in state:
+                        state[key] = copy.deepcopy(self._global_state[key])
+                    state_set = cast(Set[str], state[key])
+                    state_set.add(value)
                 elif action == 'set.remove':
+                    if directive.inline and key not in state:
+                        state[key] = copy.deepcopy(self._global_state[key])
+                    state_set = cast(Set[str], state[key])
                     try:
-                        cast(Set[str], state[key]).remove(value)
+                        state_set.remove(value)
                     except KeyError:
                         pass
                 else:
