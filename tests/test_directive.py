@@ -18,6 +18,30 @@ def test_inline_skip_directive() -> None:
     assert result['passed']
 
 
+def test_inline_requires_directive(monkeypatch) -> None:
+    """Inline requirements inherit block state without mutating it."""
+    monkeypatch.delenv('XDOCTEST_REQ', raising=False)
+    string = utils.codeblock(
+        """
+        >>> print('before')
+        >>> assert False, 'should be skipped'  # doctest: +REQUIRES(env:XDOCTEST_REQ)
+        >>> print('after')
+        >>> # doctest: +REQUIRES(env:XDOCTEST_REQ)
+        >>> assert False, 'block should be skipped'
+        >>> print('inline-ran')  # doctest: -REQUIRES(env:XDOCTEST_REQ)
+        >>> assert False, 'block should still be skipped'
+        """
+    )
+    self = doctest_example.DocTest(docsrc=string)
+    result = self.run(on_error='raise')
+    assert self.logged_stdout is not None
+    stdout = ''.join(str(v) for v in self.logged_stdout.values())
+    assert result['passed']
+    assert 'before' in stdout
+    assert 'after' in stdout
+    assert 'inline-ran' in stdout
+
+
 def test_block_skip_directive() -> None:
     """
     pytest tests/test_directive.py::test_block_skip_directive

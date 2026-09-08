@@ -34,6 +34,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Fix traceback rewriting for exceptions raised in earlier doctest parts
 * Ignored output from a no-want part is discarded rather than deferred to a
   later trailing match.
+* Issue where inline REQUIRES directives caused errors. (bug introduced in 2693ea4  2019-07-16)
 
 
 ### Changed
