@@ -1311,10 +1311,10 @@ class DocTest:
         # state so local negative directives can override configured defaults;
         # only checker-specific flags remain in the raw bitmask.
         default_state = self.config['default_runtime_state']
-        from xdoctest import directive_facade
+        from xdoctest.stdlib_doctest import _optionflags
 
         native_defaults = directive.RuntimeState(default_state).to_dict()
-        runstate = self._runstate = directive_facade.optionflags_to_runtime_state(
+        runstate = self._runstate = _optionflags.optionflags_to_runtime_state(
             int(self.config.get('output_checker_flags', 0)),
             cast(directive.RuntimeStateDict, native_defaults),
         )
@@ -1504,7 +1504,7 @@ class DocTest:
                             finally:
                                 asyncio_runner = None
                         # Execute the doctest code. ``_part_context`` is an
-                        # extension point used by the stdlib_compat intake
+                        # extension point used by the stdlib-doctest intake
                         # seam to apply per-part warning policy without
                         # rewriting source. Default is a no-op.
                         try:

@@ -28,6 +28,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `__doctest_requires__` metadata. Bare module or distribution requirements
   remain zero-dependency; version-constrained requirements use the optional
   `packaging` dependency.
+* Added `xdoctest.stdlib_doctest`, the documented adapter package for
+  stdlib `doctest` objects, checkers, and option flags. It exposes checker
+  and optionflag registration,
+  runtime-state conversion, structured stdlib-doctest intake helpers, and the
+  supporting `StdlibExampleLike`, `RuntimeState`, and `DocTest` types used by
+  those public signatures.
 
 ### Fixed
 * Fixed issue #181 where comment indentation could cause parsing issues.

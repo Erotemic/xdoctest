@@ -8,6 +8,7 @@ Subpackages
    :maxdepth: 4
 
    xdoctest.docstr
+   xdoctest.stdlib_doctest
    xdoctest.utils
 
 Submodules

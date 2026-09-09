@@ -43,7 +43,9 @@ import os
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Protocol, cast
 
-from xdoctest import directive, directive_facade, parser
+from xdoctest import directive, parser
+
+from . import _optionflags
 from xdoctest.doctest_example import DocTest
 from xdoctest.doctest_part import DoctestPart
 
@@ -312,8 +314,8 @@ def _apply_stdlib_optionflags(dtest: DocTest, optionflags: int) -> None:
     defaults = dict(dtest.config.get('default_runtime_state') or {})
     runtime_bound_mask = 0
     for key in directive.DEFAULT_RUNTIME_STATE:
-        if directive_facade.is_registered_optionflag(key):
-            flag = directive_facade.get_optionflag(key)
+        if _optionflags.is_registered_optionflag(key):
+            flag = _optionflags.get_optionflag(key)
             runtime_bound_mask |= flag
             defaults[key] = bool(optionflags & flag)
     dtest.config['default_runtime_state'] = defaults
@@ -321,9 +323,9 @@ def _apply_stdlib_optionflags(dtest: DocTest, optionflags: int) -> None:
 
     dtest.config['reportchoice'] = 'none'
     report_flags = [
-        (directive_facade.REPORT_UDIFF, 'udiff'),
-        (directive_facade.REPORT_CDIFF, 'cdiff'),
-        (directive_facade.REPORT_NDIFF, 'ndiff'),
+        (_optionflags.REPORT_UDIFF, 'udiff'),
+        (_optionflags.REPORT_CDIFF, 'cdiff'),
+        (_optionflags.REPORT_NDIFF, 'ndiff'),
     ]
     for flag, reportchoice in report_flags:
         if optionflags & flag:
@@ -392,11 +394,11 @@ def _options_to_directives(
         name = name.upper()
         if (
             name not in directive.COMMANDS
-            and not directive_facade.is_registered_optionflag(name)
+            and not _optionflags.is_registered_optionflag(name)
         ):
             # Adopt any stdlib-registered flag so the directive system can
             # carry it through to the output checker as a checker-only bit.
-            directive_facade.register_optionflag(name)
+            _optionflags.register_optionflag(name)
         directives.append(
             directive.Directive(name, positive=bool(value), inline=True)
         )
