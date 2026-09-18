@@ -239,6 +239,28 @@ def import_notebook_from_path(
     return module
 
 
+def _has_jupyter_kernel(kernel_name: str | None = None) -> bool:
+    """Return whether a usable Jupyter kernelspec is registered.
+
+    Importing :mod:`jupyter_client` or :mod:`ipykernel` is not sufficient:
+    isolated environments may have both packages installed without exposing a
+    kernelspec on Jupyter's search path.
+    """
+    try:
+        import jupyter_client.kernelspec
+    except ImportError:
+        return False
+
+    if kernel_name is None:
+        kernel_name = jupyter_client.kernelspec.NATIVE_KERNEL_NAME
+    try:
+        jupyter_client.kernelspec.get_kernel_spec(kernel_name)
+    except jupyter_client.kernelspec.NoSuchKernel:
+        return False
+    else:
+        return True
+
+
 def execute_notebook(
     ipynb_fpath: str | os.PathLike,
     timeout: typing.Any = None,
@@ -258,8 +280,11 @@ def execute_notebook(
 
     Example:
         >>> # xdoctest: +REQUIRES(PY3, module:IPython, module:nbconvert, CPYTHON)
+        >>> import xdoctest
         >>> from xdoctest import utils
         >>> from os.path import join
+        >>> if not _has_jupyter_kernel():
+        >>>     raise xdoctest.ExitTestException('no Jupyter kernel is registered')
         >>> self = utils.TempDir()
         >>> dpath = self.ensure()
         >>> ipynb_fpath = join(dpath, 'hello_world.ipydb')
@@ -322,12 +347,22 @@ def _make_test_notebook_fpath(
 
     # TODO: is there an API to generate kernelspec json correctly?
     kernel_name = jupyter_client.kernelspec.NATIVE_KERNEL_NAME
-    spec = jupyter_client.kernelspec.get_kernel_spec(kernel_name)
+    try:
+        spec = jupyter_client.kernelspec.get_kernel_spec(kernel_name)
+    except jupyter_client.kernelspec.NoSuchKernel:
+        # Constructing a notebook file does not require an executable kernel.
+        # Use conventional Python metadata when the environment has the
+        # Jupyter libraries installed but no registered native kernelspec.
+        display_name = 'Python 3'
+        language = 'python'
+    else:
+        display_name = spec.display_name
+        language = spec.language
     metadata = {
         'kernelspec': {
             'name': kernel_name,
-            'display_name': spec.display_name,
-            'language': spec.language,
+            'display_name': display_name,
+            'language': language,
         }
     }
     # Use nbformat API to create notebook structure and cell json
