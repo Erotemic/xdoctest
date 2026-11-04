@@ -42,6 +42,9 @@ else:
 _PYTEST_IS_GE_620 = _parse_version(pytest.__version__) >= _parse_version(
     '6.2.0'
 )
+_PYTEST_IS_GE_700 = _parse_version(pytest.__version__) >= _parse_version(
+    '7.0.0'
+)
 _PYTEST_IS_GE_800 = _parse_version(pytest.__version__) >= _parse_version(
     '8.0.0'
 )
@@ -163,7 +166,7 @@ def pytest_addoption(parser) -> None:
     )
 
 
-if pytest.__version__ < '7.':  # nocover
+if not _PYTEST_IS_GE_700:  # nocover
 
     def pytest_collect_file(path, parent):
         return _pytest_collect_file(path, parent, fspath=path)
