@@ -9,7 +9,7 @@ import doctest
 import pytest
 
 import xdoctest
-from xdoctest import stdlib_compat
+from xdoctest import stdlib_doctest
 
 
 def _register_warning_flags():
@@ -40,7 +40,7 @@ def test_warning_policy_does_not_rewrite_source():
             options={ignore_flag: True},
         )
     ]
-    dtest = stdlib_compat.from_examples(examples, name='t')
+    dtest = stdlib_doctest.from_examples(examples, name='t')
     assert dtest.docsrc is not None
     assert user_source.strip() in dtest.docsrc
     # Source should not contain the doctestplus wrapper class.
@@ -59,7 +59,7 @@ def test_ignore_warnings_silences_warning():
             options={ignore_flag: True},
         )
     ]
-    dtest = stdlib_compat.from_examples(examples, name='t')
+    dtest = stdlib_doctest.from_examples(examples, name='t')
     import warnings as _warnings
 
     with _warnings.catch_warnings(record=True) as record:
@@ -82,7 +82,7 @@ def test_show_warnings_captures_via_stdout():
             options={show_flag: True},
         )
     ]
-    dtest = stdlib_compat.from_examples(examples, name='t')
+    dtest = stdlib_doctest.from_examples(examples, name='t')
     result = dtest.run(verbose=0, on_error='return')
     assert result['passed'], result
 
@@ -102,7 +102,7 @@ def test_failure_inside_warning_context_points_at_user_code_line():
             options={ignore_flag: True},
         )
     ]
-    dtest = stdlib_compat.from_examples(examples, name='t')
+    dtest = stdlib_doctest.from_examples(examples, name='t')
     result = dtest.run(verbose=0, on_error='return')
     assert result['failed']
     assert dtest.lineno == 8
@@ -116,7 +116,7 @@ def test_no_warning_policy_uses_default_no_op_context():
     examples = [
         doctest.Example(source='print(1)\n', want='1\n', lineno=0),
     ]
-    dtest = stdlib_compat.from_examples(examples, name='t')
+    dtest = stdlib_doctest.from_examples(examples, name='t')
     # Without an active runstate (or warning flags) _part_context is a no-op.
     from contextlib import nullcontext
 
@@ -147,7 +147,7 @@ def test_warning_policy_is_per_part():
             options={},
         ),
     ]
-    dtest = stdlib_compat.from_examples(examples, name='t')
+    dtest = stdlib_doctest.from_examples(examples, name='t')
     result = dtest.run(verbose=0, on_error='return')
     assert result['passed'], result
     # The runner records warnings that escape the parts in dtest.warn_list.

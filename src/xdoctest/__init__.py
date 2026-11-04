@@ -318,10 +318,11 @@ __version__ = '1.3.3'
 __submodules__ = [
     'runner',
     'exceptions',
+    'stdlib_doctest',
 ]
 
 
-from xdoctest import docstr, utils
+from xdoctest import docstr, stdlib_doctest, utils
 from xdoctest.exceptions import (
     DoctestParseError,
     ExistingEventLoopError,
@@ -332,7 +333,7 @@ from xdoctest.runner import (
     doctest_callable,
     doctest_module,
 )
-from xdoctest.directive_facade import (
+from xdoctest.stdlib_doctest import (
     BLANKLINE_MARKER,
     DONT_ACCEPT_BLANKLINE,
     ELLIPSIS,
@@ -345,19 +346,17 @@ from xdoctest.directive_facade import (
     IGNORE_WANT,
     NORMALIZE_REPR,
     NORMALIZE_WHITESPACE,
+    OutputChecker,
     REPORT_CDIFF,
     REPORT_NDIFF,
     REPORT_UDIFF,
     SHOW_WARNINGS,
     SKIP,
     optionflags_to_runtime_state,
-    register_optionflag,
-    runtime_state_to_optionflags,
-)
-from xdoctest.checker_facade import (
-    OutputChecker,
     register_checker,
+    register_optionflag,
     resolve_checker,
+    runtime_state_to_optionflags,
 )
 
 __all__ = [
@@ -369,6 +368,7 @@ __all__ = [
     'doctest_callable',
     'utils',
     'docstr',
+    'stdlib_doctest',
     '__version__',
     'BLANKLINE_MARKER',
     'ELLIPSIS_MARKER',

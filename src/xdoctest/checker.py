@@ -298,14 +298,27 @@ def _coerce_runstate(
         return runstate
     if runstate is None:
         return directive.RuntimeState()
-    from xdoctest import checker_facade
+    from xdoctest.stdlib_doctest import _checker, _optionflags
 
-    optionflags = checker_facade.runtime_state_to_optionflags(runstate)
-    normalized = checker_facade.optionflags_to_runtime_state(optionflags)
+    optionflags = _optionflags.runtime_state_to_optionflags(runstate)
+    normalized = _optionflags.optionflags_to_runtime_state(optionflags)
     normalized.set_output_checker(
         str(runstate.get('_output_checker', 'xdoctest'))
     )
     return normalized
+
+
+def _stdlib_checker_want(want: str) -> str:
+    """Restore the line ending expected by stdlib output checkers.
+
+    Xdoctest stores parsed wants without a trailing newline, while
+    :mod:`doctest` passes non-empty ``Example.want`` values to output
+    checkers with their terminating newline intact. Foreign checkers use the
+    stdlib protocol, so normalize only at that boundary.
+    """
+    if want and not want.endswith('\n'):
+        return want + '\n'
+    return want
 
 
 def check_output(
@@ -336,10 +349,14 @@ def check_output(
     checker_name = runstate.get_output_checker()
     if checker_name == 'xdoctest':
         return _xdoctest_check_output(got, want, runstate)
-    from xdoctest import checker_facade
-    optionflags = checker_facade.runtime_state_to_optionflags(runstate)
-    output_checker = checker_facade.resolve_checker(checker_name, runstate)
-    return bool(output_checker.check_output(want, got, optionflags))
+    from xdoctest.stdlib_doctest import _checker, _optionflags
+    optionflags = _optionflags.runtime_state_to_optionflags(runstate)
+    output_checker = _checker.resolve_checker(checker_name, runstate)
+    return bool(
+        output_checker.check_output(
+            _stdlib_checker_want(want), got, optionflags
+        )
+    )
 
 
 def _check_match(
@@ -843,16 +860,18 @@ class GotWantException(AssertionError):
             # A foreign checker may provide its own difference rendering
             # (e.g. to display fixed-up wants); fall back to the native
             # renderer when it inherits the facade default.
-            from xdoctest import checker_facade
-            output_checker = checker_facade.resolve_checker(
+            from xdoctest.stdlib_doctest import _checker, _optionflags
+            output_checker = _checker.resolve_checker(
                 checker_name, runstate
             )
             if (
                 output_checker.__class__.output_difference
-                is not checker_facade.OutputChecker.output_difference
+                is not _checker.OutputChecker.output_difference
             ):
-                example = doctest.Example(source='', want=self.want)
-                optionflags = checker_facade.runtime_state_to_optionflags(
+                example = doctest.Example(
+                    source='', want=_stdlib_checker_want(self.want)
+                )
+                optionflags = _optionflags.runtime_state_to_optionflags(
                     runstate
                 )
                 return output_checker.output_difference(
