@@ -23,6 +23,13 @@ def skip_notebook_tests_if_unsupported() -> None:
         import IPython  # NOQA
         import nbconvert  # NOQA
         import nbformat  # NOQA
+        import jupyter_client.kernelspec
+
+        kernel_name = jupyter_client.kernelspec.NATIVE_KERNEL_NAME
+        try:
+            jupyter_client.kernelspec.get_kernel_spec(kernel_name)
+        except jupyter_client.kernelspec.NoSuchKernel:
+            pytest.skip('No Jupyter kernel named {!r}'.format(kernel_name))
 
         import platform
 
@@ -110,3 +117,43 @@ def test_xdoctest_outside_notebook() -> None:
     text = info['out']
     assert isinstance(text, str)
     assert '3 / 3 passed' in text
+
+
+def test_missing_kernel_is_treated_as_unsupported(monkeypatch) -> None:
+    jupyter_client = pytest.importorskip('jupyter_client')
+    pytest.importorskip('IPython')
+    pytest.importorskip('nbconvert')
+    pytest.importorskip('nbformat')
+
+    def _raise_no_such_kernel(kernel_name):
+        raise jupyter_client.kernelspec.NoSuchKernel(kernel_name)
+
+    monkeypatch.setattr(
+        jupyter_client.kernelspec,
+        'get_kernel_spec',
+        _raise_no_such_kernel,
+    )
+    with pytest.raises(pytest.skip.Exception, match='No Jupyter kernel'):
+        skip_notebook_tests_if_unsupported()
+
+
+def test_make_notebook_without_registered_kernel(monkeypatch, tmp_path) -> None:
+    jupyter_client = pytest.importorskip('jupyter_client')
+    nbformat = pytest.importorskip('nbformat')
+    from xdoctest.utils import util_notebook
+
+    def _raise_no_such_kernel(kernel_name):
+        raise jupyter_client.kernelspec.NoSuchKernel(kernel_name)
+
+    monkeypatch.setattr(
+        jupyter_client.kernelspec,
+        'get_kernel_spec',
+        _raise_no_such_kernel,
+    )
+    fpath = tmp_path / 'demo.ipynb'
+    util_notebook._make_test_notebook_fpath(fpath, ['x = 1'])
+    with fpath.open('r') as file:
+        notebook = nbformat.read(file, as_version=nbformat.NO_CONVERT)
+    assert notebook.metadata.kernelspec.name == 'python3'
+    assert notebook.metadata.kernelspec.display_name == 'Python 3'
+    assert notebook.metadata.kernelspec.language == 'python'
