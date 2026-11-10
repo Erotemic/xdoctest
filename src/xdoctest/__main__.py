@@ -190,16 +190,22 @@ def main(argv: list[str] | None = None) -> int:
             )
         )
 
-    run_summary = xdoctest.doctest_module(
-        modname,
+    try:
+        run_summary = xdoctest.doctest_module(
+            modname,
         argv=[],
         style=style,
         command=command,
         verbose=config['verbose'],
         config=config,
-        durations=durations,
-        analysis=analysis,
-    )
+            durations=durations,
+            analysis=analysis,
+        )
+    except ValueError as ex:
+        # A missing module (or a malformed modname::command spec) is a
+        # CLI usage error: report it like other argument errors
+        # instead of dumping a traceback.
+        parser.error(str(ex))
     n_failed = run_summary.get('n_failed', 0)
     if n_failed > 0:
         return 1

@@ -122,6 +122,21 @@ def test_xdoc_cli_version() -> None:
     assert xdoctest.__version__ in cast(str, info['out'])
 
 
+def test_xdoc_cli_missing_module(capsys) -> None:
+    """
+    A nonexistent module is a CLI usage error, not a traceback.
+    """
+    from xdoctest import __main__
+
+    with pytest.raises(SystemExit) as excinfo:
+        __main__.main(argv=['xdoctest', 'does-not-exist-module-xyz'])
+    assert excinfo.value.code == 2
+    out, err = capsys.readouterr()
+    assert 'Cannot find module' in err
+    assert 'Traceback' not in err
+    assert 'Traceback' not in out
+
+
 if __name__ == '__main__':
     """
     CommandLine:
