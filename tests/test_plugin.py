@@ -259,6 +259,31 @@ class TestXDoctest:
             items, reprec = testdir.inline_genitems(p, '--xdoctest-modules')
             assert len(items) == 0
 
+    @pytest.mark.parametrize('import_mode', ['prepend', 'append', 'importlib'])
+    def test_nested_module_import_path(
+        self, testdir: pytest.Testdir, import_mode: str
+    ) -> None:
+        nested = testdir.tmpdir.mkdir('nested')
+        module = nested.join('example_module.py')
+        path_check = {
+            'prepend': 'sys.path[0] == module_dir',
+            'append': 'sys.path[-1] == module_dir',
+            'importlib': 'module_dir not in sys.path',
+        }[import_mode]
+        module.write(
+            '"""\n'
+            '>>> import sys\n'
+            '>>> from pathlib import Path\n'
+            '>>> module_dir = str(Path(__file__).parent)\n'
+            f'>>> assert {path_check}\n'
+            '"""\n'
+        )
+
+        result = testdir.runpytest_subprocess(
+            nested, '--xdoctest-modules', f'--import-mode={import_mode}'
+        )
+        result.assert_outcomes(passed=1)
+
     def test_simple_doctestfile(self, testdir: pytest.Testdir) -> None:
         """
         CommandLine:
