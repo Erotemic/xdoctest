@@ -27,7 +27,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 from xdoctest import checker, directive
-from ._optionflags import (
+from xdoctest.stdlib_doctest._optionflags import (
     optionflags_to_runtime_state,
     register_optionflag,
     runtime_state_to_optionflags,

@@ -90,9 +90,17 @@ package is the documented home of the stdlib-doctest adapter.
 from xdoctest.directive import RuntimeState
 from xdoctest.doctest_example import DocTest
 
-from ._checker import OutputChecker, register_checker, resolve_checker
-from ._convert import StdlibExampleLike, from_examples, from_stdlib_doctest
-from ._optionflags import (
+from xdoctest.stdlib_doctest._checker import (
+    OutputChecker,
+    register_checker,
+    resolve_checker,
+)
+from xdoctest.stdlib_doctest._convert import (
+    StdlibExampleLike,
+    from_examples,
+    from_stdlib_doctest,
+)
+from xdoctest.stdlib_doctest._optionflags import (
     BLANKLINE_MARKER,
     DONT_ACCEPT_BLANKLINE,
     ELLIPSIS,

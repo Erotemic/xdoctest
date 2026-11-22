@@ -45,10 +45,9 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Protocol, cast
 
 from xdoctest import directive, parser
-
-from . import _optionflags
 from xdoctest.doctest_example import DocTest
 from xdoctest.doctest_part import DoctestPart
+from xdoctest.stdlib_doctest import _optionflags
 
 
 class StdlibExampleLike(Protocol):
