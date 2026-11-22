@@ -240,11 +240,11 @@ def import_notebook_from_path(
 
 
 def _has_jupyter_kernel(kernel_name: str | None = None) -> bool:
-    """Return whether a usable Jupyter kernelspec is registered.
+    """Return whether Jupyter can resolve a kernelspec by name.
 
-    Importing :mod:`jupyter_client` or :mod:`ipykernel` is not sufficient:
-    isolated environments may have both packages installed without exposing a
-    kernelspec on Jupyter's search path.
+    Jupyter can provide the native Python kernelspec via :mod:`ipykernel`
+    without a separate kernelspec registration. Resolving a kernelspec does
+    not guarantee that its kernel process can be started.
     """
     try:
         import jupyter_client.kernelspec
@@ -284,7 +284,7 @@ def execute_notebook(
         >>> from xdoctest import utils
         >>> from os.path import join
         >>> if not _has_jupyter_kernel():
-        >>>     raise xdoctest.ExitTestException('no Jupyter kernel is registered')
+        >>>     raise xdoctest.ExitTestException('no Jupyter kernel could be resolved')
         >>> self = utils.TempDir()
         >>> dpath = self.ensure()
         >>> ipynb_fpath = join(dpath, 'hello_world.ipydb')
@@ -351,8 +351,7 @@ def _make_test_notebook_fpath(
         spec = jupyter_client.kernelspec.get_kernel_spec(kernel_name)
     except jupyter_client.kernelspec.NoSuchKernel:
         # Constructing a notebook file does not require an executable kernel.
-        # Use conventional Python metadata when the environment has the
-        # Jupyter libraries installed but no registered native kernelspec.
+        # Use conventional Python metadata when no native kernelspec resolves.
         display_name = 'Python 3'
         language = 'python'
     else:
