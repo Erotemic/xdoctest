@@ -54,7 +54,6 @@ import sys
 import time
 import types
 import typing
-import unicodedata
 import warnings
 from collections.abc import Callable
 from functools import partial
@@ -308,9 +307,13 @@ def doctest_module(
     # Python normalizes identifier spellings to NFKC during compilation.
     # Fall back to that spelling for command-line selections (issue #183),
     # while preserving exact matches for explicitly named doctests.
-    if command not in {'all', 'dump', 'list'} and not any(
-        command in example.valid_testnames for example in examples
+    if (
+        command not in {'all', 'dump', 'list'}
+        and not command.isascii()
+        and not any(command in example.valid_testnames for example in examples)
     ):
+        import unicodedata
+
         normalized = unicodedata.normalize('NFKC', command)
         if normalized not in {'all', 'dump', 'list'}:
             command = normalized
