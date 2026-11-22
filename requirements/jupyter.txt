@@ -1,4 +1,8 @@
-nbconvert>=6.1.0;  python_version >= '3.7.0' and platform_python_implementation != "PyPy"  # Python 3.7+
+# The strict extra pins the minimum nbconvert. 6.1.0 requires nbclient<0.6,
+# whose import-time strptime('%d') call fails on Python 3.15.
+nbconvert>=6.1.0;  python_version < '3.15' and platform_python_implementation != "PyPy"
+nbconvert>=7.17.0; python_version >= '3.15' and platform_python_implementation != "PyPy"
+nbclient>=0.10.2;  python_version >= '3.15' and platform_python_implementation != "PyPy"
 
 # For nbconvert
 jinja2>=3.0.0   ; platform_python_implementation != "PyPy"  # Python 3.6+
