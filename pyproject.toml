@@ -17,7 +17,9 @@ license = "Apache 2"
 dev_status = "stable"
 ci_pypi_trusted_publishing = true
 ci_gpg_secret_transport = "direct_ci"
+enable_gpg = true
 typed = true
+use_setup_py = false
 skip_autogen = ["MANIFEST.in"]
 # CI extras configuration - adds tests-binary to full-loose variant
 ci_extras = 'full-loose: [tests-binary]'
