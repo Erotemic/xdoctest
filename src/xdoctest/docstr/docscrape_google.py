@@ -540,10 +540,12 @@ def parse_google_argblock(
     varname = named('name', r'\*?\*?[A-Za-z_][A-Za-z0-9_]*')
     typename = named('type', '[^)]*?')
     argdesc = named('desc', '.*?')
-    # Types are optional, and must be enclosed in parens
-    optional_type = optional(whitespace.join([r'\(', typename, r'\)']))
-    # Each arg hint must defined a on newline without any indentation
-    argdef = whitespace.join([varname, optional_type, ':'])
+    # Keep spacing before a type inside its optional group. In particular,
+    # avoid two independently backtracking whitespace matches when the type
+    # is absent, and avoid splitting whitespace between the type and ')'.
+    optional_type = optional(whitespace + r'\(' + typename + r'\)')
+    # Each arg hint must be defined on a newline without any indentation.
+    argdef = varname + optional_type + whitespace + ':'
     # the description is everything after the colon until either the next line
     # without any indentation or the end of the string
     end_desc = regex_or(['^' + positive_lookahead(r'[^\s]'), endofstr])
@@ -553,6 +555,10 @@ def parse_google_argblock(
 
     for match in argline_pat.finditer(lines):
         argdict = match.groupdict()
+        if argdict['type'] is not None:
+            # Previously, whitespace around a parenthesized type was
+            # consumed by separate regex groups instead of the capture.
+            argdict['type'] = argdict['type'].strip()
         # Clean description
         if clean_desc:
             desc_lines = [p.strip() for p in argdict['desc'].split('\n')]
