@@ -265,7 +265,7 @@ if __name__ == '__main__':
     setupkw['long_description_content_type'] = 'text/x-rst'
     setupkw['license'] = 'Apache 2'
     setupkw['packages'] = find_packages('./src')
-    setupkw['python_requires'] = '>=3.8'
+    setupkw['python_requires'] = '>=3.10'
     setupkw['classifiers'] = [
         'Development Status :: 6 - Mature',
         'Intended Audience :: Developers',
@@ -274,13 +274,12 @@ if __name__ == '__main__':
         'Topic :: Software Development :: Testing',
         'Framework :: Pytest',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
         'Programming Language :: Python :: 3.13',
         'Programming Language :: Python :: 3.14',
+        'Programming Language :: Python :: 3.15',
         'Programming Language :: Python :: Implementation :: PyPy',
         'Programming Language :: Python :: Implementation :: CPython',
     ]

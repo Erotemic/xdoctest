@@ -1,5 +1,5 @@
 """
-Stdlib-doctest-shaped façade over xdoctest's checker.
+Stdlib-doctest-shaped checker adapter for xdoctest.
 
 This module exposes a small public surface that lets tooling built around the
 stdlib :mod:`doctest` module (most notably :mod:`pytest_doctestplus`) plug
@@ -8,8 +8,7 @@ into xdoctest's runner without having to know about xdoctest's internal
 
 Adopters typically:
 
-1. Register their optionflags through :func:`xdoctest.register_optionflag`
-   (re-exported here from :mod:`xdoctest.directive_facade`).
+1. Register their optionflags through :func:`xdoctest.stdlib_doctest.register_optionflag`.
 2. Define an :class:`OutputChecker` subclass with the standard
    ``check_output(want, got, optionflags)`` and (optionally)
    ``output_difference(example, got, optionflags)`` signatures.
@@ -28,7 +27,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 from xdoctest import checker, directive
-from xdoctest.directive_facade import (
+from xdoctest.stdlib_doctest._optionflags import (
     optionflags_to_runtime_state,
     register_optionflag,
     runtime_state_to_optionflags,
@@ -44,9 +43,8 @@ class _CheckerRegistration:
     checker: doctest.OutputChecker | type[doctest.OutputChecker]
 
 
-# Keep this union inside postponed annotations. A module-level assignment such
-# as ``CheckerLike = OutputChecker | type[OutputChecker]`` would evaluate the
-# PEP 604 expression during import and break supported Python 3.8 / 3.9.
+# Keep the checker union in annotations, avoiding an unnecessary module-level
+# runtime type alias.
 _REGISTERED_CHECKERS: dict[str, _CheckerRegistration] = {}
 
 
@@ -176,7 +174,7 @@ class OutputChecker(doctest.OutputChecker):
         replacement for stdlib-shaped consumers.
 
     Example:
-        >>> from xdoctest.directive_facade import ELLIPSIS, FLOAT_CMP
+        >>> from xdoctest.stdlib_doctest import ELLIPSIS, FLOAT_CMP
         >>> output_checker = OutputChecker()
         >>> output_checker.check_output(
         >>>     'prefix ... value=1\n',
@@ -209,7 +207,4 @@ __all__ = [
     'register_checker',
     'resolve_checker',
     'resolve_current_checker',
-    'register_optionflag',
-    'runtime_state_to_optionflags',
-    'optionflags_to_runtime_state',
 ]

@@ -7,10 +7,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Version 1.4.0 - Unreleased
 
-
-## Version 1.3.3 - Released 2026-11-22
-
 ### Added
+* Added `xdoctest.stdlib_doctest`, the documented adapter package for
+  stdlib `doctest` objects, checkers, and option flags. It exposes checker
+  and optionflag registration, runtime-state conversion, structured
+  stdlib-doctest intake helpers, and the supporting `StdlibExampleLike`,
+  `RuntimeState`, and `DocTest` types used by those public signatures.
 * Added the `REQUIRE_WANT` runtime directive. When enabled, a doctest part that
   produces stdout or an evaluated value must provide an explicit local want.
   It can be enabled for a whole run through the existing generic directive
@@ -33,6 +35,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `packaging` dependency.
 
 ### Fixed
+* Preserve literal blank lines and prompt-looking expected output when
+  converting structured stdlib doctest examples.
 * Fixed issue #181 where comment indentation could cause parsing issues.
 * Fix traceback rewriting for exceptions raised in earlier doctest parts
 * Ignored output from a no-want part is discarded rather than deferred to a
@@ -41,6 +45,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 
 ### Changed
+* Dropped Python 3.8 and 3.9 support; the minimum is now Python 3.10.
 * Cached static module doctest metadata using file identity, and report specific `__doctest_skip__` and `__doctest_requires__` reasons through pytest.
 * Native xdoctest output checks now keep structured runtime state on the fast
   path. Stdlib optionflag conversion occurs only for foreign checkers or sparse

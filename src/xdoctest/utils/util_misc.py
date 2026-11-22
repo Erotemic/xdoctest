@@ -7,7 +7,7 @@ from __future__ import annotations
 import random
 from os.path import join
 
-from .util_path import TempDir
+from xdoctest.utils.util_path import TempDir
 
 
 class TempDoctest:

@@ -5,4 +5,4 @@ pyflakes>=3.3.0     ; python_version < '4.0'  and python_version >= '3.14'    # 
 pyflakes>=2.2.0     ; python_version < '3.14'                                 # Python < 3.14
 
 # xdev availpkg tomli
-tomli>=0.2.0  ; python_version < '3.11.0' and python_version >= '3.6'    # Python 3.6+
+tomli>=0.2.0  ; python_version < '3.11.0' and python_version >= '3.10'   # Python 3.10

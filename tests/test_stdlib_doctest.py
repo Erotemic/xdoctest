@@ -9,16 +9,17 @@ from collections.abc import Iterator
 import pytest
 
 import xdoctest
-from xdoctest import checker_facade, directive_facade, stdlib_compat
+from xdoctest import stdlib_doctest
+from xdoctest.stdlib_doctest import _checker, _optionflags
 
 
 @pytest.fixture(autouse=True)
-def isolate_interop_registries() -> Iterator[None]:
+def isolate_stdlib_doctest_registries() -> Iterator[None]:
     """Restore checker and optionflag registries after each test."""
-    checker_registry = checker_facade._REGISTERED_CHECKERS
+    checker_registry = _checker._REGISTERED_CHECKERS
     checker_snapshot = checker_registry.copy()
 
-    runtime_flags = directive_facade._RUNTIME_FLAGS
+    runtime_flags = _optionflags._RUNTIME_FLAGS
     runtime_flags_snapshot = copy.deepcopy(runtime_flags.__dict__)
 
     doctest_flags = doctest.OPTIONFLAGS_BY_NAME
@@ -42,7 +43,7 @@ def isolate_interop_registries() -> Iterator[None]:
 
 def test_synthetic_example_runs_successfully():
     examples = [doctest.Example(source='print(1)\n', want='1\n', lineno=0)]
-    dtest = stdlib_compat.from_examples(examples, name='t')
+    dtest = stdlib_doctest.from_examples(examples, name='t')
     result = dtest.run(verbose=0, on_error='return')
     assert result['passed']
     assert not result['failed']
@@ -51,7 +52,7 @@ def test_synthetic_example_runs_successfully():
 def test_synthetic_example_with_failure_reports_correct_line():
     # Stdlib Example.lineno is zero-based, so lineno=4 is physical line 5.
     examples = [doctest.Example(source='print(2)\n', want='1\n', lineno=4)]
-    dtest = stdlib_compat.from_examples(
+    dtest = stdlib_doctest.from_examples(
         examples, name='t', filename='/tmp/fake.py'
     )
     result = dtest.run(verbose=0, on_error='return')
@@ -69,7 +70,7 @@ def test_multiple_examples_preserve_lineno_spacing():
         doctest.Example(source='x = 1\n', want='', lineno=10),
         doctest.Example(source='print(x)\n', want='1\n', lineno=20),
     ]
-    dtest = stdlib_compat.from_examples(examples, name='t')
+    dtest = stdlib_doctest.from_examples(examples, name='t')
     assert dtest.lineno == 11
     # Force a parse to populate _parts so we can inspect line offsets.
     dtest._parse()
@@ -88,19 +89,19 @@ def test_empty_want_rejects_unexpected_stdout():
             lineno=0,
         )
     ]
-    dtest = stdlib_compat.from_examples(examples, name='t')
+    dtest = stdlib_doctest.from_examples(examples, name='t')
     result = dtest.run(verbose=0, on_error='return')
     assert result['failed']
 
 
 def test_empty_want_uses_stdlib_displayhook_semantics():
-    silent = stdlib_compat.from_examples(
+    silent = stdlib_doctest.from_examples(
         [doctest.Example(source='None\n', want='', lineno=0)],
         name='silent',
     )
     assert silent.run(verbose=0, on_error='return')['passed']
 
-    displayed = stdlib_compat.from_examples(
+    displayed = stdlib_doctest.from_examples(
         [doctest.Example(source='1\n', want='', lineno=0)],
         name='displayed',
     )
@@ -112,9 +113,77 @@ def test_empty_want_output_cannot_satisfy_later_example():
         doctest.Example(source='print("a")\n', want='', lineno=0),
         doctest.Example(source='pass\n', want='a\n', lineno=1),
     ]
-    dtest = stdlib_compat.from_examples(examples, name='t')
+    dtest = stdlib_doctest.from_examples(examples, name='t')
     result = dtest.run(verbose=0, on_error='return')
     assert result['failed']
+
+
+@pytest.mark.parametrize(
+    ('source', 'want', 'should_pass'),
+    [
+        ('print(">>> item")\n', '>>> item\n', True),
+        ('print("... bc")\n', '... bc\n', True),
+        ('print("... bc")\n', '... bd\n', False),
+        ('print("a\\n\\nb")\n', 'a\n\nb\n', True),
+        ('print("a\\n\\nb")\n', 'a\n<BLANKLINE>\nb\n', True),
+        ('print("a\\n")\n', 'a\n\n', True),
+        ('print("")\n', '\n', True),
+        ('print("a\\n")\n', 'a\n', False),
+        ('print("hello")\n', 'hello\n', True),
+        ('print("hello")\n', 'hello', True),
+        (
+            'print("line1\\n>>> line2")\n',
+            'line1\n>>> line2\n',
+            True,
+        ),
+    ],
+)
+def test_structured_want_matches_stdlib(
+    source: str, want: str, should_pass: bool
+) -> None:
+    """Output is data, even when lines resemble prompts or are blank."""
+    example = doctest.Example(source=source, want=want, lineno=0)
+    stdlib_test = doctest.DocTest(
+        [example], {'__name__': '__main__'}, 'example', 'demo.py', 0, ''
+    )
+    stdlib_result = doctest.DocTestRunner().run(
+        stdlib_test, out=lambda text: None, clear_globs=False
+    )
+    assert (stdlib_result.failed == 0) is should_pass
+
+    stdlib_doctest.register_checker('verbatim_want', doctest.OutputChecker)
+    converted = stdlib_doctest.from_examples(
+        [example], config={'output_checker': 'verbatim_want'}
+    )
+    assert converted._parts is not None
+    assert len(converted._parts) == 1
+    assert converted._parts[0].want == example.want
+    result = converted.run(verbose=0, on_error='return')
+    assert result['passed'] is should_pass
+
+
+def test_structured_wants_preserve_example_boundaries_and_lines() -> None:
+    """Multiple structured wants must not affect following source or lines."""
+    examples = [
+        doctest.Example('print(">>> item")\n', '>>> item\n', lineno=8),
+        doctest.Example(
+            'print("a\\n\\nb")\n', 'a\n\nb\n', lineno=20
+        ),
+    ]
+    stdlib_test = doctest.DocTest(
+        examples, {'__name__': '__main__'}, 'example', 'demo.py', 100, ''
+    )
+    converted = stdlib_doctest.from_stdlib_doctest(
+        stdlib_test, config={'output_checker': 'stdlib'}
+    )
+    stdlib_doctest.register_checker('stdlib', doctest.OutputChecker)
+    assert converted._parts is not None
+    assert [part.line_offset for part in converted._parts] == [0, 12]
+    assert [part.want for part in converted._parts] == [
+        '>>> item\n', 'a\n\nb\n'
+    ]
+    assert converted.lineno == 109
+    assert converted.run(verbose=0, on_error='return')['passed']
 
 
 def test_skip_option_is_honored():
@@ -127,7 +196,7 @@ def test_skip_option_is_honored():
         ),
         doctest.Example(source='print(2)\n', want='2\n', lineno=2),
     ]
-    dtest = stdlib_compat.from_examples(examples, name='t')
+    dtest = stdlib_doctest.from_examples(examples, name='t')
     result = dtest.run(verbose=0, on_error='raise')
     assert result['passed']
 
@@ -144,7 +213,7 @@ def test_per_example_skip_preserves_execution_boundary():
         ),
         doctest.Example(source='print(x)\n', want='1\n', lineno=2),
     ]
-    dtest = stdlib_compat.from_examples(examples, name='t')
+    dtest = stdlib_doctest.from_examples(examples, name='t')
     result = dtest.run(verbose=0, on_error='return')
     assert result['passed'], result
     assert not result['failed']
@@ -169,7 +238,7 @@ def test_skip_option_does_not_rewrite_source():
             options={doctest.SKIP: True},
         ),
     ]
-    dtest = stdlib_compat.from_examples(examples, name='t')
+    dtest = stdlib_doctest.from_examples(examples, name='t')
     assert dtest.docsrc is not None
     assert 'xdoctest' not in dtest.docsrc
     assert 'SKIP' not in dtest.docsrc
@@ -202,7 +271,7 @@ def test_per_example_option_applies_to_matching_part_only():
         ),
         doctest.Example(source='print(2)\n', want='2\n', lineno=2),
     ]
-    dtest = stdlib_compat.from_examples(
+    dtest = stdlib_doctest.from_examples(
         examples,
         name='t',
         config={'output_checker': 'part_local_recorder'},
@@ -229,7 +298,7 @@ def test_registered_checker_only_flag_flows_through():
     xdoctest.register_checker('intake_recorder', Recorder)
 
     examples = [doctest.Example(source='print(1)\n', want='1\n', lineno=0)]
-    dtest = stdlib_compat.from_examples(
+    dtest = stdlib_doctest.from_examples(
         examples,
         name='t',
         optionflags=fix_flag,
@@ -251,7 +320,7 @@ def test_stdlib_doctest_roundtrip_runs():
         lineno=10,
         docstring='',
     )
-    dtest = stdlib_compat.from_stdlib_doctest(stdlib_test)
+    dtest = stdlib_doctest.from_stdlib_doctest(stdlib_test)
     result = dtest.run(verbose=0, on_error='return')
     assert result['passed']
     # Both stdlib values are zero-based; xdoctest stores one-based locations.
@@ -288,7 +357,7 @@ def test_stdlib_doctest_finder_preserves_physical_failure_line(tmp_path):
         '>>>'
     )
 
-    dtest = stdlib_compat.from_stdlib_doctest(stdlib_test)
+    dtest = stdlib_doctest.from_stdlib_doctest(stdlib_test)
     result = dtest.run(verbose=0, on_error='return')
     assert result['failed']
     assert dtest.lineno == physical_line
@@ -303,7 +372,7 @@ def test_builtin_optionflag_translates_to_runtime_state():
             lineno=0,
         )
     ]
-    dtest = stdlib_compat.from_examples(
+    dtest = stdlib_doctest.from_examples(
         examples, name='t', optionflags=doctest.ELLIPSIS
     )
     result = dtest.run(verbose=0, on_error='return')
@@ -311,7 +380,7 @@ def test_builtin_optionflag_translates_to_runtime_state():
 
 
 def test_zero_optionflags_disable_stdlib_comparison_flags():
-    ellipsis = stdlib_compat.from_examples(
+    ellipsis = stdlib_doctest.from_examples(
         [
             doctest.Example(
                 source='print("abc")\n',
@@ -325,7 +394,7 @@ def test_zero_optionflags_disable_stdlib_comparison_flags():
     assert ellipsis.config['reportchoice'] == 'none'
     assert ellipsis.run(verbose=0, on_error='return')['failed']
 
-    whitespace = stdlib_compat.from_examples(
+    whitespace = stdlib_doctest.from_examples(
         [
             doctest.Example(
                 source='print("a  b")\n',
@@ -341,7 +410,7 @@ def test_zero_optionflags_disable_stdlib_comparison_flags():
 
 def test_optionflags_preserve_unrelated_runtime_config():
     examples = [doctest.Example(source='print("ok")\n', want='ok\n', lineno=0)]
-    dtest = stdlib_compat.from_examples(
+    dtest = stdlib_doctest.from_examples(
         examples,
         optionflags=doctest.ELLIPSIS,
         config={
@@ -366,7 +435,7 @@ def test_whole_test_skip_optionflag_prevents_execution():
             lineno=0,
         )
     ]
-    dtest = stdlib_compat.from_examples(examples, optionflags=doctest.SKIP)
+    dtest = stdlib_doctest.from_examples(examples, optionflags=doctest.SKIP)
     result = dtest.run(verbose=0, on_error='return')
     assert result['skipped']
     assert not result['failed']
@@ -376,7 +445,7 @@ def test_zero_optionflags_clear_configured_skip():
     examples = [
         doctest.Example(source='print("ran")\n', want='ran\n', lineno=0)
     ]
-    dtest = stdlib_compat.from_examples(
+    dtest = stdlib_doctest.from_examples(
         examples,
         optionflags=0,
         config={'default_runtime_state': {'SKIP': True}},
@@ -410,7 +479,7 @@ def test_per_example_report_flags_are_local():
             lineno=1,
         ),
     ]
-    dtest = stdlib_compat.from_examples(
+    dtest = stdlib_doctest.from_examples(
         examples,
         optionflags=doctest.REPORT_UDIFF,
         config={'output_checker': 'report_scope_recorder'},
@@ -447,7 +516,7 @@ def test_per_example_negative_report_flag_is_local():
             lineno=1,
         ),
     ]
-    dtest = stdlib_compat.from_examples(
+    dtest = stdlib_doctest.from_examples(
         examples,
         optionflags=doctest.REPORT_NDIFF,
         config={'output_checker': 'negative_report_scope_recorder'},
@@ -461,7 +530,7 @@ def test_per_example_negative_report_flag_is_local():
 def test_none_optionflags_preserve_configured_checker_flags():
     custom = xdoctest.register_optionflag('CONFIGURED_INTAKE_FLAG')
     examples = [doctest.Example(source='print("ok")\n', want='ok\n', lineno=0)]
-    dtest = stdlib_compat.from_examples(
+    dtest = stdlib_doctest.from_examples(
         examples,
         optionflags=None,
         config={'output_checker_flags': custom},
@@ -470,8 +539,8 @@ def test_none_optionflags_preserve_configured_checker_flags():
 
 
 def test_warning_flags_are_top_level_exports():
-    assert xdoctest.IGNORE_WARNINGS is directive_facade.IGNORE_WARNINGS
-    assert xdoctest.SHOW_WARNINGS is directive_facade.SHOW_WARNINGS
+    assert xdoctest.IGNORE_WARNINGS is _optionflags.IGNORE_WARNINGS
+    assert xdoctest.SHOW_WARNINGS is _optionflags.SHOW_WARNINGS
 
 
 
@@ -495,7 +564,7 @@ def test_local_builtin_option_overrides_global_for_foreign_checker():
             options={doctest.ELLIPSIS: False},
         )
     ]
-    dtest = stdlib_compat.from_examples(
+    dtest = stdlib_doctest.from_examples(
         examples,
         name='t',
         optionflags=doctest.ELLIPSIS,
@@ -528,7 +597,7 @@ def test_local_custom_option_can_mask_global_checker_flag():
             options={custom: False},
         )
     ]
-    dtest = stdlib_compat.from_examples(
+    dtest = stdlib_doctest.from_examples(
         examples,
         name='t',
         optionflags=custom,

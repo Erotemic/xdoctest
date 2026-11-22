@@ -20,11 +20,12 @@ Fidelity guarantees:
   line. xdoctest's
   parser then assigns each part a ``line_offset`` such that
   ``dtest.lineno + part.line_offset == original_file_line``.
-- **Source content**: example source is carried verbatim (only the standard
-  ``>>> `` / ``... `` prompts are re-added). Per-example semantics from
-  ``Example.options`` are attached to the parsed parts as *structured*
-  :class:`~xdoctest.directive.Directive` objects — never by injecting
-  directive comments into the source text.
+- **Source and expected-output content**: example source is parsed with
+  reconstructed ``>>> `` / ``... `` prompts, but expected output is attached
+  directly from ``Example.want`` without reparsing it as doctest source.
+  Per-example semantics from ``Example.options`` are attached to the parts as
+  *structured* :class:`~xdoctest.directive.Directive` objects — never by
+  injecting directive comments into the source text.
 
 Option semantics flow through one channel: each named stdlib optionflag in
 ``Example.options`` becomes a per-part directive. Flags whose names match
@@ -43,9 +44,10 @@ import os
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Protocol, cast
 
-from xdoctest import directive, directive_facade, parser
+from xdoctest import directive, parser
 from xdoctest.doctest_example import DocTest
 from xdoctest.doctest_part import DoctestPart
+from xdoctest.stdlib_doctest import _optionflags
 
 
 class StdlibExampleLike(Protocol):
@@ -274,7 +276,11 @@ def _parse_examples_as_parts(
     base = 0 if base is None else base
     parts: list[DoctestPart] = []
     for ex in examples:
-        local_docsrc = '\n'.join(_example_docsrc_lines(ex))
+        # Only executable source may be parsed as prompts. ``Example.want``
+        # is already structured data: reparsing it can turn output such as
+        # ``>>> item`` or ``... text`` into Python, or lose literal blank
+        # lines embedded in the expected output.
+        local_docsrc = '\n'.join(_example_source_lines(ex))
         info = {
             'callname': dtest.callname,
             'modpath': dtest.modpath,
@@ -284,6 +290,11 @@ def _parse_examples_as_parts(
         raw_parts = parser.DoctestParser().parse(local_docsrc, info)
         local_parts = [part for part in raw_parts if not isinstance(part, str)]
         line_offset = (ex.lineno or 0) - base
+        if local_parts and ex.want:
+            # Preserve all lines, including trailing blank lines and the
+            # terminating newline (if supplied). DoctestPart.want rejoins
+            # these with ``'\n'.join``, reproducing the original want exactly.
+            local_parts[-1].want_lines = ex.want.split('\n')
         for part in local_parts:
             # stdlib compiles each Example in ``single`` mode. Besides matching
             # the accepted grammar for one interactive statement, this invokes
@@ -312,8 +323,8 @@ def _apply_stdlib_optionflags(dtest: DocTest, optionflags: int) -> None:
     defaults = dict(dtest.config.get('default_runtime_state') or {})
     runtime_bound_mask = 0
     for key in directive.DEFAULT_RUNTIME_STATE:
-        if directive_facade.is_registered_optionflag(key):
-            flag = directive_facade.get_optionflag(key)
+        if _optionflags.is_registered_optionflag(key):
+            flag = _optionflags.get_optionflag(key)
             runtime_bound_mask |= flag
             defaults[key] = bool(optionflags & flag)
     dtest.config['default_runtime_state'] = defaults
@@ -321,9 +332,9 @@ def _apply_stdlib_optionflags(dtest: DocTest, optionflags: int) -> None:
 
     dtest.config['reportchoice'] = 'none'
     report_flags = [
-        (directive_facade.REPORT_UDIFF, 'udiff'),
-        (directive_facade.REPORT_CDIFF, 'cdiff'),
-        (directive_facade.REPORT_NDIFF, 'ndiff'),
+        (_optionflags.REPORT_UDIFF, 'udiff'),
+        (_optionflags.REPORT_CDIFF, 'cdiff'),
+        (_optionflags.REPORT_NDIFF, 'ndiff'),
     ]
     for flag, reportchoice in report_flags:
         if optionflags & flag:
@@ -331,8 +342,21 @@ def _apply_stdlib_optionflags(dtest: DocTest, optionflags: int) -> None:
             break
 
 
+def _example_source_lines(ex: StdlibExampleLike) -> list[str]:
+    """Reconstruct prompted source lines without interpreting expected output."""
+    lines: list[str] = []
+    src_lines = (ex.source or '').splitlines() or ['']
+    for idx, line in enumerate(src_lines):
+        prefix = '>>> ' if idx == 0 else '... '
+        lines.append(prefix + line)
+    return lines
+
+
 def _example_docsrc_lines(ex: StdlibExampleLike) -> list[str]:
-    r"""Reconstruct prompted source and want lines for one example.
+    r"""Reconstruct display-only prompted source and want lines for an example.
+
+    The returned display text is not used to parse the executable parts;
+    ``Example.want`` is attached directly as structured data instead.
 
     Example:
         >>> import doctest
@@ -340,11 +364,7 @@ def _example_docsrc_lines(ex: StdlibExampleLike) -> list[str]:
         >>> _example_docsrc_lines(example)
         ['>>> x = 1', '... x', '1']
     """
-    lines: list[str] = []
-    src_lines = (ex.source or '').splitlines() or ['']
-    for idx, line in enumerate(src_lines):
-        prefix = '>>> ' if idx == 0 else '... '
-        lines.append(prefix + line)
+    lines = _example_source_lines(ex)
     if ex.want:
         lines.extend(ex.want.splitlines())
     return lines
@@ -357,11 +377,7 @@ def _example_options(ex: StdlibExampleLike) -> Mapping[int, bool]:
         return {}
     if not isinstance(options, Mapping):
         raise TypeError('example options must be a mapping')
-    # The first argument to ``typing.cast`` is evaluated at runtime.
-    # ``collections.abc.Mapping`` did not become subscriptable until
-    # Python 3.9, so keep the type expression as a forward-reference
-    # string for supported Python 3.8 imports and execution.
-    return cast('Mapping[int, bool]', options)
+    return cast(Mapping[int, bool], options)
 
 
 def _options_to_directives(
@@ -392,11 +408,11 @@ def _options_to_directives(
         name = name.upper()
         if (
             name not in directive.COMMANDS
-            and not directive_facade.is_registered_optionflag(name)
+            and not _optionflags.is_registered_optionflag(name)
         ):
             # Adopt any stdlib-registered flag so the directive system can
             # carry it through to the output checker as a checker-only bit.
-            directive_facade.register_optionflag(name)
+            _optionflags.register_optionflag(name)
         directives.append(
             directive.Directive(name, positive=bool(value), inline=True)
         )

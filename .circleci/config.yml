@@ -32,20 +32,8 @@ workflows:
               branches:
                   ignore: 
                       - release
-      - test_full/cp39-39-linux:
-          filters:
-              <<: *__ignore_release__
-      - test_full/cp38-38-linux:
-          filters:
-              <<: *__ignore_release__
 
       - test_minimal/cp3_10-3_10-linux:
-          filters:
-              <<: *__ignore_release__
-      - test_minimal/cp39-39-linux:
-          filters:
-              <<: *__ignore_release__
-      - test_minimal/cp38-38-linux:
           filters:
               <<: *__ignore_release__
 
@@ -90,7 +78,7 @@ jobs:
           command: |
             pwd
             ls -al
-            $PYTHON_EXE -m venv venv || virtualenv -v venv  # first command is python3 || second is python2
+            $PYTHON_EXE -m venv venv
             . venv/bin/activate
             # The "minimal" tests install barebones requirements
             pip install pip -U
@@ -133,7 +121,7 @@ jobs:
           command: |
             pwd
             ls -al
-            $PYTHON_EXE -m venv venv || virtualenv -v venv  # first command is python3 || second is python2
+            $PYTHON_EXE -m venv venv
             . venv/bin/activate
             # The "full" dependency install
             pip install pip -U
@@ -167,26 +155,15 @@ jobs:
   ### INHERIT FROM BASE TEMPLATES ###
   ###################################
 
-  # Define tests fo the other python verisons using the "test3.6" template
-  # and indicating what needs to be modified.
-  #
-  # All we need to do is change the base docker image so python is the
-  # version we want we can reuse everything else from the template
+  # Define jobs for the supported Python versions using shared templates.
+  # Only the base Docker image varies between these jobs.
   #
   test_full/cp3_10-3_10-linux:
     <<: *test_full_template
     docker:
-      - image: cimg/python:3.10.0
+      - image: cimg/python:3.10
   
-  test_full/cp39-39-linux:
-    <<: *test_full_template
-    docker:
-      - image: cimg/python:3.9
   
-  test_full/cp38-38-linux:
-    <<: *test_full_template
-    docker:
-      - image: cimg/python:3.8
 
   # ------------
   test_minimal/cp3_10-3_10-linux:
@@ -194,15 +171,7 @@ jobs:
     docker:
       - image: cimg/python:3.10
   
-  test_minimal/cp39-39-linux:
-    <<: *test_minimal_template
-    docker:
-      - image: cimg/python:3.9
   
-  test_minimal/cp38-38-linux:
-    <<: *test_minimal_template
-    docker:
-      - image: cimg/python:3.8
 
   # --- pypy ----
 
@@ -224,9 +193,6 @@ jobs:
 .__doc__: &__doc__
     - | 
 
-        IMAGE_NAME=cimg/python:3.9
-        docker pull $IMAGE_NAME
-
         IMAGE_NAME=pypy:3
         docker pull $IMAGE_NAME
         docker run -v $HOME/code/xdoctest:/io -it $IMAGE_NAME bash
@@ -241,8 +207,6 @@ jobs:
         docker run -v $HOME/code/xdoctest:/io -it $IMAGE_NAME bash
 
 
-        IMAGE_NAME=circleci/python:3.4
-        docker run -v $HOME/code/xdoctest:/io -it $IMAGE_NAME bash
         git clone /io $HOME/repo
         cd $HOME/repo
         source dev/make_strict_req.sh
@@ -299,7 +263,7 @@ jobs:
         git clone /io /root/test_minimal/pypy3
         cd /root/test_minimal/pypy3
         PYTHON_EXE=pypy3
-        $PYTHON_EXE -m venv venv || virtualenv -v venv  # first command is python3 || second is python2
+        $PYTHON_EXE -m venv venv
         . venv/bin/activate
         # The "minimal" tests install barebones requirements
         pip install pip -U
@@ -331,8 +295,6 @@ jobs:
         $HOME/.local/bin/circleci switch
 
         $HOME/.local/bin/circleci config validate
-        $HOME/.local/bin/circleci local execute --job test_minimal/3.9
         $HOME/.local/bin/circleci local execute --job test_minimal/pypy3
-        $HOME/.local/bin/circleci local execute --job test_full/3.6
-        $HOME/.local/bin/circleci local execute --config .circleci/config.yml --job test_full/cp38-38-linux
+        $HOME/.local/bin/circleci local execute --config .circleci/config.yml --job test_full/cp3_10-3_10-linux
         $HOME/.local/bin/circleci local execute --config .circleci/config.yml 

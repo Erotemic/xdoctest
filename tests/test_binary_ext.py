@@ -8,14 +8,10 @@ Test this in docker
 
 # cd ~/code/xdoctest
 
-DOCKER_IMAGE=circleci/python:3.9-rc
+DOCKER_IMAGE=python:3.10
 docker pull $DOCKER_IMAGE
 docker run -v $PWD:/io \
     --rm -it $DOCKER_IMAGE bash
-
-docker pull python:3.9.0a5-buster
-docker run -v $PWD:/io \
-    --rm -it python bash
 
 
 print('feature.compiler_flag = {!r:>60}'.format(bin(221184)))
