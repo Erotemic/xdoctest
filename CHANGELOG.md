@@ -5,7 +5,10 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Version 1.3.3 - Unreleased
+## Version 1.4.0 - Unreleased
+
+
+## Version 1.3.3 - Released 2026-11-22
 
 ### Added
 * Added the `REQUIRE_WANT` runtime directive. When enabled, a doctest part that
