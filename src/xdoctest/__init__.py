@@ -311,17 +311,18 @@ __autogen__ = """
 mkinit xdoctest --nomods
 """
 
-__version__ = '1.3.3'
+__version__ = '1.4.0'
 
 
 # Expose only select submodules
 __submodules__ = [
     'runner',
     'exceptions',
+    'stdlib_doctest',
 ]
 
 
-from xdoctest import docstr, utils
+from xdoctest import docstr, stdlib_doctest, utils
 from xdoctest.exceptions import (
     DoctestParseError,
     ExistingEventLoopError,
@@ -332,12 +333,30 @@ from xdoctest.runner import (
     doctest_callable,
     doctest_module,
 )
-# The full third-party integration contract lives in xdoctest.interop; the
-# two registration entry points are convenient enough to expose here.
-from xdoctest.interop import (
+from xdoctest.stdlib_doctest import (
+    BLANKLINE_MARKER,
+    DONT_ACCEPT_BLANKLINE,
+    ELLIPSIS,
+    ELLIPSIS_MARKER,
+    FLOAT_CMP,
+    IGNORE_EXCEPTION_DETAIL,
+    IGNORE_OUTPUT,
+    IGNORE_WARNINGS,
+    IGNORE_WHITESPACE,
+    IGNORE_WANT,
+    NORMALIZE_REPR,
+    NORMALIZE_WHITESPACE,
     OutputChecker,
+    REPORT_CDIFF,
+    REPORT_NDIFF,
+    REPORT_UDIFF,
+    SHOW_WARNINGS,
+    SKIP,
+    optionflags_to_runtime_state,
     register_checker,
     register_optionflag,
+    resolve_checker,
+    runtime_state_to_optionflags,
 )
 
 __all__ = [
@@ -349,8 +368,29 @@ __all__ = [
     'doctest_callable',
     'utils',
     'docstr',
+    'stdlib_doctest',
     '__version__',
+    'BLANKLINE_MARKER',
+    'ELLIPSIS_MARKER',
+    'DONT_ACCEPT_BLANKLINE',
+    'NORMALIZE_WHITESPACE',
+    'ELLIPSIS',
+    'IGNORE_EXCEPTION_DETAIL',
+    'REPORT_UDIFF',
+    'REPORT_CDIFF',
+    'REPORT_NDIFF',
+    'IGNORE_WANT',
+    'IGNORE_OUTPUT',
+    'IGNORE_WARNINGS',
+    'IGNORE_WHITESPACE',
+    'FLOAT_CMP',
+    'NORMALIZE_REPR',
+    'SHOW_WARNINGS',
+    'SKIP',
     'register_optionflag',
+    'runtime_state_to_optionflags',
+    'optionflags_to_runtime_state',
     'register_checker',
+    'resolve_checker',
     'OutputChecker',
 ]

@@ -398,50 +398,33 @@ def import_module_from_path(
             modname = os.path.splitext(internal)[0]
             modname = os.path.normpath(modname)
             if os.path.exists(archivepath):
+                import importlib.util
+
                 zimp_file = zipimport.zipimporter(archivepath)
+
+                def load_zip_module(name: str) -> ModuleType:
+                    # zipimporter.load_module was removed in Python 3.15.
+                    spec = zimp_file.find_spec(name)
+                    if spec is None:
+                        raise ImportError(f'Cannot find spec for {name!r}')
+                    module = importlib.util.module_from_spec(spec)
+                    sys.modules[name] = module  # for recursive imports
+                    try:
+                        zimp_file.exec_module(module)
+                    except BaseException:
+                        sys.modules.pop(name, None)
+                        raise
+                    return module
+
                 try:
                     try:
-                        # module = zimp_file.load_module(modname)
-                        if hasattr(zimp_file, 'exec_module'):
-                            import importlib
-
-                            # Modern path (3.4+; preferred, no deprecation)
-                            spec = importlib.util.spec_from_loader(
-                                modname, zimp_file
-                            )
-                            if spec is None:
-                                raise ImportError(
-                                    f'Cannot create spec for {modname!r}'
-                                )
-                            module = importlib.util.module_from_spec(spec)
-                            sys.modules[modname] = (
-                                module  # important for recursive imports
-                            )
-                            zimp_file.exec_module(module)
-                        else:  # nocover
-                            # Legacy fallback (deprecated; only used on very old Pythons)
-                            module = zimp_file.load_module(modname)
-                    except Exception:  # nocover
-                        _modname = modname.replace('\\', '/')  # hack
-                        if hasattr(zimp_file, 'exec_module'):
-                            import importlib
-
-                            # Modern path (3.4+; preferred, no deprecation)
-                            spec = importlib.util.spec_from_loader(
-                                _modname, zimp_file
-                            )
-                            if spec is None:
-                                raise ImportError(
-                                    f'Cannot create spec for {modname!r}'
-                                )
-                            module = importlib.util.module_from_spec(spec)
-                            sys.modules[_modname] = (
-                                module  # important for recursive imports
-                            )
-                            zimp_file.exec_module(module)
-                        else:
-                            # Legacy fallback (deprecated; only used on very old Pythons)
-                            module = zimp_file.load_module(_modname)
+                        module = load_zip_module(modname)
+                    except Exception:
+                        # Windows paths may need forward slashes inside a zip.
+                        normalized_name = modname.replace('\\', '/')
+                        if normalized_name == modname:
+                            raise
+                        module = load_zip_module(normalized_name)
                 except Exception as ex:  # nocover
                     text = (
                         'Encountered error in import_module_from_path '

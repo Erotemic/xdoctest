@@ -181,6 +181,7 @@ Example:
 from __future__ import annotations
 
 import copy
+import doctest
 import operator
 import os
 import re
@@ -240,7 +241,7 @@ class RuntimeStateDict(TypedDict, total=False):
 
 
 # Report style choices for set_report_style method
-ReportStyle = Literal['udiff', 'ndiff', 'cdiff']
+ReportStyle = Literal['udiff', 'ndiff', 'cdiff', 'none']
 
 
 DEFAULT_RUNTIME_STATE: RuntimeStateDict = {
@@ -355,7 +356,10 @@ class RuntimeState(utils.NiceRepr):
         self._inline_state: dict[str, typing.Any] = {}
         self._output_checker = 'xdoctest'
         self._output_checker_flags = 0
-        self._inline_output_checker_flags = 0
+        self._inline_output_checker_flags_add = 0
+        self._inline_output_checker_flags_remove = 0
+        self._output_checker_cache_token: object | None = None
+        self._output_checker_instance: doctest.OutputChecker | None = None
 
     def to_dict(self) -> OrderedDict[str, bool | set[str]]:
         """
@@ -408,25 +412,54 @@ class RuntimeState(utils.NiceRepr):
         return self._output_checker
 
     def set_output_checker(self, name: str) -> None:
+        if name != self._output_checker:
+            self.clear_cached_output_checker()
         self._output_checker = name
 
+    def get_cached_output_checker(
+        self, registration_token: object
+    ) -> doctest.OutputChecker | None:
+        """Return this run's checker when it matches the registration."""
+        if self._output_checker_cache_token is registration_token:
+            return self._output_checker_instance
+        return None
+
+    def cache_output_checker(
+        self,
+        registration_token: object,
+        instance: doctest.OutputChecker,
+    ) -> None:
+        """Bind a class registration to one instance for this run."""
+        self._output_checker_cache_token = registration_token
+        self._output_checker_instance = instance
+
+    def clear_cached_output_checker(self) -> None:
+        """Discard the checker instance bound to this run, if any."""
+        self._output_checker_cache_token = None
+        self._output_checker_instance = None
+
     def get_output_checker_flags(self) -> int:
-        return self._output_checker_flags | self._inline_output_checker_flags
+        flags = self._output_checker_flags | self._inline_output_checker_flags_add
+        return flags & ~self._inline_output_checker_flags_remove
 
     def set_output_checker_flags(self, flags: int) -> None:
         self._output_checker_flags = int(flags)
 
     def add_output_checker_flags(self, flags: int, inline: bool = False) -> None:
+        flags = int(flags)
         if inline:
-            self._inline_output_checker_flags |= int(flags)
+            self._inline_output_checker_flags_add |= flags
+            self._inline_output_checker_flags_remove &= ~flags
         else:
-            self._output_checker_flags |= int(flags)
+            self._output_checker_flags |= flags
 
     def remove_output_checker_flags(self, flags: int, inline: bool = False) -> None:
+        flags = int(flags)
         if inline:
-            self._inline_output_checker_flags &= ~int(flags)
+            self._inline_output_checker_flags_remove |= flags
+            self._inline_output_checker_flags_add &= ~flags
         else:
-            self._output_checker_flags &= ~int(flags)
+            self._output_checker_flags &= ~flags
 
     def set_report_style(
         self,
@@ -436,7 +469,7 @@ class RuntimeState(utils.NiceRepr):
         """
         Args:
             reportchoice (ReportStyle): name of report style. Must be one of
-                'udiff', 'ndiff', or 'cdiff'.
+                'udiff', 'ndiff', 'cdiff', or 'none'.
             state (None | RuntimeStateDict): if unspecified defaults to the global state
 
         Example:
@@ -446,15 +479,23 @@ class RuntimeState(utils.NiceRepr):
             >>> runstate.set_report_style('ndiff')
             >>> assert not runstate['REPORT_UDIFF']
             >>> assert runstate['REPORT_NDIFF']
+            >>> runstate.set_report_style('none')
+            >>> assert not any(
+            >>>     runstate[key]
+            >>>     for key in ['REPORT_UDIFF', 'REPORT_NDIFF', 'REPORT_CDIFF']
+            >>> )
         """
         # When enabling a report flag, toggle all others off
         if state is None:
             state = self._global_state
         state_dict = cast(Dict[str, Union[bool, Set[str]]], state)
-        for k in state_dict.keys():
+        # Inline state is intentionally sparse, so enumerate report keys from
+        # the complete global schema and write explicit local masks for each.
+        for k in self._global_state:
             if k.startswith('REPORT_'):
                 state_dict[k] = False
-        state_dict['REPORT_' + reportchoice.upper()] = True
+        if reportchoice != 'none':
+            state_dict['REPORT_' + reportchoice.upper()] = True
 
     def update(self, directives: list[Directive]) -> None:
         """
@@ -467,7 +508,8 @@ class RuntimeState(utils.NiceRepr):
         """
         # Clear the previous inline state
         self._inline_state.clear()
-        self._inline_output_checker_flags = 0
+        self._inline_output_checker_flags_add = 0
+        self._inline_output_checker_flags_remove = 0
         for directive in directives:
             for effect in directive.effects():
                 action, key, value = effect
@@ -475,10 +517,10 @@ class RuntimeState(utils.NiceRepr):
                     continue
 
                 if key not in self._global_state:
-                    from xdoctest import directive_facade
+                    from xdoctest.stdlib_doctest import _optionflags
 
-                    if directive_facade.is_registered_optionflag(key):
-                        flag = directive_facade.get_optionflag(key)
+                    if _optionflags.is_registered_optionflag(key):
+                        flag = _optionflags.get_optionflag(key)
                         if action == 'assign':
                             if value:
                                 self.add_output_checker_flags(flag, inline=bool(directive.inline))
@@ -494,15 +536,35 @@ class RuntimeState(utils.NiceRepr):
                     state = cast(Dict[str, typing.Any], self._global_state)
 
                 if action == 'set_report_style':
-                    # Special handling of report style
-                    self.set_report_style(key.replace('REPORT_', ''))
+                    # Report-style directives obey the same inline/global
+                    # lifetime as ordinary directives. Inline styles must not
+                    # mutate the persistent state used by later parts.
+                    reportchoice = cast(
+                        ReportStyle, key.replace('REPORT_', '').lower()
+                    )
+                    self.set_report_style(
+                        reportchoice,
+                        state=cast(RuntimeStateDict, state),
+                    )
                 elif action == 'assign':
                     state[key] = value
                 elif action == 'set.add':
-                    cast(Set[str], state[key]).add(value)
+                    assert key == 'REQUIRES'
+                    if directive.inline and 'REQUIRES' not in state:
+                        state['REQUIRES'] = copy.deepcopy(
+                            self._global_state['REQUIRES']
+                        )
+                    state_set = cast(Set[str], state['REQUIRES'])
+                    state_set.add(value)
                 elif action == 'set.remove':
+                    assert key == 'REQUIRES'
+                    if directive.inline and 'REQUIRES' not in state:
+                        state['REQUIRES'] = copy.deepcopy(
+                            self._global_state['REQUIRES']
+                        )
+                    state_set = cast(Set[str], state['REQUIRES'])
                     try:
-                        cast(Set[str], state[key]).remove(value)
+                        state_set.remove(value)
                     except KeyError:
                         pass
                 else:
@@ -729,6 +791,10 @@ class Directive(utils.NiceRepr):
             Effect(action='set.add', key='REQUIRES', value='-s')
             >>> Directive('ELLIPSIS', args=['-s']).effects(argv=[])[0]
             Effect(action='assign', key='ELLIPSIS', value=True)
+            >>> Directive('REPORT_NDIFF', positive=True).effects()[0]
+            Effect(action='set_report_style', key='REPORT_NDIFF', value=True)
+            >>> Directive('REPORT_NDIFF', positive=False).effects()[0]
+            Effect(action='assign', key='REPORT_NDIFF', value=False)
 
         Doctest:
             >>> # requirement directive with module
@@ -786,11 +852,15 @@ class Directive(utils.NiceRepr):
                         action = 'set.remove'
                 effects.append(Effect(action, key, value))
         elif key.startswith('REPORT_'):
-            # Special handling of report style
+            # Enabling one report style selects it exclusively. Disabling a
+            # report flag clears only that flag. RuntimeState.update decides
+            # whether the effect belongs to inline or persistent state.
             if self.positive:
-                action = 'noop'
-            else:
                 action = 'set_report_style'
+                value = True
+            else:
+                action = 'assign'
+                value = False
             effects.append(Effect(action, key, value))
         else:
             # The action overwrites state[key] using value
@@ -1069,9 +1139,9 @@ def parse_directive_optstr(
 
     name = name.upper()
     if name not in COMMANDS:
-        from xdoctest import directive_facade
+        from xdoctest.stdlib_doctest import _optionflags
 
-        if not directive_facade.is_registered_optionflag(name):
+        if not _optionflags.is_registered_optionflag(name):
             msg = 'Unknown directive: {!r}'.format(optpart)
             warnings.warn(msg)
             return None

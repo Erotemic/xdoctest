@@ -96,3 +96,5 @@ requirements-strict.txt
 requirements-strict
 
 tests/pybind11_test/_skbuild/
+
+*.tar.gz

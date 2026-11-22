@@ -40,6 +40,7 @@ import doctest
 import math
 import re
 import typing
+from collections.abc import Mapping
 from typing import Dict, Set
 from typing import OrderedDict as OrderedDictType
 
@@ -54,13 +55,16 @@ ELLIPSIS_MARKER = '...'
 TRAILING_WS = re.compile(r'[ \t]*$', re.UNICODE | re.MULTILINE)
 
 _FLOAT_CMP_NUMBER_RE = re.compile(
-    r'(?P<number>(?<![\d.])[+-]?(?:'
+    r'(?<![^\s=,:;*+\-/%<>&|^~\(\[\{])'
+    r'(?P<number>[+-]?(?:'
     r'(?:\d+(?:\.\d*)?|\.\d+)'
     r'(?:[eE][+-]?\d+)?'
     r'|inf(?:inity)?|nan'
-    r')(?![\d.]))',
+    r'))'
+    r'(?![^\s=,:;*+\-/%<>&|^~\)\]\}jJ])',
     re.IGNORECASE,
 )
+_FLOAT_CMP_PLACEHOLDER = '\x00'
 
 
 _EXCEPTION_RE = re.compile(
@@ -260,35 +264,67 @@ def _xdoctest_check_output(
     if not want:  # nocover
         return True
     if want:
+        if runstate is None:
+            runstate = directive.RuntimeState()
+        if runstate['IGNORE_OUTPUT']:
+            return True
+
         # Try default
         if got == want:
             return True
-
-        if runstate is None:
-            runstate = directive.RuntimeState()
 
         got, want = normalize(got, want, runstate)
         return _check_match(got, want, runstate)
     return False
 
 
-def _selected_checker_name(
-    runstate: directive.RuntimeState | typing.Mapping | None,
-) -> str:
-    """
-    Return the name of the output checker selected by the runtime state.
+def _coerce_runstate(
+    runstate: directive.RuntimeState | Mapping[str, object] | None,
+) -> directive.RuntimeState:
+    """Normalize compatibility mappings without taxing native state.
+
+    Real :class:`RuntimeState` objects are returned unchanged. Sparse mappings
+    take the pre-fast-path compatibility route through stdlib option bits,
+    yielding a complete runtime state before native matching accesses flags.
+
+    Example:
+        >>> state = _coerce_runstate({'_output_checker': 'xdoctest'})
+        >>> isinstance(state, directive.RuntimeState)
+        True
+        >>> state.get_output_checker()
+        'xdoctest'
     """
     if isinstance(runstate, directive.RuntimeState):
-        return runstate.get_output_checker()
-    if isinstance(runstate, typing.Mapping):
-        return str(runstate.get('_output_checker', 'xdoctest'))
-    return 'xdoctest'
+        return runstate
+    if runstate is None:
+        return directive.RuntimeState()
+    from xdoctest.stdlib_doctest import _optionflags
+
+    optionflags = _optionflags.runtime_state_to_optionflags(runstate)
+    normalized = _optionflags.optionflags_to_runtime_state(optionflags)
+    normalized.set_output_checker(
+        str(runstate.get('_output_checker', 'xdoctest'))
+    )
+    return normalized
+
+
+def _stdlib_checker_want(want: str) -> str:
+    """Restore the line ending expected by stdlib output checkers.
+
+    Xdoctest stores parsed wants without a trailing newline, while
+    :mod:`doctest` passes non-empty ``Example.want`` values to output
+    checkers with their terminating newline intact. Foreign checkers use the
+    stdlib protocol, so normalize only at that boundary.
+    """
+    if want and not want.endswith('\n'):
+        return want + '\n'
+    return want
 
 
 def check_output(
     got: str,
     want: str,
-    runstate: directive.RuntimeState | None = None,
+    runstate: directive.RuntimeState | Mapping[str, object] | None = None,
 ) -> bool:
     """
     Check output using the currently configured output checker backend.
@@ -309,15 +345,18 @@ def check_output(
     """
     if not want:  # nocover
         return True
-    if runstate is None:
-        runstate = directive.RuntimeState()
-    checker_name = _selected_checker_name(runstate)
+    runstate = _coerce_runstate(runstate)
+    checker_name = runstate.get_output_checker()
     if checker_name == 'xdoctest':
         return _xdoctest_check_output(got, want, runstate)
-    from xdoctest import checker_facade
-    optionflags = checker_facade.runtime_state_to_optionflags(runstate)
-    output_checker = checker_facade.resolve_checker(checker_name)
-    return bool(output_checker.check_output(want, got, optionflags))
+    from xdoctest.stdlib_doctest import _checker, _optionflags
+    optionflags = _optionflags.runtime_state_to_optionflags(runstate)
+    output_checker = _checker.resolve_checker(checker_name, runstate)
+    return bool(
+        output_checker.check_output(
+            _stdlib_checker_want(want), got, optionflags
+        )
+    )
 
 
 def _check_match(
@@ -435,151 +474,92 @@ def _ellipsis_match(got: typing.Any, want: typing.Any) -> bool:
 def _float_cmp_match(
     got: str, want: str, runstate: directive.RuntimeState | dict
 ) -> bool:
-    """
-    Compare output strings with numeric substrings matched approximately.
+    """Compare numeric substrings approximately while preserving text rules.
 
-    Text outside of numeric substrings must still agree. Ellipsis is handled in
-    the same token stream so that ``FLOAT_CMP`` composes with ``ELLIPSIS``.
+    Numeric fields are replaced with a neutral placeholder before ordinary
+    text or ellipsis matching. Numeric values are then compared separately,
+    with ellipses allowed to consume zero or more numeric fields as well as
+    arbitrary text.
     """
     allow_ellipsis = bool(runstate['ELLIPSIS'])
-    got_tokens = _tokenize_float_cmp_text(got, allow_ellipsis=allow_ellipsis)
-    want_tokens = _tokenize_float_cmp_text(want, allow_ellipsis=allow_ellipsis)
-    return _float_cmp_match_tokens(got_tokens, want_tokens)
+    want_chunks = (
+        want.split(ELLIPSIS_MARKER) if allow_ellipsis else [want]
+    )
+
+    got_structure = _replace_float_cmp_numbers(got)
+    want_structure = ELLIPSIS_MARKER.join(
+        _replace_float_cmp_numbers(chunk) for chunk in want_chunks
+    )
+    if allow_ellipsis:
+        if not _ellipsis_match(got_structure, want_structure):
+            return False
+    elif got_structure != want_structure:
+        return False
+
+    got_numbers = _find_float_cmp_numbers(got)
+    want_number_chunks = [
+        _find_float_cmp_numbers(chunk) for chunk in want_chunks
+    ]
+    return _float_cmp_number_chunks_match(got_numbers, want_number_chunks)
 
 
-def _tokenize_float_cmp_text(
-    text: str, allow_ellipsis: bool
-) -> list[tuple[str, str]]:
-    tokens: list[tuple[str, str]] = []
-    pos = 0
-    for match in _FLOAT_CMP_NUMBER_RE.finditer(text):
-        start, stop = match.span()
-        if start > pos:
-            _append_float_cmp_text_tokens(
-                tokens, text[pos:start], allow_ellipsis=allow_ellipsis
-            )
-        tokens.append(('number', match.group('number')))
-        pos = stop
-    if pos < len(text):
-        _append_float_cmp_text_tokens(
-            tokens, text[pos:], allow_ellipsis=allow_ellipsis
-        )
-    return tokens
+def _find_float_cmp_numbers(text: str) -> list[str]:
+    """Return independently formatted numeric fields from ``text``."""
+    return [
+        match.group('number') for match in _FLOAT_CMP_NUMBER_RE.finditer(text)
+    ]
 
 
-def _append_float_cmp_text_tokens(
-    tokens: list[tuple[str, str]], text: str, allow_ellipsis: bool
-) -> None:
-    if not allow_ellipsis or ELLIPSIS_MARKER not in text:
-        if text:
-            tokens.append(('text', text))
-        return
-
-    parts = re.split(r'(\.\.\.)', text)
-    for part in parts:
-        if not part:
-            continue
-        if part == ELLIPSIS_MARKER:
-            tokens.append(('ellipsis', part))
-        else:
-            tokens.append(('text', part))
+def _replace_float_cmp_numbers(text: str) -> str:
+    """Replace recognized numeric fields without disturbing surrounding text."""
+    return _FLOAT_CMP_NUMBER_RE.sub(_FLOAT_CMP_PLACEHOLDER, text)
 
 
-def _float_cmp_match_tokens(
-    got_tokens: list[tuple[str, str]],
-    want_tokens: list[tuple[str, str]],
+def _float_cmp_number_lists_equal(got: list[str], want: list[str]) -> bool:
+    return len(got) == len(want) and all(
+        _float_cmp_numeric_equal(got_value, want_value)
+        for got_value, want_value in zip(got, want)
+    )
+
+
+def _float_cmp_number_chunks_match(
+    got_numbers: list[str], want_chunks: list[list[str]]
 ) -> bool:
-    """
-    Match tokenized output for ``FLOAT_CMP``.
+    """Match numeric chunks separated by expected ellipses."""
+    if len(want_chunks) == 1:
+        return _float_cmp_number_lists_equal(got_numbers, want_chunks[0])
 
-    ``want_tokens`` may contain ``('ellipsis', '...')`` tokens, which act like
-    a wildcard over zero or more tokens in ``got_tokens``.
+    first = want_chunks[0]
+    if not _float_cmp_number_lists_equal(got_numbers[: len(first)], first):
+        return False
+    start = len(first)
 
-    Example:
-        >>> from xdoctest.checker import _float_cmp_match_tokens
-        >>> got_tokens = [('text', 'best='), ('number', '0.3333333333')]
-        >>> want_tokens = [('text', 'best='), ('number', '0.333333')]
-        >>> _float_cmp_match_tokens(got_tokens, want_tokens)
-        True
+    last = want_chunks[-1]
+    stop = len(got_numbers) - len(last)
+    if stop < start or not _float_cmp_number_lists_equal(
+        got_numbers[stop:], last
+    ):
+        return False
 
-    Example:
-        >>> from xdoctest.checker import _float_cmp_match_tokens
-        >>> got_tokens = [('text', 'best='), ('number', '1.0')]
-        >>> want_tokens = [('text', 'best='), ('number', '1.1')]
-        >>> _float_cmp_match_tokens(got_tokens, want_tokens)
-        False
-
-    Example:
-        >>> from xdoctest.checker import _float_cmp_match_tokens
-        >>> got_tokens = [
-        ...     ('text', 'prefix '),
-        ...     ('number', '0.3333333333'),
-        ...     ('text', ' middle '),
-        ...     ('number', '2.0'),
-        ...     ('text', ' suffix'),
-        ... ]
-        >>> want_tokens = [
-        ...     ('text', 'prefix '),
-        ...     ('ellipsis', '...'),
-        ...     ('text', ' suffix'),
-        ... ]
-        >>> _float_cmp_match_tokens(got_tokens, want_tokens)
-        True
-
-    Example:
-        >>> from xdoctest.checker import _float_cmp_match_tokens
-        >>> got_tokens = [('text', 'prefix '), ('text', 'suffix')]
-        >>> want_tokens = [('text', 'prefix '), ('ellipsis', '...')]
-        >>> _float_cmp_match_tokens(got_tokens, want_tokens)
-        True
-    """
-    def token_equal(got_token: tuple[str, str], want_token: tuple[str, str]) -> bool:
-        gkind, gvalue = got_token
-        wkind, wvalue = want_token
-        if gkind != wkind:
-            return False
-        if gkind == 'text':
-            return gvalue == wvalue
-        if gkind == 'ellipsis':
-            return True
-        return _float_cmp_numeric_equal(gvalue, wvalue)
-
-    # Collapse consecutive ellipses first.
-    compact_want: list[tuple[str, str]] = []
-    for tok in want_tokens:
-        if (
-            tok[0] == 'ellipsis'
-            and compact_want
-            and compact_want[-1][0] == 'ellipsis'
-        ):
+    for chunk in want_chunks[1:-1]:
+        if not chunk:
             continue
-        compact_want.append(tok)
-    want_tokens = compact_want
-
-    gi = 0
-    wi = 0
-    last_ellipsis_wi = -1
-    retry_gi = -1
-
-    while gi < len(got_tokens):
-        if wi < len(want_tokens) and want_tokens[wi][0] == 'ellipsis':
-            last_ellipsis_wi = wi
-            wi += 1
-            retry_gi = gi
-        elif wi < len(want_tokens) and token_equal(got_tokens[gi], want_tokens[wi]):
-            gi += 1
-            wi += 1
-        elif last_ellipsis_wi != -1:
-            retry_gi += 1
-            gi = retry_gi
-            wi = last_ellipsis_wi + 1
-        else:
+        width = len(chunk)
+        found = next(
+            (
+                candidate
+                for candidate in range(start, stop - width + 1)
+                if _float_cmp_number_lists_equal(
+                    got_numbers[candidate : candidate + width], chunk
+                )
+            ),
+            None,
+        )
+        if found is None:
             return False
+        start = found + width
 
-    while wi < len(want_tokens) and want_tokens[wi][0] == 'ellipsis':
-        wi += 1
-
-    return wi == len(want_tokens)
+    return start <= stop
 
 
 def _float_cmp_numeric_equal(got_text: str, want_text: str) -> bool:
@@ -870,25 +850,28 @@ class GotWantException(AssertionError):
 
     def output_difference(
         self,
-        runstate: directive.RuntimeState | None = None,
+        runstate: directive.RuntimeState | Mapping[str, object] | None = None,
         colored: bool = True,
     ) -> str:
-        if runstate is None:
-            runstate = directive.RuntimeState()
+        runstate = _coerce_runstate(runstate)
 
-        checker_name = _selected_checker_name(runstate)
+        checker_name = runstate.get_output_checker()
         if checker_name != 'xdoctest':
             # A foreign checker may provide its own difference rendering
             # (e.g. to display fixed-up wants); fall back to the native
             # renderer when it inherits the facade default.
-            from xdoctest import checker_facade
-            output_checker = checker_facade.resolve_checker(checker_name)
+            from xdoctest.stdlib_doctest import _checker, _optionflags
+            output_checker = _checker.resolve_checker(
+                checker_name, runstate
+            )
             if (
                 output_checker.__class__.output_difference
-                is not checker_facade.OutputChecker.output_difference
+                is not _checker.OutputChecker.output_difference
             ):
-                example = doctest.Example(source='', want=self.want)
-                optionflags = checker_facade.runtime_state_to_optionflags(
+                example = doctest.Example(
+                    source='', want=_stdlib_checker_want(self.want)
+                )
+                optionflags = _optionflags.runtime_state_to_optionflags(
                     runstate
                 )
                 return output_checker.output_difference(

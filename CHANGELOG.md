@@ -5,7 +5,17 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Version 1.3.3 - Unreleased
+## Version 1.4.0 - Unreleased
+
+### Added
+* Added `xdoctest.stdlib_doctest`, the documented adapter package for
+  stdlib `doctest` objects, checkers, and option flags. It exposes checker
+  and optionflag registration, runtime-state conversion, structured
+  stdlib-doctest intake helpers, and the supporting `StdlibExampleLike`,
+  `RuntimeState`, and `DocTest` types used by those public signatures.
+
+
+## Version 1.3.3 - Released 2026-11-22
 
 ### Added
 * Added the `REQUIRE_WANT` runtime directive. When enabled, a doctest part that
@@ -15,23 +25,34 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Added the `deferred_output_matching` config knob and CLI flags to opt into
   stdlib/doctest-like output grouping without changing the default xdoctest
   behavior.
-* Added doctestplus compatibility for `FLOAT_CMP`, `IGNORE_OUTPUT`,
-  `__doctest_skip__`, and `__doctest_requires__`.
-* Added `IGNORE_WARNINGS` and `SHOW_WARNINGS` runtime directives. Warning
-  policy is applied at the runner level so failure line numbers continue to
-  point at user code.
-* Added `xdoctest.interop`, the documented integration contract for third-party
-  doctest tooling (`register_optionflag`, `register_checker`, `from_examples`,
-  and `from_stdlib_doctest`).
+* Added structured intake helpers for stdlib-shaped `doctest.Example` and
+  `doctest.DocTest` objects, preserving one-based source locations, complete
+  stdlib option masks (including `SKIP`), and per-example output, report-style,
+  and option boundaries without rewriting user source.
+* Added `IGNORE_WARNINGS` and `SHOW_WARNINGS` runtime directives for
+  per-example warning policy.
+* Added native doctest interoperability primitives, including stdlib-shaped
+  output-checker and optionflag registration APIs and the `FLOAT_CMP` and
+  `IGNORE_OUTPUT` directives.
+* Added support for module-level `__doctest_skip__` and
+  `__doctest_requires__` metadata. Bare module or distribution requirements
+  remain zero-dependency; version-constrained requirements use the optional
+  `packaging` dependency.
 
 ### Fixed
 * Fixed issue #181 where comment indentation could cause parsing issues.
 * Fix traceback rewriting for exceptions raised in earlier doctest parts
 * Ignored output from a no-want part is discarded rather than deferred to a
   later trailing match.
+* Issue where inline REQUIRES directives caused errors. (bug introduced in 2693ea4  2019-07-16)
 
 
 ### Changed
+* Cached static module doctest metadata using file identity, and report specific `__doctest_skip__` and `__doctest_requires__` reasons through pytest.
+* Native xdoctest output checks now keep structured runtime state on the fast
+  path. Stdlib optionflag conversion occurs only for foreign checkers or sparse
+  compatibility mappings. The native checker name is reserved; foreign checker
+  classes retain factory semantics and are materialized once per doctest run.
 * Bump minimum pytest to 6.2.5
 * Much more static typing
 
