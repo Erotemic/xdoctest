@@ -18,6 +18,30 @@ def test_inline_skip_directive() -> None:
     assert result['passed']
 
 
+def test_inline_requires_directive(monkeypatch) -> None:
+    """Inline requirements inherit block state without mutating it."""
+    monkeypatch.delenv('XDOCTEST_REQ', raising=False)
+    string = utils.codeblock(
+        """
+        >>> print('before')
+        >>> assert False, 'should be skipped'  # doctest: +REQUIRES(env:XDOCTEST_REQ)
+        >>> print('after')
+        >>> # doctest: +REQUIRES(env:XDOCTEST_REQ)
+        >>> assert False, 'block should be skipped'
+        >>> print('inline-ran')  # doctest: -REQUIRES(env:XDOCTEST_REQ)
+        >>> assert False, 'block should still be skipped'
+        """
+    )
+    self = doctest_example.DocTest(docsrc=string)
+    result = self.run(on_error='raise')
+    assert self.logged_stdout is not None
+    stdout = ''.join(str(v) for v in self.logged_stdout.values())
+    assert result['passed']
+    assert 'before' in stdout
+    assert 'after' in stdout
+    assert 'inline-ran' in stdout
+
+
 def test_block_skip_directive() -> None:
     """
     pytest tests/test_directive.py::test_block_skip_directive
@@ -91,6 +115,36 @@ def test_directive_syntax_error() -> None:
     assert self.logged_stdout is not None
     stdout = ''.join(str(v) for v in self.logged_stdout.values())
     assert stdout.count('not-skipped') == 1
+
+
+def test_inline_report_style_is_local() -> None:
+    from xdoctest.directive import Directive, RuntimeState
+
+    runstate = RuntimeState()
+    assert runstate['REPORT_UDIFF']
+    assert not runstate['REPORT_NDIFF']
+
+    runstate.update([Directive('REPORT_NDIFF', positive=True, inline=True)])
+    assert not runstate['REPORT_UDIFF']
+    assert runstate['REPORT_NDIFF']
+
+    runstate.update([])
+    assert runstate['REPORT_UDIFF']
+    assert not runstate['REPORT_NDIFF']
+
+
+def test_inline_negative_report_style_is_local() -> None:
+    from xdoctest.directive import Directive, RuntimeState
+
+    runstate = RuntimeState()
+    runstate.set_report_style('ndiff')
+    assert runstate['REPORT_NDIFF']
+
+    runstate.update([Directive('REPORT_NDIFF', positive=False, inline=True)])
+    assert not runstate['REPORT_NDIFF']
+
+    runstate.update([])
+    assert runstate['REPORT_NDIFF']
 
 
 if __name__ == '__main__':

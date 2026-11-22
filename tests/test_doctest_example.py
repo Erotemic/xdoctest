@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import argparse
 import typing
+from pathlib import Path
+
+import pytest
 
 from xdoctest import checker, constants, doctest_example, exceptions, utils
 
@@ -382,6 +385,106 @@ def test_require_want_ignored_no_want_part_passes() -> None:
     assert result['passed']
 
 
+def test_ignore_output_wrong_want_passes() -> None:
+    docsrc = utils.codeblock(
+        """
+        >>> print('foo')  # xdoctest: +IGNORE_OUTPUT
+        bar
+        """
+    )
+    self = doctest_example.DocTest(docsrc=docsrc)
+    result = self.run(verbose=0, on_error='return')
+
+    assert result['passed']
+
+
+def test_ignore_output_suppresses_require_want_stdout_failure() -> None:
+    docsrc = utils.codeblock(
+        """
+        >>> print('foo')  # xdoctest: +IGNORE_OUTPUT
+        """
+    )
+    self = doctest_example.DocTest(docsrc=docsrc)
+    self.config['default_runtime_state'] = {'REQUIRE_WANT': True}
+
+    result = self.run(verbose=0, on_error='return')
+
+    assert result['passed']
+
+
+def test_ignore_output_suppresses_require_want_eval_failure() -> None:
+    docsrc = utils.codeblock(
+        """
+        >>> 1 + 1  # xdoctest: +IGNORE_OUTPUT
+        """
+    )
+    self = doctest_example.DocTest(docsrc=docsrc)
+    self._parse()
+    assert self._parts is not None
+    self._parts[0].compile_mode = 'eval'
+    self.config['default_runtime_state'] = {'REQUIRE_WANT': True}
+
+    result = self.run(verbose=0, on_error='return')
+
+    assert result['passed']
+
+
+def test_ignore_output_breaks_deferred_matching() -> None:
+    docsrc = utils.codeblock(
+        """
+        >>> print('prefix')
+
+        >>> print('ignored')  # xdoctest: +IGNORE_OUTPUT
+        junk
+
+        >>> print('suffix')
+        prefix
+        suffix
+        """
+    )
+    self = doctest_example.DocTest(docsrc=docsrc)
+    self._parse()
+    assert self._parts is not None
+    assert len(self._parts) == 3
+
+    result = self.run(verbose=0, on_error='return')
+
+    assert result['failed']
+    assert not result['passed']
+
+
+def test_module_doctest_requires_invalid_value_fails(tmp_path: Path) -> None:
+    fpath = tmp_path / 'mod_requires_bad.py'
+    fpath.write_text(
+        utils.codeblock(
+            """
+            __doctest_requires__ = {'foo': ['bad requirement']}
+
+            def foo():
+                '''
+                >>> 1
+                1
+                '''
+            """
+        )
+    )
+    docsrc = utils.codeblock(
+        """
+        >>> 1
+        1
+        """
+    )
+    self = doctest_example.DocTest(
+        docsrc=docsrc,
+        modpath=str(fpath),
+        callname='foo',
+        fpath=str(fpath),
+    )
+
+    with pytest.raises(ValueError):
+        self.run(verbose=0, on_error='raise')
+
+
 def test_deferred_output_matching_false_disables_trailing_match() -> None:
     docsrc = utils.codeblock(
         """
@@ -450,6 +553,7 @@ def test_doctest_fails_because_ignore_want_clears_unmatched_stdout_v1() -> None:
     # The idea here is that we shouldn't be able to match things before an
     # ignore, because it is cleared by the want.
     import pytest
+
     docsrc = utils.codeblock(
         """
         >>> print('prefix')
@@ -473,6 +577,7 @@ def test_doctest_fails_because_ignore_want_clears_unmatched_stdout_v2() -> None:
     # Similar idea to the v1 test, but this one would pass if the ignore was
     # removed.
     import pytest
+
     docsrc = utils.codeblock(
         """
         >>> print('prefix')
@@ -785,3 +890,104 @@ if __name__ == '__main__':
     import xdoctest
 
     xdoctest.doctest_module(__file__)
+
+
+def test_requirement_check_without_packaging(monkeypatch) -> None:
+    monkeypatch.setattr(doctest_example, 'Requirement', None)
+
+    assert doctest_example._doctest_requirement_satisfied('os')
+    assert not doctest_example._doctest_requirement_satisfied(
+        'definitely_missing_package_123456'
+    )
+    with pytest.warns(RuntimeWarning, match='packaging is required'):
+        assert not doctest_example._doctest_requirement_satisfied('pytest>=1')
+
+
+def test_static_module_metadata_cache_reuses_and_invalidates(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from xdoctest import doctest_example as mod
+
+    fpath = tmp_path / 'cached_metadata.py'
+    fpath.write_text("__doctest_skip__ = ['first']\n")
+
+    calls: list[str] = []
+    original = mod.static.parse_static_value
+
+    def counting_parse(key: str, *, fpath: str) -> typing.Any:
+        calls.append(key)
+        return original(key, fpath=fpath)
+
+    monkeypatch.setattr(mod.static, 'parse_static_value', counting_parse)
+    mod._read_static_module_doctest_metadata_cached.cache_clear()
+    try:
+        first = mod._static_module_doctest_metadata(fpath)
+        second = mod._static_module_doctest_metadata(fpath)
+        assert second is first
+        assert calls == ['__doctest_skip__', '__doctest_requires__']
+
+        fpath.write_text("__doctest_skip__ = ['second', 'changed']\n")
+        changed = mod._static_module_doctest_metadata(fpath)
+        assert changed[0] == ['second', 'changed']
+        assert calls == [
+            '__doctest_skip__',
+            '__doctest_requires__',
+            '__doctest_skip__',
+            '__doctest_requires__',
+        ]
+    finally:
+        mod._read_static_module_doctest_metadata_cached.cache_clear()
+
+
+def test_module_metadata_returns_specific_skip_reasons() -> None:
+    import types
+
+    from xdoctest import directive, doctest_example
+
+    module = types.ModuleType('metadata_reason_demo')
+    setattr(module, '__doctest_skip__', ['skip_me'])
+    setattr(
+        module,
+        '__doctest_requires__',
+        {'needs_missing': ['definitely_missing_package_123456']},
+    )
+
+    skipped = doctest_example.DocTest(
+        docsrc='>>> 1\n2\n',
+        modpath=module,
+        callname='skip_me',
+    )
+    skip_state = directive.RuntimeState()
+    reason = skipped._apply_module_doctest_metadata(skip_state)
+    assert reason == 'listed in `__doctest_skip__`'
+    assert skip_state['SKIP']
+
+    required = doctest_example.DocTest(
+        docsrc='>>> 1\n1\n',
+        modpath=module,
+        callname='needs_missing',
+    )
+    require_state = directive.RuntimeState()
+    reason = required._apply_module_doctest_metadata(require_state)
+    assert reason == (
+        "unmet `__doctest_requires__` requirement: "
+        "'definitely_missing_package_123456'"
+    )
+    assert require_state['SKIP']
+
+
+def test_module_requirement_patterns_validate_sequence_items() -> None:
+    import types
+
+    import pytest
+
+    from xdoctest import doctest_example
+
+    module = types.ModuleType('metadata_validation_demo')
+    dtest = doctest_example.DocTest(
+        docsrc='>>> 1\n1\n',
+        modpath=module,
+        callname='target',
+    )
+    with pytest.raises(ValueError, match='patterns must be strings'):
+        dtest._unmet_module_requirement({('target', 3): ['os']})

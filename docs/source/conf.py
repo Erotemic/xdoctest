@@ -111,7 +111,6 @@ Notes:
 # sys.path.insert(0, os.path.abspath('.'))
 
 # -- Project information -----------------------------------------------------
-import sphinx_rtd_theme
 from os.path import exists
 from os.path import dirname
 from os.path import join
@@ -133,7 +132,7 @@ def parse_version(fpath):
         def visit_Assign(self, node):
             for target in node.targets:
                 if getattr(target, 'id', None) == '__version__':
-                    self.version = node.value.s
+                    self.version = node.value.value
 
     visitor = VersionVisitor()
     visitor.visit(pt)
@@ -181,6 +180,7 @@ extensions = [
 ]
 
 todo_include_todos = True
+myst_heading_anchors = 3
 napoleon_google_docstring = True
 napoleon_use_param = False
 napoleon_use_ivar = True
@@ -236,6 +236,7 @@ intersphinx_mapping = {
     'xdoctest': ('https://xdoctest.readthedocs.io/en/latest/', None),
     'networkx': ('https://networkx.org/documentation/stable/', None),
     'scriptconfig': ('https://scriptconfig.readthedocs.io/en/latest/', None),
+    'kwconf': ('https://kwconf.readthedocs.io/en/latest/', None),
     'rich': ('https://rich.readthedocs.io/en/latest/', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
     'sympy': ('https://docs.sympy.org/latest/', None),
@@ -271,10 +272,12 @@ python -m sphinx.ext.intersphinx https://pygments-doc.readthedocs.io/en/latest/o
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
-# The suffix(es) of source filenames.
-# You can specify multiple suffix as a list of string:
-#
-source_suffix = ['.rst', '.md']
+# The suffix(es) of source filenames. Mapping form avoids Sphinx
+# converting a legacy list at runtime.
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.md': 'markdown',
+}
 
 # The master toctree document.
 master_doc = 'index'
@@ -301,7 +304,6 @@ pygments_style = 'sphinx'
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -309,7 +311,6 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 #
 html_theme_options = {
     'collapse_navigation': False,
-    'display_version': True,
     'navigation_depth': -1,
     # 'logo_only': True,
 }
@@ -319,7 +320,10 @@ html_theme_options = {
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# Keep empty by default to avoid warnings when generated projects do not
+# define custom static assets. Projects that create ``docs/source/_static``
+# can opt back in locally.
+html_static_path = []
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -410,20 +414,19 @@ texinfo_documents = [
 
 
 # -- Extension configuration -------------------------------------------------
+import os
+import time
+from typing import Any, List  # NOQA
+
 from sphinx.domains.python import PythonDomain  # NOQA
 
 # from sphinx.application import Sphinx  # NOQA
-from typing import Any, List  # NOQA
 
 
-# HACK TO PREVENT EXCESSIVE TIME.
-# TODO: FIXME FOR REAL
-MAX_TIME_MINUTES = None
-if MAX_TIME_MINUTES:
-    import ubelt  # NOQA
-
-    TIMER = ubelt.Timer()
-    TIMER.tic()
+# Optional limit for documentation image rendering time (disabled by default).
+_time_limit_setting = os.environ.get('XCOOKIE_DOC_MAX_TIME_MINUTES')
+MAX_TIME_MINUTES = float(_time_limit_setting) if _time_limit_setting else None
+_TIMER_START = time.monotonic()
 
 
 class PatchedPythonDomain(PythonDomain):
@@ -678,7 +681,10 @@ class GoogleStyleDocstringProcessor:
 
         render_doc_images = 0
 
-        if MAX_TIME_MINUTES and TIMER.toc() > (60 * MAX_TIME_MINUTES):
+        if (
+            MAX_TIME_MINUTES
+            and time.monotonic() - _TIMER_START > 60 * MAX_TIME_MINUTES
+        ):
             render_doc_images = False  # FIXME too slow on RTD
 
         if render_doc_images:

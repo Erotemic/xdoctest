@@ -311,7 +311,7 @@ __autogen__ = """
 mkinit xdoctest --nomods
 """
 
-__version__ = '1.3.3'
+__version__ = '1.4.0'
 
 
 # Expose only select submodules
@@ -332,6 +332,33 @@ from xdoctest.runner import (
     doctest_callable,
     doctest_module,
 )
+from xdoctest.directive_facade import (
+    BLANKLINE_MARKER,
+    DONT_ACCEPT_BLANKLINE,
+    ELLIPSIS,
+    ELLIPSIS_MARKER,
+    FLOAT_CMP,
+    IGNORE_EXCEPTION_DETAIL,
+    IGNORE_OUTPUT,
+    IGNORE_WARNINGS,
+    IGNORE_WHITESPACE,
+    IGNORE_WANT,
+    NORMALIZE_REPR,
+    NORMALIZE_WHITESPACE,
+    REPORT_CDIFF,
+    REPORT_NDIFF,
+    REPORT_UDIFF,
+    SHOW_WARNINGS,
+    SKIP,
+    optionflags_to_runtime_state,
+    register_optionflag,
+    runtime_state_to_optionflags,
+)
+from xdoctest.checker_facade import (
+    OutputChecker,
+    register_checker,
+    resolve_checker,
+)
 
 __all__ = [
     'DoctestParseError',
@@ -343,4 +370,27 @@ __all__ = [
     'utils',
     'docstr',
     '__version__',
+    'BLANKLINE_MARKER',
+    'ELLIPSIS_MARKER',
+    'DONT_ACCEPT_BLANKLINE',
+    'NORMALIZE_WHITESPACE',
+    'ELLIPSIS',
+    'IGNORE_EXCEPTION_DETAIL',
+    'REPORT_UDIFF',
+    'REPORT_CDIFF',
+    'REPORT_NDIFF',
+    'IGNORE_WANT',
+    'IGNORE_OUTPUT',
+    'IGNORE_WARNINGS',
+    'IGNORE_WHITESPACE',
+    'FLOAT_CMP',
+    'NORMALIZE_REPR',
+    'SHOW_WARNINGS',
+    'SKIP',
+    'register_optionflag',
+    'runtime_state_to_optionflags',
+    'optionflags_to_runtime_state',
+    'register_checker',
+    'resolve_checker',
+    'OutputChecker',
 ]
