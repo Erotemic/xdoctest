@@ -304,6 +304,20 @@ def doctest_module(
         for example in examples:
             example.mode = 'native'
 
+    # Python normalizes identifier spellings to NFKC during compilation.
+    # Fall back to that spelling for command-line selections (issue #183),
+    # while preserving exact matches for explicitly named doctests.
+    if (
+        command not in {'all', 'dump', 'list'}
+        and not command.isascii()
+        and not any(command in example.valid_testnames for example in examples)
+    ):
+        import unicodedata
+
+        normalized = unicodedata.normalize('NFKC', command)
+        if normalized not in {'all', 'dump', 'list'}:
+            command = normalized
+
     if command == 'list':
         if len(examples) == 0:
             _log('... no docstrings with examples found')

@@ -144,6 +144,46 @@ def test_example_run() -> None:
     assert 'i wanna see this' in cap.text
 
 
+def test_unicode_identifier_command_selection() -> None:
+    """Issue #183: CLI spellings must find Python-normalized identifiers."""
+    from xdoctest import runner
+    from xdoctest.__main__ import main
+
+    source = utils.codeblock(
+        '''
+        class Model:
+            def validation_with_subscript_ᵣ(self):
+                """
+                Example:
+                    >>> assert 2 + 2 == 4
+                """
+                return self
+        '''
+    )
+    with utils.TempDir() as temp:
+        modpath = join(str(temp.dpath), 'unicode_methods.py')
+        with open(modpath, 'w', encoding='utf8') as file:
+            file.write(source)
+
+        unicode_name = 'Model.validation_with_subscript_ᵣ'
+        canonical_name = 'Model.validation_with_subscript_r'
+        for analysis in ('static', 'dynamic'):
+            for command in (unicode_name, unicode_name + ':0', canonical_name):
+                with utils.CaptureStdout():
+                    result = runner.doctest_module(
+                        modpath, command, argv=[], analysis=analysis, verbose=0
+                    )
+                assert result['n_passed'] == 1
+                assert result['n_total'] == 1
+
+        # Exercise the user-facing argparse entry point, not just the API.
+        with utils.CaptureStdout() as cap:
+            exit_code = main(['xdoctest', modpath, unicode_name, '--quiet'])
+        assert exit_code == 0
+        assert cap.text is not None
+        assert '1 passed' in cap.text
+
+
 def test_durations() -> None:
     from xdoctest import runner
 
