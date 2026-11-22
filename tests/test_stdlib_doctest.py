@@ -118,6 +118,74 @@ def test_empty_want_output_cannot_satisfy_later_example():
     assert result['failed']
 
 
+@pytest.mark.parametrize(
+    ('source', 'want', 'should_pass'),
+    [
+        ('print(">>> item")\n', '>>> item\n', True),
+        ('print("... bc")\n', '... bc\n', True),
+        ('print("... bc")\n', '... bd\n', False),
+        ('print("a\\n\\nb")\n', 'a\n\nb\n', True),
+        ('print("a\\n\\nb")\n', 'a\n<BLANKLINE>\nb\n', True),
+        ('print("a\\n")\n', 'a\n\n', True),
+        ('print("")\n', '\n', True),
+        ('print("a\\n")\n', 'a\n', False),
+        ('print("hello")\n', 'hello\n', True),
+        ('print("hello")\n', 'hello', True),
+        (
+            'print("line1\\n>>> line2")\n',
+            'line1\n>>> line2\n',
+            True,
+        ),
+    ],
+)
+def test_structured_want_matches_stdlib(
+    source: str, want: str, should_pass: bool
+) -> None:
+    """Output is data, even when lines resemble prompts or are blank."""
+    example = doctest.Example(source=source, want=want, lineno=0)
+    stdlib_test = doctest.DocTest(
+        [example], {'__name__': '__main__'}, 'example', 'demo.py', 0, ''
+    )
+    stdlib_result = doctest.DocTestRunner().run(
+        stdlib_test, out=lambda text: None, clear_globs=False
+    )
+    assert (stdlib_result.failed == 0) is should_pass
+
+    stdlib_doctest.register_checker('verbatim_want', doctest.OutputChecker)
+    converted = stdlib_doctest.from_examples(
+        [example], config={'output_checker': 'verbatim_want'}
+    )
+    assert converted._parts is not None
+    assert len(converted._parts) == 1
+    assert converted._parts[0].want == example.want
+    result = converted.run(verbose=0, on_error='return')
+    assert result['passed'] is should_pass
+
+
+def test_structured_wants_preserve_example_boundaries_and_lines() -> None:
+    """Multiple structured wants must not affect following source or lines."""
+    examples = [
+        doctest.Example('print(">>> item")\n', '>>> item\n', lineno=8),
+        doctest.Example(
+            'print("a\\n\\nb")\n', 'a\n\nb\n', lineno=20
+        ),
+    ]
+    stdlib_test = doctest.DocTest(
+        examples, {'__name__': '__main__'}, 'example', 'demo.py', 100, ''
+    )
+    converted = stdlib_doctest.from_stdlib_doctest(
+        stdlib_test, config={'output_checker': 'stdlib'}
+    )
+    stdlib_doctest.register_checker('stdlib', doctest.OutputChecker)
+    assert converted._parts is not None
+    assert [part.line_offset for part in converted._parts] == [0, 12]
+    assert [part.want for part in converted._parts] == [
+        '>>> item\n', 'a\n\nb\n'
+    ]
+    assert converted.lineno == 109
+    assert converted.run(verbose=0, on_error='return')['passed']
+
+
 def test_skip_option_is_honored():
     examples = [
         doctest.Example(

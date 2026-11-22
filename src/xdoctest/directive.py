@@ -974,7 +974,7 @@ def _is_requires_satisfied(
     arg_lower = arg.lower()
 
     # TODO: better chained version parsing
-    # Should be able to specify Python>=3.8,Python!=3.8.1,env:HASIT<3
+    # Should be able to specify Python>=3.10,Python!=3.10.1,env:HASIT<3
 
     if arg.startswith('-'):
         if argv is None:

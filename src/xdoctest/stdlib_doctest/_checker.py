@@ -43,9 +43,8 @@ class _CheckerRegistration:
     checker: doctest.OutputChecker | type[doctest.OutputChecker]
 
 
-# Keep this union inside postponed annotations. A module-level assignment such
-# as ``CheckerLike = OutputChecker | type[OutputChecker]`` would evaluate the
-# PEP 604 expression during import and break supported Python 3.8 / 3.9.
+# Keep the checker union in annotations, avoiding an unnecessary module-level
+# runtime type alias.
 _REGISTERED_CHECKERS: dict[str, _CheckerRegistration] = {}
 
 
