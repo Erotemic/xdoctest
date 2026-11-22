@@ -8,7 +8,7 @@ mod_name = "xdoctest"
 repo_name = "xdoctest"
 rel_mod_parent_dpath = "./src"
 os = [ "all", "win", "linux", "osx",]
-min_python = '3.8'
+min_python = '3.10'
 author = "Jon Crall"
 author_email = "erotemic@gmail.com"
 description = "A rewrite of the builtin doctest module"
@@ -32,12 +32,12 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     # Supported Python versions
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Programming Language :: Python :: Implementation :: PyPy",
     "Programming Language :: Python :: Implementation :: CPython",
 ]
@@ -115,7 +115,7 @@ exclude = [
 
 [tool.ty.rules]
 unused-type-ignore-comment = "ignore"
-unresolved-import = "ignore"
+import-not-found = "ignore"
 
 [[tool.ty.overrides]]
 include = ["src/xdoctest/_tokenize.py", "pybind11_test"]
@@ -125,7 +125,7 @@ invalid-assignment = "ignore"
 
 [tool.ruff]
 line-length = 80
-target-version = "py38"
+target-version = "py310"
 extend-exclude = ["src/xdoctest/_tokenize.py"]
 
 

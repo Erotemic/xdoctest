@@ -71,7 +71,7 @@ class TeeStringIO(io.StringIO):
             return super(TeeStringIO, self).fileno()
 
     @property
-    def encoding(self) -> str | None:  # type: ignore[override] # ty: ignore[invalid-property-type-override]
+    def encoding(self) -> str | None:  # type: ignore[override] # ty: ignore[incompatible-property-override]
         """
         Gets the encoding of the `redirect` IO object
 
