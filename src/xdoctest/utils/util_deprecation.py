@@ -97,7 +97,13 @@ def schedule_deprecation(
     """
     import sys
     import warnings
+    from collections.abc import Callable
+    from typing import Any
 
+    # Both branches parse all versions with the same implementation. Their
+    # concrete return types differ, so use a common callable annotation rather
+    # than an invalid Version | LooseVersion comparison.
+    _parse_version: Callable[[str], Any]
     try:
         import packaging.version as _pkg_version
 
@@ -107,15 +113,30 @@ def schedule_deprecation(
 
         _parse_version = _dist_version.LooseVersion
 
+    # Keep the comparison within a single version backend. Each constructor
+    # has its own ordering protocol, so comparing a union of their return
+    # types is not valid to a static checker (or across backends at runtime).
+    def _at_least(actual: str, threshold: str) -> bool:
+        try:
+            import packaging.version as pkg_version
+        except ImportError:
+            import distutils.version as dist_version  # type: ignore[unresolved-import]
+
+            return dist_version.LooseVersion(actual) >= dist_version.LooseVersion(
+                threshold
+            )
+        return pkg_version.parse(actual) >= pkg_version.parse(threshold)
+
     module = sys.modules[modname]
-    current = _parse_version(module.__version__)
+    current_text = module.__version__
+    current = _parse_version(current_text)
     deprecate_v = _parse_version(deprecate) if deprecate is not None else None
     remove_v = _parse_version(remove) if remove is not None else None
     error_v = _parse_version(error) if error is not None else None
     deprecate_str = '' if deprecate_v is None else f' in {deprecate_v}'
     remove_str = '' if remove_v is None else f' in {remove_v}'
     error_str = '' if error_v is None else f' in {error_v}'
-    if deprecate_v is None or current >= deprecate_v:
+    if deprecate is None or _at_least(current_text, deprecate):
         msg = (
             (
                 'The "{name}" {type} was deprecated{deprecate_str}, will cause '
@@ -125,14 +146,14 @@ def schedule_deprecation(
             .format(**locals())
             .strip()
         )
-        if remove_v is not None and current >= remove_v:
+        if remove is not None and _at_least(current_text, remove):
             raise AssertionError(
                 'Forgot to remove deprecated: '
                 + msg
                 + ' '
                 + 'Remove the function, or extend the scheduled remove version.'
             )
-        if error_v is not None and current >= error_v:
+        if error is not None and _at_least(current_text, error):
             raise RuntimeError(msg)
         else:
             warnings.warn(msg, DeprecationWarning)

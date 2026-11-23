@@ -1,6 +1,268 @@
 [build-system]
-requires = [ "setuptools>=41.0.1",]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "xdoctest"
+dynamic = ["version"]
+description = "A rewrite of the builtin doctest module"
+readme = {file = "README.rst", content-type = "text/x-rst"}
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [{name = "Jon Crall", email = "erotemic@gmail.com"}]
+keywords = ["xdoctest", "doctest", "test", "docstr", "pytest"]
+classifiers = [
+    "Development Status :: 6 - Mature",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+    "Topic :: Software Development :: Testing",
+    "Framework :: Pytest",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+dependencies = []  # No mandatory runtime dependencies
+
+[project.urls]
+Homepage = "https://github.com/Erotemic/xdoctest"
+
+[project.scripts]
+xdoctest = "xdoctest.__main__:main"
+
+[project.entry-points.pytest11]
+xdoctest = "xdoctest.plugin"
+
+[project.optional-dependencies]
+# Keep these extras in sync with requirements/*.txt. In contrast to setup.py,
+# PEP 621 metadata does not support the pip-only `-r` include directive.
+"all" = [
+    "pytest>=9.0.0;python_version < '4.0.0'  and python_version >= '3.14.0'",
+    "pytest>=6.2.5;python_version < '3.14.0' and python_version >= '3.10.0'",
+    "pytest-cov>=3.0.0",
+    "Pygments>=2.15.1",
+    "colorama>=0.4.1;platform_system==\"Windows\"",
+    "nbconvert>=6.1.0;python_version < '3.15' and platform_python_implementation != \"PyPy\"",
+    "nbconvert>=7.17.0;python_version >= '3.15' and platform_python_implementation != \"PyPy\"",
+    "nbclient>=0.10.2;python_version >= '3.15' and platform_python_implementation != \"PyPy\"",
+    "jinja2>=3.0.0;platform_python_implementation != \"PyPy\"",
+    "jupyter_client>=8.8.0;python_version >= '3.14'",
+    "jupyter_client>=7.0.0;python_version <  '3.14'",
+    "IPython>=9.0.0;python_version >= '3.14'",
+    "IPython>=7.23.1;python_version <  '3.14'",
+    "ipykernel>=7.2.0;python_version < '4.0'  and python_version >= '3.14' and (platform_system!=\"Windows\" or platform_python_implementation != \"PyPy\")",
+    "ipykernel>=6.11.0;python_version < '3.14' and python_version >= '3.12' and (platform_system!=\"Windows\" or platform_python_implementation != \"PyPy\")",
+    "ipykernel>=6.0.0;python_version < '3.12' and python_version >= '3.10' and (platform_system!=\"Windows\" or platform_python_implementation != \"PyPy\")",
+    "debugpy>=1.8.0;python_version < '4'    and python_version >= '3.14'",
+    "debugpy>=1.6.0;python_version < '3.14' and python_version >= '3.10'",
+    "ipython_genutils>=0.2.0;platform_python_implementation != \"PyPy\"",
+    "jedi>=0.16",
+    "attrs>=19.2.0",
+    "jupyter_core>=5.7.0;python_version >= '3.14'",
+    "jupyter_core>=4.7.0;python_version <  '3.14'",
+    "pyflakes>=3.3.0;python_version < '4.0'  and python_version >= '3.14'",
+    "pyflakes>=2.2.0;python_version < '3.14'",
+    "tomli>=0.2.0;python_version < '3.11.0' and python_version >= '3.10'",
+]
+"runtime" = [
+]
+"tests" = [
+    "pytest>=9.0.0;python_version < '4.0.0'  and python_version >= '3.14.0'",
+    "pytest>=6.2.5;python_version < '3.14.0' and python_version >= '3.10.0'",
+    "pytest-cov>=3.0.0",
+]
+"optional" = [
+    "Pygments>=2.15.1",
+    "colorama>=0.4.1;platform_system==\"Windows\"",
+    "nbconvert>=6.1.0;python_version < '3.15' and platform_python_implementation != \"PyPy\"",
+    "nbconvert>=7.17.0;python_version >= '3.15' and platform_python_implementation != \"PyPy\"",
+    "nbclient>=0.10.2;python_version >= '3.15' and platform_python_implementation != \"PyPy\"",
+    "jinja2>=3.0.0;platform_python_implementation != \"PyPy\"",
+    "jupyter_client>=8.8.0;python_version >= '3.14'",
+    "jupyter_client>=7.0.0;python_version <  '3.14'",
+    "IPython>=9.0.0;python_version >= '3.14'",
+    "IPython>=7.23.1;python_version <  '3.14'",
+    "ipykernel>=7.2.0;python_version < '4.0'  and python_version >= '3.14' and (platform_system!=\"Windows\" or platform_python_implementation != \"PyPy\")",
+    "ipykernel>=6.11.0;python_version < '3.14' and python_version >= '3.12' and (platform_system!=\"Windows\" or platform_python_implementation != \"PyPy\")",
+    "ipykernel>=6.0.0;python_version < '3.12' and python_version >= '3.10' and (platform_system!=\"Windows\" or platform_python_implementation != \"PyPy\")",
+    "debugpy>=1.8.0;python_version < '4'    and python_version >= '3.14'",
+    "debugpy>=1.6.0;python_version < '3.14' and python_version >= '3.10'",
+    "ipython_genutils>=0.2.0;platform_python_implementation != \"PyPy\"",
+    "jedi>=0.16",
+    "attrs>=19.2.0",
+    "jupyter_core>=5.7.0;python_version >= '3.14'",
+    "jupyter_core>=4.7.0;python_version <  '3.14'",
+    "pyflakes>=3.3.0;python_version < '4.0'  and python_version >= '3.14'",
+    "pyflakes>=2.2.0;python_version < '3.14'",
+    "tomli>=0.2.0;python_version < '3.11.0' and python_version >= '3.10'",
+]
+"colors" = [
+    "Pygments>=2.15.1",
+    "colorama>=0.4.1;platform_system==\"Windows\"",
+]
+"docs" = [
+    "sphinx>=5.0.1",
+    "sphinx-autobuild>=2021.3.14",
+    "sphinx_rtd_theme>=1.0.0",
+    "sphinxcontrib-napoleon>=0.7",
+    "sphinx-autoapi>=1.8.4",
+    "Pygments>=2.15.1",
+    "myst_parser>=0.18.0",
+    "sphinx-reredirects>=0.0.1",
+]
+"jupyter" = [
+    "nbconvert>=6.1.0;python_version < '3.15' and platform_python_implementation != \"PyPy\"",
+    "nbconvert>=7.17.0;python_version >= '3.15' and platform_python_implementation != \"PyPy\"",
+    "nbclient>=0.10.2;python_version >= '3.15' and platform_python_implementation != \"PyPy\"",
+    "jinja2>=3.0.0;platform_python_implementation != \"PyPy\"",
+    "jupyter_client>=8.8.0;python_version >= '3.14'",
+    "jupyter_client>=7.0.0;python_version <  '3.14'",
+    "IPython>=9.0.0;python_version >= '3.14'",
+    "IPython>=7.23.1;python_version <  '3.14'",
+    "ipykernel>=7.2.0;python_version < '4.0'  and python_version >= '3.14' and (platform_system!=\"Windows\" or platform_python_implementation != \"PyPy\")",
+    "ipykernel>=6.11.0;python_version < '3.14' and python_version >= '3.12' and (platform_system!=\"Windows\" or platform_python_implementation != \"PyPy\")",
+    "ipykernel>=6.0.0;python_version < '3.12' and python_version >= '3.10' and (platform_system!=\"Windows\" or platform_python_implementation != \"PyPy\")",
+    "debugpy>=1.8.0;python_version < '4'    and python_version >= '3.14'",
+    "debugpy>=1.6.0;python_version < '3.14' and python_version >= '3.10'",
+    "ipython_genutils>=0.2.0;platform_python_implementation != \"PyPy\"",
+    "jedi>=0.16",
+    "attrs>=19.2.0",
+    "jupyter_core>=5.7.0;python_version >= '3.14'",
+    "jupyter_core>=4.7.0;python_version <  '3.14'",
+]
+"tests-binary" = [
+    "scikit-build>=0.16.1;python_version < '4.0'  and python_version >= '3.11'",
+    "scikit-build>=0.11.1;python_version < '3.11' and python_version >= '3.10'",
+    "ninja>=1.11.1;python_version < '4.0'  and python_version >= '3.11'",
+    "ninja>=1.10.2;python_version < '3.11' and python_version >= '3.10'",
+    "pybind11>=2.10.3;python_version < '4.0'  and python_version >= '3.11'",
+    "pybind11>=2.7.1;python_version < '3.11' and python_version >= '3.10'",
+    "cmake>=3.25.0;python_version < '4.0'  and python_version >= '3.11'",
+    "cmake>=3.21.2;python_version < '3.11' and python_version >= '3.10'",
+]
+"all-strict" = [
+    "pytest==9.0.0;python_version < '4.0.0'  and python_version >= '3.14.0'",
+    "pytest==6.2.5;python_version < '3.14.0' and python_version >= '3.10.0'",
+    "pytest-cov==3.0.0",
+    "Pygments==2.15.1",
+    "colorama==0.4.1;platform_system==\"Windows\"",
+    "nbconvert==6.1.0;python_version < '3.15' and platform_python_implementation != \"PyPy\"",
+    "nbconvert==7.17.0;python_version >= '3.15' and platform_python_implementation != \"PyPy\"",
+    "nbclient==0.10.2;python_version >= '3.15' and platform_python_implementation != \"PyPy\"",
+    "jinja2==3.0.0;platform_python_implementation != \"PyPy\"",
+    "jupyter_client==8.8.0;python_version >= '3.14'",
+    "jupyter_client==7.0.0;python_version <  '3.14'",
+    "IPython==9.0.0;python_version >= '3.14'",
+    "IPython==7.23.1;python_version <  '3.14'",
+    "ipykernel==7.2.0;python_version < '4.0'  and python_version >= '3.14' and (platform_system!=\"Windows\" or platform_python_implementation != \"PyPy\")",
+    "ipykernel==6.11.0;python_version < '3.14' and python_version >= '3.12' and (platform_system!=\"Windows\" or platform_python_implementation != \"PyPy\")",
+    "ipykernel==6.0.0;python_version < '3.12' and python_version >= '3.10' and (platform_system!=\"Windows\" or platform_python_implementation != \"PyPy\")",
+    "debugpy==1.8.0;python_version < '4'    and python_version >= '3.14'",
+    "debugpy==1.6.0;python_version < '3.14' and python_version >= '3.10'",
+    "ipython_genutils==0.2.0;platform_python_implementation != \"PyPy\"",
+    "jedi==0.16",
+    "attrs==19.2.0",
+    "jupyter_core==5.7.0;python_version >= '3.14'",
+    "jupyter_core==4.7.0;python_version <  '3.14'",
+    "pyflakes==3.3.0;python_version < '4.0'  and python_version >= '3.14'",
+    "pyflakes==2.2.0;python_version < '3.14'",
+    "tomli==0.2.0;python_version < '3.11.0' and python_version >= '3.10'",
+]
+"runtime-strict" = [
+]
+"tests-strict" = [
+    "pytest==9.0.0;python_version < '4.0.0'  and python_version >= '3.14.0'",
+    "pytest==6.2.5;python_version < '3.14.0' and python_version >= '3.10.0'",
+    "pytest-cov==3.0.0",
+]
+"optional-strict" = [
+    "Pygments==2.15.1",
+    "colorama==0.4.1;platform_system==\"Windows\"",
+    "nbconvert==6.1.0;python_version < '3.15' and platform_python_implementation != \"PyPy\"",
+    "nbconvert==7.17.0;python_version >= '3.15' and platform_python_implementation != \"PyPy\"",
+    "nbclient==0.10.2;python_version >= '3.15' and platform_python_implementation != \"PyPy\"",
+    "jinja2==3.0.0;platform_python_implementation != \"PyPy\"",
+    "jupyter_client==8.8.0;python_version >= '3.14'",
+    "jupyter_client==7.0.0;python_version <  '3.14'",
+    "IPython==9.0.0;python_version >= '3.14'",
+    "IPython==7.23.1;python_version <  '3.14'",
+    "ipykernel==7.2.0;python_version < '4.0'  and python_version >= '3.14' and (platform_system!=\"Windows\" or platform_python_implementation != \"PyPy\")",
+    "ipykernel==6.11.0;python_version < '3.14' and python_version >= '3.12' and (platform_system!=\"Windows\" or platform_python_implementation != \"PyPy\")",
+    "ipykernel==6.0.0;python_version < '3.12' and python_version >= '3.10' and (platform_system!=\"Windows\" or platform_python_implementation != \"PyPy\")",
+    "debugpy==1.8.0;python_version < '4'    and python_version >= '3.14'",
+    "debugpy==1.6.0;python_version < '3.14' and python_version >= '3.10'",
+    "ipython_genutils==0.2.0;platform_python_implementation != \"PyPy\"",
+    "jedi==0.16",
+    "attrs==19.2.0",
+    "jupyter_core==5.7.0;python_version >= '3.14'",
+    "jupyter_core==4.7.0;python_version <  '3.14'",
+    "pyflakes==3.3.0;python_version < '4.0'  and python_version >= '3.14'",
+    "pyflakes==2.2.0;python_version < '3.14'",
+    "tomli==0.2.0;python_version < '3.11.0' and python_version >= '3.10'",
+]
+"colors-strict" = [
+    "Pygments==2.15.1",
+    "colorama==0.4.1;platform_system==\"Windows\"",
+]
+"docs-strict" = [
+    "sphinx==5.0.1",
+    "sphinx-autobuild==2021.3.14",
+    "sphinx_rtd_theme==1.0.0",
+    "sphinxcontrib-napoleon==0.7",
+    "sphinx-autoapi==1.8.4",
+    "Pygments==2.15.1",
+    "myst_parser==0.18.0",
+    "sphinx-reredirects==0.0.1",
+]
+"jupyter-strict" = [
+    "nbconvert==6.1.0;python_version < '3.15' and platform_python_implementation != \"PyPy\"",
+    "nbconvert==7.17.0;python_version >= '3.15' and platform_python_implementation != \"PyPy\"",
+    "nbclient==0.10.2;python_version >= '3.15' and platform_python_implementation != \"PyPy\"",
+    "jinja2==3.0.0;platform_python_implementation != \"PyPy\"",
+    "jupyter_client==8.8.0;python_version >= '3.14'",
+    "jupyter_client==7.0.0;python_version <  '3.14'",
+    "IPython==9.0.0;python_version >= '3.14'",
+    "IPython==7.23.1;python_version <  '3.14'",
+    "ipykernel==7.2.0;python_version < '4.0'  and python_version >= '3.14' and (platform_system!=\"Windows\" or platform_python_implementation != \"PyPy\")",
+    "ipykernel==6.11.0;python_version < '3.14' and python_version >= '3.12' and (platform_system!=\"Windows\" or platform_python_implementation != \"PyPy\")",
+    "ipykernel==6.0.0;python_version < '3.12' and python_version >= '3.10' and (platform_system!=\"Windows\" or platform_python_implementation != \"PyPy\")",
+    "debugpy==1.8.0;python_version < '4'    and python_version >= '3.14'",
+    "debugpy==1.6.0;python_version < '3.14' and python_version >= '3.10'",
+    "ipython_genutils==0.2.0;platform_python_implementation != \"PyPy\"",
+    "jedi==0.16",
+    "attrs==19.2.0",
+    "jupyter_core==5.7.0;python_version >= '3.14'",
+    "jupyter_core==4.7.0;python_version <  '3.14'",
+]
+"tests-binary-strict" = [
+    "scikit-build==0.16.1;python_version < '4.0'  and python_version >= '3.11'",
+    "scikit-build==0.11.1;python_version < '3.11' and python_version >= '3.10'",
+    "ninja==1.11.1;python_version < '4.0'  and python_version >= '3.11'",
+    "ninja==1.10.2;python_version < '3.11' and python_version >= '3.10'",
+    "pybind11==2.10.3;python_version < '4.0'  and python_version >= '3.11'",
+    "pybind11==2.7.1;python_version < '3.11' and python_version >= '3.10'",
+    "cmake==3.25.0;python_version < '4.0'  and python_version >= '3.11'",
+    "cmake==3.21.2;python_version < '3.11' and python_version >= '3.10'",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+xdoctest = ["py.typed", "*.pyi"]
+
+[tool.setuptools.dynamic]
+version = {attr = "xdoctest.__version__"}
 
 [tool.xcookie]
 tags = [ "erotemic", "github", "purepy", "mypy"]
@@ -17,7 +279,9 @@ license = "Apache 2"
 dev_status = "stable"
 ci_pypi_trusted_publishing = true
 ci_gpg_secret_transport = "direct_ci"
+enable_gpg = true
 typed = true
+use_setup_py = false
 skip_autogen = ["MANIFEST.in"]
 # CI extras configuration - adds tests-binary to full-loose variant
 ci_extras = 'full-loose: [tests-binary]'

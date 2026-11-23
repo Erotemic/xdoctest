@@ -7,7 +7,7 @@
 - Use rst files in `docs/source/manual` for narrative documentation. 
 - Use `run_tests.py` for unit tests and only.
 - Use `run_doctests.sh` for doctests only.
-- Dependencies are listed in `requirements/*.txt` and referenced in `setup.py`
+- Dependencies are listed in `requirements/*.txt` and mirrored in `pyproject.toml` optional extras; keep both synchronized.
 
 ## Commit attribution
 
