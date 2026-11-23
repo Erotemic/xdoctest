@@ -1096,6 +1096,9 @@ class DocTest:
         # This also avoids changing the globals of the module under test.
         # The synthetic module is importable only until this run finishes;
         # pickles cannot rely on it for cross-process or later unpickling.
+        # Related discussions of module creation and pickling with exec:
+        # https://stackoverflow.com/questions/32175693/python-importlibs-analogue-for-imp-new-module
+        # https://stackoverflow.com/questions/31191947/pickle-and-exec-in-python
         sandbox_name = f'_xdoctest_sandbox_{id(self):x}'
         sandbox_module = types.ModuleType(sandbox_name)
         sandbox_module.__dict__.update(test_globals)
