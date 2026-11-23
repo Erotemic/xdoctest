@@ -7,7 +7,7 @@ import __future__
 
 import ast
 import functools
-from contextlib import AbstractContextManager, nullcontext
+from contextlib import AbstractContextManager, ExitStack, nullcontext
 import math
 import os
 import re
@@ -1079,42 +1079,41 @@ class DocTest:
                 compileflags |= feature.compiler_flag
         return compileflags
 
-    def _test_globals(self):
+    def _test_globals(
+        self, cleanup: ExitStack
+    ) -> tuple[dict[str, typing.Any], int]:
         test_globals = self.global_namespace
         if self.module is None:
             compileflags = 0
         else:
-            # Its unclear what the side effects of populating globals with
-            # __name__, __package__, etc are. They do cause differences.
-            # between that and IPython code. Probably regular code too.
-
-            # https://stackoverflow.com/questions/32175693/python-importlibs-analogue-for-imp-new-module
-            # https://stackoverflow.com/questions/31191947/pickle-and-exec-in-python
-            # import types
-            # dummy_name = self.module.__name__ + '_xdoctest_sandbox'
-            # if dummy_name in sys.modules:
-            #     dummy_mod = sys.modules[dummy_name]
-            # else:
-            # dummy_mod = types.ModuleType(dummy_name)
-            # sys.modules[dummy_name] = dummy_mod
-
             test_globals.update(self.module.__dict__)
-            # test_globals.update(dummy_mod.__dict__)
-            # importable_attrs = {
-            #     k: v for k, v in self.module.__dict__.items()
-            #     if not k.startswith('__')
-            # }
-            # test_globals.update(importable_attrs)
-            # test_globals['__name__'] = self.module.__name__ + '.doctest'
-            # test_globals['__name__'] = '__main__'
-            # test_globals['__file__'] = None
-            # test_globals['__package__'] = None
             compileflags = self._extract_future_flags(test_globals)
-        # force print function and division futures
+
+        # Code executed in a separate globals dictionary is not actually
+        # module-level code: pickle cannot import classes or functions defined
+        # there, because they are missing from the containing module. Give
+        # each doctest a temporary, real module for its execution namespace.
+        # This also avoids changing the globals of the module under test.
+        # The synthetic module is importable only until this run finishes;
+        # pickles cannot rely on it for cross-process or later unpickling.
+        sandbox_name = f'_xdoctest_sandbox_{id(self):x}'
+        sandbox_module = types.ModuleType(sandbox_name)
+        sandbox_module.__dict__.update(test_globals)
+        sandbox_module.__name__ = sandbox_name
+        self.global_namespace = sandbox_module.__dict__
+        sys.modules[sandbox_name] = sandbox_module
+
+        def unregister_sandbox() -> None:
+            if sys.modules.get(sandbox_name) is sandbox_module:
+                del sys.modules[sandbox_name]
+
+        cleanup.callback(unregister_sandbox)
+
+        # Force print function and division futures.
         compileflags |= __future__.print_function.compiler_flag
         compileflags |= __future__.division.compiler_flag
         compileflags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
-        return test_globals, compileflags
+        return self.global_namespace, compileflags
 
     def _partfilename_for(self, partno: int) -> str:
         """
@@ -1343,7 +1342,10 @@ class DocTest:
 
         # NOTE: this will prevent any custom handling of warnings
         # See: https://github.com/Erotemic/xdoctest/issues/169
-        with warnings.catch_warnings(record=True) as self.warn_list:
+        with (
+            ExitStack() as cleanup,
+            warnings.catch_warnings(record=True) as self.warn_list,
+        ):
             assert self._parts is not None
             for partx, part in enumerate(self._parts):
                 if DEBUG:
@@ -1425,7 +1427,7 @@ class DocTest:
                         did_pre_import = True
                         continue
 
-                    test_globals, compileflags = self._test_globals()
+                    test_globals, compileflags = self._test_globals(cleanup)
 
                     if DEBUG:
                         print(
