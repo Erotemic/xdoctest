@@ -17,7 +17,9 @@ https://github.com/pytest-dev/pytest
 
 from __future__ import annotations
 
+import sys
 import typing
+from contextlib import ExitStack
 from typing import cast
 
 import pytest
@@ -321,8 +323,21 @@ class XDoctestItem(pytest.Item):
     def runtest(self) -> None:
         if self.dtest.is_disabled(pytest=True):
             pytest.skip('doctest encountered global skip directive')
-        # verbose = self.dtest.config['verbose']
-        self.dtest.run(on_error='raise')
+        with ExitStack() as stack:
+            if isinstance(self.parent, XDoctestModule):
+                import_mode = self.config.getoption('importmode')
+                if import_mode != 'importlib':
+                    from xdoctest.utils import PythonPathContext, split_modpath
+
+                    import_dir, _ = split_modpath(str(self.parent.fspath))
+                    if import_dir not in sys.path:
+                        # Keep the module importable after xdoctest's own
+                        # import, including in processes spawned by the test.
+                        index = 0 if import_mode == 'prepend' else -1
+                        stack.enter_context(
+                            PythonPathContext(import_dir, index)
+                        )
+            self.dtest.run(on_error='raise')
         if not self.dtest.anything_ran():
             pytest.skip(self.dtest._skip_reason())
 
