@@ -97,7 +97,13 @@ def schedule_deprecation(
     """
     import sys
     import warnings
+    from collections.abc import Callable
+    from typing import Any
 
+    # Both branches parse all versions with the same implementation. Their
+    # concrete return types differ, so use a common callable annotation rather
+    # than an invalid Version | LooseVersion comparison.
+    _parse_version: Callable[[str], Any]
     try:
         import packaging.version as _pkg_version
 
